@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lista de Insumos</title>
+  </head>
+  <body>
+    <h1>Lista de Insumos</h1>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Classificação</th>
+          <th>Código</th>
+          <th>Descrição</th>
+          <th>Unidade</th>
+          <th>Origem de Preço</th>
+          <th>AC</th>
+          <th>AL</th>
+          <th>AP</th>
+          <th>AM</th>
+          <th>BA</th>
+          <th>CE</th>
+          <th>DF</th>
+          <th>ES</th>
+          <th>GO</th>
+          <th>MA</th>
+          <th>MT</th>
+          <th>MS</th>
+          <th>MG</th>
+          <th>PA</th>
+          <th>PB</th>
+          <th>PR</th>
+          <th>PE</th>
+          <th>PI</th>
+          <th>RJ</th>
+          <th>RN</th>
+          <th>RS</th>
+          <th>RO</th>
+          <th>RR</th>
+          <th>SC</th>
+          <th>SP</th>
+          <th>SE</th>
+          <th>TO</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for arquivo in insumos %}
+        <tr>
+          <td>{{ arquivo.classificacao }}</td>
+          <td>{{ arquivo.codigo_insumo }}</td>
+          <td>{{ arquivo.descricao_do_insumo }}</td>
+          <td>{{ arquivo.unidade }}</td>
+          <td>{{ arquivo.origem_de_preco }}</td>
+          <td>{{ arquivo.AC }}</td>
+          <td>{{ arquivo.AL }}</td>
+          <td>{{ arquivo.AP }}</td>
+          <td>{{ arquivo.AM }}</td>
+          <td>{{ arquivo.BA }}</td>
+          <td>{{ arquivo.CE }}</td>
+          <td>{{ arquivo.DF }}</td>
+          <td>{{ arquivo.ES }}</td>
+          <td>{{ arquivo.GO }}</td>
+          <td>{{ arquivo.MA }}</td>
+          <td>{{ arquivo.MT }}</td>
+          <td>{{ arquivo.MS }}</td>
+          <td>{{ arquivo.MG }}</td>
+          <td>{{ arquivo.PA }}</td>
+          <td>{{ arquivo.PB }}</td>
+          <td>{{ arquivo.PR }}</td>
+          <td>{{ arquivo.PE }}</td>
+          <td>{{ arquivo.PI }}</td>
+          <td>{{ arquivo.RJ }}</td>
+          <td>{{ arquivo.RN }}</td>
+          <td>{{ arquivo.RS }}</td>
+          <td>{{ arquivo.RO }}</td>
+          <td>{{ arquivo.RR }}</td>
+          <td>{{ arquivo.SC }}</td>
+          <td>{{ arquivo.SP }}</td>
+          <td>{{ arquivo.SE }}</td>
+          <td>{{ arquivo.TO }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>
