@@ -5,9 +5,11 @@ const Insumos = () => {
   const [insumos, setInsumos] = useState([]);
 
   useEffect(() => {
-    axios
-      .get("http://127.0.0.1:8000/api/insumos") // Certifique-se de que a URL está correta
-      .then((response) => setInsumos(response.data))
+    axios.get("http://127.0.0.1:8000/api/insumos") // Certifique-se de que a URL está correta
+      .then((response) => {
+        console.log("Dados recebidos:", response.data); // Verifique os dados no console
+        setInsumos(response.data);
+      })
       .catch((error) => console.error("Erro ao buscar insumos:", error));
   }, []);
 
@@ -52,42 +54,48 @@ const Insumos = () => {
           </tr>
         </thead>
         <tbody>
-          {insumos.map((insumos) => (
-            <tr key={insumos.id}>
-              <td>{insumos.classificacao}</td>
-              <td>{insumos.codigo_insumo}</td>
-              <td>{insumos.descricao_do_insumo}</td>
-              <td>{insumos.unidade}</td>
-              <td>{insumos.origem_de_preco}</td>
-              <td>{insumos.AC}</td>
-              <td>{insumos.AL}</td>
-              <td>{insumos.AP}</td>
-              <td>{insumos.AM}</td>
-              <td>{insumos.BA}</td>
-              <td>{insumos.CE}</td>
-              <td>{insumos.DF}</td>
-              <td>{insumos.ES}</td>
-              <td>{insumos.GO}</td>
-              <td>{insumos.MA}</td>
-              <td>{insumos.MT}</td>
-              <td>{insumos.MS}</td>
-              <td>{insumos.MG}</td>
-              <td>{insumos.PA}</td>
-              <td>{insumos.PB}</td>
-              <td>{insumos.PR}</td>
-              <td>{insumos.PE}</td>
-              <td>{insumos.PI}</td>
-              <td>{insumos.RJ}</td>
-              <td>{insumos.RN}</td>
-              <td>{insumos.RS}</td>
-              <td>{insumos.RO}</td>
-              <td>{insumos.RR}</td>
-              <td>{insumos.SC}</td>
-              <td>{insumos.SP}</td>
-              <td>{insumos.SE}</td>
-              <td>{insumos.TO}</td>
+          {insumos.length > 0 ? (
+            insumos.map((insumo) => (
+              <tr key={insumo.id}>
+                <td>{insumo.classificacao}</td>
+                <td>{insumo.codigo_insumo}</td>
+                <td>{insumo.descricao_do_insumo}</td>
+                <td>{insumo.unidade}</td>
+                <td>{insumo.origem_de_preco}</td>
+                <td>{insumo.AC}</td>
+                <td>{insumo.AL}</td>
+                <td>{insumo.AP}</td>
+                <td>{insumo.AM}</td>
+                <td>{insumo.BA}</td>
+                <td>{insumo.CE}</td>
+                <td>{insumo.DF}</td>
+                <td>{insumo.ES}</td>
+                <td>{insumo.GO}</td>
+                <td>{insumo.MA}</td>
+                <td>{insumo.MT}</td>
+                <td>{insumo.MS}</td>
+                <td>{insumo.MG}</td>
+                <td>{insumo.PA}</td>
+                <td>{insumo.PB}</td>
+                <td>{insumo.PR}</td>
+                <td>{insumo.PE}</td>
+                <td>{insumo.PI}</td>
+                <td>{insumo.RJ}</td>
+                <td>{insumo.RN}</td>
+                <td>{insumo.RS}</td>
+                <td>{insumo.RO}</td>
+                <td>{insumo.RR}</td>
+                <td>{insumo.SC}</td>
+                <td>{insumo.SP}</td>
+                <td>{insumo.SE}</td>
+                <td>{insumo.TO}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="32">Nenhum dado disponível.</td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

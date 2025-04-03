@@ -13,6 +13,10 @@ table = "api_insumos"
 cursor.execute(f"DELETE FROM {table}")
 conection.commit()
 
+# Reiniciar o ID da tabela
+cursor.execute(f"DELETE FROM sqlite_sequence WHERE name='{table}'")
+conection.commit()
+
 # Inserir os dados no banco de dados
 for _, row in database.iterrows():
     # Obter os valores da linha como uma lista
