@@ -5,7 +5,7 @@
 
 <h2>Como iniciar o projeto</h2>
 <p>primeiramente precisa instalar as dependencias e framworks: </p>
-<p>inicie o comando <strong>cd core</strong></p>
+<p>inicie o comando <strong>cd backend</strong></p>
 <p>instale as depencias a partir do comando <strong>python -r requirements.txt</strong></p>
 <p>faça as migrações necessarias para aplicar as tabelas no banco de dados com o comando <strong>python manage.py makemigrations</strong></p>
 <p>faça a aplicação das tabelas no banco de dados com o comando <strong>python manage.py migrate</strong></p>
