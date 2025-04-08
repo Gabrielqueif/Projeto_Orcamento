@@ -1,5 +1,6 @@
 import pandas as pd
 import sqlite3
+import re
 
 # Ler a base de dados
 database = pd.read_excel("dados/referencia sinapi.xlsx")
@@ -17,10 +18,26 @@ conection.commit()
 cursor.execute(f"DELETE FROM sqlite_sequence WHERE name='{table}'")
 conection.commit()
 
+# Função para substituir pontos por vírgulas em valores numéricos
+
+
+def processar_valor(valor):
+    if pd.isna(valor):
+        return None
+    if isinstance(valor, (int, float)):
+        return valor
+    if isinstance(valor, str):
+        # Verifica se é um número com ponto decimal
+        if re.match(r'^\d+\.\d+$', valor):
+            # Substitui ponto por vírgula
+            return valor.replace('.', ',')
+    return valor
+
+
 # Inserir os dados no banco de dados
 for _, row in database.iterrows():
-    # Obter os valores da linha como uma lista
-    data = row.tolist()
+    # Processar cada valor da linha
+    data = [processar_valor(valor) for valor in row.tolist()]
 
     # Montar a query de inserção explicitamente
     query = f"""
@@ -41,3 +58,5 @@ conection.commit()
 # Fechar o cursor e a conexão
 cursor.close()
 conection.close()
+
+print("Dados inseridos com sucesso! Pontos substituídos por vírgulas nos valores numéricos.")
