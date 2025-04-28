@@ -44,7 +44,8 @@ const FiltroInsumos = ({ onFiltroChange }) => {
   const origens = [
     { valor: '', label: 'Todas' },
     { valor: 'C', label: 'C' },
-    { valor: 'CR', label: 'CR' }
+    { valor: 'CR', label: 'CR' },
+    { valor: 'AS', label: 'AS' }
   ];
 
   const handleChange = (e) => {
@@ -135,9 +136,11 @@ const FiltroInsumos = ({ onFiltroChange }) => {
             onChange={handleChange}
             style={selectStyle}
           >
-            <option value="">Todas</option>
-            <option value="C">C</option>
-            <option value="CR">CR</option>
+            {origens.map(origem => (
+              <option key={origem.valor} value={origem.valor}>
+                {origem.label}
+              </option>
+            ))}
           </select>
         </div>
 

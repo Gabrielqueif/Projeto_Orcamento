@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import FiltroInsumos from './FiltroInsumos';
+import FiltroInsumos from '../pages/FiltroInsumos';
 
 const Insumos = () => {
   const [insumos, setInsumos] = useState([]);

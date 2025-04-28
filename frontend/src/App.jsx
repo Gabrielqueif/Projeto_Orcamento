@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Insumos from "./components/insumos";
-import BuscaInsumo from "./components/BuscaInsumo";
+import BuscaInsumo from "./pages/BuscaInsumo";
 
 function App() {
   return (
