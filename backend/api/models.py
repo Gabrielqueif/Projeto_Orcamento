@@ -34,10 +34,10 @@ class Insumos(models.Model):
     SP = models.FloatField(default=0,blank=True, null=True)  # São Paulo
     SE = models.FloatField(default=0,blank=True, null=True)  # Sergipe
     TO = models.FloatField(default=0,blank=True, null=True)  # Tocantins 
- 
+
 class Composicoes(models.Model):
-    grupo = models.CharField(max_length=55)
-    codigo_composicao = models.IntegerField(default=0)
+    grupo = models.CharField(max_length=255)
+    codigo_composicao = models.IntegerField(null=True, default=0)
     tipo_item = models.CharField(max_length=100, null=True)
     codigo_item = models.IntegerField(null=True, default=0)
     descricao = models.TextField()
