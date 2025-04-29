@@ -83,7 +83,7 @@ class ComposicoesViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            composicoes = Composicoes.objects.get(codigo_insumo=codigo)
+            composicoes = Composicoes.objects.get(codigo_composicao=codigo)
             serializer = self.get_serializer(composicoes)
             return Response(serializer.data)
         except Composicoes.DoesNotExist:
@@ -95,10 +95,10 @@ class ComposicoesViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def buscar(self, request):
         """
-        Endpoint para buscar insumos com filtros sem paginação.
+        Endpoint para buscar composições com filtros sem paginação.
         """
         # Obter parâmetros de busca
-        classificacao = request.query_params.get('grupo', '')
+        grupo = request.query_params.get('grupo', '')
         codigo = request.query_params.get('codigo', '')
         descricao = request.query_params.get('descricao', '')
         unidade = request.query_params.get('unidade', '')
@@ -109,8 +109,8 @@ class ComposicoesViewSet(viewsets.ModelViewSet):
         queryset = Insumos.objects.all()
 
         # Aplicar filtros se fornecidos
-        if classificacao:
-            queryset = queryset.filter(classificacao__icontains=classificacao)
+        if grupo:
+            queryset = queryset.filter(classificacao__icontains=grupo)
         if codigo:
             queryset = queryset.filter(codigo_insumo__icontains=codigo)
         if descricao:

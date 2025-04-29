@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import Insumos from "./components/insumos";
+import Insumos from "./pages/insumos";
 import BuscaInsumo from "./pages/BuscaInsumo";
+import Composicoes from './pages/composicoes';
 
 function App() {
   return (
@@ -28,12 +29,18 @@ function App() {
                 Buscar por Código
               </Link>
             </li>
+            <li>
+              <Link to="/composicoes" style={{ textDecoration: 'none', color: '#007bff' }}>
+                Composições
+              </Link>
+            </li>
           </ul>
         </nav>
 
         <Routes>
           <Route path="/" element={<Insumos />} />
           <Route path="/busca" element={<BuscaInsumo />} />
+          <Route path = "/composicoes" element={<Composicoes />}/>
         </Routes>
       </div>
     </Router>

@@ -113,4 +113,23 @@ api.buscarInsumos = async (filtros) => {
   }
 };
 
+api.getComposicoes = async () => {
+  try {
+    const response = await api.get('/composicoes/');
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar composições:', error);
+    throw error;
+  }
+};
+api.getComposicaoPorCodigo = async (codigo) => {
+  try {
+    const response = await api.get(`/composicoes/${codigo_composicao=codigo}/`);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar composição por ID:', error);
+    throw error;
+  }
+};
+
 export default api; 
