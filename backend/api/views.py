@@ -54,4 +54,6 @@ class ComposicoesViewSet(viewsets.ModelViewSet):
     serializer_class = ComposicoesSerializer
     pagination_class = TabelaPagination
 
+    
+
        
