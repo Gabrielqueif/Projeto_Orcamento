@@ -81,7 +81,7 @@ export function BuscadorSinapi({ onAddItem }: BuscadorSinapiProps) {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Digite o código ou descrição do insumo/composição..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    className="w-full px-4 py-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 />
 
                 {isSearching && <p className="text-gray-500">Buscando...</p>}

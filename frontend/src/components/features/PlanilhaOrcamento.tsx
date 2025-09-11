@@ -20,6 +20,9 @@ export function PlanilhaOrcamento({ itens, onUpdateQuantity, onRemoveItem }: Pla
         );
     }
 
+    // Estilo para o input de quantidade, para consistência
+    const quantityInputStyle = "w-24 p-1.5 bg-slate-50 border border-slate-300 rounded-md text-center text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
+
     return (
         <div className="border rounded-lg bg-white shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -45,7 +48,7 @@ export function PlanilhaOrcamento({ itens, onUpdateQuantity, onRemoveItem }: Pla
                                     type="number"
                                     value={item.quantidade}
                                     onChange={(e) => onUpdateQuantity(item.codigo, parseFloat(e.target.value))}
-                                    className="w-20 p-1 border rounded-md text-center"
+                                    className={quantityInputStyle} // Aplicando o estilo
                                     min="0"
                                     step="0.01"
                                 />

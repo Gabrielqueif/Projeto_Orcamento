@@ -1,103 +1,100 @@
-import Image from "next/image";
+// src/app/page.tsx
+'use client'; // Necessário para usar hooks e interagir com o localStorage
 
-export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { IOrcamento } from '@/types/sinapi';
+import { listarOrcamentos, deletarOrcamento } from '@/lib/orcamento-storage';
+import { FileText, PlusCircle, Trash2 } from 'lucide-react'; // Ícones para a UI
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+export default function HomePage() {
+    const [orcamentos, setOrcamentos] = useState<IOrcamento[]>([]);
+
+    // useEffect para carregar os orçamentos do storage quando o componente montar
+    useEffect(() => {
+        const orcamentosSalvos = listarOrcamentos();
+        setOrcamentos(orcamentosSalvos);
+    }, []);
+
+    const handleDelete = (id: string) => {
+        // Confirmação para evitar exclusões acidentais
+        if (window.confirm('Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.')) {
+            deletarOrcamento(id);
+            // Atualiza o estado local para refletir a exclusão na UI imediatamente
+            setOrcamentos(prevOrcamentos => prevOrcamentos.filter(o => o.id !== id));
+        }
+    };
+
+    return (
+        <main className="bg-slate-50 min-h-screen p-4 md:p-8">
+            <div className="container mx-auto">
+                <div className="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Meus Orçamentos</h1>
+                        <p className="text-slate-600 mt-1">Visualize, edite ou exclua seus projetos salvos.</p>
+                    </div>
+                    <Link href="/orcamento/novo" className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+                        <PlusCircle size={20} />
+                        Criar Novo Orçamento
+                    </Link>
+                </div>
+
+                {/* Grid para listar os orçamentos */}
+                {orcamentos.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {orcamentos.map(orcamento => {
+                            // Calculamos o valor total para exibir no card
+                            const custoTotal = orcamento.itens.reduce((total, item) => total + (item.preco * item.quantidade), 0);
+                            const precoVenda = custoTotal * (1 + orcamento.bdiPercentual / 100);
+
+                            return (
+                                <div key={orcamento.id} className="bg-white rounded-lg shadow-sm border border-slate-200 flex flex-col justify-between overflow-hidden">
+                                    <div className="p-5">
+                                        <div className="flex items-start gap-3">
+                                            <div className="bg-slate-100 p-2 rounded-md">
+                                                <FileText className="text-slate-500" />
+                                            </div>
+                                            <div>
+                                                <h2 className="font-bold text-lg text-gray-800">{orcamento.tituloObra}</h2>
+                                                <p className="text-sm text-slate-500">{orcamento.cliente}</p>
+                                            </div>
+                                        </div>
+                                        <div className="mt-4 text-sm text-slate-600">
+                                            <p>Data: {new Date(orcamento.data).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</p>
+                                            <p className="font-semibold text-lg mt-2 text-gray-800">
+                                                Valor Total: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(precoVenda)}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gray-50 px-5 py-3 flex justify-end gap-3 border-t">
+                                        <button
+                                            onClick={() => handleDelete(orcamento.id)}
+                                            className="text-sm font-medium text-red-600 hover:text-red-800 flex items-center gap-1.5"
+                                        >
+                                            <Trash2 size={16} />
+                                            Excluir
+                                        </button>
+                                        {/* O link de edição aponta para uma página que ainda vamos criar */}
+                                        <Link
+                                            href={`/orcamento/${orcamento.id}/editar`}
+                                            className="text-sm font-medium bg-slate-700 text-white px-4 py-1.5 rounded-md hover:bg-slate-800"
+                                        >
+                                            Editar
+                                        </Link>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    // Mensagem para quando não houver orçamentos
+                    <div className="text-center py-20 bg-white rounded-lg border-2 border-dashed">
+                        <h2 className="text-xl font-semibold text-slate-700">Nenhum orçamento salvo ainda.</h2>
+                        <p className="text-slate-500 mt-2">Clique em "Criar Novo Orçamento" para começar.</p>
+                    </div>
+                )}
+            </div>
+        </main>
+    );
 }

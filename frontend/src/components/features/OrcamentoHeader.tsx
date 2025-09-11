@@ -3,11 +3,13 @@
 
 import { IOrcamento } from "@/types/sinapi";
 
-// Definimos quais dados do orçamento o Header precisa e qual função ele pode chamar
 type OrcamentoHeaderProps = {
     data: Pick<IOrcamento, 'tituloObra' | 'cliente' | 'local' | 'data' | 'bdiPercentual' | 'encargosSociaisPercentual'>;
     onUpdate: (field: keyof IOrcamento, value: string | number) => void;
 }
+
+// Vamos definir um estilo base para reutilizar em todos os inputs
+const inputStyle = "mt-1 block w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-md shadow-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
 
 export function OrcamentoHeader({ data, onUpdate }: OrcamentoHeaderProps) {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,7 +30,7 @@ export function OrcamentoHeader({ data, onUpdate }: OrcamentoHeaderProps) {
                     name="tituloObra"
                     value={data.tituloObra}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={inputStyle} // Aplicando o estilo
                 />
             </div>
 
@@ -40,7 +42,7 @@ export function OrcamentoHeader({ data, onUpdate }: OrcamentoHeaderProps) {
                     name="cliente"
                     value={data.cliente}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={inputStyle} // Aplicando o estilo
                 />
             </div>
 
@@ -52,7 +54,7 @@ export function OrcamentoHeader({ data, onUpdate }: OrcamentoHeaderProps) {
                     name="local"
                     value={data.local}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={inputStyle} // Aplicando o estilo
                 />
             </div>
 
@@ -64,7 +66,7 @@ export function OrcamentoHeader({ data, onUpdate }: OrcamentoHeaderProps) {
                     name="data"
                     value={data.data}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={inputStyle} // Aplicando o estilo
                 />
             </div>
 
@@ -78,7 +80,7 @@ export function OrcamentoHeader({ data, onUpdate }: OrcamentoHeaderProps) {
                     name="bdiPercentual"
                     value={data.bdiPercentual}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={inputStyle} // Aplicando o estilo
                 />
             </div>
 
@@ -90,7 +92,7 @@ export function OrcamentoHeader({ data, onUpdate }: OrcamentoHeaderProps) {
                     name="encargosSociaisPercentual"
                     value={data.encargosSociaisPercentual}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={inputStyle} // Aplicando o estilo
                 />
             </div>
         </div>
