@@ -1,337 +1,249 @@
 from typing import Any, Dict, List
-import os
+import unicodedata
+import re
 from pathlib import Path
-
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException
 from app.dependencies import get_supabase
 
 router = APIRouter(prefix="/composicoes", tags=["Composições"])
 
-# Caminho absoluto baseado no diretório do arquivo atual
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 PLANILHA_SINAPI_CAMINHO = BASE_DIR / "planilhas" / "planilha_sinapi.xlsx"
-ABA_CSD = "CSD"
 
-# Nomes de tabelas no Supabase
 TABELA_COMPOSICOES = "composicao"
 TABELA_COMPOSICOES_ESTADOS = "composicao_estados"
 
-# Ajuste aqui os nomes das colunas de metadados conforme o cabeçalho da aba CSD
-# Depois de normalizar os nomes (strip, lower, espaço -> _, etc.)
-COLUMN_GRUPO = "grupo"
-COLUMN_CODIGO = "codigo_composicao"
-COLUMN_DESCRICAO = "descricao"
-COLUMN_UNIDADE = "unidade"
-
-# Colunas que representam os estados (após normalização)
 COLUNAS_ESTADOS = [
-    "ac",
-    "al",
-    "ap",
-    "am",
-    "ba",
-    "ce",
-    "df",
-    "es",
-    "go",
-    "ma",
-    "mt",
-    "ms",
-    "mg",
-    "pa",
-    "pb",
-    "pr",
-    "pe",
-    "pi",
-    "rj",
-    "rn",
-    "rs",
-    "ro",
-    "rr",
-    "sc",
-    "sp",
-    "se",
-    "to",
+    "ac", "al", "ap", "am", "ba", "ce", "df", "es", "go", 
+    "ma", "mt", "ms", "mg", "pa", "pb", "pr", "pe", "pi", 
+    "rj", "rn", "rs", "ro", "rr", "sc", "sp", "se", "to"
 ]
 
+def remover_acentos(texto: str) -> str:
+    """Remove acentos e deixa minúsculo"""
+    if not isinstance(texto, str): return str(texto)
+    nfkd = unicodedata.normalize('NFD', texto)
+    return u"".join([c for c in nfkd if not unicodedata.combining(c)]).lower()
 
-def _normalizar_colunas(df: pd.DataFrame) -> pd.DataFrame:
-    df.columns = (
-        df.columns.astype(str)
-        .str.strip()
-        .str.lower()
-        .str.replace(" ", "_")
-        .str.replace("-", "_")
-    )
-    return df
+def limpar_link_excel(texto):
+    """Remove fórmulas HYPERLINK e deixa só o texto"""
+    if pd.isna(texto): return ""
+    texto = str(texto).strip()
+    if texto.startswith("="):
+        match = re.search(r'HYPERLINK\s*\(.*,\s*"(.*)"\s*\)', texto, re.IGNORECASE)
+        if match: return match.group(1)
+        return texto.replace('"', '').replace('=', '')
+    return texto
 
+def gerar_chave_match(texto: str) -> str:
+    """Gera chave apenas com letras e números para cruzar dados"""
+    texto = limpar_link_excel(texto)
+    sem_acento = remover_acentos(texto)
+    return re.sub(r'[^a-z0-9]', '', sem_acento)
 
-@router.post(
-    "/importar",
-    summary=(
-        "Importar composições da planilha SINAPI (aba CSD) para duas tabelas: "
-        "composicoes e composicoes_estados"
-    ),
-)
-def importar_composicoes(supabase=Depends(get_supabase)) -> dict:
-    """
-    Lê a planilha planilha_sinapi.xlsx (aba CSD) e envia os dados para DUAS tabelas:
-
-    1. `composicao`: grupo, codigo_composicao (PK), descricao, unidade (1 linha por composição)
-    2. `composicao_estados`: codigo_composicao (FK) + colunas ac, al, ap, am, ba, ce, etc. (formato largo)
-
-    A planilha SINAPI tem cabeçalhos na linha 10 (índice 9) e dados começam na linha 11.
-    A tabela composicao_estados usa formato largo: uma coluna para cada estado brasileiro.
-    """
+def limpar_valor_moeda(valor):
+    if pd.isna(valor): return None
+    s_valor = str(valor).strip()
+    if s_valor == '' or s_valor == '-' or s_valor.lower() == 'nan': return None
     try:
-        # Verifica se o arquivo existe
-        if not PLANILHA_SINAPI_CAMINHO.exists():
-            raise HTTPException(
-                status_code=500, 
-                detail=f"Arquivo da planilha não encontrado: {PLANILHA_SINAPI_CAMINHO}"
-            )
-        
-        # Lê a planilha pulando as primeiras 9 linhas (0-8) e usando linha 10 (índice 9) como cabeçalho
-        df = pd.read_excel(
-            PLANILHA_SINAPI_CAMINHO, 
-            sheet_name=ABA_CSD, 
-            skiprows=9,  # Pula linhas 0-8 (metadados do relatório)
-            header=0     # Usa a primeira linha lida (linha 10 original) como cabeçalho
-        )
-        
-    except FileNotFoundError:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Arquivo da planilha não encontrado: {PLANILHA_SINAPI_CAMINHO}"
-        )
-    except ValueError as e:
-        # Erro comum quando a aba não existe
-        raise HTTPException(status_code=500, detail=f"Erro ao ler a planilha/aba: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro inesperado ao ler planilha: {str(e)}")
+        if isinstance(valor, (int, float)): return float(valor)
+        return float(s_valor.replace('.', '').replace(',', '.'))
+    except: return None
 
-    if df.empty:
-        return {"status": "vazio", "mensagem": "Nenhum dado encontrado na aba CSD."}
+def _normalizar_nome_aba(texto):
+    return remover_acentos(str(texto)).strip()
 
-    # Remove linhas totalmente vazias
-    df = df.dropna(how="all")
+@router.post("/importar", summary="Importar SINAPI (Completo)")
+def importar_sinapi(supabase=Depends(get_supabase)) -> dict:
     
-    # Remove linhas que são apenas separadores ou totais
-    df = df[~df.iloc[:, 0].astype(str).str.contains("TOTAL", case=False, na=False)]
+    if not PLANILHA_SINAPI_CAMINHO.exists():
+        raise HTTPException(status_code=400, detail="Arquivo planilha_sinapi.xlsx não encontrado.")
 
-    # Normaliza nomes de colunas
-    df = _normalizar_colunas(df)
-
-    # Mapeia nomes de colunas que podem variar
-    mapeamento_colunas = {}
-    for col in df.columns:
-        col_lower = str(col).lower()
-        if 'grupo' in col_lower and COLUMN_GRUPO not in mapeamento_colunas.values():
-            mapeamento_colunas[col] = COLUMN_GRUPO
-        elif ('código' in col_lower or 'codigo' in col_lower) and ('composição' in col_lower or 'composicao' in col_lower):
-            if COLUMN_CODIGO not in mapeamento_colunas.values():
-                mapeamento_colunas[col] = COLUMN_CODIGO
-        elif 'descrição' in col_lower or 'descricao' in col_lower:
-            if COLUMN_DESCRICAO not in mapeamento_colunas.values():
-                mapeamento_colunas[col] = COLUMN_DESCRICAO
-        elif 'unidade' in col_lower:
-            if COLUMN_UNIDADE not in mapeamento_colunas.values():
-                mapeamento_colunas[col] = COLUMN_UNIDADE
-    
-    # Aplica o mapeamento se encontrou colunas
-    if mapeamento_colunas:
-        df = df.rename(columns=mapeamento_colunas)
-        # Normaliza novamente após renomear
-        df = _normalizar_colunas(df)
-
-    colunas_necessarias = {COLUMN_GRUPO, COLUMN_CODIGO, COLUMN_DESCRICAO, COLUMN_UNIDADE}
-    if not colunas_necessarias.issubset(set(df.columns)):
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "As colunas esperadas não foram encontradas após normalização. "
-                f"Esperado: {sorted(colunas_necessarias)}. "
-                f"Encontrado (primeiras 20): {sorted(df.columns.tolist()[:20])}"
-            ),
-        )
-
-    # Remove linhas onde código está vazio ou inválido
-    df = df[df[COLUMN_CODIGO].notna()]
-    df = df[df[COLUMN_CODIGO].astype(str).str.strip() != '']
-
-    # ------ TABELA 1: COMPOSICOES (metadados da composição) ------
-    df_composicoes = df[[COLUMN_GRUPO, COLUMN_CODIGO, COLUMN_DESCRICAO, COLUMN_UNIDADE]].copy()
-    df_composicoes = df_composicoes.drop_duplicates()
-    registros_composicoes: List[Dict[str, Any]] = df_composicoes.to_dict(orient="records")
-
-    # ------ TABELA 2: COMPOSICAO_ESTADOS (formato largo: uma coluna por estado) ------
-    # A tabela tem formato largo: codigo_composicao + colunas ac, al, ap, am, ba, ce, etc.
-    # Identifica colunas de custo (não %AS)
-    colunas_custo = [c for c in df.columns 
-                    if 'custo' in str(c).lower() 
-                    and '%as' not in str(c).lower()
-                    and c not in [COLUMN_GRUPO, COLUMN_CODIGO, COLUMN_DESCRICAO, COLUMN_UNIDADE]]
-
-    if not colunas_custo:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Nenhuma coluna de custo encontrada. "
-                f"Colunas disponíveis: {list(df.columns)}"
-            ),
-        )
-
-    # Lê a linha 9 (índice 8 na planilha original) para identificar os estados
-    # Esta linha contém as siglas dos estados (AC, AL, AM, etc.)
     try:
-        df_linha_estados = pd.read_excel(
-            PLANILHA_SINAPI_CAMINHO, 
-            sheet_name=ABA_CSD, 
-            skiprows=8,  # Pula até linha 9
-            nrows=1,     # Lê apenas 1 linha
-            header=None  # Sem cabeçalho
-        )
-        # Normaliza para facilitar busca
-        linha_estados = df_linha_estados.iloc[0].astype(str).str.strip().str.upper()
-    except:
-        linha_estados = None
+        xl = pd.ExcelFile(PLANILHA_SINAPI_CAMINHO)
+        abas = xl.sheet_names
+        
+        # 1. LOCALIZAR ABAS
+        aba_analitico = next((a for a in abas if "analitico" in _normalizar_nome_aba(a) and "custo" not in _normalizar_nome_aba(a)), None)
+        if not aba_analitico: aba_analitico = next((a for a in abas if "analitico" in _normalizar_nome_aba(a)), None)
 
-    # Mapeia cada coluna de custo para seu estado correspondente (formato: coluna_planilha -> coluna_tabela)
-    mapeamento_coluna_estado = {}
-    estados_siglas = [e.upper() for e in COLUNAS_ESTADOS]
-    
-    for idx, col_custo in enumerate(colunas_custo):
-        estado_encontrado = None
-        
-        # Tenta encontrar o estado pela posição na linha de estados
-        if linha_estados is not None:
-            # Calcula a posição da coluna de custo no DataFrame original
-            posicao_coluna = list(df.columns).index(col_custo)
-            if posicao_coluna < len(linha_estados):
-                valor_linha = linha_estados.iloc[posicao_coluna]
-                # Verifica se é uma sigla de estado válida
-                if valor_linha in estados_siglas:
-                    estado_encontrado = valor_linha.lower()  # Converte para minúscula (nome da coluna na tabela)
-        
-        # Se não encontrou, tenta pelo nome da coluna
-        if not estado_encontrado:
-            col_lower = str(col_custo).lower()
-            for estado in COLUNAS_ESTADOS:  # Já está em minúscula
-                if estado in col_lower:
-                    estado_encontrado = estado
+        aba_precos = next((a for a in abas if "csd" in _normalizar_nome_aba(a)), None)
+        if not aba_precos: aba_precos = next((a for a in abas if "ccd" in _normalizar_nome_aba(a)), None)
+        if not aba_precos: aba_precos = next((a for a in abas if "cse" in _normalizar_nome_aba(a)), None)
+
+        registros_comp = []
+        registros_precos = []
+        mapa_desc_cod = {} 
+
+        # =========================================================
+        # FASE 1: ANALÍTICO (Metadados e Chaves)
+        # =========================================================
+        if aba_analitico:
+            df_raw = pd.read_excel(PLANILHA_SINAPI_CAMINHO, sheet_name=aba_analitico, header=None, dtype=str)
+            
+            idx_row_header = -1
+            col_idx_cod = -1
+            col_idx_desc = -1
+            col_idx_unid = -1
+            col_idx_grupo = -1
+            col_idx_tipo = -1
+
+            for r_idx, row in df_raw.head(30).iterrows():
+                row_clean = [remover_acentos(str(v)) for v in row.values]
+                
+                tem_codigo = any("codigo" in s and "composicao" in s for s in row_clean)
+                tem_descricao = any("descricao" in s for s in row_clean)
+                
+                if tem_codigo and tem_descricao:
+                    idx_row_header = r_idx
+                    for c_idx, val in enumerate(row_clean):
+                        if "codigo" in val and "composicao" in val: col_idx_cod = c_idx
+                        elif "descricao" in val: col_idx_desc = c_idx
+                        elif "unidade" in val: col_idx_unid = c_idx
+                        elif "grupo" in val: col_idx_grupo = c_idx
+                        elif "tipo" in val and "item" in val: col_idx_tipo = c_idx
                     break
-        
-        # Se ainda não encontrou, usa mapeamento sequencial padrão
-        if not estado_encontrado:
-            # Mapeamento baseado na posição
-            if idx < len(COLUNAS_ESTADOS):
-                estado_encontrado = COLUNAS_ESTADOS[idx]
-        
-        if estado_encontrado:
-            mapeamento_coluna_estado[col_custo] = estado_encontrado
+            
+            if idx_row_header != -1 and col_idx_cod != -1:
+                for r_idx in range(idx_row_header + 1, len(df_raw)):
+                    row = df_raw.iloc[r_idx]
+                    
+                    if col_idx_tipo != -1:
+                        tipo = remover_acentos(str(row.iloc[col_idx_tipo]))
+                        if "insumo" in tipo or "composicao" in tipo: continue 
+                    
+                    cod = str(row.iloc[col_idx_cod]).replace('.0', '').strip()
+                    desc = str(row.iloc[col_idx_desc]) if col_idx_desc != -1 else ""
+                    
+                    if cod.isdigit() and cod != '0':
+                        chave = gerar_chave_match(desc)
+                        if len(chave) > 5:
+                            mapa_desc_cod[chave] = cod
+                        
+                        registros_comp.append({
+                            "codigo_composicao": cod,
+                            "descricao": desc.strip(),
+                            "unidade": str(row.iloc[col_idx_unid]).strip() if col_idx_unid != -1 else "-",
+                            "grupo": str(row.iloc[col_idx_grupo]).strip()[:250] if col_idx_grupo != -1 else "-"
+                        })
 
-    if not mapeamento_coluna_estado:
-        raise HTTPException(
-            status_code=500,
-            detail="Não foi possível mapear colunas de custo para estados."
-        )
+        # =========================================================
+        # FASE 2: PREÇOS (Grid Layout)
+        # =========================================================
+        if aba_precos:
+            df_grid = pd.read_excel(PLANILHA_SINAPI_CAMINHO, sheet_name=aba_precos, header=None)
+            
+            row_idx_estados = -1
+            mapa_col_estados_temp = {} 
+            
+            # Busca Linha dos Estados
+            for r_idx, row in df_grid.head(15).iterrows():
+                vals = [remover_acentos(str(v)).strip() for v in row.values]
+                siglas_achadas = [v for v in vals if v in COLUNAS_ESTADOS]
+                if len(siglas_achadas) >= 5:
+                    row_idx_estados = r_idx
+                    for c_idx, val in enumerate(vals):
+                        if val in COLUNAS_ESTADOS:
+                            mapa_col_estados_temp[c_idx] = val
+                    break
+            
+            # Busca Linha de Dados (Descrição)
+            row_idx_dados_inicio = -1
+            col_idx_desc_preco = -1
+            start_search = row_idx_estados + 1 if row_idx_estados != -1 else 0
+            
+            for r_idx in range(start_search, 25): 
+                row = df_grid.iloc[r_idx]
+                vals = [remover_acentos(str(v)).strip() for v in row.values]
+                if any("descricao" in v for v in vals):
+                    row_idx_dados_inicio = r_idx + 1
+                    for c_idx, val in enumerate(vals):
+                        if "descricao" in val: col_idx_desc_preco = c_idx
+                    break
+            
+            # Extração
+            if row_idx_dados_inicio != -1 and mapa_col_estados_temp:
+                df_dados = df_grid.iloc[row_idx_dados_inicio:]
+                
+                for _, row in df_dados.iterrows():
+                    desc_raw = row.iloc[col_idx_desc_preco] if col_idx_desc_preco != -1 else ""
+                    if pd.isna(desc_raw) or str(desc_raw).strip() == "": continue
+                    
+                    chave = gerar_chave_match(desc_raw)
+                    cod_recuperado = mapa_desc_cod.get(chave)
+                    
+                    if cod_recuperado:
+                        reg_preco = {"codigo_composicao": cod_recuperado}
+                        tem_valor = False
+                        
+                        for c_idx, sigla_estado in mapa_col_estados_temp.items():
+                            val = row.iloc[c_idx]
+                            val_float = limpar_valor_moeda(val)
+                            reg_preco[sigla_estado] = val_float
+                            if val_float is not None: tem_valor = True
+                        
+                        if tem_valor:
+                            registros_precos.append(reg_preco)
 
-    # Prepara DataFrame para composicao_estados no formato largo
-    # Cada linha terá: codigo_composicao + valores para cada estado (ac, al, ap, etc.)
-    df_estados = pd.DataFrame()
-    df_estados['codigo_composicao'] = df[COLUMN_CODIGO].astype(str).str.strip()
-    
-    # Função para converter valores (tratando formatação brasileira)
-    def converter_valor(valor):
-        try:
-            if pd.isna(valor):
-                return None
-            if isinstance(valor, str):
-                valor_limpo = valor.replace('.', '').replace(',', '.').strip()
-                if valor_limpo == '' or valor_limpo == '-':
-                    return None
-                return float(valor_limpo)
-            return float(valor)
-        except (ValueError, TypeError):
-            return None
-    
-    # Mapeia cada coluna de custo para sua coluna de estado correspondente
-    for col_custo, estado_col in mapeamento_coluna_estado.items():
-        if estado_col in COLUNAS_ESTADOS:  # Garante que o estado está na lista
-            df_estados[estado_col] = df[col_custo].apply(converter_valor)
-    
-    # Remove linhas onde código está vazio
-    df_estados = df_estados[df_estados['codigo_composicao'].notna()]
-    df_estados = df_estados[df_estados['codigo_composicao'].str.strip() != '']
-    
-    # Converte para lista de dicionários
-    registros_estados_list: List[Dict[str, Any]] = df_estados.to_dict(orient="records")
-
-    if not registros_composicoes and not registros_estados_list:
-        return {"status": "vazio", "mensagem": "Após limpeza, nenhum registro para enviar."}
-
-    # Envia tabelas para o Supabase
-    inseridos_composicoes = 0
-    inseridos_estados = 0
-
-    try:
-        if registros_composicoes:
-            resp_comp = supabase.table(TABELA_COMPOSICOES).upsert(registros_composicoes).execute()
-            inseridos_composicoes = len(resp_comp.data) if resp_comp.data else 0
-
-        if registros_estados_list:
-            resp_est = supabase.table(TABELA_COMPOSICOES_ESTADOS).upsert(registros_estados_list).execute()
-            inseridos_estados = len(resp_est.data) if resp_est.data else 0
     except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Erro ao inserir dados no Supabase: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
+
+    # =========================================================
+    # FASE 3: ENVIO (Deduplicação e Batch)
+    # =========================================================
+    def dedup(lista):
+        seen = set()
+        new_l = []
+        for d in lista:
+            c = d['codigo_composicao']
+            if c not in seen:
+                seen.add(c)
+                new_l.append(d)
+        return new_l
+
+    registros_comp = dedup(registros_comp)
+    registros_precos = dedup(registros_precos)
+
+    def upsert_batch(tabela, dados):
+        if not dados: return 0
+        total = 0
+        for i in range(0, len(dados), 1000):
+            try:
+                r = supabase.table(tabela).upsert(dados[i:i+1000]).execute()
+                if r.data: total += len(r.data)
+            except Exception as e:
+                print(f"Erro lote {tabela}: {e}")
+        return total
+
+    q_comp = upsert_batch(TABELA_COMPOSICOES, registros_comp)
+    q_est = upsert_batch(TABELA_COMPOSICOES_ESTADOS, registros_precos)
 
     return {
-        "status": "ok",
-        "composicoes_enviadas": len(registros_composicoes),
-        "linhas_estados_enviadas": len(registros_estados_list),
-        "composicoes_inseridas_atualizadas": inseridos_composicoes,
-        "estados_inseridos_atualizados": inseridos_estados,
+        "status": "sucesso",
+        "mensagem": "Importação concluída com sucesso.",
+        "detalhes": {
+            "itens_cadastrados": q_comp,
+            "itens_com_preco": q_est,
+            "aba_origem": aba_analitico,
+            "aba_precos": aba_precos
+        }
     }
 
+# --- ROTAS DE LEITURA ---
+@router.get("/")
+def listar_composicoes(supabase=Depends(get_supabase)):
+    return supabase.table(TABELA_COMPOSICOES).select("*").limit(100).execute().data or []
 
-@router.get("/", summary="Listar composições armazenadas no Supabase")
-def listar_composicoes(supabase=Depends(get_supabase)) -> list[dict[str, Any]]:
-    """
-    Lê os dados da tabela `composicao` no Supabase e retorna todos os registros.
+@router.get("/buscar/{termo}")
+def buscar_composicao(termo: str, supabase=Depends(get_supabase)):
+    try:
+        if termo.isdigit():
+            return supabase.table(TABELA_COMPOSICOES).select("*").eq("codigo_composicao", termo).execute().data
+        else:
+            return supabase.table(TABELA_COMPOSICOES).select("*").ilike("descricao", f"%{termo}%").limit(50).execute().data
+    except: return []
 
-    - Você pode depois adicionar filtros (por código, descrição, etc.).
-    """
-    resposta = supabase.table(TABELA_COMPOSICOES).select("*").execute()
-    return resposta.data or []
-
-
-@router.get("/estados", summary="Listar composições com seus estados e valores")
-def listar_composicoes_estados(supabase=Depends(get_supabase)) -> list[dict[str, Any]]:
-    """
-    Lê os dados da tabela `composicao_estados` no Supabase.
-    Retorna todas as composições com seus valores por estado (formato largo: uma coluna por estado).
-    """
-    resposta = supabase.table(TABELA_COMPOSICOES_ESTADOS).select("*").execute()
-    return resposta.data or []
-
-
-@router.get("/{codigo_composicao}/estados", summary="Listar estados e valores de uma composição específica")
-def listar_estados_composicao(
-    codigo_composicao: str, supabase=Depends(get_supabase)
-) -> list[dict[str, Any]]:
-    """
-    Retorna os valores de todos os estados para uma composição específica.
-    Formato: {codigo_composicao, ac, al, ap, am, ba, ce, ...}
-    """
-    resposta = (
-        supabase.table(TABELA_COMPOSICOES_ESTADOS)
-        .select("*")
-        .eq("codigo_composicao", codigo_composicao)
-        .execute()
-    )
-
-    return resposta.data or []
+@router.get("/{codigo_composicao}/estados")
+def listar_estados_composicao(codigo_composicao: str, supabase=Depends(get_supabase)):
+    return supabase.table(TABELA_COMPOSICOES_ESTADOS).select("*").eq("codigo_composicao", codigo_composicao).execute().data or []
