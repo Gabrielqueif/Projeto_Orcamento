@@ -4,6 +4,19 @@ from app.routers import itens, teste
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,    # Libera o seu React
+    allow_credentials=True,
+    allow_methods=["*"],      # Libera GET, POST, DELETE, etc.
+    allow_headers=["*"],
+)
+
 app.include_router(itens.router)
 app.include_router(teste.router)
 
