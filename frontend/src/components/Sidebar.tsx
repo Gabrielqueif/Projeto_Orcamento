@@ -14,7 +14,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-slate-100 min-h-screen flex flex-col border-r border-slate-200">
+    <aside className="w-64 bg-white-100 h-screen flex flex-col fixed border-r border-slate-200">
       {/* Espaço para alinhar com o Header se necessário, ou deixar vazio */}
       <div className="h-20"></div> 
 

@@ -1,6 +1,6 @@
 export default function EmpreendimentosPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-[400px]">
       {/* Cabeçalho da Página */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800">Meus Empreendimentos</h1>

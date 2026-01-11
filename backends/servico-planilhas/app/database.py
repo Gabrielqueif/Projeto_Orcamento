@@ -8,7 +8,7 @@ from core.config import settings
 # O formato geral é: postgresql://USER:PASSWORD@HOST:PORT/NAME
 SQLALCHEMY_DATABASE_URL = (
     f"postgresql+psycopg2://{settings.DB_USER}:{settings.DB_PASSWORD}"
-    f"@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+    f"@{settings.SUPABASE_URL}:{settings.DB_PORT}/{settings.DB_NAME}"
 )
 
 # 2. Cria o Engine (O 'motor' de conexão)

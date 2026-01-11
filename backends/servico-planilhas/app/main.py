@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import itens, teste
+from app.controllers import itens
 
 app = FastAPI()
 
@@ -18,7 +18,7 @@ app.add_middleware(
 )
 
 app.include_router(itens.router)
-app.include_router(teste.router)
+
 
 
 @app.get("/")

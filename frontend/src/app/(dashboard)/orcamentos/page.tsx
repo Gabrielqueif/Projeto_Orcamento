@@ -1,12 +1,16 @@
+import Link from "next/link";
+
 export default function OrcamentosPage() {
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800">Orçamentos</h1>
-        <button className="bg-[#26A69A] text-white px-4 py-2 rounded hover:bg-[#208f85] transition flex items-center gap-2">
-          <span>+</span> Novo Orçamento
-        </button>
+        <Link href="/orcamentos/novo">
+          <button className="bg-[#26A69A] text-white px-4 py-2 rounded hover:bg-[#208f85] transition flex items-center gap-2">
+            <span>+</span> Novo Orçamento
+          </button>
+        </Link>
       </div>
 
       {/* Tabela Placeholder */}

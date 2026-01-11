@@ -4,7 +4,7 @@ export default function HomePage() {
       <h1 className="text-2xl font-bold text-slate-800">Olá GPObras</h1>
 
       {/* Container Azulão Principal */}
-      <div className="bg-[#1F5F7A] p-6 rounded-lg shadow-lg min-h-[500px] flex flex-col gap-6">
+      <div className="bg-[#1F5F7A] p-6 rounded-lg shadow-lg min-h-[400px] flex flex-col gap-6 ">
         
         {/* Seção 1: Empreendimentos Favoritos */}
         <div>
