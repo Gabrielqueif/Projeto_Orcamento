@@ -2,3 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --color-primary: #26A69A;
+    --color-secondary: #1F5F7A;
+    --color-white: #f1f1f1;
+  }
+}

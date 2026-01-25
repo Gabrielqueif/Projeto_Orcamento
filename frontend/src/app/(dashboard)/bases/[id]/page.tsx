@@ -1,4 +1,4 @@
-import { SinapiSearch } from "@/components/SinapiSearch";
+import { SinapiSearch } from "@/components/bases/SinapiSearch";
 // import { OrseSearch } from "@/components/OrseSearch"; // Exemplo de outro componente
 
 const baseConfigs = {
@@ -7,12 +7,12 @@ const baseConfigs = {
     description: "Consulte preços de composições por estado (SINAPI)",
     SearchComponent: SinapiSearch,
   },
-  
+
   // Adicione outras bases aqui
 };
 
 export default function PesquisaBasePage({ params }: { params: { id: string } }) {
-  const config = baseConfigs.sinapi; 
+  const config = baseConfigs.sinapi;
 
   const SearchComponent = config.SearchComponent;
 

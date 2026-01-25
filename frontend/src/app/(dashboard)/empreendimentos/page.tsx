@@ -4,7 +4,7 @@ export default function EmpreendimentosPage() {
       {/* Cabeçalho da Página */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800">Meus Empreendimentos</h1>
-        <button className="bg-[#1F5F7A] text-white px-4 py-2 rounded hover:bg-[#164e63] transition flex items-center gap-2">
+        <button className="bg-secondary text-white px-4 py-2 rounded hover:bg-secondary/90 transition flex items-center gap-2">
           <span>+</span> Novo Empreendimento
         </button>
       </div>
@@ -29,7 +29,7 @@ export default function EmpreendimentosPage() {
               <h3 className="font-bold text-slate-700">Nome do Empreendimento {item}</h3>
               <p className="text-sm text-slate-500 mt-1">Localização: SP</p>
               <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-[#26A69A] h-2 rounded-full" style={{ width: '45%' }}></div>
+                <div className="bg-primary h-2 rounded-full" style={{ width: '45%' }}></div>
               </div>
               <p className="text-xs text-right mt-1 text-slate-500">45% concluído</p>
             </div>

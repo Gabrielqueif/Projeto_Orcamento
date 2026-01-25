@@ -4,7 +4,7 @@ export default function HomePage() {
       <h1 className="text-2xl font-bold text-slate-800">Olá GPObras</h1>
 
       {/* Container Azulão Principal */}
-      <div className="bg-[#1F5F7A] p-6 rounded-lg shadow-lg min-h-[400px] flex flex-col gap-6 ">
+      <div className="bg-secondary p-6 rounded-lg shadow-lg min-h-[400px] flex flex-col gap-6 ">
         
         {/* Seção 1: Empreendimentos Favoritos */}
         <div>
@@ -16,7 +16,7 @@ export default function HomePage() {
           {/* Grid de Cards Brancos (Placeholders) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white h-32 rounded shadow-sm hover:bg-gray-50 transition cursor-pointer">
+              <div key={i} className="bg-white h-32 rounded shadow-sm hover:bg-white/90 transition cursor-pointer">
                 {/* Conteúdo do card vazio por enquanto */}
               </div>
             ))}

@@ -6,7 +6,7 @@ import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException
 from app.dependencies import get_supabase
 
-router = APIRouter(prefix="/composicoes", tags=["Composições"])
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 PLANILHA_SINAPI_CAMINHO = BASE_DIR / "planilhas" / "planilha_sinapi.xlsx"
@@ -54,7 +54,8 @@ def limpar_valor_moeda(valor):
 def _normalizar_nome_aba(texto):
     return remover_acentos(str(texto)).strip()
 
-@router.post("/importar", summary="Importar SINAPI (Completo)")
+
+
 def importar_sinapi(supabase=Depends(get_supabase)) -> dict:
     
     if not PLANILHA_SINAPI_CAMINHO.exists():
@@ -232,11 +233,9 @@ def importar_sinapi(supabase=Depends(get_supabase)) -> dict:
     }
 
 # --- ROTAS DE LEITURA ---
-@router.get("/")
 def listar_composicoes(supabase=Depends(get_supabase)):
     return supabase.table(TABELA_COMPOSICOES).select("*").limit(100).execute().data or []
 
-@router.get("/buscar/{termo}")
 def buscar_composicao(termo: str, supabase=Depends(get_supabase)):
     try:
         if termo.isdigit():
@@ -245,6 +244,5 @@ def buscar_composicao(termo: str, supabase=Depends(get_supabase)):
             return supabase.table(TABELA_COMPOSICOES).select("*").ilike("descricao", f"%{termo}%").limit(50).execute().data
     except: return []
 
-@router.get("/{codigo_composicao}/estados")
 def listar_estados_composicao(codigo_composicao: str, supabase=Depends(get_supabase)):
     return supabase.table(TABELA_COMPOSICOES_ESTADOS).select("*").eq("codigo_composicao", codigo_composicao).execute().data or []

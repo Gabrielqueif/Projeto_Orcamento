@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.controllers import itens
+from app.routes import itens, orcamentos, orcamento_itens, etapas
 
 app = FastAPI()
 
@@ -18,6 +18,9 @@ app.add_middleware(
 )
 
 app.include_router(itens.router)
+app.include_router(orcamentos.router)
+app.include_router(orcamento_itens.router)
+app.include_router(etapas.router)
 
 
 
