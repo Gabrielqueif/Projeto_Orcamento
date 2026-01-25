@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+import { fetchWithAuth } from './client';
 
 export interface Orcamento {
   id: string;
@@ -86,11 +86,8 @@ export interface EtapaCreate {
 
 // Funções para Orçamentos
 export async function createOrcamento(data: OrcamentoCreate): Promise<Orcamento> {
-  const response = await fetch(`${API_URL}/orcamentos/`, {
+  const response = await fetchWithAuth('/orcamentos/', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(data),
   });
 
@@ -107,8 +104,8 @@ export async function getOrcamentos(status?: string, cliente?: string): Promise<
   if (status) params.append('status', status);
   if (cliente) params.append('cliente', cliente);
 
-  const url = `${API_URL}/orcamentos/${params.toString() ? '?' + params.toString() : ''}`;
-  const response = await fetch(url);
+  const url = `/orcamentos/${params.toString() ? '?' + params.toString() : ''}`;
+  const response = await fetchWithAuth(url);
 
   if (!response.ok) {
     throw new Error('Erro ao buscar orçamentos');
@@ -118,7 +115,7 @@ export async function getOrcamentos(status?: string, cliente?: string): Promise<
 }
 
 export async function getOrcamento(id: string): Promise<Orcamento> {
-  const response = await fetch(`${API_URL}/orcamentos/${id}`);
+  const response = await fetchWithAuth(`/orcamentos/${id}`);
 
   if (!response.ok) {
     if (response.status === 404) {
@@ -131,11 +128,8 @@ export async function getOrcamento(id: string): Promise<Orcamento> {
 }
 
 export async function updateOrcamento(id: string, data: OrcamentoUpdate): Promise<Orcamento> {
-  const response = await fetch(`${API_URL}/orcamentos/${id}`, {
+  const response = await fetchWithAuth(`/orcamentos/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(data),
   });
 
@@ -148,7 +142,7 @@ export async function updateOrcamento(id: string, data: OrcamentoUpdate): Promis
 }
 
 export async function deleteOrcamento(id: string): Promise<void> {
-  const response = await fetch(`${API_URL}/orcamentos/${id}`, {
+  const response = await fetchWithAuth(`/orcamentos/${id}`, {
     method: 'DELETE',
   });
 
@@ -160,11 +154,8 @@ export async function deleteOrcamento(id: string): Promise<void> {
 
 // Funções para Itens do Orçamento
 export async function addItem(orcamentoId: string, item: OrcamentoItemCreate): Promise<OrcamentoItem> {
-  const response = await fetch(`${API_URL}/orcamentos/${orcamentoId}/itens`, {
+  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/itens`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(item),
   });
 
@@ -177,7 +168,7 @@ export async function addItem(orcamentoId: string, item: OrcamentoItemCreate): P
 }
 
 export async function getItens(orcamentoId: string): Promise<OrcamentoItem[]> {
-  const response = await fetch(`${API_URL}/orcamentos/${orcamentoId}/itens`);
+  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/itens`);
 
   if (!response.ok) {
     throw new Error('Erro ao buscar itens do orçamento');
@@ -191,11 +182,8 @@ export async function updateItem(
   itemId: string,
   item: OrcamentoItemUpdate
 ): Promise<OrcamentoItem> {
-  const response = await fetch(`${API_URL}/orcamentos/${orcamentoId}/itens/${itemId}`, {
+  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/itens/${itemId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(item),
   });
 
@@ -208,7 +196,7 @@ export async function updateItem(
 }
 
 export async function deleteItem(orcamentoId: string, itemId: string): Promise<void> {
-  const response = await fetch(`${API_URL}/orcamentos/${orcamentoId}/itens/${itemId}`, {
+  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/itens/${itemId}`, {
     method: 'DELETE',
   });
 
@@ -220,15 +208,14 @@ export async function deleteItem(orcamentoId: string, itemId: string): Promise<v
 
 // Funções para Etapas
 export async function getEtapas(orcamentoId: string): Promise<Etapa[]> {
-  const response = await fetch(`${API_URL}/orcamentos/${orcamentoId}/etapas`);
+  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/etapas`);
   if (!response.ok) throw new Error('Erro ao buscar etapas');
   return response.json();
 }
 
 export async function createEtapa(orcamentoId: string, data: EtapaCreate): Promise<Etapa> {
-  const response = await fetch(`${API_URL}/orcamentos/${orcamentoId}/etapas`, {
+  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/etapas`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
   if (!response.ok) {
@@ -239,7 +226,7 @@ export async function createEtapa(orcamentoId: string, data: EtapaCreate): Promi
 }
 
 export async function deleteEtapa(orcamentoId: string, etapaId: string): Promise<void> {
-  const response = await fetch(`${API_URL}/orcamentos/${orcamentoId}/etapas/${etapaId}`, {
+  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/etapas/${etapaId}`, {
     method: 'DELETE',
   });
   if (!response.ok) {

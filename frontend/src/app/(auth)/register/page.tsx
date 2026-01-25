@@ -1,59 +1,153 @@
-import Link from 'next/link'
-import { Button } from "@/components/button"
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 
 export default function RegisterPage() {
-  return (
-    // Fundo Escuro cobrindo a tela toda
-    <div className="min-h-screen bg-[#1F1F1F] flex items-center justify-center p-4">
-      {/* Card Centralizado (Parte Branca + Parte Logo) */}
-      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[500px]">
-        {/* Lado Esquerdo: Formulário */}
-        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-gray-50">
-          <h2 className="text-2xl font-bold text-slate-800 mb-6">Cadastre-se</h2>
+    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [accountType, setAccountType] = useState<'individual' | 'company'>('individual');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
 
-          <form className="space-y-5" action="/api/auth/register" method="post">
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
-              <input name="email" type="email" required className="w-full p-3 rounded border border-gray-300 focus:border-blue-500 outline-none transition" placeholder="seu@email.com" />
-            </div>
+    const handleRegister = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
 
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Confirmar Email</label>
-              <input name="confirmEmail" type="email" required className="w-full p-3 rounded border border-gray-300 focus:border-blue-500 outline-none transition" placeholder="Repita seu email" />
-            </div>
+        if (password !== confirmPassword) {
+            setError('As senhas não coincidem');
+            setLoading(false);
+            return;
+        }
 
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Senha</label>
-              <input name="password" type="password" required className="w-full p-3 rounded border border-gray-300 focus:border-blue-500 outline-none transition" placeholder="••••••••" />
-            </div>
+        const { error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    account_type: accountType,
+                    username: username,
+                },
+            },
+        });
 
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Confirmar Senha</label>
-              <input name="confirmPassword" type="password" required className="w-full p-3 rounded border border-gray-300 focus:border-blue-500 outline-none transition" placeholder="••••••••" />
-            </div>
+        if (error) {
+            setError(error.message);
+            setLoading(false);
+        } else {
+            // Depending on Supabase settings, auto sign-in might happen or email verification needed.
+            // Assuming auto sign-in or informing user to check email.
+            alert('Cadastro realizado com sucesso! Verifique seu email se necessário.');
+            router.push('/login');
+        }
+    };
 
-            <Button variant={"default"} type="submit">Register</Button>
+    return (
+        <div className="flex flex-1 w-full items-center justify-center bg-gray-50 py-12">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle className="text-2xl font-bold text-center">Cadastro</CardTitle>
+                    <CardDescription className="text-center">
+                        Crie sua conta para começar
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleRegister} className="space-y-4">
+                        {/* Account Type Selector */}
+                        <div className="space-y-2">
+                            <Label>Tipo de Conta</Label>
+                            <div className="grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-md">
+                                <button
+                                    type="button"
+                                    onClick={() => setAccountType('individual')}
+                                    className={`py-2 px-4 rounded text-sm font-medium transition-all ${accountType === 'individual'
+                                        ? 'bg-white text-[#1F5F7A] shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                >
+                                    Pessoa Física
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setAccountType('company')}
+                                    className={`py-2 px-4 rounded text-sm font-medium transition-all ${accountType === 'company'
+                                        ? 'bg-white text-[#1F5F7A] shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                >
+                                    Empresa
+                                </button>
+                            </div>
+                        </div>
 
-            <button type="button" className="w-full bg-white border border-gray-300 text-gray-600 font-semibold py-3 rounded flex items-center justify-center gap-2 hover:bg-gray-100 transition">
-              <span>G</span> Cadastrar com Google
-            </button>
-          </form>
+                        <div className="space-y-2">
+                            <Label htmlFor="username">Nome de Usuário</Label>
+                            <Input
+                                id="username"
+                                type="text"
+                                placeholder="Seu nome"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                required
+                            />
+                        </div>
 
-          <p className="mt-8 text-center text-sm text-gray-500">
-            Já tem uma conta? <Link href="/login" className="text-[#26A69A] font-bold hover:underline">Entrar</Link>
-          </p>
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="seu@email.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="password">Senha</Label>
+                            <Input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                            <Input
+                                id="confirmPassword"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                            />
+                        </div>
+                        {error && <p className="text-sm text-red-500">{error}</p>}
+                        <Button type="submit" className="w-full" disabled={loading}>
+                            {loading ? 'Cadastrando...' : 'Cadastrar'}
+                        </Button>
+                    </form>
+                </CardContent>
+                <CardFooter className="justify-center">
+                    <p className="text-sm text-gray-600">
+                        Já tem uma conta?{' '}
+                        <Link href="/login" className="text-blue-600 hover:underline">
+                            Entrar
+                        </Link>
+                    </p>
+                </CardFooter>
+            </Card>
         </div>
-
-        {/* Lado Direito: Imagem Ilustrativa */}
-        <div className="hidden md:flex w-1/2 bg-[#2D2D2D] items-center justify-center p-12 flex-col text-center relative">
-          <img
-            src="/register-illustration.png"
-            alt="Ilustração de Cadastro"
-            className="w-3/4 object-contain"
-          />
-        </div>
-
-      </div>
-    </div>
-  )
+    );
 }
