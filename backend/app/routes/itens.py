@@ -1,7 +1,12 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from app.controllers import itens
+from core.security import get_current_user
 
-router = APIRouter(prefix="/composicoes", tags=["Composições"])
+router = APIRouter(
+    prefix="/composicoes", 
+    tags=["Composições"],
+    dependencies=[Depends(get_current_user)]
+)
 
 router.add_api_route("/importar", itens.importar_sinapi, methods=["POST"], summary="Importar SINAPI (Completo)")
 router.add_api_route("/", itens.listar_composicoes, methods=["GET"])

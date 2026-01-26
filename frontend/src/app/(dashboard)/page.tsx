@@ -1,18 +1,33 @@
+'use client';
+
+import { useAuth } from '@/components/auth-provider';
+import Link from 'next/link';
+
 export default function HomePage() {
+  const { user } = useAuth();
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800">Olá GPObras</h1>
+      <h1 className="text-2xl font-bold text-slate-800">
+        {user ? (
+          `Olá ${user.user_metadata?.username || user.email}`
+        ) : (
+          <span>
+            Considere fazer o seu <Link href="/login" className="text-blue-600 hover:underline">login</Link> para utilizar o sistema
+          </span>
+        )}
+      </h1>
 
       {/* Container Azulão Principal */}
       <div className="bg-secondary p-6 rounded-lg shadow-lg min-h-[400px] flex flex-col gap-6 ">
-        
+
         {/* Seção 1: Empreendimentos Favoritos */}
         <div>
           <div className="flex justify-between items-center text-white mb-4">
             <h2 className="text-xl font-semibold">Empreendimentos favoritos:</h2>
             <span className="text-xs underline cursor-pointer hover:text-gray-200">Ver Tudo</span>
           </div>
-          
+
           {/* Grid de Cards Brancos (Placeholders) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
@@ -25,7 +40,7 @@ export default function HomePage() {
 
         {/* Seção 2: Parte de baixo (Dados e Bases) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-auto">
-          
+
           {/* Card Esquerdo: Dados Empresa */}
           <div className="border border-white/30 rounded p-4 text-white h-48">
             <h3 className="font-semibold text-lg mb-2">Dados empresa e Logo:</h3>

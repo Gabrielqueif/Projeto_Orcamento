@@ -1,9 +1,14 @@
 from typing import List
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from app.controllers import orcamento_itens
 from schemas.schemas import OrcamentoItemResponse
+from core.security import get_current_user
 
-router = APIRouter(prefix="/orcamentos", tags=["Itens do Orçamento"])
+router = APIRouter(
+    prefix="/orcamentos", 
+    tags=["Itens do Orçamento"],
+    dependencies=[Depends(get_current_user)]
+)
 
 router.add_api_route(
     "/{orcamento_id}/itens", 

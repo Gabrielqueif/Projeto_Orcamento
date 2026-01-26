@@ -2,9 +2,8 @@
 
 import * as React from "react";
 import { addItem, updateItem, getEtapas, type OrcamentoItemCreate, type OrcamentoItemUpdate, type Etapa, type OrcamentoItem } from "@/lib/api/orcamentos";
+import { buscarComposicoes as apiBuscarComposicoes } from "@/lib/api/composicoes";
 import { Modal } from "@/components/ui/Modal";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 interface ItemComposicao {
   codigo_composicao: string;
@@ -128,8 +127,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, onItemAdded, i
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/composicoes/buscar/${encodeURIComponent(termo)}`);
-      const data = await res.json();
+      const data = await apiBuscarComposicoes(termo);
       setResultados(data || []);
     } catch (error) {
       console.error(error);
