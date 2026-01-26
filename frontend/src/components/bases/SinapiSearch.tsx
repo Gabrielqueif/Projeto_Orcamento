@@ -1,28 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-
-// --- Tipagens ---
-interface ItemComposicao {
-  codigo_composicao: string;
-  descricao: string;
-  unidade: string;
-  grupo: string;
-}
-
-interface PrecosEstado {
-  [key: string]: number | string | null;
-}
+import { buscarComposicoes, getEstadosComposicao, type ItemComposicao, type PrecosEstado } from '@/lib/api/composicoes';
 
 export function SinapiSearch() {
   const [termo, setTermo] = useState('');
   const [resultados, setResultados] = useState<ItemComposicao[]>([]);
   const [loading, setLoading] = useState(false);
-  
+
   const [precosAbertos, setPrecosAbertos] = useState<Record<string, PrecosEstado | null>>({});
   const [loadingPrecos, setLoadingPrecos] = useState<Record<string, boolean>>({});
-
-  const API_URL = 'http://127.0.0.1:8000/composicoes';
 
   const formatarMoeda = (valor: number | string | null) => {
     if (valor === null || valor === undefined) return '-';
@@ -34,10 +21,9 @@ export function SinapiSearch() {
   const buscarItens = async () => {
     if (!termo) return;
     setLoading(true);
-    setResultados([]); 
+    setResultados([]);
     try {
-      const res = await fetch(`${API_URL}/buscar/${termo}`);
-      const data = await res.json();
+      const data = await buscarComposicoes(termo);
       setResultados(data);
     } catch (error) {
       console.error(error);
@@ -56,8 +42,7 @@ export function SinapiSearch() {
     }
     setLoadingPrecos((prev) => ({ ...prev, [codigo]: true }));
     try {
-      const res = await fetch(`${API_URL}/${codigo}/estados`);
-      const data = await res.json();
+      const data = await getEstadosComposicao(codigo);
       if (data && data.length > 0) {
         setPrecosAbertos((prev) => ({ ...prev, [codigo]: data[0] }));
       } else {
@@ -96,14 +81,14 @@ export function SinapiSearch() {
       {/* --- RESULTADOS --- */}
       <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
         {resultados.length === 0 && !loading && termo && (
-           <p className="text-center text-slate-400 py-4">Nenhum resultado encontrado.</p>
+          <p className="text-center text-slate-400 py-4">Nenhum resultado encontrado.</p>
         )}
 
         {resultados.map((item) => {
           const isOpen = precosAbertos[item.codigo_composicao] !== undefined;
           return (
             <div key={item.codigo_composicao} className={`bg-white border rounded-md overflow-hidden ${isOpen ? 'ring-1 ring-blue-300' : ''}`}>
-              <div 
+              <div
                 onClick={() => togglePreco(item.codigo_composicao)}
                 className="p-3 cursor-pointer flex justify-between items-center hover:bg-slate-50"
               >
@@ -119,10 +104,10 @@ export function SinapiSearch() {
 
               {isOpen && (
                 <div className="bg-slate-50 p-3 border-t grid grid-cols-4 sm:grid-cols-6 gap-2">
-                   {loadingPrecos[item.codigo_composicao] ? (
-                     <p className="col-span-full text-center text-xs text-slate-400">Carregando...</p>
-                   ) : (
-                     Object.entries(precosAbertos[item.codigo_composicao] || {})
+                  {loadingPrecos[item.codigo_composicao] ? (
+                    <p className="col-span-full text-center text-xs text-slate-400">Carregando...</p>
+                  ) : (
+                    Object.entries(precosAbertos[item.codigo_composicao] || {})
                       .filter(([k, v]) => k.length === 2 && v !== null)
                       .sort()
                       .map(([uf, val]) => (
@@ -131,7 +116,7 @@ export function SinapiSearch() {
                           <div className="text-xs font-semibold text-green-700">{formatarMoeda(val)}</div>
                         </div>
                       ))
-                   )}
+                  )}
                 </div>
               )}
             </div>
