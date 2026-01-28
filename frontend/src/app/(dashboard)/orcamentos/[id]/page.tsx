@@ -19,32 +19,36 @@ export default function OrcamentoDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const carregarOrcamento = async () => {
+  const carregarOrcamento = async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
       const data = await getOrcamento(id);
       setOrcamento(data);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar orçamento');
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   };
 
   useEffect(() => {
     if (id) {
-      carregarOrcamento();
+      carregarOrcamento(true);
     }
-  }, [id, refreshKey]);
+  }, [id]);
+
+  useEffect(() => {
+    if (id && refreshKey > 0) {
+      carregarOrcamento(false);
+    }
+  }, [refreshKey, id]);
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
-    // carregarOrcamento is called by useEffect when refreshKey changes
   };
 
-  if (loading) {
-    // ... (loading state)
+  if (loading && !orcamento) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -59,8 +63,7 @@ export default function OrcamentoDetailPage() {
     );
   }
 
-  if (error || !orcamento) {
-    // ... (error state)
+  if (error) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -86,23 +89,23 @@ export default function OrcamentoDetailPage() {
 
       {/* Gerenciar Etapas */}
       <EtapasManager
-        orcamentoId={orcamento.id}
+        orcamentoId={orcamento!.id}
         onEtapasChange={handleRefresh}
       />
 
       {/* Adicionar Item */}
       <OrcamentoItemForm
-        key={`form-${refreshKey}`} // Re-mount form to fetch new stages
-        orcamentoId={orcamento.id}
-        estadoOrcamento={orcamento.estado}
+        refreshTrigger={refreshKey}
+        orcamentoId={orcamento!.id}
+        estadoOrcamento={orcamento!.estado}
         onItemAdded={handleRefresh}
       />
 
       {/* Lista de Itens */}
       <OrcamentoItensList
-        key={`list-${refreshKey}`} // Re-mount list to fetch new items/stages
-        orcamentoId={orcamento.id}
-        valorTotal={orcamento.valor_total}
+        refreshTrigger={refreshKey}
+        orcamentoId={orcamento!.id}
+        valorTotal={orcamento!.valor_total}
         onItemDeleted={handleRefresh}
       />
     </div>

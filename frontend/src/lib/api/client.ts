@@ -1,8 +1,9 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     const headers: any = {
         'Content-Type': 'application/json',

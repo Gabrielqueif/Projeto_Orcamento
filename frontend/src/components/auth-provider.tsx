@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -28,6 +28,7 @@ export default function AuthProvider({
 }: {
     children: React.ReactNode;
 }) {
+    const [supabase] = useState(() => createClient());
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
@@ -53,13 +54,16 @@ export default function AuthProvider({
                 if (_event === 'SIGNED_OUT') {
                     router.push('/login');
                 }
+                if (_event === 'SIGNED_IN') {
+                    router.refresh();
+                }
             }
         );
 
         return () => {
             authListener.subscription.unsubscribe();
         };
-    }, [router]);
+    }, [router, supabase]);
 
     const signOut = async () => {
         await supabase.auth.signOut();

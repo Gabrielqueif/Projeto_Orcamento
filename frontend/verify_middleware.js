@@ -6,7 +6,7 @@ function checkRedirect() {
     // Assuming frontend is running on 3000. 
     // We check a non-existent public route that should be protected, or a protected one.
     // /orcamentos is protected.
-    const cmd = 'curl -I http://localhost:3001/orcamentos';
+    const cmd = 'curl -I http://localhost:3000/orcamentos';
 
     exec(cmd, (error, stdout, stderr) => {
         if (error) {

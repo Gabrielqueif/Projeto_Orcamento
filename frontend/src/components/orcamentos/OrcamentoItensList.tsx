@@ -13,10 +13,11 @@ const formatarMoeda = (valor: number | null): string => {
 type OrcamentoItensListProps = {
   orcamentoId: string;
   valorTotal: number | null;
+  refreshTrigger?: number;
   onItemDeleted?: () => void;
 };
 
-export function OrcamentoItensList({ orcamentoId, valorTotal, onItemDeleted }: OrcamentoItensListProps) {
+export function OrcamentoItensList({ orcamentoId, valorTotal, refreshTrigger, onItemDeleted }: OrcamentoItensListProps) {
   const [itens, setItens] = React.useState<OrcamentoItem[]>([]);
   const [etapas, setEtapas] = React.useState<Etapa[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -25,7 +26,7 @@ export function OrcamentoItensList({ orcamentoId, valorTotal, onItemDeleted }: O
 
   const carregarDados = async () => {
     try {
-      setLoading(true);
+      if (itens.length === 0) setLoading(true); // Only show generic loading on first load or if empty
       const [itensData, etapasData] = await Promise.all([
         getItens(orcamentoId),
         getEtapas(orcamentoId)
@@ -42,7 +43,7 @@ export function OrcamentoItensList({ orcamentoId, valorTotal, onItemDeleted }: O
 
   React.useEffect(() => {
     carregarDados();
-  }, [orcamentoId]);
+  }, [orcamentoId, refreshTrigger]);
 
   const handleDelete = async (itemId: string) => {
     if (!confirm('Tem certeza que deseja remover este item?')) {

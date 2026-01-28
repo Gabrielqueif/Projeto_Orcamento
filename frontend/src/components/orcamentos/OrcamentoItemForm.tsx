@@ -51,12 +51,13 @@ const ESTADOS = [
 type OrcamentoItemFormProps = {
   orcamentoId: string;
   estadoOrcamento?: string;
+  refreshTrigger?: number;
   onItemAdded?: () => void;
   itemToEdit?: OrcamentoItem;
   onCancel?: () => void;
 };
 
-export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, onItemAdded, itemToEdit, onCancel }: OrcamentoItemFormProps) {
+export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger, onItemAdded, itemToEdit, onCancel }: OrcamentoItemFormProps) {
   const [termo, setTermo] = React.useState('');
   const [resultados, setResultados] = React.useState<ItemComposicao[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -87,7 +88,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, onItemAdded, i
 
   React.useEffect(() => {
     fetchEtapas();
-  }, [orcamentoId]);
+  }, [orcamentoId, refreshTrigger]);
 
   // Populate form when updating an item
   React.useEffect(() => {
