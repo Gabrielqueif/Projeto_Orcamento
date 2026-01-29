@@ -1,6 +1,6 @@
 # schemas.py
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, Any
 from datetime import date, datetime
 
@@ -14,8 +14,7 @@ class OrcamentoCreate(BaseModel):
     estado: str
     status: Optional[str] = "em_elaboracao"
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class OrcamentoUpdate(BaseModel):
     nome: Optional[str] = None
@@ -26,8 +25,7 @@ class OrcamentoUpdate(BaseModel):
     status: Optional[str] = None
     valor_total: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class OrcamentoResponse(BaseModel):
     id: str
@@ -41,11 +39,7 @@ class OrcamentoResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Schemas para Etapas
 class EtapaCreate(BaseModel):
@@ -63,8 +57,7 @@ class EtapaResponse(BaseModel):
     ordem: int
     created_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Schemas para Itens do Orçamento
 class OrcamentoItemCreate(BaseModel):
@@ -77,8 +70,7 @@ class OrcamentoItemCreate(BaseModel):
     memoria_calculo: Optional[str] = None
     variaveis: Optional[Any] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class OrcamentoItemUpdate(BaseModel):
     codigo_composicao: Optional[str] = None
@@ -90,8 +82,7 @@ class OrcamentoItemUpdate(BaseModel):
     memoria_calculo: Optional[str] = None
     variaveis: Optional[Any] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class OrcamentoItemResponse(BaseModel):
     id: str
@@ -108,5 +99,4 @@ class OrcamentoItemResponse(BaseModel):
     variaveis: Optional[Any] = None
     created_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
