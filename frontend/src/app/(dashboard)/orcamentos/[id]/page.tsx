@@ -8,6 +8,7 @@ import { getOrcamento, type Orcamento } from "@/lib/api/orcamentos";
 import { EtapasManager } from "@/components/orcamentos/EtapasManager";
 import { OrcamentoItemForm } from "@/components/orcamentos/OrcamentoItemForm";
 import { OrcamentoItensList } from "@/components/orcamentos/OrcamentoItensList";
+import { BudgetAnalytics } from "@/components/orcamentos/BudgetAnalytics";
 
 export default function OrcamentoDetailPage() {
   const params = useParams();
@@ -91,6 +92,12 @@ export default function OrcamentoDetailPage() {
       <EtapasManager
         orcamentoId={orcamento!.id}
         onEtapasChange={handleRefresh}
+      />
+
+      {/* Analytics Dashboard */}
+      <BudgetAnalytics
+        orcamentoId={orcamento!.id}
+        refreshTrigger={refreshKey}
       />
 
       {/* Adicionar Item */}

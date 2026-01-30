@@ -124,7 +124,7 @@ export function CalculationMemory({ initialRows = [], onChange }: CalculationMem
                             </div>
                             <div className="col-span-2 text-right">
                                 <span className={`text-sm font-medium ${row.result < 0 ? 'text-red-600' : 'text-slate-700'}`}>
-                                    {row.result.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    {(row.result || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
                             <div className="col-span-1 text-center">
@@ -145,7 +145,7 @@ export function CalculationMemory({ initialRows = [], onChange }: CalculationMem
                     <div className="bg-slate-50 p-3 border-t flex justify-between items-center">
                         <span className="font-semibold text-slate-600 text-sm">Total Calculado:</span>
                         <span className="font-bold text-lg text-blue-700">
-                            {rows.reduce((acc, r) => acc + r.result, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {rows.reduce((acc, r) => acc + (r.result || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                     </div>
                 )}
