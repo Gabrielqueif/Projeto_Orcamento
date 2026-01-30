@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from app.dependencies import get_supabase
 from schemas.schemas import OrcamentoItemCreate, OrcamentoItemUpdate
 from app.repositories.orcamento_item_repository import OrcamentoItemRepository
@@ -19,21 +19,11 @@ def adicionar_item(
     service: OrcamentoItemService = Depends(get_orcamento_item_service)
 ):
     """Adiciona um novo item ao orçamento"""
-    try:
-        return service.adicionar_item(orcamento_id, item)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao adicionar item: {str(e)}")
+    return service.adicionar_item(orcamento_id, item)
 
 def listar_itens(orcamento_id: str, service: OrcamentoItemService = Depends(get_orcamento_item_service)):
     """Lista todos os itens de um orçamento"""
-    try:
-        return service.listar_itens(orcamento_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao listar itens: {str(e)}")
+    return service.listar_itens(orcamento_id)
 
 def atualizar_item(
     orcamento_id: str,
@@ -42,16 +32,7 @@ def atualizar_item(
     service: OrcamentoItemService = Depends(get_orcamento_item_service)
 ):
     """Atualiza um item do orçamento"""
-    try:
-        return service.atualizar_item(orcamento_id, item_id, item_update)
-    except ValueError as e:
-        # Pode ser item nao encontrado (404) ou erro de validacao (400)
-        # Simplificando para 400 ou 404 dependendo da mensagem seria ideal, mas aqui genericamente:
-        if "não encontrado" in str(e):
-             raise HTTPException(status_code=404, detail=str(e))
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao atualizar item: {str(e)}")
+    return service.atualizar_item(orcamento_id, item_id, item_update)
 
 def remover_item(
     orcamento_id: str,
@@ -59,10 +40,6 @@ def remover_item(
     service: OrcamentoItemService = Depends(get_orcamento_item_service)
 ):
     """Remove um item do orçamento"""
-    try:
-        return service.remover_item(orcamento_id, item_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao remover item: {str(e)}")
+    return service.remover_item(orcamento_id, item_id)
+
 

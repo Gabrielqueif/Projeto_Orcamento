@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from app.dependencies import get_supabase
 from schemas.schemas import OrcamentoCreate, OrcamentoUpdate, OrcamentoResponse
 from app.repositories.orcamento_repository import OrcamentoRepository
@@ -11,10 +11,7 @@ def get_orcamento_service(supabase=Depends(get_supabase)) -> OrcamentoService:
 
 def criar_orcamento(orcamento: OrcamentoCreate, service: OrcamentoService = Depends(get_orcamento_service)):
     """Cria um novo orçamento"""
-    try:
-        return service.criar_orcamento(orcamento)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao criar orçamento: {str(e)}")
+    return service.criar_orcamento(orcamento)
 
 def listar_orcamentos(
     status: Optional[str] = None,
@@ -22,19 +19,11 @@ def listar_orcamentos(
     service: OrcamentoService = Depends(get_orcamento_service)
 ):
     """Lista todos os orçamentos, com filtros opcionais"""
-    try:
-        return service.listar_orcamentos(status, cliente)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao listar orçamentos: {str(e)}")
+    return service.listar_orcamentos(status, cliente)
 
 def buscar_orcamento(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
     """Busca um orçamento específico por ID"""
-    try:
-        return service.buscar_orcamento(orcamento_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao buscar orçamento: {str(e)}")
+    return service.buscar_orcamento(orcamento_id)
 
 def atualizar_orcamento(
     orcamento_id: str,
@@ -42,20 +31,11 @@ def atualizar_orcamento(
     service: OrcamentoService = Depends(get_orcamento_service)
 ):
     """Atualiza um orçamento existente"""
-    try:
-        return service.atualizar_orcamento(orcamento_id, orcamento_update)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao atualizar orçamento: {str(e)}")
+    return service.atualizar_orcamento(orcamento_id, orcamento_update)
 
 def deletar_orcamento(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
     """Deleta um orçamento e seus itens relacionados"""
-    try:
-        service.deletar_orcamento(orcamento_id)
-        return {"message": "Orçamento deletado com sucesso", "id": orcamento_id}
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao deletar orçamento: {str(e)}")
+    service.deletar_orcamento(orcamento_id)
+    return {"message": "Orçamento deletado com sucesso", "id": orcamento_id}
+
 
