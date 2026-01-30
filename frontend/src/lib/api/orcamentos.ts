@@ -152,6 +152,16 @@ export async function deleteOrcamento(id: string): Promise<void> {
   }
 }
 
+export async function downloadOrcamentoPDF(id: string): Promise<Blob> {
+  const response = await fetchWithAuth(`/orcamentos/${id}/pdf`);
+
+  if (!response.ok) {
+    throw new Error('Erro ao baixar PDF');
+  }
+
+  return response.blob();
+}
+
 // Funções para Itens do Orçamento
 export async function addItem(orcamentoId: string, item: OrcamentoItemCreate): Promise<OrcamentoItem> {
   const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/itens`, {

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.controllers import orcamentos
 from schemas.schemas import OrcamentoResponse
 from core.security import get_current_user
+from app.dependencies import get_supabase
 
 router = APIRouter(
     prefix="/orcamentos", 
@@ -44,3 +45,13 @@ router.add_api_route(
     methods=["DELETE"], 
     summary="Deletar orçamento"
 )
+
+@router.get("/{orcamento_id}/pdf")
+async def download_pdf_orcamento(
+    orcamento_id: str,
+    user: dict = Depends(get_current_user),
+    service = Depends(orcamentos.get_orcamento_service),
+    supabase = Depends(get_supabase)
+):
+    return orcamentos.download_pdf(orcamento_id, service, supabase)
+

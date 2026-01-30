@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { type Orcamento } from '@/lib/api/orcamentos';
+import { type Orcamento, downloadOrcamentoPDF } from '@/lib/api/orcamentos';
 import { formatarMoeda, formatarData } from '@/utils/formatters';
 import { StatusBadge } from './StatusBadge';
-import { Trash2 } from 'lucide-react';
+import { Trash2, FileDown } from 'lucide-react';
+import { useState } from 'react';
 
 interface OrcamentoCardProps {
     orcamento: Orcamento;
@@ -10,6 +11,28 @@ interface OrcamentoCardProps {
 }
 
 export function OrcamentoCard({ orcamento, onDelete }: OrcamentoCardProps) {
+    const [downloading, setDownloading] = useState(false);
+
+    const handleDownload = async () => {
+        try {
+            setDownloading(true);
+            const blob = await downloadOrcamentoPDF(orcamento.id);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `orcamento_${orcamento.nome.toLowerCase().replace(/\s+/g, '_')}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            alert('Erro ao baixar PDF');
+            console.error(error);
+        } finally {
+            setDownloading(false);
+        }
+    };
+
     return (
         <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 border border-slate-100 flex flex-col">
             <div className="flex justify-between items-start mb-4">
@@ -45,6 +68,14 @@ export function OrcamentoCard({ orcamento, onDelete }: OrcamentoCardProps) {
                     Ver Detalhes
                 </Link>
                 <button
+                    onClick={handleDownload}
+                    disabled={downloading}
+                    className="px-3 py-2 text-slate-500 hover:bg-slate-50 rounded transition-colors border border-transparent hover:border-slate-100 disabled:opacity-50"
+                    title="Baixar PDF"
+                >
+                    <FileDown className="w-5 h-5" />
+                </button>
+                <button
                     onClick={() => onDelete(orcamento.id)}
                     className="px-3 py-2 text-red-500 hover:bg-red-50 rounded transition-colors border border-transparent hover:border-red-100"
                     title="Deletar"
@@ -55,3 +86,4 @@ export function OrcamentoCard({ orcamento, onDelete }: OrcamentoCardProps) {
         </div>
     );
 }
+
