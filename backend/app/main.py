@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import itens, orcamentos, orcamento_itens, etapas
+from core.config import settings
 
 app = FastAPI(title="Projeto Orçamento", version="1.0.0")
 
@@ -20,14 +21,12 @@ async def generic_exception_handler(request: Request, exc: Exception):
     )
 
 
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+
+origins = settings.ALLOWED_ORIGINS.split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,    # Libera o seu React
+    allow_origins=origins,    # Libera as origens configuradas
     allow_credentials=True,
     allow_methods=["*"],      # Libera GET, POST, DELETE, etc.
     allow_headers=["*"],
@@ -37,9 +36,3 @@ app.include_router(itens.router)
 app.include_router(orcamentos.router)
 app.include_router(orcamento_itens.router)
 app.include_router(etapas.router)
-
-
-
-@app.get("/")
-def read_root():
-    return {"message": "Hello World"}

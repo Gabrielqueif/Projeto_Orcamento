@@ -98,7 +98,7 @@ export function CalculationMemory({ initialRows = [], onChange }: CalculationMem
                     {rows.length === 0 && (
                         <div className="p-8 text-center text-slate-400 text-sm">
                             Nenhuma linha adicionada. <br />
-                            Clique em "Adicionar Linha" para iniciar a memória de cálculo.
+                            Clique em &quot;Adicionar Linha&quot; para iniciar a memória de cálculo.
                         </div>
                     )}
 

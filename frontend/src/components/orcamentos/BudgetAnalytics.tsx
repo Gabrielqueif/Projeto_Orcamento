@@ -78,17 +78,16 @@ export function BudgetAnalytics({ orcamentoId, refreshTrigger }: BudgetAnalytics
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={data}
-                        layout="vertical"
-                        margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                        <XAxis type="number" tickFormatter={(val) => `R$${val / 1000}k`} />
-                        <YAxis type="category" dataKey="name" width={100} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="name" />
+                        <YAxis tickFormatter={(val) => `R$${val / 1000}k`} />
                         <Tooltip
-                            formatter={(value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)}
+                            formatter={(value: number | undefined) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0)}
                             cursor={{ fill: 'transparent' }}
                         />
-                        <Bar dataKey="total" radius={[0, 4, 4, 0]}>
+                        <Bar dataKey="total" radius={[4, 4, 0, 0]} maxBarSize={60}>
                             {data.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#3b82f6' : '#60a5fa'} />
                             ))}

@@ -13,8 +13,23 @@ class OrcamentoItemRepository:
         return None
 
     def listar_por_orcamento(self, orcamento_id: str) -> List[Dict[str, Any]]:
-        resultado = self.supabase.table(TABELA_ORCAMENTO_ITENS).select("*").eq("orcamento_id", orcamento_id).order("created_at").execute()
-        return resultado.data or []
+        # Busca itens com dados da etapa relacionada
+        # Nota: O nome da tabela é 'orcamento_etapas', não 'etapas'
+        resultado = self.supabase.table(TABELA_ORCAMENTO_ITENS)\
+            .select("*, orcamento_etapas(nome, ordem)")\
+            .eq("orcamento_id", orcamento_id)\
+            .order("created_at")\
+            .execute()
+        
+        items = resultado.data or []
+        
+        # Ordenar por ordem da etapa, se disponível, e depois por item
+        items.sort(key=lambda x: (
+            x.get('orcamento_etapas', {}).get('ordem', 9999) if x.get('orcamento_etapas') else 9999,
+            x.get('created_at', '')
+        ))
+        
+        return items
 
     def buscar_por_id(self, item_id: str, orcamento_id: str = None) -> Optional[Dict[str, Any]]:
         query = self.supabase.table(TABELA_ORCAMENTO_ITENS).select("*").eq("id", item_id)

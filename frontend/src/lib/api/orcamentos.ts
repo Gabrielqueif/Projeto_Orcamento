@@ -44,6 +44,7 @@ export interface OrcamentoItem {
   estado: string;
   etapa_id?: string;
   memoria_calculo?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   variaveis?: any;
   created_at?: string;
 }
@@ -56,6 +57,7 @@ export interface OrcamentoItemCreate {
   estado?: string; // Opcional, será pego do orçamento se não fornecido
   etapa_id?: string;
   memoria_calculo?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   variaveis?: any;
 }
 
@@ -67,6 +69,7 @@ export interface OrcamentoItemUpdate {
   estado?: string;
   etapa_id?: string;
   memoria_calculo?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   variaveis?: any;
 }
 
