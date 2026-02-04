@@ -8,6 +8,10 @@ from fastapi.testclient import TestClient
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
+# Mock supabase module globally before importing app
+mock_supabase_module = MagicMock()
+sys.modules["supabase"] = mock_supabase_module
+
 from app.main import app
 from app.dependencies import get_supabase
 from core.security import get_current_user

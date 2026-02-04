@@ -1,3 +1,5 @@
 .vscode/
 backends/servico-planilhas/.env
 .env
+__pycache__/
+*.pyc
