@@ -1,2 +1,3 @@
 .vscode/
-backends/servico-planilhas/.env.env
+backends/servico-planilhas/.env
+.env
