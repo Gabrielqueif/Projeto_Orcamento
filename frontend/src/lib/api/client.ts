@@ -10,6 +10,11 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
         ...options.headers,
     };
 
+    // If body is FormData, remove Content-Type so browser can set boundary
+    if (options.body instanceof FormData) {
+        delete headers['Content-Type'];
+    }
+
     if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
     }

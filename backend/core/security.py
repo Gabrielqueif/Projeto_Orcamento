@@ -1,35 +1,97 @@
-from fastapi import HTTPException, status, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+from datetime import datetime, timedelta
+from typing import Optional, Any
+from jose import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from pydantic import ValidationError
+from app.dependencies import get_supabase
 from supabase import Client
-from core.supabase_client import get_supabase_client
 
-security = HTTPBearer()
+# Configurações JWT
+# Em produção, você deve usar variáveis de ambiente
+SECRET_KEY = "sua_chave_secreta_super_segura" 
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 dias
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    supabase: Client = Depends(get_supabase_client)
-):
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    supabase: Client = Depends(get_supabase)
+) -> dict:
     """
-    Validates the Bearer token using Supabase Auth.
+    Valida o token JWT do Supabase e retorna o usuário atual.
     """
-    token = credentials.credentials
     try:
-        # Supabase-py uses .auth.get_user(token) to validate the JWT
-        user_response = supabase.auth.get_user(token)
+        # Verifica se o usuario existe no supabase usando o token
+        user = supabase.auth.get_user(token)
         
-        if not user_response or not user_response.user:
+        if not user or not user.user:
              raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials",
+                detail="Token inválido ou expirado",
                 headers={"WWW-Authenticate": "Bearer"},
             )
             
-        return user_response.user
+        return user.user.__dict__ # Retorna dados do usuario
         
     except Exception as e:
-        # In case of expired token or other errors
+        print(f"Erro na autenticação: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Authentication failed: {str(e)}",
+            detail="Não foi possível validar as credenciais",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+def require_admin(
+    user: dict = Depends(get_current_user),
+    supabase: Client = Depends(get_supabase)
+):
+    """
+    Verifica se o usuário tem a role 'admin'
+    """
+    # 1. Verifica metadados (App Metadata ou User Metadata)
+    app_metadata = user.get('app_metadata', {})
+    user_metadata = user.get('user_metadata', {})
+    
+    if app_metadata.get('role') == 'admin' or user_metadata.get('role') == 'admin':
+        return user
+
+    # 2. Verifica tabela 'profiles' (onde o frontend encontrou a role)
+    user_id = user.get('id')
+    if user_id:
+        try:
+            # Tenta buscar na tabela profiles
+            response = supabase.table('profiles').select('role').eq('id', user_id).single().execute()
+            if response.data and response.data.get('role') == 'admin':
+                return user
+        except Exception:
+            # Ignora erro se tabela não existir ou usuario nao encontrado
+            pass
+            
+        try:
+            # Tenta buscar na tabela users (fallback comum)
+            response = supabase.table('users').select('role').eq('id', user_id).single().execute()
+            if response.data and response.data.get('role') == 'admin':
+                return user
+        except Exception:
+            pass
+    
+    # Se chegou aqui, não é admin
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Acesso negado: requer privilégios de administrador"
+    )
+    return user

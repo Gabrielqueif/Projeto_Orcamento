@@ -1,10 +1,29 @@
 'use client';
 
-import { useAuth } from '@/components/auth-provider';
 import Link from 'next/link';
+import { createClient } from '@/utils/supabase/client';
+import { useEffect, useState } from 'react';
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+    console.log('HomePage: Checking auth session...');
+    supabase.auth.getUser().then(({ data, error }) => {
+      console.log('HomePage: getUser result:', data, error);
+      if (data?.user) {
+        setUser(data.user);
+      }
+      setLoading(false);
+    }).catch((err) => {
+      console.error('HomePage: getUser error:', err);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) return <div className="p-6">Carregando...</div>;
 
   return (
     <div className="space-y-6">

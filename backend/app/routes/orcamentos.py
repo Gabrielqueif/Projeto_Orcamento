@@ -1,7 +1,9 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends
 from app.controllers import orcamentos
-from schemas.schemas import OrcamentoResponse
+from schemas.schemas import OrcamentoResponse, OrcamentoCreate, OrcamentoUpdate
+from app.services.orcamento_service import OrcamentoService
+
 from core.security import get_current_user
 from app.dependencies import get_supabase
 
@@ -11,46 +13,66 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)]
 )
 
-router.add_api_route(
-    "/", 
-    orcamentos.criar_orcamento, 
-    methods=["POST"], 
-    response_model=OrcamentoResponse, 
+@router.post(
+    "/",
+    response_model=OrcamentoResponse,
     summary="Criar novo orçamento"
 )
-router.add_api_route(
-    "/", 
-    orcamentos.listar_orcamentos, 
-    methods=["GET"], 
-    response_model=List[OrcamentoResponse], 
+async def criar_orcamento(
+    orcamento: OrcamentoCreate, 
+    service: OrcamentoService = Depends(orcamentos.get_orcamento_service)
+):
+    return orcamentos.criar_orcamento(orcamento, service)
+
+@router.get(
+    "/",
+    response_model=List[OrcamentoResponse],
     summary="Listar orçamentos"
 )
-router.add_api_route(
-    "/{orcamento_id}", 
-    orcamentos.buscar_orcamento, 
-    methods=["GET"], 
-    response_model=OrcamentoResponse, 
+async def listar_orcamentos(
+    status: Optional[str] = None, 
+    cliente: Optional[str] = None, 
+    service: OrcamentoService = Depends(orcamentos.get_orcamento_service)
+):
+    return orcamentos.listar_orcamentos(status, cliente, service)
+
+@router.get(
+    "/{orcamento_id}",
+    response_model=OrcamentoResponse,
     summary="Buscar orçamento por ID"
 )
-router.add_api_route(
-    "/{orcamento_id}", 
-    orcamentos.atualizar_orcamento, 
-    methods=["PUT"], 
-    response_model=OrcamentoResponse, 
+async def buscar_orcamento(
+    orcamento_id: str, 
+    service: OrcamentoService = Depends(orcamentos.get_orcamento_service)
+):
+    return orcamentos.buscar_orcamento(orcamento_id, service)
+
+@router.put(
+    "/{orcamento_id}",
+    response_model=OrcamentoResponse,
     summary="Atualizar orçamento"
 )
-router.add_api_route(
-    "/{orcamento_id}", 
-    orcamentos.deletar_orcamento, 
-    methods=["DELETE"], 
+async def atualizar_orcamento(
+    orcamento_id: str, 
+    orcamento: OrcamentoUpdate, 
+    service: OrcamentoService = Depends(orcamentos.get_orcamento_service)
+):
+    return orcamentos.atualizar_orcamento(orcamento_id, orcamento, service)
+
+@router.delete(
+    "/{orcamento_id}",
     summary="Deletar orçamento"
 )
+async def deletar_orcamento(
+    orcamento_id: str, 
+    service: OrcamentoService = Depends(orcamentos.get_orcamento_service)
+):
+    return orcamentos.deletar_orcamento(orcamento_id, service)
 
 @router.get("/{orcamento_id}/pdf")
 async def download_pdf_orcamento(
     orcamento_id: str,
-    user: dict = Depends(get_current_user),
-    service = Depends(orcamentos.get_orcamento_service),
+    service: OrcamentoService = Depends(orcamentos.get_orcamento_service),
     supabase = Depends(get_supabase)
 ):
     return orcamentos.download_pdf(orcamento_id, service, supabase)

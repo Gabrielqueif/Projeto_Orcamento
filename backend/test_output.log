@@ -1,0 +1,47 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: D:\repositorios\Projeto_Orcamento\backend
+configfile: pytest.ini
+plugins: anyio-4.12.1
+collecting ... collected 1 item
+
+tests/test_sinapi_sheets.py::test_sheet_identification FAILED            [100%]
+
+================================== FAILURES ===================================
+__________________________ test_sheet_identification __________________________
+
+    def test_sheet_identification():
+        # 1. Create a mock Excel file with CSD, CCD, CSE sheets
+        output = BytesIO()
+>       with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_sinapi_sheets.py:10: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <pandas.io.excel._xlsxwriter.XlsxWriter object at 0x00000266F9644EC0>
+path = <_io.BytesIO object at 0x00000266F96297B0>, engine = 'xlsxwriter'
+date_format = None, datetime_format = None, mode = 'w', storage_options = None
+if_sheet_exists = None, engine_kwargs = None, kwargs = {}
+
+    def __init__(  # pyright: ignore[reportInconsistentConstructor]
+        self,
+        path: FilePath | WriteExcelBuffer | ExcelWriter,
+        engine: str | None = None,
+        date_format: str | None = None,
+        datetime_format: str | None = None,
+        mode: str = "w",
+        storage_options: StorageOptions | None = None,
+        if_sheet_exists: ExcelWriterIfSheetExists | None = None,
+        engine_kwargs: dict[str, Any] | None = None,
+        **kwargs,
+    ) -> None:
+        # Use the xlsxwriter module as the Excel writer.
+>       from xlsxwriter import Workbook
+E       ModuleNotFoundError: No module named 'xlsxwriter'
+
+C:\Users\gabri\AppData\Roaming\Python\Python314\site-packages\pandas\io\excel\_xlsxwriter.py:197: ModuleNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_sinapi_sheets.py::test_sheet_identification - ModuleNotFoundError: No module named 'xlsxwriter'
+============================== 1 failed in 0.23s ==============================

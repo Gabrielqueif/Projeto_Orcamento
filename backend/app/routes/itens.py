@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from app.controllers import itens
 from core.security import get_current_user
 
+
 router = APIRouter(
     prefix="/composicoes", 
     tags=["Composições"],
