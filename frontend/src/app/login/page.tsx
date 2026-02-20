@@ -2,26 +2,27 @@
 import { login } from '@/app/auth/actions'
 import Link from 'next/link'
 
-export default function LoginPage({
+export default async function LoginPage({
     searchParams,
 }: {
-    searchParams: { message?: string; error?: string }
+    searchParams: Promise<{ message?: string; error?: string }>
 }) {
+    const params = await searchParams;
     return (
         <div className="flex h-screen items-center justify-center bg-[#F1F5F9]">
             <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
                 <h1 className="text-2xl font-bold text-[#1F5F7A] mb-2 text-center">GPObras</h1>
                 <p className="text-gray-500 text-center mb-6">Entre com suas credenciais</p>
 
-                {searchParams?.message && (
+                {params?.message && (
                     <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 text-center text-sm">
-                        {searchParams.message}
+                        {params.message}
                     </div>
                 )}
 
-                {searchParams?.error && (
+                {params?.error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 text-center text-sm">
-                        {searchParams.error}
+                        {params.error}
                     </div>
                 )}
 

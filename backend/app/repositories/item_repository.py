@@ -12,7 +12,10 @@ class ItemRepository:
         total = 0
         for i in range(0, len(dados), 1000):
             try:
-                r = self.supabase.table(TABELA_COMPOSICOES).upsert(dados[i:i+1000]).execute()
+                r = self.supabase.table(TABELA_COMPOSICOES).upsert(
+                    dados[i:i+1000],
+                    on_conflict="codigo_composicao,mes_referencia"
+                ).execute()
                 if r.data: total += len(r.data)
             except Exception as e:
                 print(f"Erro lote {TABELA_COMPOSICOES}: {e}")
@@ -23,7 +26,10 @@ class ItemRepository:
         total = 0
         for i in range(0, len(dados), 1000):
             try:
-                r = self.supabase.table(TABELA_COMPOSICOES_ESTADOS).upsert(dados[i:i+1000]).execute()
+                r = self.supabase.table(TABELA_COMPOSICOES_ESTADOS).upsert(
+                    dados[i:i+1000],
+                    on_conflict="codigo_composicao,mes_referencia,tipo_composicao"
+                ).execute()
                 if r.data: total += len(r.data)
             except Exception as e:
                 print(f"Erro lote {TABELA_COMPOSICOES_ESTADOS}: {e}")

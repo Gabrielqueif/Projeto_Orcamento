@@ -1,249 +1,177 @@
-import pandas as pd
-from io import BytesIO
-import re
-import unicodedata
-from typing import Dict, Any, List
-from fastapi import UploadFile
-from app.schemas.sinapi import SinapiMetadata
+"""
+Serviço de processamento de planilhas SINAPI.
+
+Orquestra a extração de metadados e importação de dados de composições
+e preços a partir de arquivos Excel no formato SINAPI.
+"""
+
+import logging
+from typing import Any, Dict, List
+
 from app.repositories.item_repository import ItemRepository
+from app.schemas.sinapi import SinapiMetadata
+from app.services.sinapi_excel_parser import SinapiExcelParser
+from app.services.sinapi_text_utils import normalizar_nome_aba
 
-COLUNAS_ESTADOS = [
-    "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", 
-    "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", 
-    "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
-]
+logger = logging.getLogger(__name__)
 
-def _remover_acentos(texto: str) -> str:
-    if not isinstance(texto, str): return str(texto)
-    nfkd = unicodedata.normalize('NFD', texto)
-    return u"".join([c for c in nfkd if not unicodedata.combining(c)]).lower()
 
-def _limpar_link_excel(texto):
-    if pd.isna(texto): return ""
-    texto = str(texto).strip()
-    if texto.startswith("="):
-        match = re.search(r'HYPERLINK\s*\(.*,\s*"(.*)"\s*\)', texto, re.IGNORECASE)
-        if match: return match.group(1)
-        return texto.replace('"', '').replace('=', '')
-    return texto
+# ---------------------------------------------------------------------------
+# Extração de metadados
+# ---------------------------------------------------------------------------
 
-def _gerar_chave_match(texto: str) -> str:
-    texto = _limpar_link_excel(texto)
-    sem_acento = _remover_acentos(texto)
-    return re.sub(r'[^a-z0-9]', '', sem_acento)
+def extract_metadata(
+    file_content: bytes,
+    sheet_name_hint: str | None = None,
+) -> SinapiMetadata:
+    """Extrai metadados (mês de referência, UF, desoneração) de um arquivo SINAPI.
 
-def _limpar_valor_moeda(valor):
-    if pd.isna(valor): return None
-    s_valor = str(valor).strip()
-    if s_valor == '' or s_valor == '-' or s_valor.lower() == 'nan': return None
-    try:
-        if isinstance(valor, (int, float)): return float(valor)
-        return float(s_valor.replace('.', '').replace(',', '.'))
-    except: return None
+    Args:
+        file_content: Conteúdo binário do arquivo Excel.
+        sheet_name_hint: Nome de aba preferencial para buscar metadados.
 
-def _normalizar_nome_aba(texto):
-    return _remover_acentos(str(texto)).strip()
+    Returns:
+        Objeto SinapiMetadata com os campos extraídos.
 
-def _dedup(lista):
-    seen = set()
-    new_l = []
-    for d in lista:
-        c = d['codigo_composicao']
-        if c not in seen:
-            seen.add(c)
-            new_l.append(d)
-    return new_l
-
-def extract_metadata(file_content: bytes, sheet_name_hint: str = None) -> SinapiMetadata:
-    """
-    Extracts metadata from the first available valid sheet.
+    Raises:
+        ValueError: Se não for possível extrair os metadados.
     """
     try:
-        xl = pd.ExcelFile(BytesIO(file_content))
-        if sheet_name_hint and sheet_name_hint in xl.sheet_names:
-            sheet_use = sheet_name_hint
-        else:
-            # Fallback: try to find any CSD/CCD/CSE or Analitico sheet
-            sheet_use = xl.sheet_names[0]
-            for s in xl.sheet_names:
-                norm = _normalizar_nome_aba(s).upper()
-                if any(x in norm for x in ["CSD", "CCD", "CSE", "ANALITICO"]):
-                    sheet_use = s
-                    break
-
-        df = pd.read_excel(xl, sheet_name=sheet_use, header=None, nrows=20)
-        
-        # Strategies to find metadata
-        # Strategy A: Standard layout (Mes: B3, Deson/UF: A8/B8)
-        mes_referencia = "UNKNOWN"
-        desoneracao_raw = "UNKNOWN" 
-        uf = "BR"
-
-        # Search for "MES DE REFERENCIA" in first 10 rows
-        for idx, row in df.iterrows():
-            row_str = " ".join([str(x).upper() for x in row.values if pd.notna(x)])
-            if "MES DE REFERENCIA" in row_str or "MÊS DE REFERÊNCIA" in row_str:
-                # Usually value is in next col or same col split?
-                # Let's try to look at specific cells if known, or regex
-                pass
-        
-        # Hardcoded attempt for standard SINAPI
-        if len(df) > 2:
-             val = str(df.iloc[2, 1]).strip() # B3
-             if len(val) > 4: mes_referencia = val
-        
-        if len(df) > 7:
-             d = str(df.iloc[7, 0]).strip().upper() # A8
-             u = str(df.iloc[7, 1]).strip().upper() # B8
-             if "ENCARGOS" in d or "DESONERADO" in d: desoneracao_raw = d
-             if len(u) == 2: uf = u
-        
-        return SinapiMetadata(
-            mes_referencia=mes_referencia,
-            uf=uf,
-            desoneracao=desoneracao_raw
-        )
-        
+        parser = SinapiExcelParser(file_content)
+        sheet_use = _escolher_aba_metadados(parser, sheet_name_hint)
+        return _extrair_metadados_da_aba(parser, sheet_use)
     except Exception as e:
-        raise ValueError(f"Erro ao extrair metadados: {str(e)}")
+        raise ValueError(f"Erro ao extrair metadados: {e}") from e
 
-def process_sinapi_file(file_content: bytes, repository: ItemRepository) -> Dict[str, Any]:
+
+def _escolher_aba_metadados(
+    parser: SinapiExcelParser,
+    sheet_name_hint: str | None,
+) -> str:
+    """Escolhe a melhor aba para extrair metadados.
+
+    Prioriza o hint fornecido; em seguida procura abas com nomes
+    contendo CSD, CCD, CSE ou ANALITICO; por fim usa a primeira aba.
+    """
+    if sheet_name_hint and sheet_name_hint in parser.sheet_names:
+        return sheet_name_hint
+
+    termos_meta = ("CSD", "CCD", "CSE", "ANALITICO")
+    for sheet in parser.sheet_names:
+        norm = normalizar_nome_aba(sheet).upper()
+        if any(t in norm for t in termos_meta):
+            return sheet
+
+    return parser.sheet_names[0]
+
+
+def _extrair_metadados_da_aba(
+    parser: SinapiExcelParser,
+    sheet_name: str,
+) -> SinapiMetadata:
+    """Lê as primeiras linhas de uma aba e extrai mês e desoneração."""
+    df = parser.ler_aba(sheet_name, header=None, nrows=20)
+
+    mes_referencia = "UNKNOWN"
+    desoneracao_raw = "UNKNOWN"
+
+    # Posição padrão SINAPI: mês em B3 (iloc[2,1])
+    if len(df) > 2:
+        val = str(df.iloc[2, 1]).strip()
+        if len(val) > 4:
+            mes_referencia = val
+
+    # Posição padrão SINAPI: desoneração em D4 (iloc[3,3])
+    if len(df) > 3 and len(df.columns) > 3:
+        d = str(df.iloc[3, 3]).strip().upper()
+        if d and d != "NAN":
+            desoneracao_raw = d
+
+    return SinapiMetadata(
+        mes_referencia=mes_referencia,
+        uf="BR",
+        desoneracao=desoneracao_raw,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Processamento completo (composições + preços)
+# ---------------------------------------------------------------------------
+
+def process_sinapi_file(
+    file_content: bytes,
+    repository: ItemRepository,
+) -> Dict[str, Any]:
+    """Processa um arquivo SINAPI completo e importa os dados no banco.
+
+    Fluxo:
+        1. Abre o arquivo Excel
+        2. Identifica abas de preços (CSD/CCD/CSE)
+        3. Extrai metadados da primeira aba de preços
+        4. Para cada aba: extrai composições e preços
+        5. Deduplica composições e salva via repository
+
+    Args:
+        file_content: Conteúdo binário do arquivo Excel.
+        repository: Repositório para persistir os dados.
+
+    Returns:
+        Dict com status, quantidades importadas e metadados.
+
+    Raises:
+        ValueError: Se ocorrer um erro durante o processamento.
+    """
     try:
-        xl = pd.ExcelFile(BytesIO(file_content))
-        abas = xl.sheet_names
-        
-        # Identify Price Sheets (CSD, CCD, CSE)
-        termos_precos = ["csd", "ccd", "cse"]
-        abas_precos = [a for a in abas if any(t in _normalizar_nome_aba(a) for t in termos_precos)]
-        
-        # Fallback if no specific price sheets found (maybe user renamed them?) use all except known 'bad' sheets
-        if not abas_precos:
-             ignore = ["MENU", "BUSCA", "OBS", "INSTRUCOES"]
-             abas_precos = [a for a in abas if not any(i in _normalizar_nome_aba(a).upper() for i in ignore)]
+        parser = SinapiExcelParser(file_content)
+        abas_precos = parser.identificar_abas_precos()
 
-        # Extract Metadata from the first price sheet found (or just the file)
-        first_sheet = abas_precos[0] if abas_precos else abas[0]
+        first_sheet = abas_precos[0] if abas_precos else parser.sheet_names[0]
         metadata = extract_metadata(file_content, sheet_name_hint=first_sheet)
 
-        with open("debug_sinapi.log", "a", encoding="utf-8") as f:
-             f.write(f"\n--- Processando Arquivo (Refatorado) ---\n")
-             f.write(f"Abas encontradas: {abas}\n")
-             f.write(f"Abas Preços processadas: {abas_precos}\n")
-             f.write(f"Metadados: {metadata}\n")
+        logger.info(
+            "Processando arquivo SINAPI — abas: %s, metadados: %s",
+            abas_precos,
+            metadata,
+        )
 
-        registros_comp = []
-        registros_precos = []
-        
-        # Process ONLY Price Sheets (extracting both Item Data AND Prices from them)
-        for aba_precos in abas_precos:
-            df_grid = pd.read_excel(xl, sheet_name=aba_precos, header=None)
-            
-            row_idx_header = -1
-            mapa_col_estados = {}
-            col_idx_cod = -1
-            col_idx_desc = -1
-            col_idx_unid = -1
-            
-            # 1. Find Header Line (must contain State codes AND 'CODIGO'/'DESCRICAO')
-            # Searching first 20 lines
-            for r_idx, row in df_grid.head(20).iterrows():
-                vals = [_remover_acentos(str(v)).strip().upper() for v in row.values]
-                
-                # Check for key columns
-                tem_estados = any(v in COLUNAS_ESTADOS for v in vals)
-                tem_cod = any("CODIGO" in v for v in vals)
-                tem_desc = any("DESCRICAO" in v for v in vals)
-                
-                if tem_estados and (tem_cod or tem_desc):
-                    row_idx_header = r_idx
-                    for c_idx, val in enumerate(vals):
-                        if val in COLUNAS_ESTADOS:
-                            mapa_col_estados[c_idx] = val.lower()
-                        elif "CODIGO" in val: col_idx_cod = c_idx
-                        elif "DESCRICAO" in val: col_idx_desc = c_idx
-                        elif "UNIDADE" in val: col_idx_unid = c_idx
-                    break
-            
-            # Fallback if header is tricky: try to find just states line? 
-            # User said "descriptions are the same", so columns must exist.
-            if row_idx_header == -1: 
-                 # Try finding just states
-                 for r_idx, row in df_grid.head(15).iterrows():
-                    vals = [_remover_acentos(str(v)).strip().upper() for v in row.values]
-                    if sum(1 for v in vals if v in COLUNAS_ESTADOS) > 5:
-                         row_idx_header = r_idx
-                         for c_idx, val in enumerate(vals):
-                            if val in COLUNAS_ESTADOS: mapa_col_estados[c_idx] = val.lower()
-                         # Assume standard positions if not found explicitly?
-                         # Usually: Cod=0/1, Desc=1/2, Unit=2/3?
-                         # Let's hope the previous explicit search worked.
-                         break
+        todas_composicoes: List[dict] = []
+        todos_precos: List[dict] = []
 
-            if row_idx_header == -1: continue # Skip this sheet
+        for aba in abas_precos:
+            composicoes, precos = parser.extrair_registros_aba(
+                aba, metadata.mes_referencia
+            )
+            todas_composicoes.extend(composicoes)
+            todos_precos.extend(precos)
 
-            row_idx_dados = row_idx_header + 1
-            
-            # Determine Type from Sheet Name
-            aba_norm = _normalizar_nome_aba(aba_precos).upper()
-            tipo_comp = "Sem Desoneração"
-            if "CCD" in aba_norm or "COM DESONERACAO" in aba_norm: tipo_comp = "Com Desoneração"
-            elif "CSE" in aba_norm or "EMPREITADA" in aba_norm: tipo_comp = "Empreitada"
-            elif "CSD" in aba_norm or "SEM DESONERACAO" in aba_norm: tipo_comp = "Sem Desoneração"
+        todas_composicoes = _deduplicar_composicoes(todas_composicoes)
 
-            # Process Data
-            df_dados = df_grid.iloc[row_idx_dados:]
-            for _, row in df_dados.iterrows():
-                # Extract Code/Desc/Unit
-                cod_raw = row.iloc[col_idx_cod] if col_idx_cod != -1 else None
-                desc_raw = row.iloc[col_idx_desc] if col_idx_desc != -1 else None
-                
-                if pd.isna(cod_raw) or str(cod_raw).strip() == "": continue
-                
-                cod = str(cod_raw).replace('.0', '').strip()
-                desc = str(desc_raw).strip()
-                unid = str(row.iloc[col_idx_unid]).strip() if col_idx_unid != -1 else "-"
-                
-                if not cod.isdigit() and len(cod) < 3: continue # Skip headers repeated or cruft
+        q_comp = repository.upsert_batch_composicoes(todas_composicoes)
+        q_est = repository.upsert_batch_estados(todos_precos)
 
-                # Add to Master Catalog List (will be deduped)
-                registros_comp.append({
-                    "codigo_composicao": cod,
-                    "descricao": desc,
-                    "unidade": unid,
-                    "grupo": "-", # Not present in price sheet usually, default to -
-                    "mes_referencia": metadata.mes_referencia
-                })
-                
-                # Add to Prices List
-                reg_preco = {
-                     "codigo_composicao": cod,
-                     "mes_referencia": metadata.mes_referencia,
-                     "tipo_composicao": tipo_comp
-                }
-                has_val = False
-                for c_idx, sigla_estado in mapa_col_estados.items():
-                    val = _limpar_valor_moeda(row.iloc[c_idx])
-                    reg_preco[sigla_estado] = val
-                    if val is not None: has_val = True
-                
-                if has_val:
-                    registros_precos.append(reg_preco)
-
-        # Deduplicate Master Catalog
-        registros_comp = _dedup(registros_comp)
-        
-        # Upsert
-        q_comp = repository.upsert_batch_composicoes(registros_comp)
-        q_est = repository.upsert_batch_estados(registros_precos)
-        
         return {
             "status": "sucesso",
             "imported_items": q_comp,
             "imported_prices": q_est,
-            "metadata": metadata.dict()
+            "metadata": metadata.dict(),
         }
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise ValueError(f"Erro no processamento da importação: {str(e)}")
+        logger.exception("Erro no processamento da importação SINAPI")
+        raise ValueError(f"Erro no processamento da importação: {e}") from e
+
+
+# ---------------------------------------------------------------------------
+# Helpers internos
+# ---------------------------------------------------------------------------
+
+def _deduplicar_composicoes(registros: List[dict]) -> List[dict]:
+    """Remove composições duplicadas mantendo a primeira ocorrência."""
+    vistos: set = set()
+    resultado: List[dict] = []
+    for reg in registros:
+        cod = reg["codigo_composicao"]
+        if cod not in vistos:
+            vistos.add(cod)
+            resultado.append(reg)
+    return resultado
