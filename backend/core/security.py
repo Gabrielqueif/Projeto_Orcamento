@@ -7,12 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
 from app.dependencies import get_supabase
 from supabase import Client
-
-# Configurações JWT
-# Em produção, você deve usar variáveis de ambiente
-SECRET_KEY = "sua_chave_secreta_super_segura" 
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 dias
+from core.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -24,7 +19,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + timedelta(minutes=15)
     
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
 async def get_current_user(

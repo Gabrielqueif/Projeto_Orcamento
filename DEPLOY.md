@@ -1,58 +1,111 @@
 # Guia de Implantação (Deployment)
 
-Este projeto utiliza Docker e Docker Compose para facilitar a implantação e execução dos serviços (Frontend e Backend).
+Este projeto utiliza Docker e Docker Compose para facilitar a implantação e execução dos serviços (Frontend, Backend e Nginx).
 
 ## Pré-requisitos
 
 1.  **Docker** e **Docker Compose** instalados na máquina.
-2.  Arquivo `.env` na raiz do projeto com as variáveis de ambiente necessárias (já criado automaticamente com base no backend).
+2.  Arquivo `.env` na raiz do projeto com as variáveis de ambiente necessárias.
+    -   Use `.env.example` como referência: `cp .env.example .env`
 
 ## Estrutura dos Serviços
 
--   **Backend**: Python/FastAPI rodando na porta `8000`.
--   **Frontend**: Next.js rodando na porta `3000`.
+-   **Nginx**: Reverse proxy na porta `80` — roteia `/api/*` para o backend e `/` para o frontend.
+-   **Backend**: Python/FastAPI com Gunicorn (4 workers Uvicorn).
+-   **Frontend**: Next.js em modo standalone (build otimizado de produção).
 
 ## Configuração
 
-O arquivo `docker-compose.yml` está configurado para ler as variáveis do arquivo `.env` na raiz. As principais variáveis são:
+### Variáveis de Ambiente
 
--   `SUPABASE_URL`: URL do seu projeto Supabase.
--   `SUPABASE_ANON_KEY`: Chave pública (anon) do Supabase.
--   `DB_USER`, `DB_PASSWORD`, `DB_NAME`: Credenciais do banco de dados.
+Copie o template e preencha com seus valores:
 
-## Como Executar
+```bash
+cp .env.example .env
+```
 
-### 1. Construir e Iniciar os Containers
+As principais variáveis são:
 
-Execute o seguinte comando na raiz do projeto:
+| Variável | Descrição | Obrigatória |
+|---|---|---|
+| `SUPABASE_URL` | URL do projeto Supabase | ✅ |
+| `SUPABASE_ANON_KEY` | Chave pública (anon) do Supabase | ✅ |
+| `SUPABASE_SERVICE_ROLE_KEY` | Chave de serviço do Supabase | ✅ |
+| `DB_HOST`, `DB_PORT`, `DB_NAME` | Conexão PostgreSQL | ✅ |
+| `DB_USER`, `DB_PASSWORD` | Credenciais do banco | ✅ |
+| `SECRET_KEY` | Chave JWT (gerar com `python -c "import secrets; print(secrets.token_urlsafe(64))"`) | ✅ |
+| `API_URL` | URL pública da API (ex: `https://meusite.com/api`) | ✅ |
+| `CORS_ORIGINS` | Origens CORS separadas por vírgula | ⚙️ |
+| `ENVIRONMENT` | `development` ou `production` | ⚙️ |
+| `LOG_LEVEL` | Nível de log: `DEBUG`, `INFO`, `WARNING`, `ERROR` | ⚙️ |
+
+## Deploy em Produção
+
+### 1. Checklist Pré-Deploy
+
+- [ ] `.env` configurado com todos os valores de produção
+- [ ] `SECRET_KEY` gerada de forma segura (não usar o valor padrão!)
+- [ ] `CORS_ORIGINS` configurado com os domínios reais
+- [ ] `ENVIRONMENT=production` (desabilita Swagger Docs)
+- [ ] Credenciais do banco de dados rotacionadas se necessário
+
+### 2. Construir e Iniciar
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+Isso irá:
+1.  Construir as imagens do Frontend, Backend e Nginx.
+2.  Iniciar os containers em segundo plano com restart automático.
+3.  Nginx ficará acessível na porta `80`.
+
+### 3. Verificar Status
+
+```bash
+# Status dos containers
+docker-compose -f docker-compose.prod.yml ps
+
+# Logs em tempo real
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Health check
+curl http://localhost/api/health
+```
+
+### 4. Acessar a Aplicação
+
+-   **Frontend**: Acesse `http://seu-servidor` no navegador.
+-   **Backend Health**: `http://seu-servidor/api/health`
+-   **Swagger Docs**: Disponível apenas em `ENVIRONMENT=development`.
+
+## Desenvolvimento Local
+
+Para desenvolvimento, use o compose padrão com hot-reload:
 
 ```bash
 docker-compose up -d --build
 ```
 
-Isso irá:
-1.  Construir as imagens do Frontend e Backend.
-2.  Iniciar os containers em segundo plano.
-
-### 2. Verificar os Logs
-
-Para acompanhar o status e logs dos serviços:
+### Parar os Serviços
 
 ```bash
-docker-compose logs -f
-```
+# Produção
+docker-compose -f docker-compose.prod.yml down
 
-### 3. Acessar a Aplicação
-
--   **Frontend**: Acesse [http://localhost:3000](http://localhost:3000) no seu navegador.
--   **Backend API**: Acesse [http://localhost:8000/docs](http://localhost:8000/docs) para ver a documentação Swagger da API.
-
-## Desenvolvimento
-
-Para parar os serviços:
-
-```bash
+# Desenvolvimento
 docker-compose down
 ```
 
-Se fizer alterações no código, lembre-se de rodar `docker-compose up -d --build` novamente para reconstruir as imagens.
+## Monitoramento
+
+```bash
+# Ver logs do backend
+docker-compose -f docker-compose.prod.yml logs -f backend
+
+# Ver logs do nginx
+docker-compose -f docker-compose.prod.yml logs -f nginx
+
+# Restart de um serviço
+docker-compose -f docker-compose.prod.yml restart backend
+```

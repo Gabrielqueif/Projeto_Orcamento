@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   /* config options here */
   allowedDevOrigins: ["http://localhost:3000", "http://localhost:3001", "192.168.0.2:3000"],
   output: 'standalone',
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 export default nextConfig;

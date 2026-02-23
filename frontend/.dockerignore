@@ -1,0 +1,12 @@
+node_modules
+.next
+.env.local
+.env*.local
+.git
+.gitignore
+*.md
+npm-debug.log*
+.DS_Store
+coverage
+jest.config.ts
+jest.setup.ts
