@@ -33,8 +33,13 @@ def client(mock_supabase):
         return mock_supabase
 
     def override_get_current_user():
-        # Returns a dummy user to simulate an authenticated session
-        return {"id": "test-user-id", "email": "test@example.com"}
+        # Returns a dummy user to simulate an authenticated ADMIN session
+        return {
+            "id": "test-user-id", 
+            "email": "test@example.com",
+            "app_metadata": {"role": "admin"},
+            "user_metadata": {"role": "admin"}
+        }
 
     app.dependency_overrides[get_supabase] = override_get_supabase
     app.dependency_overrides[get_current_user] = override_get_current_user

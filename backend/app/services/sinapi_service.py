@@ -87,9 +87,20 @@ def _extrair_metadados_da_aba(
         if d and d != "NAN":
             desoneracao_raw = d
 
+    # Tentar extrair UF (geralmente em D5 ou C3, dependendo do modelo)
+    uf = "BR"
+    if len(df) > 4 and len(df.columns) > 3:
+        u = str(df.iloc[4, 3]).strip().upper()
+        if len(u) == 2 and u.isalpha():
+            uf = u
+    elif len(df) > 2 and len(df.columns) > 2:
+        u = str(df.iloc[2, 2]).strip().upper()
+        if len(u) == 2 and u.isalpha():
+            uf = u
+
     return SinapiMetadata(
         mes_referencia=mes_referencia,
-        uf="BR",
+        uf=uf,
         desoneracao=desoneracao_raw,
     )
 
