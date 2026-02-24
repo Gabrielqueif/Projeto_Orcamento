@@ -11,6 +11,7 @@ class OrcamentoCreate(BaseModel):
     cliente: str
     data: date
     base_referencia: str
+    tipo_composicao: str
     estado: str
     status: Optional[str] = "em_elaboracao"
 
@@ -21,6 +22,7 @@ class OrcamentoUpdate(BaseModel):
     cliente: Optional[str] = None
     data: Optional[date] = None
     base_referencia: Optional[str] = None
+    tipo_composicao: Optional[str] = None
     estado: Optional[str] = None
     status: Optional[str] = None
     valor_total: Optional[float] = None
@@ -33,6 +35,7 @@ class OrcamentoResponse(BaseModel):
     cliente: str
     data: date
     base_referencia: str
+    tipo_composicao: str
     estado: str
     valor_total: Optional[float]
     status: str

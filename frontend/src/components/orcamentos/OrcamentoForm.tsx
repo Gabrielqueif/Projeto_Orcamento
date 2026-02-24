@@ -51,6 +51,28 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [availableBases, setAvailableBases] = React.useState<any[]>([]);
+
+  // Extrair meses únicos e tipos únicos das bases disponíveis
+  const mesesDisponiveis = Array.from(new Set(availableBases.map(b => b.mes_referencia)));
+  const tiposDisponiveis = [
+    "Sem Desoneração",
+    "Com Desoneração",
+    "Empreitada"
+  ];
+
+  React.useEffect(() => {
+    async function loadBases() {
+      try {
+        const { getSinapiBases } = await import("@/lib/api/orcamentos");
+        const bases = await getSinapiBases();
+        setAvailableBases(bases);
+      } catch (err) {
+        console.error("Erro ao carregar bases:", err);
+      }
+    }
+    loadBases();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -63,6 +85,7 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
       cliente: formData.get("cliente") as string,
       data: formData.get("data") as string,
       base_referencia: formData.get("base_referencia") as string,
+      tipo_composicao: formData.get("tipo_composicao") as string,
       estado: formData.get("estado") as string,
     };
 
@@ -91,79 +114,106 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
         </div>
       )}
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-bold mb-2" htmlFor="nome">Nome do Orçamento</label>
-          <input
-            className="border border-gray-300 p-2 w-full rounded-md"
-            type="text"
-            id="nome"
-            name="nome"
-            placeholder="Digite o nome do orçamento"
-            defaultValue={initialData?.nome}
-            required
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-bold mb-2" htmlFor="nome">Nome do Orçamento</label>
+            <input
+              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+              type="text"
+              id="nome"
+              name="nome"
+              placeholder="Ex: Reforma Apartamento 202"
+              defaultValue={initialData?.nome}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2" htmlFor="cliente">Cliente</label>
+            <input
+              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+              type="text"
+              id="cliente"
+              name="cliente"
+              placeholder="Digite o nome do cliente"
+              defaultValue={initialData?.cliente}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2" htmlFor="data">Data de Referência</label>
+            <input
+              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+              type="date"
+              id="data"
+              name="data"
+              defaultValue={initialData?.data}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2" htmlFor="base_referencia">Mês/Ano Base (SINAPI)</label>
+            <select
+              id="base_referencia"
+              name="base_referencia"
+              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+              defaultValue={initialData?.base_referencia}
+              required
+            >
+              <option value="">Selecione o mês base</option>
+              {mesesDisponiveis.map((mes) => (
+                <option key={mes} value={mes}>{mes}</option>
+              ))}
+              {!availableBases.length && <option value="" disabled>Carregando bases...</option>}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2" htmlFor="tipo_composicao">Tipo de Desoneração</label>
+            <select
+              id="tipo_composicao"
+              name="tipo_composicao"
+              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+              defaultValue={initialData?.base_referencia ? availableBases.find(b => b.mes_referencia === initialData.base_referencia)?.tipo_composicao : ""}
+              required
+            >
+              <option value="">Selecione o tipo</option>
+              {tiposDisponiveis.map((tipo) => (
+                <option key={tipo} value={tipo}>{tipo}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-bold mb-2" htmlFor="estado">Estado (UF)</label>
+            <select
+              id="estado"
+              name="estado"
+              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+              defaultValue={initialData?.estado}
+              required
+            >
+              <option value="">Selecione um estado</option>
+              {ESTADOS.map((est) => (
+                <option key={est.value} value={est.value}>
+                  {est.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-slate-500 mt-1">
+              O estado e a base selecionados garantem a precisão dos preços das composições.
+            </p>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-bold mb-2" htmlFor="cliente">Cliente</label>
-          <input
-            className="border border-gray-300 p-2 w-full rounded-md"
-            type="text"
-            id="cliente"
-            name="cliente"
-            placeholder="Digite o nome do cliente"
-            defaultValue={initialData?.cliente}
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-bold mb-2" htmlFor="data">Data</label>
-          <input
-            className="border border-gray-300 p-2 w-full rounded-md"
-            type="date"
-            id="data"
-            name="data"
-            defaultValue={initialData?.data}
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-bold mb-2" htmlFor="base_referencia">Base de Referência</label>
-          <input
-            className="border border-gray-300 p-2 w-full rounded-md"
-            type="text"
-            id="base_referencia"
-            name="base_referencia"
-            placeholder="Digite a base de referência"
-            defaultValue={initialData?.base_referencia}
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-bold mb-2" htmlFor="estado">Estado</label>
-          <select
-            id="estado"
-            name="estado"
-            className="border border-gray-300 p-2 w-full rounded-md"
-            defaultValue={initialData?.estado}
-            required
-          >
-            <option value="">Selecione um estado</option>
-            {ESTADOS.map((est) => (
-              <option key={est.value} value={est.value}>
-                {est.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-slate-500 mt-1">
-            O estado selecionado será usado para buscar os preços de todas as composições deste orçamento.
-          </p>
-        </div>
+
         <button
           type="submit"
           disabled={loading}
-          className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white p-2 mt-4 w-full rounded-md transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-bold p-3 mt-4 w-full rounded-md transition-all shadow-sm"
         >
-          {loading ? "Salvando..." : mode === "create" ? "Criar Orçamento" : "Atualizar Orçamento"}
+          {loading ? "Processando..." : mode === "create" ? "🚀 Criar Orçamento" : "✅ Atualizar Orçamento"}
         </button>
       </div>
     </form>

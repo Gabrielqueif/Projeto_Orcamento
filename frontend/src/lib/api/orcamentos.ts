@@ -6,6 +6,7 @@ export interface Orcamento {
   cliente: string;
   data: string;
   base_referencia: string;
+  tipo_composicao: string;
   estado: string;
   valor_total: number | null;
   status: string;
@@ -18,6 +19,7 @@ export interface OrcamentoCreate {
   cliente: string;
   data: string;
   base_referencia: string;
+  tipo_composicao: string;
   estado: string;
   status?: string;
 }
@@ -27,6 +29,7 @@ export interface OrcamentoUpdate {
   cliente?: string;
   data?: string;
   base_referencia?: string;
+  tipo_composicao?: string;
   estado?: string;
   status?: string;
   valor_total?: number;
@@ -243,4 +246,16 @@ export async function deleteEtapa(orcamentoId: string, etapaId: string): Promise
     const error = await response.json();
     throw new Error(error.detail || 'Erro ao deletar etapa');
   }
+}
+
+// SINAPI Bases
+export interface SinapiBase {
+  mes_referencia: string;
+  tipo_composicao: string;
+}
+
+export async function getSinapiBases(): Promise<SinapiBase[]> {
+  const response = await fetchWithAuth('/sinapi/bases');
+  if (!response.ok) throw new Error('Erro ao buscar bases SINAPI');
+  return response.json();
 }

@@ -96,3 +96,22 @@ async def import_sinapi_data(
     except Exception as e:
         logger.error(f"Error importing SINAPI: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error importing SINAPI: {str(e)}")
+
+
+@router.get("/bases")
+async def listar_bases_disponiveis():
+    """Retorna a lista de meses e tipos de desoneração disponíveis para escolha."""
+    from core.supabase_client import get_supabase_client
+    repo = ItemRepository(get_supabase_client())
+    
+    bases = repo.listar_bases_disponiveis()
+    # Deduplicar no Python para evitar lógica complexa de distinct no Supabase client se necessário
+    unique_bases = []
+    seen = set()
+    for b in bases:
+        key = (b["mes_referencia"], b["tipo_composicao"])
+        if key not in seen:
+            seen.add(key)
+            unique_bases.append(b)
+            
+    return sorted(unique_bases, key=lambda x: x["mes_referencia"], reverse=True)

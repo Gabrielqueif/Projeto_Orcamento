@@ -46,3 +46,7 @@ class ItemRepository:
 
     def listar_estados_por_item(self, codigo_composicao: str) -> List[Dict[str, Any]]:
         return self.supabase.table(TABELA_COMPOSICOES_ESTADOS).select("*").eq("codigo_composicao", codigo_composicao).execute().data or []
+
+    def listar_bases_disponiveis(self) -> List[Dict[str, Any]]:
+        """Retorna todos os meses e tipos de composição disponíveis no banco."""
+        return self.supabase.table(TABELA_COMPOSICOES_ESTADOS).select("mes_referencia, tipo_composicao").execute().data or []

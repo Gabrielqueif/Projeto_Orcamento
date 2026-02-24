@@ -13,6 +13,7 @@ class OrcamentoService:
             "cliente": orcamento.cliente,
             "data": orcamento.data.isoformat() if hasattr(orcamento.data, 'isoformat') else str(orcamento.data),
             "base_referencia": orcamento.base_referencia,
+            "tipo_composicao": orcamento.tipo_composicao,
             "estado": orcamento.estado.lower(),
             "status": orcamento.status or "em_elaboracao",
             "valor_total": 0.0,
@@ -46,6 +47,8 @@ class OrcamentoService:
             dados_atualizacao["data"] = orcamento_update.data.isoformat() if hasattr(orcamento_update.data, 'isoformat') else str(orcamento_update.data)
         if orcamento_update.base_referencia is not None:
             dados_atualizacao["base_referencia"] = orcamento_update.base_referencia
+        if orcamento_update.tipo_composicao is not None:
+            dados_atualizacao["tipo_composicao"] = orcamento_update.tipo_composicao
         if orcamento_update.status is not None:
             dados_atualizacao["status"] = orcamento_update.status
         if orcamento_update.valor_total is not None:

@@ -14,16 +14,24 @@ class OrcamentoItemService:
         self.orcamento_repository = orcamento_repository
         self.item_repository = item_repository
 
-    def _buscar_preco_composicao(self, codigo_composicao: str, estado: str) -> Optional[float]:
-        # Busca o preço de uma composição para um estado específico
-        # Usando listar_estados_por_item do ItemRepository
-        estados = self.item_repository.listar_estados_por_item(codigo_composicao)
-        if not estados:
-            return None
+    def _buscar_preco_composicao(self, codigo_composicao: str, estado: str, mes_referencia: str, tipo_composicao: str) -> Optional[float]:
+        # Busca o preço de uma composição para um estado, mês e tipo específicos
+        try:
+            r = self.item_repository.supabase.table("composicao_estados")\
+                .select("*")\
+                .eq("codigo_composicao", codigo_composicao)\
+                .eq("mes_referencia", mes_referencia)\
+                .eq("tipo_composicao", tipo_composicao)\
+                .execute()
             
-        dados = estados[0]
-        preco = dados.get(estado.lower())
-        return float(preco) if preco else None
+            if not r.data:
+                return None
+                
+            dados = r.data[0]
+            preco = dados.get(estado.lower())
+            return float(preco) if preco else None
+        except Exception:
+            return None
 
     def _atualizar_valor_total_orcamento(self, orcamento_id: str):
         valor_total = self.repository.calcular_total_itens(orcamento_id)
@@ -50,10 +58,15 @@ class OrcamentoItemService:
             raise ValueError("Composição não encontrada")
         composicao = comps[0]
 
-        # Buscar preço da composição para o estado informado
-        preco_unitario = self._buscar_preco_composicao(item.codigo_composicao, estado_para_buscar)
+        # Buscar preço da composição para o estado, mês e tipo do orçamento
+        preco_unitario = self._buscar_preco_composicao(
+            item.codigo_composicao, 
+            estado_para_buscar,
+            orcamento.get("base_referencia"), # Aqui base_referencia é usada como mes_referencia
+            orcamento.get("tipo_composicao")
+        )
         if preco_unitario is None:
-            raise ValueError(f"Preço não encontrado para a composição {item.codigo_composicao} no estado {estado_para_buscar}")
+            raise ValueError(f"Preço não encontrado para a composição {item.codigo_composicao} na base {orcamento.get('base_referencia')} ({orcamento.get('tipo_composicao')}) no estado {estado_para_buscar}")
 
         # Validar quantidade
         if item.quantidade <= 0:
@@ -107,11 +120,17 @@ class OrcamentoItemService:
         estado = item_update.estado or item_atual.get("estado")
         quantidade = item_update.quantidade if item_update.quantidade is not None else item_atual.get("quantidade")
 
-        # Se código ou estado mudaram, buscar novo preço
+        # Se código ou estado mudaram, buscar novo preço respeitando a base do orçamento
         if item_update.codigo_composicao is not None or item_update.estado is not None:
-            preco_unitario = self._buscar_preco_composicao(codigo_composicao, estado)
+            orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
+            preco_unitario = self._buscar_preco_composicao(
+                codigo_composicao, 
+                estado,
+                orcamento.get("base_referencia"),
+                orcamento.get("tipo_composicao")
+            )
             if preco_unitario is None:
-                raise ValueError(f"Preço não encontrado para a composição {codigo_composicao} no estado {estado}")
+                raise ValueError(f"Preço não encontrado para a composição {codigo_composicao} na base do orçamento")
             
             dados_atualizacao["preco_unitario"] = preco_unitario
             dados_atualizacao["codigo_composicao"] = codigo_composicao
