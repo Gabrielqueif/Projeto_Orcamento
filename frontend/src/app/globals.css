@@ -7,5 +7,14 @@
     --color-primary: #26A69A;
     --color-secondary: #1F5F7A;
     --color-white: #f1f1f1;
+
+    /* Pantone Palette */
+    --brand-primary: #00629B;
+    --brand-secondary: #00BFB3;
+    --brand-dark: #00594F;
+    --brand-accent: #97D700;
+    --brand-teal: #00ACA0;
+    --brand-navy: #003C71;
+    --brand-lime: #A7D500;
   }
 }

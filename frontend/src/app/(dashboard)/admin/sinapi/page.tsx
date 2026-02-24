@@ -5,7 +5,7 @@ export default function SinapiAdminPage() {
     return (
         <AdminGuard>
             <div className="container mx-auto py-10">
-                <h1 className="text-3xl font-bold mb-8 text-[#1F5F7A]">Administração SINAPI</h1>
+                <h1 className="text-3xl font-bold mb-8 text-brand-primary">Administração SINAPI</h1>
 
                 <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
                     <h2 className="text-xl font-semibold mb-4 text-slate-700">Importar Planilhas</h2>

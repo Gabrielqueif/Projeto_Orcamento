@@ -63,7 +63,7 @@ export function OrcamentoCard({ orcamento, onDelete }: OrcamentoCardProps) {
             <div className="flex gap-3 pt-2">
                 <Link
                     href={`/orcamentos/${orcamento.id}`}
-                    className="flex-1 text-center bg-blue-50 text-blue-600 py-2 rounded hover:bg-blue-100 transition-colors text-sm font-medium"
+                    className="flex-1 text-center bg-brand-primary/10 text-brand-primary py-2 rounded hover:bg-brand-primary/20 transition-colors text-sm font-medium"
                 >
                     Ver Detalhes
                 </Link>

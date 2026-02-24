@@ -377,7 +377,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
                   <button
                     type="button"
                     onClick={() => setComposicaoSelecionada(null)}
-                    className="text-blue-600 hover:text-blue-800 text-sm underline ml-4"
+                    className="text-brand-primary hover:text-brand-navy text-sm underline ml-4"
                   >
                     Trocar Serviço
                   </button>
@@ -422,7 +422,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
               <span className="font-semibold">Estado do orçamento:</span>{' '}
               {ESTADOS.find(e => e.value === estadoOrcamento)?.label || estadoOrcamento.toUpperCase()}
             </p>
-            <p className="text-xs text-blue-600 mt-1">
+            <p className="text-xs text-brand-primary mt-1">
               Os preços serão buscados automaticamente para este estado.
             </p>
           </div>
@@ -474,7 +474,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
           <button
             type="submit"
             disabled={submitting || !composicaoSelecionada || !estadoOrcamento}
-            className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white p-2 rounded-md transition-colors"
+            className="flex-1 bg-brand-primary hover:bg-brand-navy disabled:bg-brand-primary/50 text-white p-2 rounded-md transition-colors"
           >
             {submitting ? "Salvando..." : (itemToEdit ? "Salvar Alterações" : "Adicionar ao Orçamento")}
           </button>
@@ -565,7 +565,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
           {/* Result Display */}
           <div className="bg-slate-50 p-4 rounded-md border border-slate-200 flex justify-between items-center">
             <span className="text-slate-600 font-medium">Resultado:</span>
-            <span className="text-2xl font-bold text-blue-600">
+            <span className="text-2xl font-bold text-brand-primary">
               {previewResult !== null ? previewResult : '---'}
             </span>
           </div>
@@ -582,7 +582,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
               type="button"
               onClick={handleApplyFormula}
               disabled={previewResult === null}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-brand-primary text-white rounded-md font-medium hover:bg-brand-navy disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Aplicar Quantidade
             </button>

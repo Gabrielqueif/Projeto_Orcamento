@@ -26,7 +26,7 @@ export function Sidebar() {
 
   if (isOrcamentoDetail) {
     return (
-      <aside className="w-64 bg-[#1F5F7A] h-screen flex flex-col fixed border-r border-slate-200 shadow-xl z-20">
+      <aside className="w-64 bg-brand-primary h-screen flex flex-col fixed border-r border-slate-200 shadow-xl z-20">
         <div className="h-20"></div> {/* Espaço TopBar */}
         <SidebarOrcamentoInfo orcamentoId={params.id as string} />
       </aside>
@@ -54,8 +54,8 @@ export function Sidebar() {
               href={item.path}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all shadow-sm
                 ${isActive
-                  ? 'bg-[#1F5F7A] text-white'  // Azul do Figma (ativo)
-                  : 'bg-[#1F5F7A] text-white opacity-90 hover:opacity-100' // Azul do Figma (inativo mas colorido conforme imagem)
+                  ? 'bg-brand-primary text-white'  // Azul Pantone 3015 C
+                  : 'bg-brand-secondary/10 text-brand-navy hover:bg-brand-secondary/20' // Sutil e moderno
                 }
               `}
             >

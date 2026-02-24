@@ -52,7 +52,7 @@ export default function OrcamentoDetailPage() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <Link href="/orcamentos" className="text-blue-600 hover:underline">
+          <Link href="/orcamentos" className="text-brand-primary hover:underline">
             ← Voltar para Orçamentos
           </Link>
         </div>
@@ -67,7 +67,7 @@ export default function OrcamentoDetailPage() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <Link href="/orcamentos" className="text-blue-600 hover:underline">
+          <Link href="/orcamentos" className="text-brand-primary hover:underline">
             ← Voltar para Orçamentos
           </Link>
         </div>
@@ -82,7 +82,7 @@ export default function OrcamentoDetailPage() {
     <div className="space-y-6">
       {/* Cabeçalho */}
       <div className="flex justify-between items-center">
-        <Link href="/orcamentos" className="text-blue-600 hover:underline">
+        <Link href="/orcamentos" className="text-brand-primary hover:underline">
           ← Voltar para Orçamentos
         </Link>
       </div>

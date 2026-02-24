@@ -104,7 +104,7 @@ export function OrcamentoItensList({ orcamentoId, valorTotal, refreshTrigger, on
                 <div className="flex justify-center gap-3">
                   <button
                     onClick={() => setEditingItem(item)}
-                    className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-sm font-medium"
+                    className="text-brand-primary hover:text-brand-navy hover:underline cursor-pointer text-sm font-medium"
                   >
                     Editar
                   </button>
@@ -165,7 +165,7 @@ export function OrcamentoItensList({ orcamentoId, valorTotal, refreshTrigger, on
         return (
           <div key={etapa.id} className="mb-8">
             <div className="flex justify-between items-end mb-2 border-b border-gray-200 pb-1">
-              <h4 className="text-md font-bold text-[#1F5F7A] uppercase tracking-wide">
+              <h4 className="text-md font-bold text-brand-primary uppercase tracking-wide">
                 {etapa.nome}
               </h4>
               <span className="text-sm font-semibold text-slate-600">

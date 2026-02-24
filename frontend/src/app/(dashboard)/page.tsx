@@ -2,26 +2,51 @@
 
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { getSinapiBases, type SinapiBase } from '@/lib/api/orcamentos';
 
 export default function HomePage() {
   const [user, setUser] = useState<any>(null);
+  const [bases, setBases] = useState<SinapiBase[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
     console.log('HomePage: Checking auth session...');
-    supabase.auth.getUser().then(({ data, error }) => {
-      console.log('HomePage: getUser result:', data, error);
-      if (data?.user) {
-        setUser(data.user);
+
+    const loadData = async () => {
+      try {
+        const [{ data: { user } }, sinapiBases] = await Promise.all([
+          supabase.auth.getUser(),
+          getSinapiBases()
+        ]);
+
+        if (user) setUser(user);
+        setBases(sinapiBases);
+      } catch (err) {
+        console.error('HomePage: Error loading data:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }).catch((err) => {
-      console.error('HomePage: getUser error:', err);
-      setLoading(false);
-    });
+    };
+
+    loadData();
   }, []);
+
+  const sinapiRange = useMemo(() => {
+    if (bases.length === 0) return { newest: '---', oldest: '---' };
+
+    const sorted = [...bases].sort((a, b) => {
+      const [mesA, anoA] = a.mes_referencia.split('/').map(Number);
+      const [mesB, anoB] = b.mes_referencia.split('/').map(Number);
+      return (anoB * 12 + mesB) - (anoA * 12 + mesA);
+    });
+
+    return {
+      newest: sorted[0].mes_referencia,
+      oldest: sorted[sorted.length - 1].mes_referencia
+    };
+  }, [bases]);
 
   if (loading) return <div className="p-6">Carregando...</div>;
 
@@ -32,13 +57,13 @@ export default function HomePage() {
           `Olá ${user.user_metadata?.username || user.email}`
         ) : (
           <span>
-            Considere fazer o seu <Link href="/login" className="text-blue-600 hover:underline">login</Link> para utilizar o sistema
+            Considere fazer o seu <Link href="/login" className="text-brand-primary hover:underline">login</Link> para utilizar o sistema
           </span>
         )}
       </h1>
 
       {/* Container Azulão Principal */}
-      <div className="bg-secondary p-6 rounded-lg shadow-lg min-h-[400px] flex flex-col gap-6 ">
+      <div className="bg-brand-primary p-6 rounded-lg shadow-lg min-h-[400px] flex flex-col gap-6 ">
 
         {/* Seção 1: Empreendimentos Favoritos */}
         <div>
@@ -82,13 +107,13 @@ export default function HomePage() {
               <tbody className="bg-white text-slate-800 font-medium">
                 <tr className="border-b border-gray-200">
                   <td className="p-2 font-bold text-slate-600">Sinapi</td>
-                  <td>06/2025</td>
-                  <td>01/2020</td>
+                  <td>{sinapiRange.newest}</td>
+                  <td>{sinapiRange.oldest}</td>
                 </tr>
                 <tr>
                   <td className="p-2 font-bold text-slate-600">Seinfra</td>
-                  <td>05/2025</td>
-                  <td>01/2019</td>
+                  <td>---</td>
+                  <td>---</td>
                 </tr>
               </tbody>
             </table>

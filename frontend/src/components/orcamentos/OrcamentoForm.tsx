@@ -118,7 +118,7 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
           <div className="md:col-span-2">
             <label className="block text-sm font-bold mb-2" htmlFor="nome">Nome do Orçamento</label>
             <input
-              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
               type="text"
               id="nome"
               name="nome"
@@ -131,7 +131,7 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
           <div>
             <label className="block text-sm font-bold mb-2" htmlFor="cliente">Cliente</label>
             <input
-              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
               type="text"
               id="cliente"
               name="cliente"
@@ -144,7 +144,7 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
           <div>
             <label className="block text-sm font-bold mb-2" htmlFor="data">Data de Referência</label>
             <input
-              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
               type="date"
               id="data"
               name="data"
@@ -158,7 +158,7 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
             <select
               id="base_referencia"
               name="base_referencia"
-              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
               defaultValue={initialData?.base_referencia}
               required
             >
@@ -175,7 +175,7 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
             <select
               id="tipo_composicao"
               name="tipo_composicao"
-              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
               defaultValue={initialData?.base_referencia ? availableBases.find(b => b.mes_referencia === initialData.base_referencia)?.tipo_composicao : ""}
               required
             >
@@ -191,7 +191,7 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
             <select
               id="estado"
               name="estado"
-              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
               defaultValue={initialData?.estado}
               required
             >
@@ -211,7 +211,7 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
         <button
           type="submit"
           disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-bold p-3 mt-4 w-full rounded-md transition-all shadow-sm"
+          className="bg-brand-primary hover:bg-brand-navy disabled:bg-brand-primary/50 text-white font-bold p-3 mt-4 w-full rounded-md transition-all shadow-sm"
         >
           {loading ? "Processando..." : mode === "create" ? "🚀 Criar Orçamento" : "✅ Atualizar Orçamento"}
         </button>

@@ -11,7 +11,7 @@ export default async function LoginPage({
     return (
         <div className="flex h-screen items-center justify-center bg-[#F1F5F9]">
             <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
-                <h1 className="text-2xl font-bold text-[#1F5F7A] mb-2 text-center">GPObras</h1>
+                <h1 className="text-2xl font-bold text-brand-primary mb-2 text-center">GPObras</h1>
                 <p className="text-gray-500 text-center mb-6">Entre com suas credenciais</p>
 
                 {params?.message && (
@@ -34,7 +34,7 @@ export default async function LoginPage({
                             name="email"
                             type="email"
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F5F7A]/50"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-brand-primary/50"
                             placeholder="seu@email.com"
                         />
                     </div>
@@ -46,7 +46,7 @@ export default async function LoginPage({
                             name="password"
                             type="password"
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F5F7A]/50"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-brand-primary/50"
                             placeholder="********"
                         />
                     </div>
@@ -54,7 +54,7 @@ export default async function LoginPage({
                     <div className="pt-2 flex flex-col gap-3">
                         <button
                             formAction={login}
-                            className="w-full bg-[#1F5F7A] text-white py-2 rounded font-medium hover:bg-[#164e63] transition-colors"
+                            className="w-full bg-brand-primary text-white py-2 rounded font-medium hover:bg-brand-navy transition-colors"
                         >
                             Entrar
                         </button>
@@ -62,7 +62,7 @@ export default async function LoginPage({
 
                     <div className="text-center mt-4">
                         <span className="text-sm text-gray-600">Não tem uma conta? </span>
-                        <Link href="/signup" className="text-sm text-[#1F5F7A] hover:underline font-medium">
+                        <Link href="/signup" className="text-sm text-brand-primary hover:underline font-medium">
                             Cadastre-se
                         </Link>
                     </div>

@@ -11,10 +11,10 @@ export default function EmpreendimentosPage() {
 
       {/* Área Principal (Placeholder) */}
       <div className="bg-white p-6 rounded-lg shadow min-h-[500px]">
-        
+
         {/* Filtros Fictícios */}
         <div className="flex gap-4 mb-6 border-b pb-4">
-          <span className="text-blue-600 font-semibold border-b-2 border-blue-600 cursor-pointer">Em Andamento</span>
+          <span className="text-brand-primary font-semibold border-b-2 border-brand-primary cursor-pointer">Em Andamento</span>
           <span className="text-gray-500 cursor-pointer hover:text-gray-700">Concluídos</span>
           <span className="text-gray-500 cursor-pointer hover:text-gray-700">Arquivados</span>
         </div>

@@ -82,7 +82,7 @@ export default function OrcamentosPage() {
       {orcamentos.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-8 text-center text-slate-500">
           <p>Nenhum orçamento encontrado.</p>
-          <Link href="/orcamentos/novo" className="text-blue-600 hover:underline mt-2 inline-block">
+          <Link href="/orcamentos/novo" className="text-brand-primary hover:underline mt-2 inline-block">
             Criar primeiro orçamento
           </Link>
         </div>

@@ -16,7 +16,7 @@ export default function DatabaseCard({ title, description, id }: DatabaseCardPro
       </div>
       <div className="space-y-4">
         <Link href={`/bases/${id}`}>
-          <button className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition">
+          <button className="w-full bg-brand-primary text-white py-2 px-4 rounded hover:bg-brand-navy transition">
             ver detalhes
           </button>
         </Link>
