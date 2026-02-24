@@ -1,3 +1,6 @@
+import logging
+import traceback
+
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status
 from app.services.sinapi_service import extract_metadata, process_sinapi_file
 from app.repositories.item_repository import ItemRepository
@@ -5,6 +8,7 @@ from app.schemas.sinapi import SinapiMetadata
 from core.supabase_client import get_supabase_client
 
 # Setup Router
+logger = logging.getLogger("projeto_orcamento")
 router = APIRouter(prefix="/sinapi", tags=["SINAPI"])
 
 # Dependencies
@@ -31,26 +35,24 @@ async def upload_sinapi_worksheet(
     if not file.filename.endswith(('.xls', '.xlsx')):
         raise HTTPException(status_code=400, detail="Invalid file format. Please upload an Excel file.")
 
-    print(f"Received file: {file.filename}")
+    logger.info(f"Received file: {file.filename}")
     try:
         content = await file.read()
-        print(f"File read into memory. Size: {len(content)} bytes")
+        logger.info(f"File read into memory. Size: {len(content)} bytes")
     except Exception as e:
-        print(f"Error reading file: {e}")
+        logger.error(f"Error reading file: {e}")
         raise HTTPException(status_code=500, detail="Error reading file")
     
     try:
-        print("Calling extract_metadata...")
+        logger.info("Calling extract_metadata...")
         metadata = extract_metadata(content)
-        print("Metadata extracted successfully")
+        logger.info("Metadata extracted successfully")
         return metadata
     except ValueError as e:
-        print(f"ValueError: {e}")
+        logger.warning(f"ValueError: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        print(f"Unexpected error: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Unexpected error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error processing file.")
 
 @router.post("/import")
@@ -81,7 +83,7 @@ async def import_sinapi_data(
                 total_prices += result.get("imported_prices", 0)
                 results_metadata.append(result.get("metadata"))
             except ValueError as e:
-                print(f"Error processing file {file.filename}: {e}")
+                logger.error(f"Error processing file {file.filename}: {e}")
                 # We could raise or just continue. Let's continue to try other files but log error.
                 pass 
 
@@ -92,6 +94,5 @@ async def import_sinapi_data(
             "metadata_list": results_metadata
         }
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error importing SINAPI: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error importing SINAPI: {str(e)}")

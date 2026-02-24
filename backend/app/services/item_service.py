@@ -45,7 +45,7 @@ class ItemService:
         try:
             if isinstance(valor, (int, float)): return float(valor)
             return float(s_valor.replace('.', '').replace(',', '.'))
-        except: return None
+        except (ValueError, TypeError): return None
 
     def _normalizar_nome_aba(self, texto):
         return self._remover_acentos(str(texto)).strip()

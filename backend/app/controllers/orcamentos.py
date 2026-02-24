@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Response
+from fastapi import Depends, Response
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from app.dependencies import get_supabase

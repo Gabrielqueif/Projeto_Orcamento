@@ -22,7 +22,7 @@ def buscar_composicao(termo: str, service: ItemService = Depends(get_item_servic
     try:
         return service.buscar_composicao(termo)
     except Exception as e:
-        return []
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar composição: {str(e)}")
 
 def listar_estados_composicao(codigo_composicao: str, service: ItemService = Depends(get_item_service)):
     return service.listar_estados_composicao(codigo_composicao)

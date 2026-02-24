@@ -1,6 +1,9 @@
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from fastapi import HTTPException
+import logging
+
+logger = logging.getLogger("projeto_orcamento")
 
 TABELA_ORCAMENTOS = "orcamentos"
 
@@ -47,8 +50,8 @@ class OrcamentoRepository:
         # Deletar itens do orçamento primeiro
         try:
             self.supabase.table("orcamento_itens").delete().eq("orcamento_id", orcamento_id).execute()
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"Erro ao deletar itens do orçamento {orcamento_id}: {e}")
             
         resultado = self.supabase.table(TABELA_ORCAMENTOS).delete().eq("id", orcamento_id).execute()
         return True

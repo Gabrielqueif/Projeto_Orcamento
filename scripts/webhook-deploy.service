@@ -1,0 +1,17 @@
+[Unit]
+Description=GitHub Webhook Listener - Auto Deploy
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=gpobras
+Group=gpobras
+WorkingDirectory=/home/gpobras/Projeto_Orcamento
+EnvironmentFile=/home/gpobras/Projeto_Orcamento/.env
+ExecStart=/usr/bin/python3 /home/gpobras/Projeto_Orcamento/scripts/webhook_listener.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

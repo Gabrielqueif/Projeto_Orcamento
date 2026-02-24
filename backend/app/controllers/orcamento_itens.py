@@ -1,5 +1,5 @@
-from typing import List, Optional
-from fastapi import APIRouter, Depends
+from typing import List
+from fastapi import Depends
 from app.dependencies import get_supabase
 from schemas.schemas import OrcamentoItemCreate, OrcamentoItemUpdate
 from app.repositories.orcamento_item_repository import OrcamentoItemRepository

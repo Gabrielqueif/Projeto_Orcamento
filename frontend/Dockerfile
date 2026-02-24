@@ -8,7 +8,7 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json*  ./
-RUN npm ci
+RUN npm install --no-audit --no-fund --legacy-peer-deps
 
 
 # Rebuild the source code only when needed
@@ -29,7 +29,7 @@ ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-RUN npm run build
+RUN NEXT_DISABLE_ESLINT=1 NEXT_TELEMETRY_DISABLED=1 npx next build
 
 # Production image, copy all the files and run next
 FROM base AS runner

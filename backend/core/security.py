@@ -1,5 +1,6 @@
+import logging
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Any
 from jose import jwt
 from fastapi import Depends, HTTPException, status
@@ -9,14 +10,15 @@ from app.dependencies import get_supabase
 from supabase import Client
 from core.config import settings
 
+logger = logging.getLogger("projeto_orcamento")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -43,7 +45,7 @@ async def get_current_user(
         return user.user.__dict__ # Retorna dados do usuario
         
     except Exception as e:
-        print(f"Erro na autenticação: {e}")
+        logger.error(f"Erro na autenticação: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Não foi possível validar as credenciais",
@@ -89,4 +91,3 @@ def require_admin(
         status_code=status.HTTP_403_FORBIDDEN,
         detail="Acesso negado: requer privilégios de administrador"
     )
-    return user
