@@ -63,40 +63,40 @@ export default function HomePage() {
       </h1>
 
       {/* Container Azulão Principal */}
-      <div className="bg-brand-primary p-6 rounded-lg shadow-lg min-h-[400px] flex flex-col gap-6 ">
+      <div className="bg-brand-primary p-4 md:p-6 rounded-lg shadow-lg min-h-fit lg:min-h-[400px] flex flex-col gap-6 ">
 
         {/* Seção 1: Empreendimentos Favoritos */}
         <div>
           <div className="flex justify-between items-center text-white mb-4">
-            <h2 className="text-xl font-semibold">Empreendimentos favoritos:</h2>
+            <h2 className="text-lg md:text-xl font-semibold">Empreendimentos favoritos:</h2>
             <span className="text-xs underline cursor-pointer hover:text-gray-200">Ver Tudo</span>
           </div>
 
-          {/* Grid de Cards Brancos (Placeholders) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Grid de Cards Brancos - Responsivo */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white h-32 rounded shadow-sm hover:bg-white/90 transition cursor-pointer">
+              <div key={i} className="bg-white h-24 md:h-32 rounded shadow-sm hover:bg-white/90 transition cursor-pointer">
                 {/* Conteúdo do card vazio por enquanto */}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Seção 2: Parte de baixo (Dados e Bases) */}
+        {/* Seção 2: Parte de baixo (Dados e Bases) - Responsivo */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-auto">
 
           {/* Card Esquerdo: Dados Empresa */}
-          <div className="border border-white/30 rounded p-4 text-white h-48">
+          <div className="border border-white/30 rounded p-4 text-white min-h-[150px] md:h-48">
             <h3 className="font-semibold text-lg mb-2">Dados empresa e Logo:</h3>
-            <div className="flex items-center justify-center h-full pb-8 text-white/50">
+            <div className="flex items-center justify-center h-full pb-8 text-white/50 text-center">
               Placeholder Info Empresa
             </div>
           </div>
 
           {/* Card Direito: Bases Disponíveis (Tabela simples) */}
-          <div className="border border-white/30 rounded p-4 text-white h-48">
+          <div className="border border-white/30 rounded p-4 text-white min-h-[150px] md:h-48 overflow-x-auto">
             <h3 className="font-semibold text-lg mb-2">Bases disponíveis:</h3>
-            <table className="w-full text-sm text-center">
+            <table className="w-full text-xs md:text-sm text-center min-w-[300px]">
               <thead>
                 <tr className="bg-white/20">
                   <th className="p-2 rounded-tl"></th>

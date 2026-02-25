@@ -66,7 +66,7 @@ export default function OrcamentosPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800">Orçamentos</h1>
         <Link href="/orcamentos/novo">
-          <button className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90 transition flex items-center gap-2">
+          <button className="bg-brand-primary text-white px-4 py-2 rounded hover:bg-brand-navy transition flex items-center gap-2 font-medium">
             <span>+</span> Novo Orçamento
           </button>
         </Link>

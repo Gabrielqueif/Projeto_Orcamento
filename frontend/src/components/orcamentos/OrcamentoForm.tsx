@@ -34,7 +34,7 @@ const ESTADOS = [
   { value: 'to', label: 'TO - Tocantins' },
 ];
 
-type OrçamentoFormProps = {
+type OrcamentoFormProps = {
   mode?: "create" | "edit";
   orcamentoId?: string;
   initialData?: {
@@ -47,7 +47,7 @@ type OrçamentoFormProps = {
   };
 }
 
-export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: OrçamentoFormProps) {
+export function OrcamentoForm({ mode = "create", orcamentoId, initialData }: OrcamentoFormProps) {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -86,6 +86,7 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
       data: formData.get("data") as string,
       base_referencia: formData.get("base_referencia") as string,
       tipo_composicao: formData.get("tipo_composicao") as string,
+      bdi: parseFloat(formData.get("bdi") as string) || 0,
       estado: formData.get("estado") as string,
     };
 
@@ -115,10 +116,11 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
       )}
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-bold mb-2" htmlFor="nome">Nome do Orçamento</label>
+          {/* Nome do Orçamento */}
+          <div className="md:col-span-2 space-y-1">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="nome">Nome do Orçamento</label>
             <input
-              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary"
               type="text"
               id="nome"
               name="nome"
@@ -128,23 +130,25 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-bold mb-2" htmlFor="cliente">Cliente</label>
+          {/* Cliente */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="cliente">Cliente</label>
             <input
-              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary"
               type="text"
               id="cliente"
               name="cliente"
-              placeholder="Digite o nome do cliente"
+              placeholder="Nome do cliente"
               defaultValue={initialData?.cliente}
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-bold mb-2" htmlFor="data">Data de Referência</label>
+          {/* Data de Referência */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="data">Data de Referência</label>
             <input
-              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary"
               type="date"
               id="data"
               name="data"
@@ -153,12 +157,13 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-bold mb-2" htmlFor="base_referencia">Mês/Ano Base (SINAPI)</label>
+          {/* Mês/Ano Base (SINAPI) */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="base_referencia">Mês/Ano Base (SINAPI)</label>
             <select
               id="base_referencia"
               name="base_referencia"
-              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary"
               defaultValue={initialData?.base_referencia}
               required
             >
@@ -170,12 +175,13 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-bold mb-2" htmlFor="tipo_composicao">Tipo de Desoneração</label>
+          {/* Tipo de Desoneração */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="tipo_composicao">Tipo de Desoneração</label>
             <select
               id="tipo_composicao"
               name="tipo_composicao"
-              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary"
               defaultValue={initialData?.base_referencia ? availableBases.find(b => b.mes_referencia === initialData.base_referencia)?.tipo_composicao : ""}
               required
             >
@@ -186,12 +192,28 @@ export function OrçamentoForm({ mode = "create", orcamentoId, initialData }: Or
             </select>
           </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-sm font-bold mb-2" htmlFor="estado">Estado (UF)</label>
+          {/* BDI (%) */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="bdi">BDI (%)</label>
+            <input
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary"
+              type="number"
+              step="0.01"
+              id="bdi"
+              name="bdi"
+              placeholder="Ex: 25.00"
+              defaultValue={(initialData as any)?.bdi || 0}
+              required
+            />
+          </div>
+
+          {/* Estado (UF) */}
+          <div className="md:col-span-2 space-y-1">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="estado">Estado (UF)</label>
             <select
               id="estado"
               name="estado"
-              className="border border-gray-300 p-2 w-full rounded-md focus:ring-2 focus:ring-brand-primary outline-none"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary"
               defaultValue={initialData?.estado}
               required
             >

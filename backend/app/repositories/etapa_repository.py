@@ -20,6 +20,15 @@ class EtapaRepository:
             .execute()
         return resultado.data or []
 
+    def atualizar(self, etapa_id: str, dados: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        resultado = self.supabase.table(TABELA_ETAPAS)\
+            .update(dados)\
+            .eq("id", etapa_id)\
+            .execute()
+        if resultado.data:
+            return resultado.data[0]
+        return None
+
     def deletar(self, etapa_id: str, orcamento_id: str) -> bool:
         resultado = self.supabase.table(TABELA_ETAPAS)\
             .delete()\

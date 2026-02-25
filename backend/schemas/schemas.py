@@ -13,6 +13,7 @@ class OrcamentoCreate(BaseModel):
     base_referencia: str
     tipo_composicao: str
     estado: str
+    bdi: Optional[float] = 0.0
     status: Optional[str] = "em_elaboracao"
 
     model_config = ConfigDict(from_attributes=True)
@@ -24,6 +25,7 @@ class OrcamentoUpdate(BaseModel):
     base_referencia: Optional[str] = None
     tipo_composicao: Optional[str] = None
     estado: Optional[str] = None
+    bdi: Optional[float] = None
     status: Optional[str] = None
     valor_total: Optional[float] = None
 
@@ -37,6 +39,7 @@ class OrcamentoResponse(BaseModel):
     base_referencia: str
     tipo_composicao: str
     estado: str
+    bdi: float
     valor_total: Optional[float]
     status: str
     created_at: Optional[datetime] = None
@@ -48,16 +51,19 @@ class OrcamentoResponse(BaseModel):
 class EtapaCreate(BaseModel):
     nome: str
     ordem: int = 0
+    parent_id: Optional[str] = None
 
 class EtapaUpdate(BaseModel):
     nome: Optional[str] = None
     ordem: Optional[int] = None
+    parent_id: Optional[str] = None
 
 class EtapaResponse(BaseModel):
     id: str
     orcamento_id: str
     nome: str
     ordem: int
+    parent_id: Optional[str] = None
     created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

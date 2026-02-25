@@ -8,9 +8,10 @@ interface ModalProps {
     onClose: () => void;
     title?: string;
     children: React.ReactNode;
+    maxWidth?: string;
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-md" }: ModalProps) {
     const [mounted, setMounted] = React.useState(false);
 
     React.useEffect(() => {
@@ -36,7 +37,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-all duration-200">
             <div
-                className="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all duration-200 scale-100 opacity-100 border border-slate-200"
+                className={`bg-white rounded-lg shadow-xl w-full ${maxWidth} transform transition-all duration-200 scale-100 opacity-100 border border-slate-200`}
                 role="dialog"
                 aria-modal="true"
             >

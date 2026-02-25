@@ -338,12 +338,28 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
               id="etapa"
               value={etapaId}
               onChange={(e) => setEtapaId(e.target.value)}
-              className="border border-gray-300 p-2 w-full rounded-md"
+              className="border border-gray-300 p-2 w-full rounded-md bg-white focus:ring-2 focus:ring-brand-primary outline-none shadow-sm"
             >
               <option value="">Sem etapa definida</option>
-              {etapas.map(etapa => (
-                <option key={etapa.id} value={etapa.id}>{etapa.nome}</option>
-              ))}
+              {(() => {
+                // Função recursiva para renderizar opções do select com indentação
+                const renderOptions = (parentId: string | null = null, level = 0) => {
+                  return etapas
+                    .filter(etapa => etapa.parent_id === parentId)
+                    .sort((a, b) => a.ordem - b.ordem)
+                    .map(etapa => (
+                      <React.Fragment key={etapa.id}>
+                        <option value={etapa.id}>
+                          {'\u00A0'.repeat(level * 4)}
+                          {level > 0 ? '↳ ' : ''}
+                          {etapa.nome}
+                        </option>
+                        {renderOptions(etapa.id, level + 1)}
+                      </React.Fragment>
+                    ));
+                };
+                return renderOptions();
+              })()}
             </select>
           </div>
         )}
@@ -486,106 +502,129 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
         isOpen={showFormulaModal}
         onClose={() => setShowFormulaModal(false)}
         title="Memória de Cálculo"
+        maxWidth="max-w-5xl"
       >
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* Coluna da Esquerda: Fórmula e Resultado (2/3) */}
+          <div className="md:col-span-8 space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">
+                Fórmula / Memória de Cálculo
+              </label>
+              <textarea
+                className="w-full border border-gray-300 rounded-lg p-4 h-64 font-mono text-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none resize-none shadow-sm"
+                placeholder="Ex: (LARGURA * COMPRIMENTO) + 5"
+                value={formula}
+                onChange={(e) => setFormula(e.target.value)}
+                autoFocus
+              />
+              {formulaError && (
+                <p className="text-red-500 text-sm mt-2 font-medium">{formulaError}</p>
+              )}
+              <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-100">
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  <span className="font-bold">Dica:</span> Use os nomes das variáveis criadas à direita.
+                  Suporta operações básicas <code className="bg-white px-1 rounded">+ - * /</code> e parênteses.
+                </p>
+              </div>
+            </div>
 
-          {/* Variables Section */}
-          <div className="bg-slate-50 p-3 rounded-md border border-slate-200">
-            <div className="flex justify-between items-center mb-2">
-              <label className="text-sm font-bold text-slate-700">Colunas (Variáveis)</label>
+            {/* Resultado em destaque */}
+            <div className="bg-slate-900 text-white p-6 rounded-xl flex justify-between items-center shadow-inner">
+              <span className="text-slate-400 font-medium tracking-wide uppercase text-sm">Resultado Final</span>
+              <div className="text-right">
+                <span className="text-4xl font-black text-brand-primary">
+                  {previewResult !== null ? previewResult.toLocaleString('pt-BR') : '---'}
+                </span>
+                <span className="ml-2 text-slate-500 font-bold">{composicaoSelecionada?.unidade}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setShowFormulaModal(false)}
+                className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg font-semibold transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyFormula}
+                disabled={previewResult === null}
+                className="px-8 py-2.5 bg-brand-primary text-white rounded-lg font-bold hover:bg-brand-navy disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md active:scale-95"
+              >
+                Aplicar no Item
+              </button>
+            </div>
+          </div>
+
+          {/* Coluna da Direita: Variáveis (1/3) */}
+          <div className="md:col-span-4 flex flex-col bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-200 bg-white flex justify-between items-center">
+              <h4 className="font-bold text-slate-700 text-sm uppercase tracking-wider">Variáveis</h4>
               <button
                 type="button"
                 onClick={addVariable}
-                className="text-xs bg-white border border-slate-300 hover:bg-slate-100 px-2 py-1 rounded-md transition-colors"
+                className="text-xs bg-brand-primary text-white hover:bg-brand-navy px-3 py-1.5 rounded-full transition-colors font-bold shadow-sm"
               >
-                + Adicionar Coluna
+                + Nova
               </button>
             </div>
 
-            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-              {variables.length === 0 && (
-                <p className="text-xs text-slate-400 text-center py-2">Nenhuma variável definida.</p>
-              )}
-              {variables.map((variable) => (
-                <div key={variable.id} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={variable.name}
-                    onChange={(e) => updateVariable(variable.id, 'name', e.target.value)}
-                    placeholder="Nome"
-                    className="w-1/3 text-xs border border-gray-300 p-1.5 rounded uppercase"
-                  />
-                  <span className="text-slate-400 font-bold">=</span>
-                  <input
-                    type="number"
-                    value={variable.value}
-                    onChange={(e) => updateVariable(variable.id, 'value', Number(e.target.value))}
-                    placeholder="Valor"
-                    className="flex-1 text-xs border border-gray-300 p-1.5 rounded"
-                  />
-                  <button
-                    onClick={() => insertVariable(variable.name)}
-                    className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                    title="Inserir na fórmula"
-                  >
-                    Usar
-                  </button>
-                  <button
-                    onClick={() => removeVariable(variable.id)}
-                    className="text-red-500 hover:text-red-700"
-                    title="Remover"
-                  >
-                    ✕
-                  </button>
+            <div className="p-4 flex-grow space-y-3 overflow-y-auto max-h-[400px]">
+              {variables.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="bg-slate-200 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-slate-400 text-xl font-bold">x</span>
+                  </div>
+                  <p className="text-xs text-slate-500 italic">Crie variáveis para reutilizar valores na fórmula.</p>
                 </div>
-              ))}
+              ) : (
+                variables.map((variable) => (
+                  <div key={variable.id} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm space-y-2 group relative">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={variable.name}
+                        onChange={(e) => updateVariable(variable.id, 'name', e.target.value)}
+                        placeholder="NOME"
+                        className="w-full text-xs font-bold border-none bg-slate-100 focus:bg-white p-1.5 rounded uppercase outline-brand-primary"
+                      />
+                      <button
+                        onClick={() => removeVariable(variable.id)}
+                        className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remover"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={variable.value}
+                        onChange={(e) => updateVariable(variable.id, 'value', Number(e.target.value))}
+                        placeholder="Valor"
+                        className="flex-1 text-sm border border-slate-200 p-1.5 rounded focus:ring-1 focus:ring-brand-primary outline-none"
+                      />
+                      <button
+                        onClick={() => insertVariable(variable.name)}
+                        className="px-3 py-1.5 text-[10px] bg-blue-50 text-blue-700 font-bold border border-blue-200 rounded-md hover:bg-blue-100 transition-colors uppercase"
+                        title="Inserir na fórmula"
+                      >
+                        Usar
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          </div>
 
-          {/* Formula Input */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Fórmula / Memória
-            </label>
-            <textarea
-              className="w-full border border-gray-300 rounded-md p-3 h-24 font-mono text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
-              placeholder="Ex: (LARGURA * COMPRIMENTO) + 5"
-              value={formula}
-              onChange={(e) => setFormula(e.target.value)}
-              autoFocus
-            />
-            {formulaError && (
-              <p className="text-red-500 text-sm mt-1">{formulaError}</p>
-            )}
-            <p className="text-xs text-slate-500 mt-2">
-              Suporta: números, variáveis acima, operações (+ - * /) e parênteses.
-            </p>
-          </div>
-
-          {/* Result Display */}
-          <div className="bg-slate-50 p-4 rounded-md border border-slate-200 flex justify-between items-center">
-            <span className="text-slate-600 font-medium">Resultado:</span>
-            <span className="text-2xl font-bold text-brand-primary">
-              {previewResult !== null ? previewResult : '---'}
-            </span>
-          </div>
-
-          <div className="flex gap-2 justify-end pt-2">
-            <button
-              type="button"
-              onClick={() => setShowFormulaModal(false)}
-              className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleApplyFormula}
-              disabled={previewResult === null}
-              className="px-4 py-2 bg-brand-primary text-white rounded-md font-medium hover:bg-brand-navy disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Aplicar Quantidade
-            </button>
+            <div className="p-4 bg-white border-t border-slate-200">
+              <p className="text-[10px] text-slate-400 text-center uppercase font-bold tracking-tighter">
+                Reutilize variáveis clicando em "USAR"
+              </p>
+            </div>
           </div>
         </div>
       </Modal>

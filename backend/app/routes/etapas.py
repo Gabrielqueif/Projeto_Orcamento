@@ -29,6 +29,14 @@ router.add_api_route(
 
 router.add_api_route(
     "/{orcamento_id}/etapas/{etapa_id}", 
+    etapas.atualizar_etapa, 
+    methods=["PUT"], 
+    response_model=EtapaResponse, 
+    summary="Atualizar etapa (nome, ordem ou hierarquia)"
+)
+
+router.add_api_route(
+    "/{orcamento_id}/etapas/{etapa_id}", 
     etapas.deletar_etapa, 
     methods=["DELETE"], 
     summary="Deletar etapa"

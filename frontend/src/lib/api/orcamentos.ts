@@ -8,6 +8,7 @@ export interface Orcamento {
   base_referencia: string;
   tipo_composicao: string;
   estado: string;
+  bdi: number;
   valor_total: number | null;
   status: string;
   created_at?: string;
@@ -21,6 +22,7 @@ export interface OrcamentoCreate {
   base_referencia: string;
   tipo_composicao: string;
   estado: string;
+  bdi?: number;
   status?: string;
 }
 
@@ -31,6 +33,7 @@ export interface OrcamentoUpdate {
   base_referencia?: string;
   tipo_composicao?: string;
   estado?: string;
+  bdi?: number;
   status?: string;
   valor_total?: number;
 }
@@ -79,12 +82,20 @@ export interface Etapa {
   orcamento_id: string;
   nome: string;
   ordem: number;
+  parent_id: string | null;
   created_at?: string;
 }
 
 export interface EtapaCreate {
   nome: string;
   ordem?: number;
+  parent_id?: string | null;
+}
+
+export interface EtapaUpdate {
+  nome?: string;
+  ordem?: number;
+  parent_id?: string | null;
 }
 
 // Funções para Orçamentos
@@ -246,6 +257,18 @@ export async function deleteEtapa(orcamentoId: string, etapaId: string): Promise
     const error = await response.json();
     throw new Error(error.detail || 'Erro ao deletar etapa');
   }
+}
+
+export async function updateEtapa(orcamentoId: string, etapaId: string, data: EtapaUpdate): Promise<Etapa> {
+  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/etapas/${etapaId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Erro ao atualizar etapa');
+  }
+  return response.json();
 }
 
 // SINAPI Bases

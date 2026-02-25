@@ -51,9 +51,25 @@ class PdfService(FPDF):
 
         self.ln(5)
         
-        # Total Geral
+        # Totais
+        total_direto = total_geral
+        bdi = float(orcamento.get('bdi') or 0.0)
+        valor_bdi = total_direto * (bdi / 100)
+        valor_venda = total_direto + valor_bdi
+
+        self.set_font('helvetica', '', 10)
+        self.cell(160, 8, 'CUSTO DIRETO TOTAL:', align='R')
+        self.cell(30, 8, f"R$ {total_direto:.2f}", border=1, align='R')
+        self.ln(8)
+
+        self.cell(160, 8, f'BDI ({bdi:.2f}%):', align='R')
+        self.cell(30, 8, f"R$ {valor_bdi:.2f}", border=1, align='R')
+        self.ln(10)
+
+        # Total Geral (Preço de Venda)
         self.set_font('helvetica', 'B', 12)
-        self.cell(160, 10, 'TOTAL GERAL:', align='R')
-        self.cell(30, 10, f"R$ {total_geral:.2f}", border=1, align='R', fill=True)
+        self.set_fill_color(240, 240, 240)
+        self.cell(160, 10, 'PREÇO DE VENDA TOTAL:', align='R')
+        self.cell(30, 10, f"R$ {valor_venda:.2f}", border=1, align='R', fill=True)
 
         return self.output()

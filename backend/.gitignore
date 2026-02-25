@@ -1,1 +1,5 @@
-.env
+debug_db.py
+inspect_db.py
+__pycache__
+.venv
+test_insert.py

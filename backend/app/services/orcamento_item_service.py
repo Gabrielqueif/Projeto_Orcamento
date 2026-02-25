@@ -34,7 +34,16 @@ class OrcamentoItemService:
             return None
 
     def _atualizar_valor_total_orcamento(self, orcamento_id: str):
-        valor_total = self.repository.calcular_total_itens(orcamento_id)
+        orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
+        if not orcamento:
+            return 0.0
+            
+        bdi = float(orcamento.get("bdi") or 0.0)
+        total_itens = self.repository.calcular_total_itens(orcamento_id)
+        
+        # Aplicar BDI: Valor Total = Custos Diretos * (1 + BDI/100)
+        valor_total = total_itens * (1 + bdi / 100)
+        
         self.orcamento_repository.atualizar(orcamento_id, {
             "valor_total": valor_total,
             "updated_at": datetime.now().isoformat()

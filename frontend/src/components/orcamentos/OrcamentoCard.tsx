@@ -52,6 +52,10 @@ export function OrcamentoCard({ orcamento, onDelete }: OrcamentoCardProps) {
                     <span className="text-slate-500">Data</span>
                     <span className="text-slate-700 font-medium">{formatarData(orcamento.data)}</span>
                 </div>
+                <div className="flex justify-between text-sm border-b border-slate-50 pb-2">
+                    <span className="text-slate-500">BDI</span>
+                    <span className="text-slate-700 font-medium">{orcamento.bdi ? `${orcamento.bdi}%` : '0%'}</span>
+                </div>
                 <div className="flex justify-between text-sm items-center">
                     <span className="text-slate-500">Valor Total</span>
                     <span className="text-slate-800 font-bold text-lg">
