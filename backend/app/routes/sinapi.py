@@ -36,18 +36,14 @@ async def upload_sinapi_worksheet(
     if not file.filename.endswith(('.xls', '.xlsx')):
         raise HTTPException(status_code=400, detail="Invalid file format. Please upload an Excel file.")
 
-    logger.info(f"Received file: {file.filename}")
     try:
         content = await file.read()
-        logger.info(f"File read into memory. Size: {len(content)} bytes")
     except Exception as e:
         logger.error(f"Error reading file: {e}")
         raise HTTPException(status_code=500, detail="Error reading file")
     
     try:
-        logger.info(f"Calling extract_metadata with source={source}...")
         metadata = extract_metadata(content, source_type=source)
-        logger.info("Metadata extracted successfully")
         return metadata
     except ValueError as e:
         logger.warning(f"ValueError: {e}")
