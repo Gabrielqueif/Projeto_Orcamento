@@ -1,7 +1,7 @@
 import logging
 import traceback
 
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status, Query
 from app.services.sinapi_service import extract_metadata, process_sinapi_file
 from app.repositories.item_repository import ItemRepository
 from app.schemas.sinapi import SinapiMetadata
@@ -26,6 +26,7 @@ async def test_upload(file: UploadFile = File(...)):
 @router.post("/upload", response_model=SinapiMetadata)
 async def upload_sinapi_worksheet(
     file: UploadFile = File(...),
+    source: str = Query("SINAPI", description="Fonte da planilha (ex: SINAPI, SEINFRA)"),
     current_user = Depends(require_admin)
 ):
     """
@@ -44,8 +45,8 @@ async def upload_sinapi_worksheet(
         raise HTTPException(status_code=500, detail="Error reading file")
     
     try:
-        logger.info("Calling extract_metadata...")
-        metadata = extract_metadata(content)
+        logger.info(f"Calling extract_metadata with source={source}...")
+        metadata = extract_metadata(content, source_type=source)
         logger.info("Metadata extracted successfully")
         return metadata
     except ValueError as e:
@@ -58,6 +59,7 @@ async def upload_sinapi_worksheet(
 @router.post("/import")
 async def import_sinapi_data(
     files: list[UploadFile] = File(...),
+    source: str = Query("SINAPI", description="Fonte da planilha (ex: SINAPI, SEINFRA)"),
     current_user = Depends(require_admin),
 ):
     """
@@ -78,7 +80,7 @@ async def import_sinapi_data(
             content = await file.read()
             # Process each file
             try:
-                result = process_sinapi_file(content, repository)
+                result = process_sinapi_file(content, repository, source_type=source)
                 total_items += result.get("imported_items", 0)
                 total_prices += result.get("imported_prices", 0)
                 results_metadata.append(result.get("metadata"))
