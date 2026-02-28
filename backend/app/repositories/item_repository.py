@@ -49,7 +49,8 @@ class ItemRepository:
 
     def listar_bases_disponiveis(self) -> List[Dict[str, Any]]:
         """Retorna todos os meses e tipos de composição disponíveis no banco."""
-        return self.supabase.table(TABELA_COMPOSICOES_ESTADOS).select("mes_referencia, tipo_composicao").execute().data or []
+        # Consultar na tabela de composições para garantir que meses apareçam mesmo sem preços
+        return self.supabase.table(TABELA_COMPOSICOES).select("mes_referencia").execute().data or []
 
     def buscar_preco(self, codigo_composicao: str, estado: str, mes_referencia: str, tipo_composicao: str) -> Optional[float]:
         """Busca o preço de uma composição para um estado, mês e tipo específicos."""

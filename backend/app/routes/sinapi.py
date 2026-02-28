@@ -101,7 +101,6 @@ async def import_sinapi_data(
 @router.get("/bases")
 async def listar_bases_disponiveis():
     """Retorna a lista de meses e tipos de desoneração disponíveis para escolha."""
-    from core.supabase_client import get_supabase_client
     repo = ItemRepository(get_supabase_client())
     
     bases = repo.listar_bases_disponiveis()
@@ -109,9 +108,16 @@ async def listar_bases_disponiveis():
     unique_bases = []
     seen = set()
     for b in bases:
-        key = (b["mes_referencia"], b["tipo_composicao"])
-        if key not in seen:
+        # Usar .get() para evitar KeyError se a coluna não existir (ex: na TABELA_COMPOSICOES)
+        mes = b.get("mes_referencia")
+        tipo = b.get("tipo_composicao", "Sem Desoneração") # Valor default
+        
+        key = (mes, tipo)
+        if key not in seen and mes:
             seen.add(key)
-            unique_bases.append(b)
+            unique_bases.append({
+                "mes_referencia": mes,
+                "tipo_composicao": tipo
+            })
             
     return sorted(unique_bases, key=lambda x: x["mes_referencia"], reverse=True)
