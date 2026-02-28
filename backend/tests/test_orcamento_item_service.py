@@ -31,11 +31,17 @@ def test_adicionar_item_sucesso(service, orcamento_repo_mock, item_repo_mock, or
     )
     
     # Mock Orcamento
-    orcamento_repo_mock.buscar_por_id.return_value = {"id": orcamento_id, "estado": "SP"}
+    orcamento_repo_mock.buscar_por_id.return_value = {
+        "id": orcamento_id, 
+        "estado": "SP", 
+        "base_referencia": "SINAPI", 
+        "tipo_composicao": "PRECO_MEDIO",
+        "bdi": 0.0
+    }
     
     # Mock Composição (ItemRepository)
     item_repo_mock.buscar_por_codigo.return_value = [{"codigo_composicao": "12345", "descricao": "Tijolo", "unidade": "un"}]
-    item_repo_mock.listar_estados_por_item.return_value = [{"sp": 10.0}] # Preço 10.0
+    item_repo_mock.buscar_preco.return_value = 10.0 # Preço 10.0
     
     # Mock Criação
     retorno_criacao = {
@@ -68,9 +74,14 @@ def test_adicionar_item_sucesso(service, orcamento_repo_mock, item_repo_mock, or
     assert args_update[1]["valor_total"] == 20.0
 
 def test_adicionar_item_preco_nao_encontrado(service, orcamento_repo_mock, item_repo_mock):
-    orcamento_repo_mock.buscar_por_id.return_value = {"id": "orc1", "estado": "SP"}
+    orcamento_repo_mock.buscar_por_id.return_value = {
+        "id": "orc1", 
+        "estado": "SP", 
+        "base_referencia": "SINAPI", 
+        "tipo_composicao": "PRECO_MEDIO"
+    }
     item_repo_mock.buscar_por_codigo.return_value = [{"codigo_composicao": "12345"}]
-    item_repo_mock.listar_estados_por_item.return_value = [{"rj": 10.0}] # Não tem SP
+    item_repo_mock.buscar_preco.return_value = None # Não encontrou
 
     item_create = OrcamentoItemCreate(codigo_composicao="12345", quantidade=1.0, descricao="Teste", unidade="un")
 
@@ -83,7 +94,14 @@ def test_atualizar_item_quantidade(service, orcamento_item_repo_mock, orcamento_
     item_id = "item1"
     
     # Item atual tem preço 10.0
-    orcamento_item_repo_mock.buscar_por_id.return_value = {"id": item_id, "preco_unitario": 10.0, "quantidade": 1.0}
+    orcamento_item_repo_mock.buscar_por_id.return_value = {"id": item_id, "preco_unitario": 10.0, "quantidade": 1.0, "estado": "sp"}
+    
+    # Mock Orcamento pai para quando o serviço buscar base/tipo
+    orcamento_repo_mock.buscar_por_id.return_value = {
+        "id": orcamento_id, 
+        "base_referencia": "SINAPI", 
+        "tipo_composicao": "PRECO_MEDIO"
+    }
     
     update = OrcamentoItemUpdate(quantidade=5.0) # Novo total deve ser 50.0
 

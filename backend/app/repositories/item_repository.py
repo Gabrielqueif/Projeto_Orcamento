@@ -50,3 +50,22 @@ class ItemRepository:
     def listar_bases_disponiveis(self) -> List[Dict[str, Any]]:
         """Retorna todos os meses e tipos de composição disponíveis no banco."""
         return self.supabase.table(TABELA_COMPOSICOES_ESTADOS).select("mes_referencia, tipo_composicao").execute().data or []
+
+    def buscar_preco(self, codigo_composicao: str, estado: str, mes_referencia: str, tipo_composicao: str) -> Optional[float]:
+        """Busca o preço de uma composição para um estado, mês e tipo específicos."""
+        try:
+            r = self.supabase.table(TABELA_COMPOSICOES_ESTADOS)\
+                .select("*")\
+                .eq("codigo_composicao", codigo_composicao)\
+                .eq("mes_referencia", mes_referencia)\
+                .eq("tipo_composicao", tipo_composicao)\
+                .execute()
+            
+            if not r.data:
+                return None
+                
+            dados = r.data[0]
+            preco = dados.get(estado.lower())
+            return float(preco) if preco is not None else None
+        except Exception:
+            return None
