@@ -8,7 +8,9 @@ def test_criar_orcamento(client, mock_supabase):
         "cliente": "João Silva",
         "data": "2023-10-27",
         "base_referencia": "SINAPI",
-        "estado": "SP"
+        "tipo_composicao": "PRECO_MEDIO",
+        "estado": "SP",
+        "bdi": 0.0
     }
     
     expected_response_db = {
@@ -34,8 +36,8 @@ def test_criar_orcamento(client, mock_supabase):
 def test_listar_orcamentos(client, mock_supabase):
     # Setup Mock
     mock_data = [
-        {"id": "orc-1", "nome": "Orc 1", "cliente": "C1", "data": "2023-01-01", "base_referencia": "A", "estado": "SP", "status": "ok", "valor_total": 100},
-        {"id": "orc-2", "nome": "Orc 2", "cliente": "C2", "data": "2023-01-02", "base_referencia": "B", "estado": "RJ", "status": "ok", "valor_total": 200}
+        {"id": "orc-1", "nome": "Orc 1", "cliente": "C1", "data": "2023-01-01", "base_referencia": "A", "tipo_composicao": "T1", "estado": "SP", "status": "ok", "valor_total": 100, "bdi": 0.0},
+        {"id": "orc-2", "nome": "Orc 2", "cliente": "C2", "data": "2023-01-02", "base_referencia": "B", "tipo_composicao": "T2", "estado": "RJ", "status": "ok", "valor_total": 200, "bdi": 0.0}
     ]
     mock_supabase.table.return_value.select.return_value.order.return_value.execute.return_value.data = mock_data
 
@@ -51,7 +53,7 @@ def test_listar_orcamentos(client, mock_supabase):
 def test_buscar_orcamento_por_id(client, mock_supabase):
     # Setup Mock
     orc_id = "orc-1"
-    mock_data = [{"id": orc_id, "nome": "Orc 1", "cliente": "C1", "data": "2023-01-01", "base_referencia": "A", "estado": "SP", "status": "ok", "valor_total": 100}]
+    mock_data = [{"id": orc_id, "nome": "Orc 1", "cliente": "C1", "data": "2023-01-01", "base_referencia": "A", "tipo_composicao": "T1", "estado": "SP", "status": "ok", "valor_total": 100, "bdi": 0.0}]
     
     mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value.data = mock_data
 
@@ -74,9 +76,11 @@ def test_atualizar_orcamento(client, mock_supabase):
         "cliente": "C1", 
         "data": "2023-01-01", 
         "base_referencia": "A", 
+        "tipo_composicao": "T1",
         "estado": "SP", 
         "status": "ok", 
-        "valor_total": 100
+        "valor_total": 100,
+        "bdi": 0.0
     }
     
     mock_supabase.table.return_value.update.return_value.eq.return_value.execute.return_value.data = [mock_response_db]

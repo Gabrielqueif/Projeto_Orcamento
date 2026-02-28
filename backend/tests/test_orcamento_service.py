@@ -21,7 +21,9 @@ def test_criar_orcamento_sucesso(orcamento_service, repository_mock):
         cliente="Cliente Teste",
         data=datetime.now().date(),
         base_referencia="SINAPI",
+        tipo_composicao="PRECO_MEDIO",
         estado="SP",
+        bdi=0.0,
         status="em_elaboracao"
     )
     
@@ -82,7 +84,7 @@ def test_buscar_orcamento_nao_encontrado(orcamento_service, repository_mock):
 
 def test_atualizar_orcamento_sucesso(orcamento_service, repository_mock):
     # Setup
-    repository_mock.buscar_por_id.return_value = {"id": "1", "nome": "Antigo"}
+    repository_mock.buscar_por_id.return_value = {"id": "1", "nome": "Antigo", "status": "em_elaboracao"}
     repository_mock.atualizar.return_value = {"id": "1", "nome": "Novo"}
     
     update_data = OrcamentoUpdate(nome="Novo")

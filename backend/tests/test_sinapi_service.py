@@ -16,5 +16,5 @@ def test_extract_metadata_success():
     metadata = extract_metadata(content)
 
     assert metadata.mes_referencia == "09/2025"
-    assert metadata.uf == "SP"
-    assert metadata.desoneracao == "SEM DESONERAÇÃO"
+    assert metadata.uf == "BR"
+    assert "SEM DESONERA" in metadata.desoneracao

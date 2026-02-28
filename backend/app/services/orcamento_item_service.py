@@ -15,23 +15,8 @@ class OrcamentoItemService:
         self.item_repository = item_repository
 
     def _buscar_preco_composicao(self, codigo_composicao: str, estado: str, mes_referencia: str, tipo_composicao: str) -> Optional[float]:
-        # Busca o preço de uma composição para um estado, mês e tipo específicos
-        try:
-            r = self.item_repository.supabase.table("composicao_estados")\
-                .select("*")\
-                .eq("codigo_composicao", codigo_composicao)\
-                .eq("mes_referencia", mes_referencia)\
-                .eq("tipo_composicao", tipo_composicao)\
-                .execute()
-            
-            if not r.data:
-                return None
-                
-            dados = r.data[0]
-            preco = dados.get(estado.lower())
-            return float(preco) if preco else None
-        except Exception:
-            return None
+        # Busca o preço de uma composição para um estado, mês e tipo específicos via repositório
+        return self.item_repository.buscar_preco(codigo_composicao, estado, mes_referencia, tipo_composicao)
 
     def _atualizar_valor_total_orcamento(self, orcamento_id: str):
         orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
