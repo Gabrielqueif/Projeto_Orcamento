@@ -13,6 +13,7 @@ from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 from openpyxl import load_workbook
+from .base_excel_parser import BaseExcelParser
 
 from app.services.sinapi_text_utils import (
     limpar_valor_moeda,
@@ -69,19 +70,18 @@ class HeaderInfo:
     """Mapeia índice da coluna → sigla do estado (lowercase)."""
 
 
-class SinapiExcelParser:
+class SinapiExcelParser(BaseExcelParser):
     """Parser para arquivos Excel no formato SINAPI.
 
     Uso típico:
         >>> parser = SinapiExcelParser(file_content)
-        >>> abas = parser.identificar_abas_precos()
+        >>> abas = parser.identificar_abas_dados()
         >>> for aba in abas:
         ...     composicoes, precos = parser.extrair_registros_aba(aba, "09/2025")
     """
 
     def __init__(self, file_content: bytes):
-        self._file_content = file_content
-        self._xl = pd.ExcelFile(BytesIO(file_content))
+        super().__init__(file_content)
 
     @property
     def sheet_names(self) -> List[str]:
@@ -95,6 +95,10 @@ class SinapiExcelParser:
     # ------------------------------------------------------------------
     # Identificação de abas
     # ------------------------------------------------------------------
+
+    def identificar_abas_dados(self) -> List[str]:
+        """Identifica quais abas contêm dados de preços."""
+        return self.identificar_abas_precos()
 
     def identificar_abas_precos(self) -> List[str]:
         """Identifica quais abas contêm dados de preços.

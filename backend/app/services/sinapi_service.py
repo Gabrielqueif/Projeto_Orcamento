@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 
 from app.repositories.item_repository import ItemRepository
 from app.schemas.sinapi import SinapiMetadata
-from app.services.sinapi_excel_parser import SinapiExcelParser
+from app.services.parser_factory import get_parser
 from app.services.sinapi_text_utils import normalizar_nome_aba
 
 logger = logging.getLogger(__name__)
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 def extract_metadata(
     file_content: bytes,
     sheet_name_hint: str | None = None,
+    source_type: str = "SINAPI"
 ) -> SinapiMetadata:
     """Extrai metadados (mês de referência, UF, desoneração) de um arquivo SINAPI.
 
@@ -37,15 +38,15 @@ def extract_metadata(
         ValueError: Se não for possível extrair os metadados.
     """
     try:
-        parser = SinapiExcelParser(file_content)
+        parser = get_parser(file_content, source_type)
         sheet_use = _escolher_aba_metadados(parser, sheet_name_hint)
-        return _extrair_metadados_da_aba(parser, sheet_use)
+        return _extrair_metadados_da_aba(parser, sheet_use, source_type=source_type)
     except Exception as e:
         raise ValueError(f"Erro ao extrair metadados: {e}") from e
 
 
 def _escolher_aba_metadados(
-    parser: SinapiExcelParser,
+    parser,
     sheet_name_hint: str | None,
 ) -> str:
     """Escolhe a melhor aba para extrair metadados.
@@ -66,8 +67,9 @@ def _escolher_aba_metadados(
 
 
 def _extrair_metadados_da_aba(
-    parser: SinapiExcelParser,
+    parser,
     sheet_name: str,
+    source_type: str = "SINAPI"
 ) -> SinapiMetadata:
     """Lê as primeiras linhas de uma aba e extrai mês e desoneração."""
     df = parser.ler_aba(sheet_name, header=None, nrows=20)
@@ -102,6 +104,7 @@ def _extrair_metadados_da_aba(
         mes_referencia=mes_referencia,
         uf=uf,
         desoneracao=desoneracao_raw,
+        fonte=source_type
     )
 
 
@@ -112,6 +115,7 @@ def _extrair_metadados_da_aba(
 def process_sinapi_file(
     file_content: bytes,
     repository: ItemRepository,
+    source_type: str = "SINAPI"
 ) -> Dict[str, Any]:
     """Processa um arquivo SINAPI completo e importa os dados no banco.
 
@@ -133,11 +137,11 @@ def process_sinapi_file(
         ValueError: Se ocorrer um erro durante o processamento.
     """
     try:
-        parser = SinapiExcelParser(file_content)
-        abas_precos = parser.identificar_abas_precos()
+        parser = get_parser(file_content, source_type)
+        abas_precos = parser.identificar_abas_dados()
 
         first_sheet = abas_precos[0] if abas_precos else parser.sheet_names[0]
-        metadata = extract_metadata(file_content, sheet_name_hint=first_sheet)
+        metadata = extract_metadata(file_content, sheet_name_hint=first_sheet, source_type=source_type)
 
         logger.info(
             "Processando arquivo SINAPI — abas: %s, metadados: %s",

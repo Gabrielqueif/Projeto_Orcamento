@@ -1,7 +1,7 @@
 import logging
 import traceback
 
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status, Query
 from app.services.sinapi_service import extract_metadata, process_sinapi_file
 from app.repositories.item_repository import ItemRepository
 from app.schemas.sinapi import SinapiMetadata
@@ -26,6 +26,7 @@ async def test_upload(file: UploadFile = File(...)):
 @router.post("/upload", response_model=SinapiMetadata)
 async def upload_sinapi_worksheet(
     file: UploadFile = File(...),
+    source: str = Query("SINAPI", description="Fonte da planilha (ex: SINAPI, SEINFRA)"),
     current_user = Depends(require_admin)
 ):
     """
@@ -35,18 +36,14 @@ async def upload_sinapi_worksheet(
     if not file.filename.endswith(('.xls', '.xlsx')):
         raise HTTPException(status_code=400, detail="Invalid file format. Please upload an Excel file.")
 
-    logger.info(f"Received file: {file.filename}")
     try:
         content = await file.read()
-        logger.info(f"File read into memory. Size: {len(content)} bytes")
     except Exception as e:
         logger.error(f"Error reading file: {e}")
         raise HTTPException(status_code=500, detail="Error reading file")
     
     try:
-        logger.info("Calling extract_metadata...")
-        metadata = extract_metadata(content)
-        logger.info("Metadata extracted successfully")
+        metadata = extract_metadata(content, source_type=source)
         return metadata
     except ValueError as e:
         logger.warning(f"ValueError: {e}")
@@ -58,6 +55,7 @@ async def upload_sinapi_worksheet(
 @router.post("/import")
 async def import_sinapi_data(
     files: list[UploadFile] = File(...),
+    source: str = Query("SINAPI", description="Fonte da planilha (ex: SINAPI, SEINFRA)"),
     current_user = Depends(require_admin),
 ):
     """
@@ -78,7 +76,7 @@ async def import_sinapi_data(
             content = await file.read()
             # Process each file
             try:
-                result = process_sinapi_file(content, repository)
+                result = process_sinapi_file(content, repository, source_type=source)
                 total_items += result.get("imported_items", 0)
                 total_prices += result.get("imported_prices", 0)
                 results_metadata.append(result.get("metadata"))
@@ -101,7 +99,6 @@ async def import_sinapi_data(
 @router.get("/bases")
 async def listar_bases_disponiveis():
     """Retorna a lista de meses e tipos de desoneração disponíveis para escolha."""
-    from core.supabase_client import get_supabase_client
     repo = ItemRepository(get_supabase_client())
     
     bases = repo.listar_bases_disponiveis()
@@ -109,9 +106,16 @@ async def listar_bases_disponiveis():
     unique_bases = []
     seen = set()
     for b in bases:
-        key = (b["mes_referencia"], b["tipo_composicao"])
-        if key not in seen:
+        # Usar .get() para evitar KeyError se a coluna não existir (ex: na TABELA_COMPOSICOES)
+        mes = b.get("mes_referencia")
+        tipo = b.get("tipo_composicao", "Sem Desoneração") # Valor default
+        
+        key = (mes, tipo)
+        if key not in seen and mes:
             seen.add(key)
-            unique_bases.append(b)
+            unique_bases.append({
+                "mes_referencia": mes,
+                "tipo_composicao": tipo
+            })
             
     return sorted(unique_bases, key=lambda x: x["mes_referencia"], reverse=True)
