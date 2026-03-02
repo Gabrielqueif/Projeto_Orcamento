@@ -1,4 +1,7 @@
+import logging
 from typing import List, Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
 
 TABELA_COMPOSICOES = "composicao"
 TABELA_COMPOSICOES_ESTADOS = "composicao_estados"
@@ -18,7 +21,7 @@ class ItemRepository:
                 ).execute()
                 if r.data: total += len(r.data)
             except Exception as e:
-                print(f"Erro lote {TABELA_COMPOSICOES}: {e}")
+                logger.error(f"Erro lote {TABELA_COMPOSICOES}: {e}")
         return total
 
     def upsert_batch_estados(self, dados: List[Dict[str, Any]]) -> int:
@@ -32,7 +35,7 @@ class ItemRepository:
                 ).execute()
                 if r.data: total += len(r.data)
             except Exception as e:
-                print(f"Erro lote {TABELA_COMPOSICOES_ESTADOS}: {e}")
+                logger.error(f"Erro lote {TABELA_COMPOSICOES_ESTADOS}: {e}")
         return total
 
     def listar(self, limit: int = 100) -> List[Dict[str, Any]]:

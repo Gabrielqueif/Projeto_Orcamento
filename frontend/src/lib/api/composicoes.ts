@@ -6,6 +6,8 @@ export interface ItemComposicao {
     unidade: string;
     grupo?: string;
     preco?: number;
+    mes_referencia: string;
+    fonte: string;
 }
 
 export interface PrecosEstado {

@@ -54,13 +54,40 @@ class SeinfraExcelParser(BaseExcelParser):
         
         # Fallback se não achar cabeçalho explícito
         if header_row == -1:
-            logger.info(f"Cabeçalho explícito não encontrado na aba {nome_aba}. Usando fallback.")
-            header_row = 0
+            logger.info(f"Cabeçalho explícito não encontrado na aba {nome_aba}. Tentando adivinhar por tipo de dado...")
             col_cod = 0
             col_desc = 1
             col_unid = 2
-            # Procurar coluna com valores numéricos no final
             col_preco = len(df.columns) - 1
+
+            # Tenta encontrar a primeira linha de dados reais (onde a coluna de código e de preço fazem sentido)
+            for r_idx, row in df.head(30).iterrows():
+                val_cod = str(row.iloc[col_cod]).strip()
+                val_preco = row.iloc[col_preco]
+                
+                # Código SEINFRA: Numérico ou Insumo (I...)
+                is_valid_cod = val_cod.replace('.', '').isdigit() or (val_cod.startswith('I') and len(val_cod) > 2)
+                
+                is_valid_preco = False
+                if pd.notna(val_preco):
+                    if isinstance(val_preco, (int, float)):
+                        is_valid_preco = True
+                    else:
+                        val_str = str(val_preco).replace('R$', '').replace('.', '').replace(',', '.').strip()
+                        try:
+                            float(val_str)
+                            is_valid_preco = True
+                        except ValueError:
+                            pass
+                
+                if is_valid_cod and is_valid_preco:
+                    header_row = max(-1, r_idx - 1)
+                    logger.info(f"Padrão de dados encontrado na linha {r_idx}. Header assumido: {header_row}")
+                    break
+                    
+            if header_row == -1:
+                # Fallback final se falhar na heurística
+                header_row = 0
 
         tipo_comp = self.classificar_tipo_composicao(nome_aba)
         df_dados = df.iloc[header_row + 1:]

@@ -24,5 +24,5 @@ def buscar_composicao(termo: str, fonte: str = "SINAPI", service: ItemService = 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao buscar composição: {str(e)}")
 
-def listar_estados_composicao(codigo_composicao: str, service: ItemService = Depends(get_item_service)):
-    return service.listar_estados_composicao(codigo_composicao)
+def listar_estados_composicao(codigo_composicao: str, mes_referencia: str, fonte: str = "SINAPI", service: ItemService = Depends(get_item_service)):
+    return service.listar_estados_composicao(codigo_composicao, mes_referencia, fonte=fonte)

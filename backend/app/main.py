@@ -22,8 +22,13 @@ app = FastAPI(
 
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
+    status_code = 400
+    msg = str(exc).lower()
+    if "não encontrado" in msg or "not found" in msg:
+        status_code = 404
+        
     return JSONResponse(
-        status_code=400,
+        status_code=status_code,
         content={"detail": str(exc)},
     )
 

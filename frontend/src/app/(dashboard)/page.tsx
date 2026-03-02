@@ -12,7 +12,6 @@ export default function HomePage() {
 
   useEffect(() => {
     const supabase = createClient();
-    console.log('HomePage: Checking auth session...');
 
     const loadData = async () => {
       try {

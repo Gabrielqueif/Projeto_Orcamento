@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import { buscarComposicoes, getEstadosComposicao, type ItemComposicao, type PrecosEstado } from '@/lib/api/composicoes';
 
-export function SinapiSearch() {
+export function ItemSearch() {
   const [termo, setTermo] = useState('');
+  const [fonte, setFonte] = useState('SINAPI');
   const [resultados, setResultados] = useState<ItemComposicao[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +28,7 @@ export function SinapiSearch() {
     setResultados([]);
     setError(null);
     try {
-      const data = await buscarComposicoes(termo);
+      const data = await buscarComposicoes(termo, fonte);
       setResultados(data || []);
     } catch (err) {
       console.error(err);
@@ -37,25 +38,26 @@ export function SinapiSearch() {
     }
   };
 
-  const togglePreco = async (codigo: string) => {
-    if (precosAbertos[codigo] !== undefined) {
+  const togglePreco = async (item: ItemComposicao) => {
+    const { codigo_composicao, mes_referencia, fonte } = item;
+    if (precosAbertos[codigo_composicao] !== undefined) {
       const novoEstado = { ...precosAbertos };
-      delete novoEstado[codigo];
+      delete novoEstado[codigo_composicao];
       setPrecosAbertos(novoEstado);
       return;
     }
-    setLoadingPrecos((prev) => ({ ...prev, [codigo]: true }));
+    setLoadingPrecos((prev) => ({ ...prev, [codigo_composicao]: true }));
     try {
-      const data = await getEstadosComposicao(codigo);
+      const data = await getEstadosComposicao(codigo_composicao, mes_referencia, fonte);
       if (data && data.length > 0) {
-        setPrecosAbertos((prev) => ({ ...prev, [codigo]: data[0] }));
+        setPrecosAbertos((prev) => ({ ...prev, [codigo_composicao]: data[0] }));
       } else {
-        setPrecosAbertos((prev) => ({ ...prev, [codigo]: null }));
+        setPrecosAbertos((prev) => ({ ...prev, [codigo_composicao]: null }));
       }
     } catch (error) {
       console.error(error);
     } finally {
-      setLoadingPrecos((prev) => ({ ...prev, [codigo]: false }));
+      setLoadingPrecos((prev) => ({ ...prev, [codigo_composicao]: false }));
     }
   };
 
@@ -64,17 +66,25 @@ export function SinapiSearch() {
       {/* --- BUSCA --- */}
       <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+          <select
+            className="px-4 py-2 rounded border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white text-sm"
+            value={fonte}
+            onChange={(e) => setFonte(e.target.value)}
+          >
+            <option value="SINAPI">SINAPI</option>
+            <option value="SEINFRA">SEINFRA</option>
+          </select>
           <input
             type="text"
-            placeholder="Ex: Cimento, Bloco, 94382..."
-            className="flex-1 px-4 py-2 rounded border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+            placeholder="Ex: Cimento, Bloco, 94382 ou I1234..."
+            className="flex-1 px-4 py-2 rounded border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
             value={termo}
             onChange={(e) => setTermo(e.target.value)}
           />
           <button
             type="submit"
             disabled={loading}
-            className="bg-brand-primary hover:bg-brand-navy text-white font-bold px-6 py-2 rounded transition whitespace-nowrap"
+            className="bg-brand-primary hover:bg-brand-navy text-white font-bold px-6 py-2 rounded transition whitespace-nowrap text-sm"
           >
             {loading ? 'Buscando...' : 'Pesquisar'}
           </button>
@@ -93,7 +103,7 @@ export function SinapiSearch() {
           return (
             <div key={item.codigo_composicao} className={`bg-white border rounded-md overflow-hidden ${isOpen ? 'ring-1 ring-brand-primary/30' : ''}`}>
               <div
-                onClick={() => togglePreco(item.codigo_composicao)}
+                onClick={() => togglePreco(item)}
                 className="p-3 cursor-pointer flex justify-between items-center hover:bg-slate-50"
               >
                 <div>

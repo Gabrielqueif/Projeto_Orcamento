@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export function SinapiUpload() {
+export function ImportUpload() {
     const [fileCSD, setFileCSD] = useState<File | null>(null);
     const [fileCCD, setFileCCD] = useState<File | null>(null);
     const [fileCSE, setFileCSE] = useState<File | null>(null);

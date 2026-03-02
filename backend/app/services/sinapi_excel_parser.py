@@ -102,15 +102,10 @@ class SinapiExcelParser(BaseExcelParser):
 
     def identificar_abas_precos(self) -> List[str]:
         """Identifica quais abas contêm dados de preços.
-
-        Procura por abas cujo nome contenha CSD, CCD ou CSE.
-        Se nenhuma for encontrada, usa todas as abas exceto as ignoradas
-        (MENU, BUSCA, OBS, INSTRUCOES).
-
-        Returns:
-            Lista de nomes de abas de preços.
         """
         abas = self._xl.sheet_names
+        if not abas:
+            return []
 
         abas_precos = [
             a for a in abas
