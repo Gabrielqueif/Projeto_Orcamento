@@ -13,6 +13,7 @@ class OrcamentoCreate(BaseModel):
     base_referencia: str
     tipo_composicao: str
     estado: str
+    fonte: Optional[str] = "SINAPI"
     bdi: Optional[float] = 0.0
     status: Optional[str] = "em_elaboracao"
 
@@ -25,6 +26,7 @@ class OrcamentoUpdate(BaseModel):
     base_referencia: Optional[str] = None
     tipo_composicao: Optional[str] = None
     estado: Optional[str] = None
+    fonte: Optional[str] = None
     bdi: Optional[float] = None
     status: Optional[str] = None
     valor_total: Optional[float] = None
@@ -39,6 +41,7 @@ class OrcamentoResponse(BaseModel):
     base_referencia: str
     tipo_composicao: str
     estado: str
+    fonte: str
     bdi: float
     valor_total: Optional[float]
     status: str

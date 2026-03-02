@@ -43,3 +43,8 @@ class BaseExcelParser(ABC):
     def classificar_tipo_composicao(self, nome_aba: str) -> str:
         """Determina o tipo de composição (Ex: Com Desoneração, Sem Desoneração)."""
         pass
+
+    @abstractmethod
+    def extrair_metadados(self, sheet_hint: Optional[str] = None) -> Dict[str, Any]:
+        """Extrai metadados como mês de referência, UF e desoneração."""
+        pass

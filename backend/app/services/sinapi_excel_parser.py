@@ -9,7 +9,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from io import BytesIO
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -244,8 +244,7 @@ class SinapiExcelParser(BaseExcelParser):
     # Classificação de tipo
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def classificar_tipo_composicao(nome_aba: str) -> str:
+    def classificar_tipo_composicao(self, nome_aba: str) -> str:
         """Determina o tipo de composição pelo nome da aba.
 
         Args:
@@ -259,6 +258,48 @@ class SinapiExcelParser(BaseExcelParser):
             if chave in aba_norm:
                 return tipo
         return "Sem Desoneração"
+
+    def extrair_metadados(self, sheet_hint: Optional[str] = None) -> Dict[str, Any]:
+        """Extrai metadados específicos do formato SINAPI."""
+        # Se não houver dica, tenta encontrar uma aba de dados
+        aba_uso = sheet_hint
+        if not aba_uso:
+            abas = self.identificar_abas_dados()
+            aba_uso = abas[0] if abas else self.sheet_names[0]
+
+        df = self.ler_aba(aba_uso, header=None, nrows=20)
+        
+        mes_referencia = "UNKNOWN"
+        desoneracao_raw = "UNKNOWN"
+        uf = "BR"
+
+        # Tentar extrair mês (Posição B3 no SINAPI)
+        if len(df) > 2:
+            val = str(df.iloc[2, 1]).strip()
+            if len(val) > 4:
+                mes_referencia = val
+
+        # Tentar extrair desoneração (Posição D4 no SINAPI)
+        if len(df) > 3 and len(df.columns) > 3:
+            d = str(df.iloc[3, 3]).strip().upper()
+            if d and d != "NAN":
+                desoneracao_raw = d
+
+        # Tentar extrair UF (D5 ou C3 no SINAPI)
+        if len(df) > 4 and len(df.columns) > 3:
+            u = str(df.iloc[4, 3]).strip().upper()
+            if len(u) == 2 and u.isalpha():
+                uf = u
+        elif len(df) > 2 and len(df.columns) > 2:
+            u = str(df.iloc[2, 2]).strip().upper()
+            if len(u) == 2 and u.isalpha():
+                uf = u
+
+        return {
+            "mes_referencia": mes_referencia,
+            "uf": uf,
+            "desoneracao": desoneracao_raw
+        }
 
     # ------------------------------------------------------------------
     # Extração de registros
@@ -452,6 +493,6 @@ class SinapiExcelParser(BaseExcelParser):
             reg_preco[sigla] = val
             if val is not None:
                 tem_valor = True
-
+        
         preco = reg_preco if tem_valor else None
         return composicao, preco

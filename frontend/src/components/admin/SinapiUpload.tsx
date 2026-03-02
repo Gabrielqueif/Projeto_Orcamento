@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { importSinapi } from '@/lib/api/sinapi';
+import { importWorksheet } from '@/lib/api/importacao';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ export function SinapiUpload() {
     // Removed fileCCD and fileCSE states as per instruction
 
     const [importing, setImporting] = useState(false);
+    const [source, setSource] = useState('SINAPI');
     const [error, setError] = useState<string | null>(null);
     const [importResult, setImportResult] = useState<any>(null);
 
@@ -29,7 +30,7 @@ export function SinapiUpload() {
 
         try {
             // New signature expects array, we send just one consolidated file
-            const result = await importSinapi([fileCSD]);
+            const result = await importWorksheet([fileCSD], source);
             setImportResult(result);
         } catch (err: unknown) {
             console.error(err);
@@ -46,15 +47,27 @@ export function SinapiUpload() {
     return (
         <Card className="w-full max-w-2xl mx-auto">
             <CardHeader>
-                <CardTitle>Importar Tabela SINAPI Completa</CardTitle>
+                <CardTitle>Importar Tabela de Preços</CardTitle>
                 <CardDescription>
-                    Selecione o arquivo Excel Consolidado (contendo abas CSD, CCD, CSE) para importar tanto o catálogo quanto os preços variados.
+                    Selecione a fonte e o arquivo Excel correspondente para importar composições e preços para o banco de dados.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+                <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="source" className="text-gray-700 font-medium">Fonte de Dados</Label>
+                    <select 
+                      id="source"
+                      value={source} 
+                      onChange={(e) => setSource(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="SINAPI">SINAPI (Nacional)</option>
+                      <option value="SEINFRA">SEINFRA (Ceará)</option>
+                    </select>
+                </div>
 
                 <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="file_complete" className="text-gray-700 font-medium">Arquivo SINAPI (Excel)</Label>
+                    <Label htmlFor="file_complete" className="text-gray-700 font-medium">Arquivo Excel (.xlsx)</Label>
                     <Input
                         id="file_complete"
                         type="file"
@@ -62,7 +75,11 @@ export function SinapiUpload() {
                         onChange={(e) => setFileCSD(e.target.files?.[0] || null)} // Use one state
                         disabled={importing}
                     />
-                    <p className="text-xs text-muted-foreground">O sistema buscará automaticamente as abas CSD, CCD e CSE neste arquivo.</p>
+                    <p className="text-xs text-muted-foreground">
+                        {source === 'SINAPI' 
+                            ? 'O sistema buscará automaticamente as abas CSD, CCD e CSE neste arquivo.'
+                            : 'O sistema processará o arquivo no formato padrão da SEINFRA (CE).'}
+                    </p>
                 </div>
 
                 {error && (

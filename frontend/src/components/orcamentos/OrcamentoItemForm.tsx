@@ -51,13 +51,14 @@ const ESTADOS = [
 type OrcamentoItemFormProps = {
   orcamentoId: string;
   estadoOrcamento?: string;
+  fonteOrcamento?: string;
   refreshTrigger?: number;
   onItemAdded?: () => void;
   itemToEdit?: OrcamentoItem;
   onCancel?: () => void;
 };
 
-export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger, onItemAdded, itemToEdit, onCancel }: OrcamentoItemFormProps) {
+export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, fonteOrcamento = "SINAPI", refreshTrigger, onItemAdded, itemToEdit, onCancel }: OrcamentoItemFormProps) {
   const [termo, setTermo] = React.useState('');
   const [resultados, setResultados] = React.useState<ItemComposicao[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -128,7 +129,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
 
     setLoading(true);
     try {
-      const data = await apiBuscarComposicoes(termo);
+      const data = await apiBuscarComposicoes(termo, fonteOrcamento);
       setResultados(data || []);
     } catch (error) {
       console.error(error);
@@ -367,7 +368,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
         {/* Busca de Composição */}
         <div>
           <label className="block text-sm font-bold mb-2" htmlFor="busca">
-            Buscar Composição (SINAPI)
+            Buscar Composição ({fonteOrcamento})
           </label>
           {composicaoSelecionada ? (
             <div className="border border-green-300 bg-green-50 p-3 rounded-md">

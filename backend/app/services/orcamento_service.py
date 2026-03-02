@@ -15,6 +15,7 @@ class OrcamentoService:
             "base_referencia": orcamento.base_referencia,
             "tipo_composicao": orcamento.tipo_composicao,
             "estado": orcamento.estado.lower(),
+            "fonte": orcamento.fonte or "SINAPI",
             "bdi": orcamento.bdi or 0.0,
             "status": orcamento.status or "em_elaboracao",
             "valor_total": 0.0,
@@ -50,6 +51,10 @@ class OrcamentoService:
             dados_atualizacao["base_referencia"] = orcamento_update.base_referencia
         if orcamento_update.tipo_composicao is not None:
             dados_atualizacao["tipo_composicao"] = orcamento_update.tipo_composicao
+        if orcamento_update.estado is not None:
+            dados_atualizacao["estado"] = orcamento_update.estado.lower()
+        if orcamento_update.fonte is not None:
+            dados_atualizacao["fonte"] = orcamento_update.fonte
         if orcamento_update.bdi is not None:
             dados_atualizacao["bdi"] = orcamento_update.bdi
         if orcamento_update.status is not None:

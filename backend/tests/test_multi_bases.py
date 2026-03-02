@@ -39,7 +39,7 @@ def test_sinapi_excel_parser_inheritance():
 
 def test_extract_metadata_with_source_type():
     """Testa se extract_metadata aceita e retorna o source_type correto."""
-    from app.services.sinapi_service import extract_metadata
+    from app.services.import_service import extract_metadata
     from pathlib import Path
     
     file_path = Path("planilhas/SINAPI_Referência_2025_12.xlsx")
@@ -55,3 +55,19 @@ def test_extract_metadata_with_source_type():
     metadata = extract_metadata(content, source_type="SINAPI")
     assert metadata.fonte == "SINAPI"
     assert metadata.mes_referencia == "12/2025"
+
+def test_parser_factory_returns_seinfra_parser():
+    """Testa se a fábrica retorna o parser correto para SEINFRA."""
+    from app.services.seinfra_excel_parser import SeinfraExcelParser
+    content = b"fake excel content" # Em teste real seria um BytesIO com pandas
+    
+    # Mockando o pd.ExcelFile no parser init se necessário, 
+    # mas por herança o factory já instancia.
+    # Como não temos um arquivo SEINFRA real nos assets agora, 
+    # apenas validamos que o factory instancia a classe certa.
+    
+    # Vamos mockar o ExcelFile para o init não falhar
+    import unittest.mock as mock
+    with mock.patch("pandas.ExcelFile"):
+        parser = get_parser(content, "SEINFRA")
+        assert isinstance(parser, SeinfraExcelParser)

@@ -13,11 +13,12 @@ const formatarMoeda = (valor: number | null): string => {
 type OrcamentoItensListProps = {
   orcamentoId: string;
   valorTotal: number | null;
+  fonteOrcamento?: string;
   refreshTrigger?: number;
   onItemDeleted?: () => void;
 };
 
-export function OrcamentoItensList({ orcamentoId, valorTotal, refreshTrigger, onItemDeleted }: OrcamentoItensListProps) {
+export function OrcamentoItensList({ orcamentoId, valorTotal, fonteOrcamento = "SINAPI", refreshTrigger, onItemDeleted }: OrcamentoItensListProps) {
   const [itens, setItens] = React.useState<OrcamentoItem[]>([]);
   const [etapas, setEtapas] = React.useState<Etapa[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -209,7 +210,8 @@ export function OrcamentoItensList({ orcamentoId, valorTotal, refreshTrigger, on
           {editingItem && (
             <OrcamentoItemForm
               orcamentoId={orcamentoId}
-              estadoOrcamento={editingItem.estado} // Pass item's state or parent's state? Item has state, but form uses it to check prices. Usually same as budget.
+              estadoOrcamento={editingItem.estado}
+              fonteOrcamento={fonteOrcamento}
               onItemAdded={handleSuccessEdit}
               itemToEdit={editingItem}
               onCancel={() => setEditingItem(null)}

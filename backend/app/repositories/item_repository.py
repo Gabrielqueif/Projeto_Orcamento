@@ -14,7 +14,7 @@ class ItemRepository:
             try:
                 r = self.supabase.table(TABELA_COMPOSICOES).upsert(
                     dados[i:i+1000],
-                    on_conflict="codigo_composicao,mes_referencia"
+                    on_conflict="codigo_composicao,mes_referencia,fonte"
                 ).execute()
                 if r.data: total += len(r.data)
             except Exception as e:
@@ -28,7 +28,7 @@ class ItemRepository:
             try:
                 r = self.supabase.table(TABELA_COMPOSICOES_ESTADOS).upsert(
                     dados[i:i+1000],
-                    on_conflict="codigo_composicao,mes_referencia,tipo_composicao"
+                    on_conflict="codigo_composicao,mes_referencia,tipo_composicao,fonte"
                 ).execute()
                 if r.data: total += len(r.data)
             except Exception as e:
@@ -38,28 +38,39 @@ class ItemRepository:
     def listar(self, limit: int = 100) -> List[Dict[str, Any]]:
         return self.supabase.table(TABELA_COMPOSICOES).select("*").limit(limit).execute().data or []
 
-    def buscar_por_codigo(self, codigo: str) -> List[Dict[str, Any]]:
-        return self.supabase.table(TABELA_COMPOSICOES).select("*").eq("codigo_composicao", codigo).execute().data
+    def buscar_por_codigo(self, codigo: str, fonte: str = "SINAPI") -> List[Dict[str, Any]]:
+        return self.supabase.table(TABELA_COMPOSICOES).select("*")\
+            .eq("codigo_composicao", codigo)\
+            .eq("fonte", fonte)\
+            .execute().data
 
-    def buscar_por_descricao(self, termo: str, limit: int = 50) -> List[Dict[str, Any]]:
-        return self.supabase.table(TABELA_COMPOSICOES).select("*").ilike("descricao", f"%{termo}%").limit(limit).execute().data
+    def buscar_por_descricao(self, termo: str, fonte: str = "SINAPI", limit: int = 50) -> List[Dict[str, Any]]:
+        return self.supabase.table(TABELA_COMPOSICOES).select("*")\
+            .ilike("descricao", f"%{termo}%")\
+            .eq("fonte", fonte)\
+            .limit(limit).execute().data
 
-    def listar_estados_por_item(self, codigo_composicao: str) -> List[Dict[str, Any]]:
-        return self.supabase.table(TABELA_COMPOSICOES_ESTADOS).select("*").eq("codigo_composicao", codigo_composicao).execute().data or []
+    def listar_estados_por_item(self, codigo_composicao: str, mes_referencia: str, fonte: str = "SINAPI") -> List[Dict[str, Any]]:
+        return self.supabase.table(TABELA_COMPOSICOES_ESTADOS).select("*")\
+            .eq("codigo_composicao", codigo_composicao)\
+            .eq("mes_referencia", mes_referencia)\
+            .eq("fonte", fonte)\
+            .execute().data or []
 
     def listar_bases_disponiveis(self) -> List[Dict[str, Any]]:
         """Retorna todos os meses e tipos de composição disponíveis no banco."""
         # Consultar na tabela de composições para garantir que meses apareçam mesmo sem preços
-        return self.supabase.table(TABELA_COMPOSICOES).select("mes_referencia").execute().data or []
+        return self.supabase.table(TABELA_COMPOSICOES).select("mes_referencia,fonte").execute().data or []
 
-    def buscar_preco(self, codigo_composicao: str, estado: str, mes_referencia: str, tipo_composicao: str) -> Optional[float]:
-        """Busca o preço de uma composição para um estado, mês e tipo específicos."""
+    def buscar_preco(self, codigo_composicao: str, estado: str, mes_referencia: str, tipo_composicao: str, fonte: str = "SINAPI") -> Optional[float]:
+        """Busca o preço de uma composição para um estado, mês, tipo e fonte específicos."""
         try:
             r = self.supabase.table(TABELA_COMPOSICOES_ESTADOS)\
                 .select("*")\
                 .eq("codigo_composicao", codigo_composicao)\
                 .eq("mes_referencia", mes_referencia)\
                 .eq("tipo_composicao", tipo_composicao)\
+                .eq("fonte", fonte)\
                 .execute()
             
             if not r.data:

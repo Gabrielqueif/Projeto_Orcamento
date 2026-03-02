@@ -98,6 +98,7 @@ export default function OrcamentoDetailPage() {
         refreshTrigger={refreshKey}
         orcamentoId={orcamento!.id}
         estadoOrcamento={orcamento!.estado}
+        fonteOrcamento={orcamento!.fonte}
         onItemAdded={handleRefresh}
       />
 
@@ -106,6 +107,7 @@ export default function OrcamentoDetailPage() {
         refreshTrigger={refreshKey}
         orcamentoId={orcamento!.id}
         valorTotal={orcamento!.valor_total}
+        fonteOrcamento={orcamento!.fonte}
         onItemDeleted={handleRefresh}
       />
     </div>

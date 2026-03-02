@@ -22,7 +22,8 @@ class PdfService(FPDF):
         self.cell(0, 10, f"Cliente: {orcamento.get('cliente', 'Não informado')}", new_x="LMARGIN", new_y="NEXT")
         self.set_font('helvetica', '', 12)
         self.cell(0, 10, f"Obra: {orcamento.get('nome', 'Não informado')}", new_x="LMARGIN", new_y="NEXT")
-        self.cell(0, 10, f"Data: {orcamento.get('created_at', '')[:10]}", new_x="LMARGIN", new_y="NEXT")
+        self.cell(0, 10, f"Fonte: {orcamento.get('fonte', 'SINAPI')} | Data Ref: {orcamento.get('base_referencia', '')}", new_x="LMARGIN", new_y="NEXT")
+        self.cell(0, 10, f"Emitido em: {orcamento.get('created_at', '')[:10]}", new_x="LMARGIN", new_y="NEXT")
         self.ln(10)
 
         # Cabeçalho da Tabela
