@@ -58,12 +58,10 @@ export async function signup(formData: FormData) {
         }
     })
 
-    console.log('Signup Attempt:', { email, username, accountType });
     if (error) {
         console.error('Signup Error:', error);
         redirect(`/signup?error=${encodeURIComponent(error.message)}`)
     }
-    // console.log('Signup Success:', authData); // Clean up logs
 
     revalidatePath('/', 'layout')
     redirect('/login?message=Cadastro realizado com sucesso! Verifique seu email para confirmar.')

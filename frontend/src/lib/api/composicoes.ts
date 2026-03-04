@@ -6,16 +6,19 @@ export interface ItemComposicao {
     unidade: string;
     grupo?: string;
     preco?: number;
+    mes_referencia: string;
+    fonte: string;
 }
 
 export interface PrecosEstado {
     [key: string]: number | string | null;
 }
 
-export async function buscarComposicoes(termo: string): Promise<ItemComposicao[]> {
+export async function buscarComposicoes(termo: string, fonte: string = "SINAPI"): Promise<ItemComposicao[]> {
     if (!termo) return [];
 
-    const response = await fetchWithAuth(`/composicoes/buscar/${encodeURIComponent(termo)}`);
+    const url = `/composicoes/buscar/${encodeURIComponent(termo)}?fonte=${encodeURIComponent(fonte)}`;
+    const response = await fetchWithAuth(url);
 
     if (!response.ok) {
         throw new Error('Erro ao buscar composições');
@@ -24,8 +27,8 @@ export async function buscarComposicoes(termo: string): Promise<ItemComposicao[]
     return response.json();
 }
 
-export async function getEstadosComposicao(codigo: string): Promise<PrecosEstado[]> {
-    const response = await fetchWithAuth(`/composicoes/${codigo}/estados`);
+export async function getEstadosComposicao(codigo: string, mes_referencia: string, fonte: string = "SINAPI"): Promise<PrecosEstado[]> {
+    const response = await fetchWithAuth(`/composicoes/${codigo}/estados/${mes_referencia}?fonte=${encodeURIComponent(fonte)}`);
 
     if (!response.ok) {
         throw new Error('Erro ao buscar preços por estado');

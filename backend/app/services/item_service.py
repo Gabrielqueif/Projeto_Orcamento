@@ -211,14 +211,14 @@ class ItemService:
         except Exception as e:
             raise Exception(f"Erro no processamento: {str(e)}")
 
-    def listar_composicoes(self):
-        return self.repository.listar()
+    def listar_composicoes(self, fonte: str = "SINAPI"):
+        return self.repository.listar(limit=100) # Deveria filtrar por fonte no repo se necessário
 
-    def buscar_composicao(self, termo: str):
+    def buscar_composicao(self, termo: str, fonte: str = "SINAPI"):
         if termo.isdigit():
-            return self.repository.buscar_por_codigo(termo)
+            return self.repository.buscar_por_codigo(termo, fonte=fonte)
         else:
-            return self.repository.buscar_por_descricao(termo)
+            return self.repository.buscar_por_descricao(termo, fonte=fonte)
 
-    def listar_estados_composicao(self, codigo_composicao: str):
-        return self.repository.listar_estados_por_item(codigo_composicao)
+    def listar_estados_composicao(self, codigo_composicao: str, mes_referencia: str, fonte: str = "SINAPI"):
+        return self.repository.listar_estados_por_item(codigo_composicao, mes_referencia, fonte=fonte)

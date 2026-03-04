@@ -49,6 +49,7 @@ def test_adicionar_item(client, mock_supabase):
         "estado": "sp",
         "preco_unitario": 50.0,
         "preco_total": 500.0,
+        "fonte": "SINAPI",
         "etapa_id": None,
         "memoria_calculo": None,
         "variaveis": None,
@@ -96,8 +97,8 @@ def test_listar_itens(client, mock_supabase):
     mock_orcamentos_table.select.return_value.eq.return_value.execute.return_value.data = [{"id": orcamento_id}]
     
     mock_data = [
-        {"id": "item-1", "orcamento_id": orcamento_id, "codigo_composicao": "A", "descricao": "Item A", "quantidade": 1, "unidade": "UN", "estado": "sp", "preco_unitario": 10, "preco_total": 10, "estado": "sp"},
-        {"id": "item-2", "orcamento_id": orcamento_id, "codigo_composicao": "B", "descricao": "Item B", "quantidade": 2, "unidade": "UN", "estado": "sp", "preco_unitario": 20, "preco_total": 40, "estado": "sp"}
+        {"id": "item-1", "orcamento_id": orcamento_id, "codigo_composicao": "A", "descricao": "Item A", "quantidade": 1, "unidade": "UN", "estado": "sp", "preco_unitario": 10, "preco_total": 10, "fonte": "SINAPI"},
+        {"id": "item-2", "orcamento_id": orcamento_id, "codigo_composicao": "B", "descricao": "Item B", "quantidade": 2, "unidade": "UN", "estado": "sp", "preco_unitario": 20, "preco_total": 40, "fonte": "SINAPI"}
     ]
     
     mock_orc_itens_table.select.return_value.eq.return_value.order.return_value.execute.return_value.data = mock_data
@@ -135,7 +136,8 @@ def test_atualizar_item(client, mock_supabase):
         "unidade": "UN",
         "estado": "sp",
         "preco_unitario": 10.0,
-        "preco_total": 100.0
+        "preco_total": 100.0,
+        "fonte": "SINAPI"
     }
     
     # Mock Buscar Item Atual (.select().eq().eq().execute())

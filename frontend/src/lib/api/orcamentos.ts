@@ -1,4 +1,4 @@
-import { fetchWithAuth } from './client';
+import { fetchWithAuth } from "./client";
 
 export interface Orcamento {
   id: string;
@@ -8,6 +8,7 @@ export interface Orcamento {
   base_referencia: string;
   tipo_composicao: string;
   estado: string;
+  fonte: string;
   bdi: number;
   valor_total: number | null;
   status: string;
@@ -22,6 +23,7 @@ export interface OrcamentoCreate {
   base_referencia: string;
   tipo_composicao: string;
   estado: string;
+  fonte?: string;
   bdi?: number;
   status?: string;
 }
@@ -33,6 +35,7 @@ export interface OrcamentoUpdate {
   base_referencia?: string;
   tipo_composicao?: string;
   estado?: string;
+  fonte?: string;
   bdi?: number;
   status?: string;
   valor_total?: number;
@@ -99,30 +102,35 @@ export interface EtapaUpdate {
 }
 
 // Funções para Orçamentos
-export async function createOrcamento(data: OrcamentoCreate): Promise<Orcamento> {
-  const response = await fetchWithAuth('/orcamentos/', {
-    method: 'POST',
+export async function createOrcamento(
+  data: OrcamentoCreate,
+): Promise<Orcamento> {
+  const response = await fetchWithAuth("/orcamentos/", {
+    method: "POST",
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Erro ao criar orçamento');
+    throw new Error(error.detail || "Erro ao criar orçamento");
   }
 
   return response.json();
 }
 
-export async function getOrcamentos(status?: string, cliente?: string): Promise<Orcamento[]> {
+export async function getOrcamentos(
+  status?: string,
+  cliente?: string,
+): Promise<Orcamento[]> {
   const params = new URLSearchParams();
-  if (status) params.append('status', status);
-  if (cliente) params.append('cliente', cliente);
+  if (status) params.append("status", status);
+  if (cliente) params.append("cliente", cliente);
 
-  const url = `/orcamentos/${params.toString() ? '?' + params.toString() : ''}`;
+  const url = `/orcamentos/${params.toString() ? "?" + params.toString() : ""}`;
   const response = await fetchWithAuth(url);
 
   if (!response.ok) {
-    throw new Error('Erro ao buscar orçamentos');
+    throw new Error("Erro ao buscar orçamentos");
   }
 
   return response.json();
@@ -133,23 +141,26 @@ export async function getOrcamento(id: string): Promise<Orcamento> {
 
   if (!response.ok) {
     if (response.status === 404) {
-      throw new Error('Orçamento não encontrado');
+      throw new Error("Orçamento não encontrado");
     }
-    throw new Error('Erro ao buscar orçamento');
+    throw new Error("Erro ao buscar orçamento");
   }
 
   return response.json();
 }
 
-export async function updateOrcamento(id: string, data: OrcamentoUpdate): Promise<Orcamento> {
+export async function updateOrcamento(
+  id: string,
+  data: OrcamentoUpdate,
+): Promise<Orcamento> {
   const response = await fetchWithAuth(`/orcamentos/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Erro ao atualizar orçamento');
+    throw new Error(error.detail || "Erro ao atualizar orçamento");
   }
 
   return response.json();
@@ -157,12 +168,12 @@ export async function updateOrcamento(id: string, data: OrcamentoUpdate): Promis
 
 export async function deleteOrcamento(id: string): Promise<void> {
   const response = await fetchWithAuth(`/orcamentos/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Erro ao deletar orçamento');
+    throw new Error(error.detail || "Erro ao deletar orçamento");
   }
 }
 
@@ -170,22 +181,25 @@ export async function downloadOrcamentoPDF(id: string): Promise<Blob> {
   const response = await fetchWithAuth(`/orcamentos/${id}/pdf`);
 
   if (!response.ok) {
-    throw new Error('Erro ao baixar PDF');
+    throw new Error("Erro ao baixar PDF");
   }
 
   return response.blob();
 }
 
 // Funções para Itens do Orçamento
-export async function addItem(orcamentoId: string, item: OrcamentoItemCreate): Promise<OrcamentoItem> {
+export async function addItem(
+  orcamentoId: string,
+  item: OrcamentoItemCreate,
+): Promise<OrcamentoItem> {
   const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/itens`, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify(item),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Erro ao adicionar item');
+    throw new Error(error.detail || "Erro ao adicionar item");
   }
 
   return response.json();
@@ -195,7 +209,7 @@ export async function getItens(orcamentoId: string): Promise<OrcamentoItem[]> {
   const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/itens`);
 
   if (!response.ok) {
-    throw new Error('Erro ao buscar itens do orçamento');
+    throw new Error("Erro ao buscar itens do orçamento");
   }
 
   return response.json();
@@ -204,69 +218,94 @@ export async function getItens(orcamentoId: string): Promise<OrcamentoItem[]> {
 export async function updateItem(
   orcamentoId: string,
   itemId: string,
-  item: OrcamentoItemUpdate
+  item: OrcamentoItemUpdate,
 ): Promise<OrcamentoItem> {
-  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/itens/${itemId}`, {
-    method: 'PUT',
-    body: JSON.stringify(item),
-  });
+  const response = await fetchWithAuth(
+    `/orcamentos/${orcamentoId}/itens/${itemId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(item),
+    },
+  );
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Erro ao atualizar item');
+    throw new Error(error.detail || "Erro ao atualizar item");
   }
 
   return response.json();
 }
 
-export async function deleteItem(orcamentoId: string, itemId: string): Promise<void> {
-  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/itens/${itemId}`, {
-    method: 'DELETE',
-  });
+export async function deleteItem(
+  orcamentoId: string,
+  itemId: string,
+): Promise<void> {
+  const response = await fetchWithAuth(
+    `/orcamentos/${orcamentoId}/itens/${itemId}`,
+    {
+      method: "DELETE",
+    },
+  );
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Erro ao remover item');
+    throw new Error(error.detail || "Erro ao remover item");
   }
 }
 
 // Funções para Etapas
 export async function getEtapas(orcamentoId: string): Promise<Etapa[]> {
   const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/etapas`);
-  if (!response.ok) throw new Error('Erro ao buscar etapas');
+  if (!response.ok) throw new Error("Erro ao buscar etapas");
   return response.json();
 }
 
-export async function createEtapa(orcamentoId: string, data: EtapaCreate): Promise<Etapa> {
+export async function createEtapa(
+  orcamentoId: string,
+  data: EtapaCreate,
+): Promise<Etapa> {
   const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/etapas`, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify(data),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Erro ao criar etapa');
+    throw new Error(error.detail || "Erro ao criar etapa");
   }
   return response.json();
 }
 
-export async function deleteEtapa(orcamentoId: string, etapaId: string): Promise<void> {
-  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/etapas/${etapaId}`, {
-    method: 'DELETE',
-  });
+export async function deleteEtapa(
+  orcamentoId: string,
+  etapaId: string,
+): Promise<void> {
+  const response = await fetchWithAuth(
+    `/orcamentos/${orcamentoId}/etapas/${etapaId}`,
+    {
+      method: "DELETE",
+    },
+  );
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Erro ao deletar etapa');
+    throw new Error(error.detail || "Erro ao deletar etapa");
   }
 }
 
-export async function updateEtapa(orcamentoId: string, etapaId: string, data: EtapaUpdate): Promise<Etapa> {
-  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/etapas/${etapaId}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
+export async function updateEtapa(
+  orcamentoId: string,
+  etapaId: string,
+  data: EtapaUpdate,
+): Promise<Etapa> {
+  const response = await fetchWithAuth(
+    `/orcamentos/${orcamentoId}/etapas/${etapaId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    },
+  );
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Erro ao atualizar etapa');
+    throw new Error(error.detail || "Erro ao atualizar etapa");
   }
   return response.json();
 }
@@ -275,10 +314,11 @@ export async function updateEtapa(orcamentoId: string, etapaId: string, data: Et
 export interface SinapiBase {
   mes_referencia: string;
   tipo_composicao: string;
+  fonte: string;
 }
 
 export async function getSinapiBases(): Promise<SinapiBase[]> {
-  const response = await fetchWithAuth('/sinapi/bases');
-  if (!response.ok) throw new Error('Erro ao buscar bases SINAPI');
+  const response = await fetchWithAuth("/importacao/bases");
+  if (!response.ok) throw new Error("Erro ao buscar bases SINAPI");
   return response.json();
 }

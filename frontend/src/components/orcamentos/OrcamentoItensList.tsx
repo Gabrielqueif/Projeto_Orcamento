@@ -13,11 +13,12 @@ const formatarMoeda = (valor: number | null): string => {
 type OrcamentoItensListProps = {
   orcamentoId: string;
   valorTotal: number | null;
+  fonteOrcamento?: string;
   refreshTrigger?: number;
   onItemDeleted?: () => void;
 };
 
-export function OrcamentoItensList({ orcamentoId, valorTotal, refreshTrigger, onItemDeleted }: OrcamentoItensListProps) {
+export function OrcamentoItensList({ orcamentoId, valorTotal, fonteOrcamento = "SINAPI", refreshTrigger, onItemDeleted }: OrcamentoItensListProps) {
   const [itens, setItens] = React.useState<OrcamentoItem[]>([]);
   const [etapas, setEtapas] = React.useState<Etapa[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -72,6 +73,7 @@ export function OrcamentoItensList({ orcamentoId, valorTotal, refreshTrigger, on
       <table className="w-full text-left border-collapse">
         <thead className="bg-slate-100 text-slate-600 uppercase text-xs font-semibold">
           <tr>
+            <th className="p-3 border-b">Fonte</th>
             <th className="p-3 border-b">Código</th>
             <th className="p-3 border-b">Descrição</th>
             <th className="p-3 border-b text-center">Qtd</th>
@@ -85,6 +87,15 @@ export function OrcamentoItensList({ orcamentoId, valorTotal, refreshTrigger, on
         <tbody className="divide-y divide-slate-100">
           {listaItens.map((item) => (
             <tr key={item.id} className="hover:bg-slate-50">
+              <td className="p-3">
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                  item.fonte === 'SEINFRA' 
+                    ? 'bg-orange-100 text-orange-700 border border-orange-200' 
+                    : 'bg-blue-100 text-blue-700 border border-blue-200'
+                }`}>
+                  {item.fonte}
+                </span>
+              </td>
               <td className="p-3 font-medium text-slate-700">{item.codigo_composicao}</td>
               <td className="p-3 text-slate-700">{item.descricao}</td>
               <td className="p-3 text-center text-slate-600">{item.quantidade.toLocaleString('pt-BR')}</td>
@@ -209,7 +220,8 @@ export function OrcamentoItensList({ orcamentoId, valorTotal, refreshTrigger, on
           {editingItem && (
             <OrcamentoItemForm
               orcamentoId={orcamentoId}
-              estadoOrcamento={editingItem.estado} // Pass item's state or parent's state? Item has state, but form uses it to check prices. Usually same as budget.
+              estadoOrcamento={editingItem.estado}
+              fonteOrcamento={fonteOrcamento}
               onItemAdded={handleSuccessEdit}
               itemToEdit={editingItem}
               onCancel={() => setEditingItem(null)}

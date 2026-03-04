@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import itens, orcamentos, orcamento_itens, etapas, sinapi
+from app.routes import itens, orcamentos, orcamento_itens, etapas, importacao
 from core.config import settings
 
 # Configurar logging
@@ -22,8 +22,13 @@ app = FastAPI(
 
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
+    status_code = 400
+    msg = str(exc).lower()
+    if "não encontrado" in msg or "not found" in msg:
+        status_code = 404
+        
     return JSONResponse(
-        status_code=400,
+        status_code=status_code,
         content={"detail": str(exc)},
     )
 
@@ -48,7 +53,7 @@ app.include_router(itens.router)
 app.include_router(orcamentos.router)
 app.include_router(orcamento_itens.router)
 app.include_router(etapas.router)
-app.include_router(sinapi.router)
+app.include_router(importacao.router)
 
 
 @app.get("/health")

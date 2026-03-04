@@ -13,7 +13,7 @@ def test_upload_sinapi_worksheet(client: TestClient):
 
     with open(file_path, "rb") as f:
         files = {"file": ("planilha_sinapi.xlsx", f, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
-        response = client.post("/sinapi/upload", files=files)
+        response = client.post("/importacao/upload", files=files)
 
     assert response.status_code == 200
     data = response.json()
@@ -26,7 +26,7 @@ def test_upload_invalid_file(client: TestClient):
     Test uploading a text file instead of Excel.
     """
     files = {"file": ("test.txt", b"plain text", "text/plain")}
-    response = client.post("/sinapi/upload", files=files)
+    response = client.post("/importacao/upload", files=files)
     
     assert response.status_code == 400
     assert "Invalid file format" in response.json()["detail"]

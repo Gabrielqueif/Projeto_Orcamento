@@ -1,7 +1,15 @@
-'use client';
+"use client";
 
 import * as React from "react";
-import { addItem, updateItem, getEtapas, type OrcamentoItemCreate, type OrcamentoItemUpdate, type Etapa, type OrcamentoItem } from "@/lib/api/orcamentos";
+import {
+  addItem,
+  updateItem,
+  getEtapas,
+  type OrcamentoItemCreate,
+  type OrcamentoItemUpdate,
+  type Etapa,
+  type OrcamentoItem,
+} from "@/lib/api/orcamentos";
 import { buscarComposicoes as apiBuscarComposicoes } from "@/lib/api/composicoes";
 import { Modal } from "@/components/ui/Modal";
 
@@ -10,6 +18,7 @@ interface ItemComposicao {
   descricao: string;
   unidade: string;
   preco?: number;
+  fonte: string; // Adicionado campo fonte
 }
 
 interface FormulaVariable {
@@ -19,52 +28,63 @@ interface FormulaVariable {
 }
 
 const ESTADOS = [
-  { value: 'ac', label: 'AC - Acre' },
-  { value: 'al', label: 'AL - Alagoas' },
-  { value: 'ap', label: 'AP - Amapá' },
-  { value: 'am', label: 'AM - Amazonas' },
-  { value: 'ba', label: 'BA - Bahia' },
-  { value: 'ce', label: 'CE - Ceará' },
-  { value: 'df', label: 'DF - Distrito Federal' },
-  { value: 'es', label: 'ES - Espírito Santo' },
-  { value: 'go', label: 'GO - Goiás' },
-  { value: 'ma', label: 'MA - Maranhão' },
-  { value: 'mt', label: 'MT - Mato Grosso' },
-  { value: 'ms', label: 'MS - Mato Grosso do Sul' },
-  { value: 'mg', label: 'MG - Minas Gerais' },
-  { value: 'pa', label: 'PA - Pará' },
-  { value: 'pb', label: 'PB - Paraíba' },
-  { value: 'pr', label: 'PR - Paraná' },
-  { value: 'pe', label: 'PE - Pernambuco' },
-  { value: 'pi', label: 'PI - Piauí' },
-  { value: 'rj', label: 'RJ - Rio de Janeiro' },
-  { value: 'rn', label: 'RN - Rio Grande do Norte' },
-  { value: 'rs', label: 'RS - Rio Grande do Sul' },
-  { value: 'ro', label: 'RO - Rondônia' },
-  { value: 'rr', label: 'RR - Roraima' },
-  { value: 'sc', label: 'SC - Santa Catarina' },
-  { value: 'sp', label: 'SP - São Paulo' },
-  { value: 'se', label: 'SE - Sergipe' },
-  { value: 'to', label: 'TO - Tocantins' },
+  { value: "ac", label: "AC - Acre" },
+  { value: "al", label: "AL - Alagoas" },
+  { value: "ap", label: "AP - Amapá" },
+  { value: "am", label: "AM - Amazonas" },
+  { value: "ba", label: "BA - Bahia" },
+  { value: "ce", label: "CE - Ceará" },
+  { value: "df", label: "DF - Distrito Federal" },
+  { value: "es", label: "ES - Espírito Santo" },
+  { value: "go", label: "GO - Goiás" },
+  { value: "ma", label: "MA - Maranhão" },
+  { value: "mt", label: "MT - Mato Grosso" },
+  { value: "ms", label: "MS - Mato Grosso do Sul" },
+  { value: "mg", label: "MG - Minas Gerais" },
+  { value: "pa", label: "PA - Pará" },
+  { value: "pb", label: "PB - Paraíba" },
+  { value: "pr", label: "PR - Paraná" },
+  { value: "pe", label: "PE - Pernambuco" },
+  { value: "pi", label: "PI - Piauí" },
+  { value: "rj", label: "RJ - Rio de Janeiro" },
+  { value: "rn", label: "RN - Rio Grande do Norte" },
+  { value: "rs", label: "RS - Rio Grande do Sul" },
+  { value: "ro", label: "RO - Rondônia" },
+  { value: "rr", label: "RR - Roraima" },
+  { value: "sc", label: "SC - Santa Catarina" },
+  { value: "sp", label: "SP - São Paulo" },
+  { value: "se", label: "SE - Sergipe" },
+  { value: "to", label: "TO - Tocantins" },
 ];
 
 type OrcamentoItemFormProps = {
   orcamentoId: string;
   estadoOrcamento?: string;
+  fonteOrcamento?: string;
   refreshTrigger?: number;
   onItemAdded?: () => void;
   itemToEdit?: OrcamentoItem;
   onCancel?: () => void;
 };
 
-export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger, onItemAdded, itemToEdit, onCancel }: OrcamentoItemFormProps) {
-  const [termo, setTermo] = React.useState('');
+export function OrcamentoItemForm({
+  orcamentoId,
+  estadoOrcamento,
+  fonteOrcamento = "SINAPI",
+  refreshTrigger,
+  onItemAdded,
+  itemToEdit,
+  onCancel,
+}: OrcamentoItemFormProps) {
+  const [termo, setTermo] = React.useState("");
   const [resultados, setResultados] = React.useState<ItemComposicao[]>([]);
   const [loading, setLoading] = React.useState(false);
-  const [composicaoSelecionada, setComposicaoSelecionada] = React.useState<ItemComposicao | null>(null);
-  const [quantidade, setQuantidade] = React.useState<string>('1');
+  const [composicaoSelecionada, setComposicaoSelecionada] =
+    React.useState<ItemComposicao | null>(null);
+  const [quantidade, setQuantidade] = React.useState<string>("1");
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [baseBusca, setBaseBusca] = React.useState<string>(fonteOrcamento); // Nova base de busca dinâmica
 
   // Etapas State
   const [etapas, setEtapas] = React.useState<Etapa[]>([]);
@@ -72,7 +92,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
 
   // Formula Modal State
   const [showFormulaModal, setShowFormulaModal] = React.useState(false);
-  const [formula, setFormula] = React.useState('');
+  const [formula, setFormula] = React.useState("");
   const [variables, setVariables] = React.useState<FormulaVariable[]>([]);
   const [previewResult, setPreviewResult] = React.useState<number | null>(null);
   const [formulaError, setFormulaError] = React.useState<string | null>(null);
@@ -99,26 +119,26 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
         codigo_composicao: itemToEdit.codigo_composicao,
         descricao: itemToEdit.descricao,
         unidade: itemToEdit.unidade,
-        preco: itemToEdit.preco_unitario || undefined
+        preco: itemToEdit.preco_unitario || undefined,
       });
       // Load memory and variables
-      setFormula(itemToEdit.memoria_calculo || '');
+      setFormula(itemToEdit.memoria_calculo || "");
       setVariables(itemToEdit.variaveis || []);
 
       // Clear search related states
-      setTermo('');
+      setTermo("");
       setResultados([]);
     } else {
       // Reset form when itemToEdit becomes null (e.g., after successful edit or cancel)
-      setQuantidade('1');
-      setEtapaId('');
+      setQuantidade("1");
+      setEtapaId("");
       setComposicaoSelecionada(null);
-      setTermo('');
+      setTermo("");
       setResultados([]);
-      setFormula('');
+      setFormula("");
       setVariables([]);
     }
-  }, [itemToEdit]);
+  }, [itemToEdit, fonteOrcamento]);
 
   const buscarComposicoes = async () => {
     if (!termo.trim()) {
@@ -128,7 +148,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
 
     setLoading(true);
     try {
-      const data = await apiBuscarComposicoes(termo);
+      const data = await apiBuscarComposicoes(termo, baseBusca);
       setResultados(data || []);
     } catch (error) {
       console.error(error);
@@ -165,14 +185,16 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
 
       // Replace variables
       // Sort by length desc to prevent partial replacements (e.g. VAR1 vs VAR10)
-      const sortedVars = [...variables].sort((a, b) => b.name.length - a.name.length);
+      const sortedVars = [...variables].sort(
+        (a, b) => b.name.length - a.name.length,
+      );
 
       for (const v of sortedVars) {
         if (!v.name) continue;
         // Escape special regex chars in name just in case, though we limit to alphanumeric
-        const safeName = v.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const safeName = v.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         // Use word boundaries to match exact variable names
-        const regex = new RegExp(`\\b${safeName}\\b`, 'g');
+        const regex = new RegExp(`\\b${safeName}\\b`, "g");
         expression = expression.replace(regex, v.value.toString());
       }
 
@@ -183,7 +205,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
       }
 
       // Replace comma with dot for JS evaluation
-      expression = expression.replace(/,/g, '.');
+      expression = expression.replace(/,/g, ".");
 
       // Safe evaluation using Function
       // eslint-disable-next-line no-new-func
@@ -220,35 +242,46 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
 
   const addVariable = () => {
     const id = Date.now().toString();
-    setVariables([...variables, { id, name: `VAR${variables.length + 1}`, value: 0 }]);
+    setVariables([
+      ...variables,
+      { id, name: `VAR${variables.length + 1}`, value: 0 },
+    ]);
   };
 
-  const updateVariable = (id: string, field: keyof FormulaVariable, value: string | number) => {
-    setVariables(variables.map(v => {
-      if (v.id === id) {
-        if (field === 'name') {
-          // Restrict name to alphanumeric
-          const sanitized = (value as string).replace(/[^a-zA-Z0-9_]/g, '');
-          return { ...v, name: sanitized.toUpperCase() };
+  const updateVariable = (
+    id: string,
+    field: keyof FormulaVariable,
+    value: string | number,
+  ) => {
+    setVariables(
+      variables.map((v) => {
+        if (v.id === id) {
+          if (field === "name") {
+            // Restrict name to alphanumeric
+            const sanitized = (value as string).replace(/[^a-zA-Z0-9_]/g, "");
+            return { ...v, name: sanitized.toUpperCase() };
+          }
+          return { ...v, [field]: value };
         }
-        return { ...v, [field]: value };
-      }
-      return v;
-    }));
+        return v;
+      }),
+    );
   };
 
   const removeVariable = (id: string) => {
-    setVariables(variables.filter(v => v.id !== id));
+    setVariables(variables.filter((v) => v.id !== id));
   };
 
   const insertVariable = (name: string) => {
-    setFormula(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + name + ' ');
+    setFormula(
+      (prev) => prev + (prev && !prev.endsWith(" ") ? " " : "") + name + " ",
+    );
   };
 
   const handleSelectComposicao = (composicao: ItemComposicao) => {
     setComposicaoSelecionada(composicao);
     setResultados([]);
-    setTermo('');
+    setTermo("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -260,7 +293,9 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
     }
 
     if (!estadoOrcamento) {
-      setError("Estado não definido no orçamento. Por favor, edite o orçamento e selecione um estado.");
+      setError(
+        "Estado não definido no orçamento. Por favor, edite o orçamento e selecione um estado.",
+      );
       return;
     }
 
@@ -283,7 +318,7 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
           unidade: composicaoSelecionada.unidade,
           etapa_id: etapaId || undefined,
           memoria_calculo: formula,
-          variaveis: variables
+          variaveis: variables,
         };
         await updateItem(orcamentoId, itemToEdit.id, itemUpdate);
       } else {
@@ -295,15 +330,15 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
           unidade: composicaoSelecionada.unidade,
           etapa_id: etapaId || undefined,
           memoria_calculo: formula,
-          variaveis: variables
+          variaveis: variables,
         };
         await addItem(orcamentoId, itemData);
 
         // Only clear form on create
         setComposicaoSelecionada(null);
-        setQuantidade('1');
-        setTermo('');
-        setFormula(''); // Clear formula for next item, but keep variables
+        setQuantidade("1");
+        setTermo("");
+        setFormula(""); // Clear formula for next item, but keep variables
       }
 
       if (onItemAdded) {
@@ -329,11 +364,12 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-
         {/* Etapa Selection */}
         {etapas.length > 0 && (
           <div>
-            <label className="block text-sm font-bold mb-2" htmlFor="etapa">Etapa</label>
+            <label className="block text-sm font-bold mb-2" htmlFor="etapa">
+              Etapa
+            </label>
             <select
               id="etapa"
               value={etapaId}
@@ -343,15 +379,18 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
               <option value="">Sem etapa definida</option>
               {(() => {
                 // Função recursiva para renderizar opções do select com indentação
-                const renderOptions = (parentId: string | null = null, level = 0) => {
+                const renderOptions = (
+                  parentId: string | null = null,
+                  level = 0,
+                ) => {
                   return etapas
-                    .filter(etapa => etapa.parent_id === parentId)
+                    .filter((etapa) => etapa.parent_id === parentId)
                     .sort((a, b) => a.ordem - b.ordem)
-                    .map(etapa => (
+                    .map((etapa) => (
                       <React.Fragment key={etapa.id}>
                         <option value={etapa.id}>
-                          {'\u00A0'.repeat(level * 4)}
-                          {level > 0 ? '↳ ' : ''}
+                          {"\u00A0".repeat(level * 4)}
+                          {level > 0 ? "↳ " : ""}
                           {etapa.nome}
                         </option>
                         {renderOptions(etapa.id, level + 1)}
@@ -365,20 +404,59 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
         )}
 
         {/* Busca de Composição */}
-        <div>
-          <label className="block text-sm font-bold mb-2" htmlFor="busca">
-            Buscar Composição (SINAPI)
-          </label>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <label className="block text-sm font-bold" htmlFor="busca">
+              Buscar Composição
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setBaseBusca("SINAPI")}
+                className={`text-[10px] px-3 py-1 rounded-full font-bold transition-all ${
+                  baseBusca === "SINAPI"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                }`}
+              >
+                SINAPI
+              </button>
+              <button
+                type="button"
+                onClick={() => setBaseBusca("SEINFRA")}
+                className={`text-[10px] px-3 py-1 rounded-full font-bold transition-all ${
+                  baseBusca === "SEINFRA"
+                    ? "bg-orange-600 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                }`}
+              >
+                SEINFRA
+              </button>
+            </div>
+          </div>
+
           {composicaoSelecionada ? (
             <div className="border border-green-300 bg-green-50 p-3 rounded-md">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="font-semibold text-slate-800">
-                    {composicaoSelecionada.codigo_composicao} - {composicaoSelecionada.descricao}
+                  <p className="font-semibold text-slate-800 flex items-center gap-2">
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                        composicaoSelecionada.fonte === "SEINFRA"
+                          ? "bg-orange-100 text-orange-700 border border-orange-200"
+                          : "bg-blue-100 text-blue-700 border border-blue-200"
+                      }`}
+                    >
+                      {composicaoSelecionada.fonte}
+                    </span>
+                    {composicaoSelecionada.codigo_composicao} -{" "}
+                    {composicaoSelecionada.descricao}
                   </p>
-                  <p className="text-sm text-slate-600">Unidade: {composicaoSelecionada.unidade}</p>
+                  <p className="text-sm text-slate-600">
+                    Unidade: {composicaoSelecionada.unidade}
+                  </p>
                 </div>
-                {!itemToEdit && ( // Only allow remove/search new composition if adding new item? 
+                {!itemToEdit && ( // Only allow remove/search new composition if adding new item?
                   // Or allow changing composition on edit? The user asked to be able to change service.
                   // So we should allow clear even in edit mode.
                   <button
@@ -410,7 +488,9 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
                 placeholder="Digite código ou descrição da composição"
                 className="border border-gray-300 p-2 w-full rounded-md"
               />
-              {loading && <p className="text-sm text-slate-500 mt-1">Buscando...</p>}
+              {loading && (
+                <p className="text-sm text-slate-500 mt-1">Buscando...</p>
+              )}
               {resultados.length > 0 && (
                 <div className="mt-2 border border-gray-200 rounded-md max-h-48 overflow-y-auto">
                   {resultados.map((item) => (
@@ -419,10 +499,21 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
                       onClick={() => handleSelectComposicao(item)}
                       className="p-3 hover:bg-slate-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                     >
-                      <p className="font-semibold text-slate-800">
+                      <p className="font-semibold text-slate-800 flex items-center gap-2">
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                            item.fonte === "SEINFRA"
+                              ? "bg-orange-100 text-orange-700 border border-orange-200"
+                              : "bg-blue-100 text-blue-700 border border-blue-200"
+                          }`}
+                        >
+                          {item.fonte}
+                        </span>
                         {item.codigo_composicao} - {item.descricao}
                       </p>
-                      <p className="text-sm text-slate-600">Unidade: {item.unidade}</p>
+                      <p className="text-sm text-slate-600">
+                        Unidade: {item.unidade}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -435,8 +526,9 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
         {estadoOrcamento && (
           <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">
             <p className="text-sm text-blue-800">
-              <span className="font-semibold">Estado do orçamento:</span>{' '}
-              {ESTADOS.find(e => e.value === estadoOrcamento)?.label || estadoOrcamento.toUpperCase()}
+              <span className="font-semibold">Estado do orçamento:</span>{" "}
+              {ESTADOS.find((e) => e.value === estadoOrcamento)?.label ||
+                estadoOrcamento.toUpperCase()}
             </p>
             <p className="text-xs text-brand-primary mt-1">
               Os preços serão buscados automaticamente para este estado.
@@ -447,7 +539,8 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
         {!estadoOrcamento && (
           <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md">
             <p className="text-sm text-yellow-800">
-              ⚠️ Estado não definido. Por favor, edite o orçamento e selecione um estado primeiro.
+              ⚠️ Estado não definido. Por favor, edite o orçamento e selecione
+              um estado primeiro.
             </p>
           </div>
         )}
@@ -471,9 +564,24 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
               disabled={!composicaoSelecionada}
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18" /><path d="M6 6l12 12" /></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 6L6 18" />
+                <path d="M6 6l12 12" />
+              </svg>
             </div>
-            <p className="text-xs text-slate-500 mt-1">Clique para inserir fórmula ou memória de cálculo</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Clique para inserir fórmula ou memória de cálculo
+            </p>
           </div>
         </div>
 
@@ -492,7 +600,11 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
             disabled={submitting || !composicaoSelecionada || !estadoOrcamento}
             className="flex-1 bg-brand-primary hover:bg-brand-navy disabled:bg-brand-primary/50 text-white p-2 rounded-md transition-colors"
           >
-            {submitting ? "Salvando..." : (itemToEdit ? "Salvar Alterações" : "Adicionar ao Orçamento")}
+            {submitting
+              ? "Salvando..."
+              : itemToEdit
+                ? "Salvar Alterações"
+                : "Adicionar ao Orçamento"}
           </button>
         </div>
       </form>
@@ -519,24 +631,34 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
                 autoFocus
               />
               {formulaError && (
-                <p className="text-red-500 text-sm mt-2 font-medium">{formulaError}</p>
+                <p className="text-red-500 text-sm mt-2 font-medium">
+                  {formulaError}
+                </p>
               )}
               <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-100">
                 <p className="text-xs text-blue-700 leading-relaxed">
-                  <span className="font-bold">Dica:</span> Use os nomes das variáveis criadas à direita.
-                  Suporta operações básicas <code className="bg-white px-1 rounded">+ - * /</code> e parênteses.
+                  <span className="font-bold">Dica:</span> Use os nomes das
+                  variáveis criadas à direita. Suporta operações básicas{" "}
+                  <code className="bg-white px-1 rounded">+ - * /</code> e
+                  parênteses.
                 </p>
               </div>
             </div>
 
             {/* Resultado em destaque */}
             <div className="bg-slate-900 text-white p-6 rounded-xl flex justify-between items-center shadow-inner">
-              <span className="text-slate-400 font-medium tracking-wide uppercase text-sm">Resultado Final</span>
+              <span className="text-slate-400 font-medium tracking-wide uppercase text-sm">
+                Resultado Final
+              </span>
               <div className="text-right">
                 <span className="text-4xl font-black text-brand-primary">
-                  {previewResult !== null ? previewResult.toLocaleString('pt-BR') : '---'}
+                  {previewResult !== null
+                    ? previewResult.toLocaleString("pt-BR")
+                    : "---"}
                 </span>
-                <span className="ml-2 text-slate-500 font-bold">{composicaoSelecionada?.unidade}</span>
+                <span className="ml-2 text-slate-500 font-bold">
+                  {composicaoSelecionada?.unidade}
+                </span>
               </div>
             </div>
 
@@ -562,7 +684,9 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
           {/* Coluna da Direita: Variáveis (1/3) */}
           <div className="md:col-span-4 flex flex-col bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-white flex justify-between items-center">
-              <h4 className="font-bold text-slate-700 text-sm uppercase tracking-wider">Variáveis</h4>
+              <h4 className="font-bold text-slate-700 text-sm uppercase tracking-wider">
+                Variáveis
+              </h4>
               <button
                 type="button"
                 onClick={addVariable}
@@ -578,16 +702,23 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
                   <div className="bg-slate-200 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
                     <span className="text-slate-400 text-xl font-bold">x</span>
                   </div>
-                  <p className="text-xs text-slate-500 italic">Crie variáveis para reutilizar valores na fórmula.</p>
+                  <p className="text-xs text-slate-500 italic">
+                    Crie variáveis para reutilizar valores na fórmula.
+                  </p>
                 </div>
               ) : (
                 variables.map((variable) => (
-                  <div key={variable.id} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm space-y-2 group relative">
+                  <div
+                    key={variable.id}
+                    className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm space-y-2 group relative"
+                  >
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
                         value={variable.name}
-                        onChange={(e) => updateVariable(variable.id, 'name', e.target.value)}
+                        onChange={(e) =>
+                          updateVariable(variable.id, "name", e.target.value)
+                        }
                         placeholder="NOME"
                         className="w-full text-xs font-bold border-none bg-slate-100 focus:bg-white p-1.5 rounded uppercase outline-brand-primary"
                       />
@@ -603,7 +734,13 @@ export function OrcamentoItemForm({ orcamentoId, estadoOrcamento, refreshTrigger
                       <input
                         type="number"
                         value={variable.value}
-                        onChange={(e) => updateVariable(variable.id, 'value', Number(e.target.value))}
+                        onChange={(e) =>
+                          updateVariable(
+                            variable.id,
+                            "value",
+                            Number(e.target.value),
+                          )
+                        }
                         placeholder="Valor"
                         className="flex-1 text-sm border border-slate-200 p-1.5 rounded focus:ring-1 focus:ring-brand-primary outline-none"
                       />

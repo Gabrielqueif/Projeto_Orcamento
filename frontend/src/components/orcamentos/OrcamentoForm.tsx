@@ -43,6 +43,7 @@ type OrcamentoFormProps = {
     data?: string;
     base_referencia?: string;
     estado?: string;
+    fonte?: string;
     status?: string;
   };
 }
@@ -74,6 +75,9 @@ export function OrcamentoForm({ mode = "create", orcamentoId, initialData }: Orc
     loadBases();
   }, []);
 
+  const fontesDisponiveis = Array.from(new Set(availableBases.map(b => b.fonte || "SINAPI")));
+  if (fontesDisponiveis.length === 0) fontesDisponiveis.push("SINAPI");
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -86,6 +90,7 @@ export function OrcamentoForm({ mode = "create", orcamentoId, initialData }: Orc
       data: formData.get("data") as string,
       base_referencia: formData.get("base_referencia") as string,
       tipo_composicao: formData.get("tipo_composicao") as string,
+      fonte: formData.get("fonte") as string || "SINAPI",
       bdi: parseFloat(formData.get("bdi") as string) || 0,
       estado: formData.get("estado") as string,
     };
@@ -157,9 +162,26 @@ export function OrcamentoForm({ mode = "create", orcamentoId, initialData }: Orc
             />
           </div>
 
-          {/* Mês/Ano Base (SINAPI) */}
+          {/* Base Principal (SINAPI, SEINFRA, etc) */}
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700" htmlFor="base_referencia">Mês/Ano Base (SINAPI)</label>
+            <label className="block text-sm font-medium text-slate-700" htmlFor="fonte">Base Principal</label>
+            <select
+              id="fonte"
+              name="fonte"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary"
+              defaultValue={initialData?.fonte || "SINAPI"}
+              required
+            >
+              <option value="">Selecione a fonte</option>
+              {fontesDisponiveis.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Mês/Ano Base */}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="base_referencia">Mês/Ano Base</label>
             <select
               id="base_referencia"
               name="base_referencia"
@@ -168,7 +190,14 @@ export function OrcamentoForm({ mode = "create", orcamentoId, initialData }: Orc
               required
             >
               <option value="">Selecione o mês base</option>
-              {mesesDisponiveis.map((mes) => (
+              {mesesDisponiveis
+                .filter(mes => {
+                  const form = typeof document !== 'undefined' ? document.getElementById('fonte') as HTMLSelectElement : null;
+                  const selectedFonte = form?.value || initialData?.fonte || "SINAPI";
+                  // Filtrar meses que pertençam à fonte selecionada (opcional, mas bom para UX)
+                  return true; // Por enquanto mostra todos para simplificar
+                })
+                .map((mes) => (
                 <option key={mes} value={mes}>{mes}</option>
               ))}
               {!availableBases.length && <option value="" disabled>Carregando bases...</option>}

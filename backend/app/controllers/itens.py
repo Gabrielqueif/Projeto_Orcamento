@@ -15,14 +15,14 @@ def importar_sinapi(service: ItemService = Depends(get_item_service)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
 
-def listar_composicoes(service: ItemService = Depends(get_item_service)):
-    return service.listar_composicoes()
+def listar_composicoes(fonte: str = "SINAPI", service: ItemService = Depends(get_item_service)):
+    return service.listar_composicoes(fonte=fonte)
 
-def buscar_composicao(termo: str, service: ItemService = Depends(get_item_service)):
+def buscar_composicao(termo: str, fonte: str = "SINAPI", service: ItemService = Depends(get_item_service)):
     try:
-        return service.buscar_composicao(termo)
+        return service.buscar_composicao(termo, fonte=fonte)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao buscar composição: {str(e)}")
 
-def listar_estados_composicao(codigo_composicao: str, service: ItemService = Depends(get_item_service)):
-    return service.listar_estados_composicao(codigo_composicao)
+def listar_estados_composicao(codigo_composicao: str, mes_referencia: str, fonte: str = "SINAPI", service: ItemService = Depends(get_item_service)):
+    return service.listar_estados_composicao(codigo_composicao, mes_referencia, fonte=fonte)
