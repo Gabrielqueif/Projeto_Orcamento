@@ -78,6 +78,7 @@ class OrcamentoItemCreate(BaseModel):
     quantidade: float
     unidade: str
     estado: Optional[str] = None
+    fonte: Optional[str] = None # Adicionado para suportar orçamentos híbridos
     etapa_id: Optional[str] = None
     memoria_calculo: Optional[str] = None
     variaveis: Optional[Any] = None
@@ -90,6 +91,7 @@ class OrcamentoItemUpdate(BaseModel):
     quantidade: Optional[float] = None
     unidade: Optional[str] = None
     estado: Optional[str] = None
+    fonte: Optional[str] = None # Adicionado para permitir trocar a fonte de um item existente
     etapa_id: Optional[str] = None
     memoria_calculo: Optional[str] = None
     variaveis: Optional[Any] = None
@@ -107,6 +109,7 @@ class OrcamentoItemResponse(BaseModel):
     preco_unitario: Optional[float]
     preco_total: Optional[float]
     estado: str
+    fonte: str # Campo obrigatório na resposta para exibição de badges
     memoria_calculo: Optional[str] = None
     variaveis: Optional[Any] = None
     created_at: Optional[datetime] = None

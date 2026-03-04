@@ -162,9 +162,9 @@ export function OrcamentoForm({ mode = "create", orcamentoId, initialData }: Orc
             />
           </div>
 
-          {/* Fonte de Dados (SINAPI, SEINFRA, etc) */}
+          {/* Base Principal (SINAPI, SEINFRA, etc) */}
           <div className="space-y-1">
-            <label className="block text-sm font-medium text-slate-700" htmlFor="fonte">Fonte de Dados</label>
+            <label className="block text-sm font-medium text-slate-700" htmlFor="fonte">Base Principal</label>
             <select
               id="fonte"
               name="fonte"
