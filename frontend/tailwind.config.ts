@@ -9,17 +9,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        "primary": "#26A69A",
-        "secondary": "#1F5F7A",
-        "white": "#f1f1f1",
-        "brand": {
-          "primary": "#00629B", // Pantone 3015 C
-          "secondary": "#00BFB3", // Pantone 3262 C
-          "dark": "#00594F", // Pantone 3292 C
-          "accent": "#97D700", // Pantone 375 C
-          "teal": "#00ACA0", // Pantone 2399 C
-          "navy": "#003C71", // Pantone 541 C
-          "lime": "#A7D500", // Pantone 2291 C
+        bg: {
+          dark: "#081225",
+          darker: "#050a15",
+          light: "#F4F6F8",
+        },
+        brand: {
+          primary: "#AEE112",
+          primaryHover: "#98C40F",
+        },
+        text: {
+          main: "#1D2C4D",
+          muted: "#6B7280",
+        },
+        surface: "#FFFFFF",
+        border: "#E5E7EB",
+        status: {
+          success: "#AEE112",
+          warning: "#F59E0B",
+          danger: "#EF4444",
+          info: "#06B6D4",
         }
       },
       backgroundImage: {

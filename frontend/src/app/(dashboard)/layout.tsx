@@ -1,42 +1,20 @@
-'use client';
-
-import { useState } from 'react';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { TopBar } from '@/components/layout/TopBar';
+import { Sidebar } from "@/components/layout/Sidebar";
+import { TopHeader } from "@/components/layout/TopHeader";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-  const closeSidebar = () => setIsSidebarOpen(false);
-
   return (
-    <div className="min-h-screen flex flex-col bg-white-100 h-screen overflow-hidden">
-      <TopBar onToggleSidebar={toggleSidebar} />
-
-      <div className="flex flex-1 pt-16 overflow-hidden">
-        {/* Sidebar e Overlay */}
-        <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
-
-        {/* Overlay para mobile quando o menu está aberto */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-20 lg:hidden"
-            onClick={closeSidebar}
-          />
-        )}
-
-        {/* Área de Conteúdo Principal */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 transition-all duration-300">
-          <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-full">
-            {children}
-          </div>
-        </main>
-      </div>
+    <div className="flex min-h-screen bg-bg-light overflow-x-hidden">
+      <Sidebar />
+      <main className="ml-[260px] flex-1 flex flex-col min-h-screen">
+        <TopHeader />
+        <div className="p-10 flex-1">
+          {children}
+        </div>
+      </main>
     </div>
   );
 }

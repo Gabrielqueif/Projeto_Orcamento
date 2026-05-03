@@ -1,90 +1,76 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname, useParams } from 'next/navigation';
-import { SidebarOrcamentoInfo } from './SidebarOrcamentoInfo';
-import { useUserRole } from '@/hooks/use-user-role';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { 
+  Buildings, 
+  SquaresFour, 
+  HardHat, 
+  Money, 
+  Users, 
+  FileText, 
+  BookOpen, 
+  Plus, 
+  Gear, 
+  Question 
+} from "@phosphor-icons/react";
+import clsx from "clsx";
 
-const menuItems = [
-  { name: 'Home', path: '/', icon: '🏠' },
-  { name: 'Empreendimentos', path: '/empreendimentos', icon: '🏗️' },
-  { name: 'Bases de dados', path: '/bases', icon: '📚' },
-  { name: 'Orçamentos', path: '/orcamentos', icon: '💰' },
-  { name: 'Admin / SINAPI', path: '/admin/sinapi', icon: '⚙️' },
-];
-
-interface SidebarProps {
-  isOpen?: boolean;
-  onClose?: () => void;
-}
-
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+export function Sidebar() {
   const pathname = usePathname();
-  const params = useParams();
-  const { role, loading } = useUserRole();
 
-  // Verifica se estamos em uma rota de detalhe de orçamento
-  const isOrcamentoDetail = pathname.startsWith('/orcamentos/') && params.id;
-
-  const sidebarClasses = `
-    w-64 h-full flex flex-col border-r border-slate-200 shadow-xl z-30 
-    transition-transform duration-300 ease-in-out
-    lg:relative lg:translate-x-0
-    fixed top-0 left-0
-    ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-  `;
-
-  if (isOrcamentoDetail) {
-    return (
-      <aside className={`${sidebarClasses} bg-brand-primary`}>
-        <div className="h-16 lg:hidden"></div> {/* Espaço TopBar no Mobile */}
-        <SidebarOrcamentoInfo orcamentoId={params.id as string} />
-      </aside>
-    );
-  }
+  const links = [
+    { href: "/", icon: SquaresFour, label: "Dashboard" },
+    { href: "/obras", icon: HardHat, label: "Obras" },
+    { href: "/financeiro", icon: Money, label: "Custos" },
+    { href: "/equipe", icon: Users, label: "Equipe" },
+    { href: "/docs", icon: FileText, label: "Docs" },
+    { href: "/diario", icon: BookOpen, label: "Diário de Obra" },
+  ];
 
   return (
-    <aside className={`${sidebarClasses} bg-white-100`}>
-      {/* Cabeçalho do Sidebar no Mobile */}
-      <div className="h-16 flex items-center justify-between px-4 lg:hidden">
-        <span className="font-bold text-brand-navy">Menu</span>
-        <button onClick={onClose} className="p-2 text-brand-navy">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <div className="hidden lg:block h-20"></div>
-
-      <nav className="flex-1 px-4 space-y-3 py-6">
-        {menuItems.map((item) => {
-          if (item.path.startsWith('/admin')) {
-            if (loading || role !== 'admin') {
-              return null;
-            }
-          }
-
-          const isActive = pathname === item.path;
+    <aside className="w-[260px] bg-bg-dark text-white flex flex-col fixed h-screen left-0 top-0 z-50 transition-all duration-300">
+      <Link href="/" className="flex items-center gap-3 py-8 px-6 text-2xl font-bold text-white no-underline">
+        <Buildings weight="fill" />
+        GP<span className="text-brand-primary">Obras</span>
+      </Link>
+      
+      <nav className="flex-1 p-4 flex flex-col gap-2">
+        {links.map((link) => {
+          const isActive = pathname === link.href || pathname?.startsWith(link.href + "/");
           return (
-            <Link
-              key={item.path}
-              href={item.path}
-              onClick={() => {
-                if (window.innerWidth < 1024) onClose?.();
-              }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all shadow-sm
-                ${isActive
-                  ? 'bg-brand-primary text-white'
-                  : 'bg-brand-secondary/10 text-brand-navy hover:bg-brand-secondary/20'
-                }
-              `}
+            <Link 
+              key={link.href} 
+              href={link.href} 
+              className={clsx(
+                "flex items-center gap-4 py-3.5 px-5 no-underline rounded-lg font-medium transition-all duration-200",
+                isActive 
+                  ? "bg-brand-primary text-bg-dark shadow-[0_4px_12px_rgba(174,225,18,0.2)]" 
+                  : "text-[#8C9CAB] hover:text-white hover:bg-white/5"
+              )}
             >
-              <span className="text-xl">{item.icon}</span>
-              {item.name}
+              <link.icon size={20} weight={isActive ? "fill" : "regular"} className={isActive ? "text-bg-dark" : "text-[#8C9CAB]"} />
+              {link.label}
             </Link>
           );
         })}
       </nav>
+      
+      <Link 
+        href="/obras/novo" 
+        className="mx-4 my-5 py-3.5 px-5 bg-brand-primary text-bg-dark rounded-lg font-semibold flex items-center justify-center gap-2 transition-all duration-200 text-[15px] hover:bg-[#98C40F]"
+      >
+        <Plus weight="bold" /> Nova Obra
+      </Link>
+      
+      <div className="p-4 border-t border-white/5 bg-bg-darker">
+        <Link href="/configuracoes" className="flex items-center gap-4 py-3 px-5 text-[#8C9CAB] no-underline rounded-lg font-medium transition-all duration-200 hover:text-white hover:bg-white/5 text-sm">
+          <Gear size={20} /> Configurações
+        </Link>
+        <a href="mailto:suporte@gpobras.com.br" className="flex items-center gap-4 py-3 px-5 text-[#8C9CAB] no-underline rounded-lg font-medium transition-all duration-200 hover:text-white hover:bg-white/5 text-sm">
+          <Question size={20} /> Suporte
+        </a>
+      </div>
     </aside>
   );
 }

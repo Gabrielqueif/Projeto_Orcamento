@@ -4,17 +4,22 @@
 
 @layer base {
   :root {
-    --color-primary: #26A69A;
-    --color-secondary: #1F5F7A;
-    --color-white: #f1f1f1;
+    --bg-dark: #081225;
+    --bg-darker: #050a15;
+    --bg-light: #F4F6F8;
+    
+    --color-primary: #AEE112;
+    --color-primary-hover: #98C40F;
+    
+    --text-main: #1D2C4D;
+    --text-muted: #6B7280;
+    
+    --surface: #FFFFFF;
+    --border: #E5E7EB;
 
-    /* Pantone Palette */
-    --brand-primary: #00629B;
-    --brand-secondary: #00BFB3;
-    --brand-dark: #00594F;
-    --brand-accent: #97D700;
-    --brand-teal: #00ACA0;
-    --brand-navy: #003C71;
-    --brand-lime: #A7D500;
+    --status-success: #AEE112;
+    --status-warning: #F59E0B;
+    --status-danger: #EF4444;
+    --status-info: #06B6D4;
   }
 }
