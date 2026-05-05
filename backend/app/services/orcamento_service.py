@@ -24,8 +24,8 @@ class OrcamentoService:
         }
         return self.repository.criar(dados)
 
-    def listar_orcamentos(self, status: Optional[str] = None, cliente: Optional[str] = None):
-        return self.repository.listar(status, cliente)
+    def listar_orcamentos(self, nome: Optional[str] = None, status: Optional[str] = None, cliente: Optional[str] = None):
+        return self.repository.listar(nome, status, cliente)
 
     def buscar_orcamento(self, orcamento_id: str):
         orcamento = self.repository.buscar_por_id(orcamento_id)

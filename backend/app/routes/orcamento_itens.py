@@ -38,3 +38,17 @@ router.add_api_route(
     methods=["DELETE"], 
     summary="Remover item do orçamento"
 )
+
+router.add_api_route(
+    "/{orcamento_id}/itens/{item_id}/insumos",
+    orcamento_itens.listar_insumos,
+    methods=["GET"],
+    summary="Listar insumos (explosão analítica) de um item"
+)
+
+router.add_api_route(
+    "/{orcamento_id}/itens/{item_id}/insumos/{insumo_id}",
+    orcamento_itens.atualizar_insumo,
+    methods=["PUT"],
+    summary="Atualizar um insumo do item"
+)

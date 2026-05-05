@@ -57,6 +57,7 @@ def process_import_file(
         3. Extrai metadados da primeira aba de preços
         4. Para cada aba: extrai composições e preços
         5. Deduplica composições e salva via repository
+        6. (SINAPI) Extrai aba Analítico e salva hierarquias pai→filho
 
     Args:
         file_content: Conteúdo binário do arquivo Excel.
@@ -102,10 +103,23 @@ def process_import_file(
         q_comp = repository.upsert_batch_composicoes(todas_composicoes)
         q_est = repository.upsert_batch_estados(todos_precos)
 
+        # --- Extração da aba Analítico (hierarquia pai→filho) ---
+        q_analitico = 0
+        if source_type == "SINAPI" and hasattr(parser, "identificar_aba_analitico"):
+            aba_analitico = parser.identificar_aba_analitico()
+            if aba_analitico:
+                logger.info("Extraindo aba Analítico: '%s'", aba_analitico)
+                relacoes = parser.extrair_analitico(
+                    aba_analitico, metadata.mes_referencia, fonte=source_type
+                )
+                q_analitico = repository.upsert_batch_composicao_itens(relacoes)
+                logger.info("%d relacionamentos analíticos importados.", q_analitico)
+
         return {
             "status": "sucesso",
             "imported_items": q_comp,
             "imported_prices": q_est,
+            "imported_analitico": q_analitico,
             "metadata": metadata.dict(),
         }
 

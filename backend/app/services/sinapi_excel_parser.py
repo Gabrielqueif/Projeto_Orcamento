@@ -33,8 +33,14 @@ COLUNAS_ESTADOS = [
 # Abas que devem ser ignoradas no processamento
 _ABAS_IGNORADAS = {"MENU", "BUSCA", "OBS", "INSTRUCOES"}
 
-# Palavras-chave para identificar abas de preços
+# Palavras-chave para identificar abas de preços de composições
 _TERMOS_PRECOS = {"csd", "ccd", "cse"}
+
+# Palavras-chave para identificar abas de preços de insumos
+_TERMOS_INSUMOS = {"isd", "icd", "ise"}
+
+# Palavras-chave para identificar a aba analítica
+_TERMOS_ANALITICO = {"analitico", "analítico"}
 
 # Mapeamento de palavras-chave no nome da aba → tipo de composição
 _MAPA_TIPOS = {
@@ -97,8 +103,32 @@ class SinapiExcelParser(BaseExcelParser):
     # ------------------------------------------------------------------
 
     def identificar_abas_dados(self) -> List[str]:
-        """Identifica quais abas contêm dados de preços."""
+        """Identifica quais abas contêm dados de preços de composições."""
         return self.identificar_abas_precos()
+
+    def identificar_aba_analitico(self) -> Optional[str]:
+        """Identifica a aba Analítico (hierárquia pai→filho).
+        Prioriza abas sem 'custo' no nome (o Análitico puro, não o 'com custo').
+        """
+        candidatos = [
+            a for a in self._xl.sheet_names
+            if any(t in normalizar_nome_aba(a) for t in _TERMOS_ANALITICO)
+        ]
+        # Prefere o Analítico puro em vez do 'Analítico com Custo'
+        for a in candidatos:
+            if "custo" not in normalizar_nome_aba(a):
+                return a
+        return candidatos[0] if candidatos else None
+
+    def identificar_aba_insumos(self) -> Optional[str]:
+        """Identifica a aba de preços de insumos individuais (ISD/ICD/ISE).
+        Prioriza ISD (sem desoneração) para correspondência com o padrão default.
+        """
+        for termo in ["isd", "icd", "ise"]:
+            for a in self._xl.sheet_names:
+                if normalizar_nome_aba(a) == termo:
+                    return a
+        return None
 
     def identificar_abas_precos(self) -> List[str]:
         """Identifica quais abas contêm dados de preços.
@@ -491,3 +521,111 @@ class SinapiExcelParser(BaseExcelParser):
         
         preco = reg_preco if tem_valor else None
         return composicao, preco
+
+    # ------------------------------------------------------------------
+    # Extração da aba Analítico (hierarquia pai→filho)
+    # ------------------------------------------------------------------
+
+    def extrair_analitico(
+        self,
+        nome_aba: str,
+        mes_referencia: str,
+        fonte: str = "SINAPI",
+    ) -> List[Dict[str, Any]]:
+        """Extrai os relacionamentos composicao→insumo da aba Analítico.
+
+        Estrutura da aba (row 9 = header):
+          Grupo | Cód Composição | Tipo Item | Cód Item | Descrição | Unidade | Coeficiente | Situação
+
+        Linhas onde 'Cód Item' é nulo são o cabeçalho da composição pai.
+        Linhas com 'Tipo Item' = COMPOSICAO ou INSUMO são os filhos.
+
+        Returns:
+            Lista de dicts prontos para upsert em composicao_itens.
+        """
+        df = self.ler_aba(nome_aba, header=None, dtype=str)
+
+        # --- Encontrar linha de cabeçalho ---
+        col_cod_pai = -1
+        col_tipo = -1
+        col_cod_filho = -1
+        col_desc = -1
+        col_unid = -1
+        col_coef = -1
+        header_row = -1
+
+        for r_idx, row in df.head(15).iterrows():
+            vals = [remover_acentos(str(v)).strip().lower() for v in row.values]
+            tem_codigo = any("codigo" in v and "composicao" in v for v in vals)
+            tem_coef = any("coeficiente" in v for v in vals)
+            if tem_codigo and tem_coef:
+                header_row = r_idx
+                for c_idx, v in enumerate(vals):
+                    if "codigo" in v and "composicao" in v:
+                        col_cod_pai = c_idx
+                    elif "tipo" in v and "item" in v:
+                        col_tipo = c_idx
+                    elif "codigo" in v and "item" in v:
+                        col_cod_filho = c_idx
+                    elif "descricao" in v or "descri" in v:
+                        col_desc = c_idx
+                    elif "unidade" in v:
+                        col_unid = c_idx
+                    elif "coeficiente" in v:
+                        col_coef = c_idx
+                break
+
+        if header_row == -1 or col_cod_pai == -1 or col_cod_filho == -1:
+            logger.warning("Cabeçalho do Analítico não encontrado na aba '%s'.", nome_aba)
+            return []
+
+        registros: List[Dict[str, Any]] = []
+        df_dados = df.iloc[header_row + 1:]
+
+        for _, row in df_dados.iterrows():
+            cod_pai_raw = row.iloc[col_cod_pai]
+            cod_filho_raw = row.iloc[col_cod_filho]
+
+            # Linhas de cabeçalho de composição: filho é nulo/nan
+            if pd.isna(cod_filho_raw) or str(cod_filho_raw).strip() in ("", "None", "nan"):
+                continue
+
+            cod_pai = str(cod_pai_raw).replace('.0', '').strip()
+            cod_filho = str(cod_filho_raw).replace('.0', '').strip()
+
+            if not cod_pai.isdigit() or not cod_filho.isdigit():
+                continue
+
+            tipo_raw = row.iloc[col_tipo] if col_tipo != -1 else ""
+            tipo = remover_acentos(str(tipo_raw)).strip().upper() if not pd.isna(tipo_raw) else ""
+
+            desc_raw = row.iloc[col_desc] if col_desc != -1 else ""
+            desc = str(desc_raw).strip() if not pd.isna(desc_raw) else ""
+
+            unid_raw = row.iloc[col_unid] if col_unid != -1 else "-"
+            unid = str(unid_raw).strip() if not pd.isna(unid_raw) else "-"
+
+            coef_raw = row.iloc[col_coef] if col_coef != -1 else None
+            try:
+                coef = float(str(coef_raw).replace(',', '.')) if coef_raw and not pd.isna(coef_raw) else None
+            except (ValueError, TypeError):
+                coef = None
+
+            if coef is None:
+                continue
+
+            registros.append({
+                "codigo_pai": cod_pai,
+                "codigo_filho": cod_filho,
+                "quantidade_coeficiente": coef,
+                "fonte": fonte,
+                "mes_referencia": mes_referencia,
+                "descricao_filho": desc,
+                "unidade_filho": unid,
+            })
+
+        logger.info(
+            "Aba '%s': %d relacionamentos analíticos extraídos.",
+            nome_aba, len(registros)
+        )
+        return registros

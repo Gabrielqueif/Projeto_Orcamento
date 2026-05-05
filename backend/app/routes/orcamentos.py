@@ -30,11 +30,12 @@ async def criar_orcamento(
     summary="Listar orçamentos"
 )
 async def listar_orcamentos(
+    nome: Optional[str] = None,
     status: Optional[str] = None, 
     cliente: Optional[str] = None, 
     service: OrcamentoService = Depends(orcamentos.get_orcamento_service)
 ):
-    return orcamentos.listar_orcamentos(status, cliente, service)
+    return orcamentos.listar_orcamentos(nome, status, cliente, service)
 
 @router.get(
     "/{orcamento_id}",

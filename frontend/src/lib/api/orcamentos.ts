@@ -54,6 +54,7 @@ export interface OrcamentoItem {
   etapa_id?: string;
   memoria_calculo?: string;
   variaveis?: any;
+  fonte: string;
   created_at?: string;
 }
 
@@ -65,6 +66,7 @@ export interface OrcamentoItemCreate {
   estado?: string; // Opcional, será pego do orçamento se não fornecido
   etapa_id?: string;
   memoria_calculo?: string;
+  fonte?: string;
   variaveis?: any;
 }
 
@@ -76,6 +78,7 @@ export interface OrcamentoItemUpdate {
   estado?: string;
   etapa_id?: string;
   memoria_calculo?: string;
+  fonte?: string;
   variaveis?: any;
 }
 
@@ -86,6 +89,8 @@ export interface Etapa {
   nome: string;
   ordem: number;
   parent_id: string | null;
+  data_inicio?: string | null;
+  data_fim?: string | null;
   created_at?: string;
 }
 
@@ -93,12 +98,16 @@ export interface EtapaCreate {
   nome: string;
   ordem?: number;
   parent_id?: string | null;
+  data_inicio?: string | null;
+  data_fim?: string | null;
 }
 
 export interface EtapaUpdate {
   nome?: string;
   ordem?: number;
   parent_id?: string | null;
+  data_inicio?: string | null;
+  data_fim?: string | null;
 }
 
 // Funções para Orçamentos
@@ -121,10 +130,12 @@ export async function createOrcamento(
 export async function getOrcamentos(
   status?: string,
   cliente?: string,
+  nome?: string,
 ): Promise<Orcamento[]> {
   const params = new URLSearchParams();
   if (status) params.append("status", status);
   if (cliente) params.append("cliente", cliente);
+  if (nome) params.append("nome", nome);
 
   const url = `/orcamentos/${params.toString() ? "?" + params.toString() : ""}`;
   const response = await fetchWithAuth(url);
@@ -320,5 +331,48 @@ export interface SinapiBase {
 export async function getSinapiBases(): Promise<SinapiBase[]> {
   const response = await fetchWithAuth("/importacao/bases");
   if (!response.ok) throw new Error("Erro ao buscar bases SINAPI");
+  return response.json();
+}
+
+// Insumos (explosão analítica)
+export interface OrcamentoItemInsumo {
+  id: string;
+  orcamento_item_id: string;
+  codigo_insumo: string;
+  descricao: string;
+  unidade: string | null;
+  quantidade_unitaria: number;
+  preco_unitario_base: number | null;
+  preco_unitario_custom: number | null;
+  total: number | null;
+  tipo_item: string;
+  created_at?: string;
+}
+
+export async function getInsumos(
+  orcamentoId: string,
+  itemId: string,
+): Promise<OrcamentoItemInsumo[]> {
+  const response = await fetchWithAuth(
+    `/orcamentos/${orcamentoId}/itens/${itemId}/insumos`
+  );
+  if (!response.ok) throw new Error("Erro ao buscar insumos do item");
+  return response.json();
+}
+
+export async function updateInsumo(
+  orcamentoId: string,
+  itemId: string,
+  insumoId: string,
+  data: Partial<OrcamentoItemInsumo>
+): Promise<OrcamentoItemInsumo> {
+  const response = await fetchWithAuth(
+    `/orcamentos/${orcamentoId}/itens/${itemId}/insumos/${insumoId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+  if (!response.ok) throw new Error("Erro ao atualizar insumo");
   return response.json();
 }

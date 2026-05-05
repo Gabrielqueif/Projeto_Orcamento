@@ -21,9 +21,11 @@ class OrcamentoRepository:
             # Re-raise para ser tratado no service/controller ou transformado
             raise e
 
-    def listar(self, status: Optional[str] = None, cliente: Optional[str] = None) -> List[Dict[str, Any]]:
+    def listar(self, nome: Optional[str] = None, status: Optional[str] = None, cliente: Optional[str] = None) -> List[Dict[str, Any]]:
         query = self.supabase.table(TABELA_ORCAMENTOS).select("*")
         
+        if nome:
+            query = query.ilike("nome", f"%{nome}%")
         if status:
             query = query.eq("status", status)
         if cliente:

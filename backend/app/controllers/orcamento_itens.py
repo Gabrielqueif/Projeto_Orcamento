@@ -1,17 +1,19 @@
 from typing import List
 from fastapi import Depends
 from app.dependencies import get_supabase
-from schemas.schemas import OrcamentoItemCreate, OrcamentoItemUpdate
+from schemas.schemas import OrcamentoItemCreate, OrcamentoItemUpdate, OrcamentoItemInsumoUpdate
 from app.repositories.orcamento_item_repository import OrcamentoItemRepository
 from app.repositories.orcamento_repository import OrcamentoRepository
 from app.repositories.item_repository import ItemRepository
+from app.repositories.insumo_repository import InsumoRepository
 from app.services.orcamento_item_service import OrcamentoItemService
 
 def get_orcamento_item_service(supabase=Depends(get_supabase)) -> OrcamentoItemService:
     item_repo = ItemRepository(supabase)
     orcamento_repo = OrcamentoRepository(supabase)
     orcamento_item_repo = OrcamentoItemRepository(supabase)
-    return OrcamentoItemService(orcamento_item_repo, orcamento_repo, item_repo)
+    insumo_repo = InsumoRepository(supabase)
+    return OrcamentoItemService(orcamento_item_repo, orcamento_repo, item_repo, insumo_repo)
 
 def adicionar_item(
     orcamento_id: str,
@@ -41,5 +43,24 @@ def remover_item(
 ):
     """Remove um item do orçamento"""
     return service.remover_item(orcamento_id, item_id)
+
+def listar_insumos(
+    orcamento_id: str,
+    item_id: str,
+    service: OrcamentoItemService = Depends(get_orcamento_item_service)
+):
+    """Lista os insumos (explosão analítica) de um item do orçamento"""
+    return service.listar_insumos(orcamento_id, item_id)
+
+def atualizar_insumo(
+    orcamento_id: str,
+    item_id: str,
+    insumo_id: str,
+    insumo_update: OrcamentoItemInsumoUpdate,
+    service: OrcamentoItemService = Depends(get_orcamento_item_service)
+):
+    """Atualiza um insumo e recalcula os totais"""
+    return service.atualizar_insumo(orcamento_id, item_id, insumo_id, insumo_update.model_dump(exclude_unset=True))
+
 
 

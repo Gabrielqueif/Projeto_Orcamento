@@ -142,7 +142,7 @@ export default function NovaObraEtapa3Page() {
             <div className="p-4 px-6 bg-[#F0FDFD] flex justify-between items-center">
               <div>
                 <h4 className="text-[15px] font-bold text-text-main mb-1 flex items-center gap-2">
-                  <Robot weight="fill" className="text-[#06B6D4]" size={24} /> Orçamentação Automática (IA)
+                  <Robot weight="fill" className="text-[#06B6D4]" size={24} /> Orçamento Preliminar (IA)
                 </h4>
                 <p className="text-[13px] text-text-muted">Insira a metragem do projeto para compor as etapas automaticamente via Inteligência Artificial baseada no CUB de R$ 2.450 / m².</p>
                 <div className="flex items-center gap-4 mt-4">

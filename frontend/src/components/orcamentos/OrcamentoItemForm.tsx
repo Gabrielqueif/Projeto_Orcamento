@@ -64,6 +64,7 @@ type OrcamentoItemFormProps = {
   refreshTrigger?: number;
   onItemAdded?: () => void;
   itemToEdit?: OrcamentoItem;
+  initialEtapaId?: string;
   onCancel?: () => void;
 };
 
@@ -74,6 +75,7 @@ export function OrcamentoItemForm({
   refreshTrigger,
   onItemAdded,
   itemToEdit,
+  initialEtapaId = "",
   onCancel,
 }: OrcamentoItemFormProps) {
   const [termo, setTermo] = React.useState("");
@@ -84,11 +86,11 @@ export function OrcamentoItemForm({
   const [quantidade, setQuantidade] = React.useState<string>("1");
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [baseBusca, setBaseBusca] = React.useState<string>(fonteOrcamento); // Nova base de busca dinâmica
+  const [baseBusca, setBaseBusca] = React.useState<string>(fonteOrcamento);
 
   // Etapas State
   const [etapas, setEtapas] = React.useState<Etapa[]>([]);
-  const [etapaId, setEtapaId] = React.useState<string>("");
+  const [etapaId, setEtapaId] = React.useState<string>(initialEtapaId);
 
   // Formula Modal State
   const [showFormulaModal, setShowFormulaModal] = React.useState(false);
@@ -120,6 +122,7 @@ export function OrcamentoItemForm({
         descricao: itemToEdit.descricao,
         unidade: itemToEdit.unidade,
         preco: itemToEdit.preco_unitario || undefined,
+        fonte: fonteOrcamento, // Provide default or pass from item if needed
       });
       // Load memory and variables
       setFormula(itemToEdit.memoria_calculo || "");
@@ -131,14 +134,14 @@ export function OrcamentoItemForm({
     } else {
       // Reset form when itemToEdit becomes null (e.g., after successful edit or cancel)
       setQuantidade("1");
-      setEtapaId("");
+      setEtapaId(initialEtapaId);
       setComposicaoSelecionada(null);
       setTermo("");
       setResultados([]);
       setFormula("");
       setVariables([]);
     }
-  }, [itemToEdit, fonteOrcamento]);
+  }, [itemToEdit, fonteOrcamento, initialEtapaId]);
 
   const buscarComposicoes = async () => {
     if (!termo.trim()) {
@@ -319,6 +322,7 @@ export function OrcamentoItemForm({
           etapa_id: etapaId || undefined,
           memoria_calculo: formula,
           variaveis: variables,
+          fonte: composicaoSelecionada.fonte,
         };
         await updateItem(orcamentoId, itemToEdit.id, itemUpdate);
       } else {
@@ -331,6 +335,7 @@ export function OrcamentoItemForm({
           etapa_id: etapaId || undefined,
           memoria_calculo: formula,
           variaveis: variables,
+          fonte: composicaoSelecionada.fonte,
         };
         await addItem(orcamentoId, itemData);
 

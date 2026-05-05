@@ -18,12 +18,13 @@ def criar_orcamento(orcamento: OrcamentoCreate, service: OrcamentoService = Depe
     return service.criar_orcamento(orcamento)
 
 def listar_orcamentos(
+    nome: Optional[str] = None,
     status: Optional[str] = None,
     cliente: Optional[str] = None,
     service: OrcamentoService = Depends(get_orcamento_service)
 ):
     """Lista todos os orçamentos, com filtros opcionais"""
-    return service.listar_orcamentos(status, cliente)
+    return service.listar_orcamentos(nome, status, cliente)
 
 def buscar_orcamento(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
     """Busca um orçamento específico por ID"""

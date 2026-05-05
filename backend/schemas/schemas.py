@@ -55,11 +55,15 @@ class EtapaCreate(BaseModel):
     nome: str
     ordem: int = 0
     parent_id: Optional[str] = None
+    data_inicio: Optional[date] = None
+    data_fim: Optional[date] = None
 
 class EtapaUpdate(BaseModel):
     nome: Optional[str] = None
     ordem: Optional[int] = None
     parent_id: Optional[str] = None
+    data_inicio: Optional[date] = None
+    data_fim: Optional[date] = None
 
 class EtapaResponse(BaseModel):
     id: str
@@ -67,6 +71,8 @@ class EtapaResponse(BaseModel):
     nome: str
     ordem: int
     parent_id: Optional[str] = None
+    data_inicio: Optional[date] = None
+    data_fim: Optional[date] = None
     created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -113,5 +119,11 @@ class OrcamentoItemResponse(BaseModel):
     memoria_calculo: Optional[str] = None
     variaveis: Optional[Any] = None
     created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class OrcamentoItemInsumoUpdate(BaseModel):
+    quantidade_unitaria: Optional[float] = None
+    preco_unitario_custom: Optional[float] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -5,6 +5,7 @@ logger = logging.getLogger(__name__)
 
 TABELA_COMPOSICOES = "composicao"
 TABELA_COMPOSICOES_ESTADOS = "composicao_estados"
+TABELA_COMPOSICAO_ITENS = "composicao_itens"
 
 class ItemRepository:
     def __init__(self, supabase_client):
@@ -84,3 +85,34 @@ class ItemRepository:
             return float(preco) if preco is not None else None
         except Exception:
             return None
+
+    def upsert_batch_composicao_itens(self, dados: List[Dict[str, Any]]) -> int:
+        """Grava os relacionamentos pai→filho da aba Analítico na tabela composicao_itens."""
+        if not dados:
+            return 0
+        total = 0
+        for i in range(0, len(dados), 500):
+            try:
+                r = self.supabase.table(TABELA_COMPOSICAO_ITENS).upsert(
+                    dados[i:i+500],
+                    on_conflict="codigo_pai,codigo_filho,mes_referencia,fonte"
+                ).execute()
+                if r.data:
+                    total += len(r.data)
+            except Exception as e:
+                logger.error(f"Erro lote {TABELA_COMPOSICAO_ITENS}: {e}")
+        return total
+
+    def buscar_filhos_composicao(self, codigo_pai: str, mes_referencia: str, fonte: str = "SINAPI") -> List[Dict[str, Any]]:
+        """Retorna os insumos/sub-composições que compõem uma composição pai."""
+        try:
+            r = self.supabase.table(TABELA_COMPOSICAO_ITENS)\
+                .select("*")\
+                .eq("codigo_pai", codigo_pai)\
+                .eq("mes_referencia", mes_referencia)\
+                .eq("fonte", fonte)\
+                .execute()
+            return r.data or []
+        except Exception as e:
+            logger.error(f"Erro ao buscar filhos de {codigo_pai}: {e}")
+            return []
