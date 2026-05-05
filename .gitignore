@@ -4,4 +4,3 @@ backends/servico-planilhas/.env
 __pycache__/
 *.pyc
 .pytest_cache/
-views
