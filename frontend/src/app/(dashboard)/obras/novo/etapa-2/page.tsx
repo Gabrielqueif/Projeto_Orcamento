@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { Check, MagnifyingGlass, User, Lock, ListChecks, Camera, FileText, Trash, Info, ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 import { useState } from "react";
+import { useWizard } from "@/contexts/WizardContext";
 
 export default function NovaObraEtapa2Page() {
+  const { data, updateData } = useWizard();
   const [selectedMember, setSelectedMember] = useState<string>("JP");
+
 
   return (
     <div className="flex flex-col h-full -mx-6 -mb-6 -mt-6">

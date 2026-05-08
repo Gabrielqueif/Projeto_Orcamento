@@ -49,23 +49,34 @@ class OrcamentoItemService:
         if not estado_para_buscar:
             raise ValueError("Estado não definido no orçamento")
 
-        # Verificar se a composição existe na fonte correta (prioriza a do item, depois a do orçamento)
+        # Verificar se a composição existe (pula para itens manuais)
         fonte = item.fonte or orcamento.get("fonte", "SINAPI")
-        comps = self.item_repository.buscar_por_codigo(item.codigo_composicao, fonte=fonte)
-        if not comps:
-            raise ValueError(f"Composição {item.codigo_composicao} não encontrada na base {fonte}")
-        composicao = comps[0]
+        composicao = {"descricao": item.descricao, "unidade": item.unidade}
+        
+        if item.codigo_composicao != "MANUAL":
+            comps = self.item_repository.buscar_por_codigo(item.codigo_composicao, fonte=fonte)
+            if not comps:
+                raise ValueError(f"Composição {item.codigo_composicao} não encontrada na base {fonte}")
+            composicao = comps[0]
 
-        # Buscar preço da composição para o estado, mês e tipo do orçamento
-        preco_unitario = self._buscar_preco_composicao(
-            item.codigo_composicao, 
-            estado_para_buscar,
-            orcamento.get("base_referencia"), # Aqui base_referencia é usada como mes_referencia
-            orcamento.get("tipo_composicao"),
-            fonte=fonte
-        )
+        # Buscar preço da composição (pula se já foi enviado preço manual)
+        preco_unitario = item.preco_unitario
+        
         if preco_unitario is None:
-            raise ValueError(f"Preço não encontrado para a composição {item.codigo_composicao} na base {orcamento.get('base_referencia')} ({orcamento.get('tipo_composicao')}) no estado {estado_para_buscar}")
+            preco_unitario = self._buscar_preco_composicao(
+                item.codigo_composicao, 
+                estado_para_buscar,
+                orcamento.get("base_referencia"),
+                orcamento.get("tipo_composicao"),
+                fonte=fonte
+            )
+            
+        if preco_unitario is None and item.codigo_composicao != "MANUAL":
+            raise ValueError(f"Preço não encontrado para a composição {item.codigo_composicao}")
+        
+        # Se for manual e ainda sem preço, assume 0
+        if preco_unitario is None:
+            preco_unitario = 0.0
 
         # Validar quantidade
         if item.quantidade <= 0:

@@ -86,6 +86,7 @@ class OrcamentoItemCreate(BaseModel):
     estado: Optional[str] = None
     fonte: Optional[str] = None # Adicionado para suportar orçamentos híbridos
     etapa_id: Optional[str] = None
+    preco_unitario: Optional[float] = None # Suporte para itens manuais no wizard
     memoria_calculo: Optional[str] = None
     variaveis: Optional[Any] = None
 

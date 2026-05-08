@@ -1,41 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Robot, MagicWand, Plus, ArrowLeft, ArrowRight, ShieldCheck, Trash } from "@phosphor-icons/react";
+import { Check, Robot, MagicWand, Plus, ArrowLeft, ArrowRight, ShieldCheck, Trash, MagnifyingGlass, Spinner } from "@phosphor-icons/react";
+import { useWizard, Etapa, Item } from "@/contexts/WizardContext";
+import { useRouter } from "next/navigation";
+import { createOrcamento, createEtapa, addItem as apiAddItem } from "@/lib/api/orcamentos";
+import { getPrecoRegionalParaItem } from "@/lib/api/composicoes";
 import { useState } from "react";
-
-interface Item {
-  id: number;
-  nome: string;
-  qtd: number;
-  preco: number;
-}
-
-interface Etapa {
-  id: number;
-  nome: string;
-  itens: Item[];
-}
+import { Modal } from "@/components/ui/Modal";
+import { CompositionAutocomplete } from "@/components/orcamentos/CompositionAutocomplete";
 
 export default function NovaObraEtapa3Page() {
-  const [metragem, setMetragem] = useState<number>(500);
-  const [etapas, setEtapas] = useState<Etapa[]>([]);
+
+  const { data, updateData } = useWizard();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const CUB_PR_VALOR = 2450;
+
+  const { metragem, etapas } = data;
+
+  const setMetragem = (m: number) => updateData({ metragem: m });
+  const setEtapas = (e: Etapa[]) => updateData({ etapas: e });
 
   const calcularIA = () => {
     if (!metragem || metragem <= 0) {
       alert("Por favor insira a metragem da obra em m².");
       return;
     }
-    
+
     const totalEstimado = metragem * CUB_PR_VALOR;
-    
+
     const dist = [
-      { nome: "Fundação e Estrutura", pct: 0.22, itens: [{n:"Concreto Usinado (m³)", q: metragem*0.12}, {n:"Aço CA-50 (kg)", q: metragem*15}, {n:"Mão de obra Fundação", q: 1}] },
-      { nome: "Alvenaria e Vedações", pct: 0.15, itens: [{n:"Bloco Estrutural (milheiro)", q: metragem*0.04}, {n:"Cimento (sacos)", q: metragem*0.8}, {n:"Equipe Pedreiros", q: 1}] },
-      { nome: "Instalações Elétrica/Hidráulica", pct: 0.12, itens: [{n:"Tubulações e Fios (Lotes)", q: metragem/50}, {n:"Equipe Especializada", q: 1}] },
-      { nome: "Acabamentos Finos e Fachada", pct: 0.35, itens: [{n:"Porcelanato (m²)", q: metragem*0.85}, {n:"Esquadrias", q: metragem*0.3}, {n:"Pintura e Massa", q: metragem*3}] },
-      { nome: "Custos Indiretos (Projetos / Taxas)", pct: 0.16, itens: [{n:"Taxas Administrativas", q: 1}, {n:"Engenharia", q: 1}] }
+      { nome: "Fundação e Estrutura", pct: 0.22, itens: [{ n: "Concreto Usinado (m³)", q: metragem * 0.12 }, { n: "Aço CA-50 (kg)", q: metragem * 15 }, { n: "Mão de obra Fundação", q: 1 }] },
+      { nome: "Alvenaria e Vedações", pct: 0.15, itens: [{ n: "Bloco Estrutural (milheiro)", q: metragem * 0.04 }, { n: "Cimento (sacos)", q: metragem * 0.8 }, { n: "Equipe Pedreiros", q: 1 }] },
+      { nome: "Instalações Elétrica/Hidráulica", pct: 0.12, itens: [{ n: "Tubulações e Fios (Lotes)", q: metragem / 50 }, { n: "Equipe Especializada", q: 1 }] },
+      { nome: "Acabamentos Finos e Fachada", pct: 0.35, itens: [{ n: "Porcelanato (m²)", q: metragem * 0.85 }, { n: "Esquadrias", q: metragem * 0.3 }, { n: "Pintura e Massa", q: metragem * 3 }] },
+      { nome: "Custos Indiretos (Projetos / Taxas)", pct: 0.16, itens: [{ n: "Taxas Administrativas", q: 1 }, { n: "Engenharia", q: 1 }] }
     ];
 
     const novasEtapas = dist.map((etapa, id) => {
@@ -43,7 +44,7 @@ export default function NovaObraEtapa3Page() {
       const valorPorItem = valEtapa / etapa.itens.length;
       return {
         id: Date.now() + id,
-        nome: `${etapa.nome} (${(etapa.pct*100).toFixed(0)}%)`,
+        nome: `${etapa.nome} (${(etapa.pct * 100).toFixed(0)}%)`,
         itens: etapa.itens.map((item, index) => ({
           id: Date.now() + 100 + index,
           nome: item.n,
@@ -109,6 +110,97 @@ export default function NovaObraEtapa3Page() {
     }, 0);
   };
 
+  const handleFinish = async () => {
+    if (!data.nome || !data.cliente) {
+      alert("Por favor, preencha os dados básicos na Etapa 1.");
+      router.push("/obras/novo");
+      return;
+    }
+
+    if (etapas.length === 0) {
+      alert("Por favor, adicione pelo menos uma etapa de custo.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const orcamento = await createOrcamento({
+        nome: data.nome,
+        cliente: data.cliente,
+        data: data.dataInicio || new Date().toISOString().split('T')[0],
+        base_referencia: data.baseReferencia,
+        tipo_composicao: data.tipo === "Residencial Vertical" ? "PROPRIA" : "SINAPI",
+        estado: data.estado,
+        fonte: data.baseReferencia.substring(0, 4),
+        bdi: 0,
+        status: "em_elaboracao"
+      });
+
+      for (const [index, e] of etapas.entries()) {
+        const novaEtapa = await createEtapa(orcamento.id, {
+          nome: e.nome,
+          ordem: index
+        });
+
+        for (const item of e.itens) {
+          await apiAddItem(orcamento.id, {
+            descricao: item.nome,
+            quantidade: item.qtd,
+            preco_unitario: item.preco,
+            unidade: (item as any).unidade || "un",
+            etapa_id: novaEtapa.id,
+            codigo_composicao: (item as any).codigo || "MANUAL",
+            fonte: data.baseReferencia.substring(0, 4)
+          } as any);
+        }
+      }
+
+      alert("Projeto e orçamento criados com sucesso!");
+      router.push("/obras");
+    } catch (error) {
+      console.error("Erro ao salvar projeto:", error);
+      alert("Ocorreu um erro ao salvar o projeto.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const selectComposicao = async (etapaId: number, itemId: number, comp: any) => {
+    let finalPreco = comp.preco || 0;
+
+    // Buscar preço específico do estado selecionado na Etapa 1 usando a lógica compartilhada
+    if (data.estado) {
+      const precoRegional = await getPrecoRegionalParaItem(
+        comp.codigo_composicao,
+        comp.mes_referencia,
+        comp.fonte,
+        data.estado
+      );
+
+      if (precoRegional !== null) {
+        finalPreco = precoRegional;
+      }
+    }
+
+    setEtapas(etapas.map(e => {
+
+      if (e.id === etapaId) {
+        return {
+          ...e,
+          itens: e.itens.map(i => i.id === itemId ? {
+            ...i,
+            nome: comp.descricao,
+            preco: finalPreco,
+            unidade: comp.unidade,
+            codigo: comp.codigo_composicao
+          } as any : i)
+        };
+      }
+      return e;
+    }));
+  };
+
+
   const totalGeral = calcularTotalGeral();
 
   return (
@@ -135,7 +227,7 @@ export default function NovaObraEtapa3Page() {
 
       {/* Form Area */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8 p-10 bg-bg-light overflow-y-auto">
-        
+
         <div>
           {/* AI Box */}
           <div className="bg-surface border border-[#06B6D4] rounded-lg mb-6 overflow-hidden shadow-sm">
@@ -148,8 +240,8 @@ export default function NovaObraEtapa3Page() {
                 <div className="flex items-center gap-4 mt-4">
                   <span className="text-[10px] font-bold text-text-muted uppercase tracking-wide">METRAGEM DA OBRA:</span>
                   <div className="flex items-center gap-2">
-                     <input type="number" value={metragem} onChange={(e) => setMetragem(Number(e.target.value))} className="w-[120px] font-bold text-center p-2 border border-[#BAE6FD] rounded bg-white outline-none" min="10" />
-                     <span className="font-bold text-text-main">m²</span>
+                    <input type="number" value={metragem} onChange={(e) => setMetragem(Number(e.target.value))} className="w-[120px] font-bold text-center p-2 border border-[#BAE6FD] rounded bg-white outline-none" min="10" />
+                    <span className="font-bold text-text-main">m²</span>
                   </div>
                 </div>
               </div>
@@ -160,7 +252,7 @@ export default function NovaObraEtapa3Page() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-surface border border-border rounded-lg p-6 shadow-sm">
             <div className="flex justify-between items-center mb-6">
               <div>
@@ -171,7 +263,7 @@ export default function NovaObraEtapa3Page() {
                 <Plus size={16} /> NOVA ETAPA
               </button>
             </div>
-            
+
             {/* Wrapper dinâmico das tabelas */}
             <div>
               {etapas.length === 0 ? (
@@ -181,36 +273,40 @@ export default function NovaObraEtapa3Page() {
               ) : (
                 etapas.map(etapa => {
                   const subtotal = etapa.itens.reduce((sub: number, item: Item) => sub + (item.qtd * item.preco), 0);
-                  
+
                   return (
                     <div key={etapa.id} className="relative mb-8 p-6 bg-white border border-border rounded-lg shadow-sm">
                       <button onClick={() => removerEtapa(etapa.id)} className="absolute top-6 right-6 text-status-danger hover:text-red-700 transition-colors">
                         <Trash size={20} />
                       </button>
-                      
+
                       <div className="text-[10px] font-bold text-text-muted uppercase tracking-wide mb-2">NOME DA ETAPA</div>
-                      <input 
-                        type="text" 
-                        value={etapa.nome} 
+                      <input
+                        type="text"
+                        value={etapa.nome}
                         onChange={(e) => updateEtapaNome(etapa.id, e.target.value)}
-                        className="text-lg font-bold text-text-main mb-4 border-none border-b border-border outline-none w-[80%] pb-2 bg-transparent focus:border-brand-primary" 
+                        className="text-lg font-bold text-text-main mb-4 border-none border-b border-border outline-none w-[80%] pb-2 bg-transparent focus:border-brand-primary"
                       />
-                      
+
                       <table className="w-full text-left border-collapse mb-4">
                         <thead>
-                           <tr>
-                             <th className="w-[40%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Item de Custo</th>
-                             <th className="w-[15%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Qtd</th>
-                             <th className="w-[20%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Preço Un.</th>
-                             <th className="pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-right">Subtotal</th>
-                             <th className="pb-3 border-b border-border"></th>
-                           </tr>
+                          <tr>
+                            <th className="w-[40%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Item de Custo</th>
+                            <th className="w-[15%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Qtd</th>
+                            <th className="w-[20%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Preço Un.</th>
+                            <th className="pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-right">Subtotal</th>
+                            <th className="pb-3 border-b border-border"></th>
+                          </tr>
                         </thead>
                         <tbody>
                           {etapa.itens.map((item: Item) => (
                             <tr key={item.id}>
-                              <td className="py-2 pr-4 border-b border-border border-dashed">
-                                <input type="text" placeholder="Nome do insumo/serviço..." value={item.nome} onChange={(e) => updateItem(etapa.id, item.id, 'nome', e.target.value)} className="w-full bg-transparent border-none outline-none text-sm" />
+                              <td className="py-2 pr-4 border-b border-border border-dashed relative">
+                                <CompositionAutocomplete
+                                  value={item.nome}
+                                  onChange={(val) => updateItem(etapa.id, item.id, 'nome', val)}
+                                  onSelect={(comp) => selectComposicao(etapa.id, item.id, comp)}
+                                />
                               </td>
                               <td className="py-2 pr-4 border-b border-border border-dashed">
                                 <input type="number" value={item.qtd} step="0.01" onChange={(e) => updateItem(etapa.id, item.id, 'qtd', Number(e.target.value))} className="w-full bg-transparent border border-transparent hover:border-border rounded px-2 py-1 outline-none text-sm" />
@@ -228,58 +324,70 @@ export default function NovaObraEtapa3Page() {
                           ))}
                         </tbody>
                       </table>
-                      
+
                       <div className="flex justify-between items-center mt-4">
-                         <button onClick={() => addItem(etapa.id)} className="px-4 py-2 bg-[#F1F5F9] border border-[#CBD5E1] rounded text-[12px] font-bold hover:bg-[#E2E8F0] transition-colors">
-                           + ADICIONAR ITEM NESTA ETAPA
-                         </button>
-                         <div className="font-bold text-text-main text-base">Subtotal: <span className="ml-2">{formatarReal(subtotal)}</span></div>
+                        <div className="flex gap-2">
+                          <button onClick={() => addItem(etapa.id)} className="px-4 py-2 bg-[#F1F5F9] border border-[#CBD5E1] rounded text-[12px] font-bold hover:bg-[#E2E8F0] transition-colors">
+                            + NOVO ITEM
+                          </button>
+                        </div>
+                        <div className="font-bold text-text-main text-base">Subtotal: <span className="ml-2">{formatarReal(subtotal)}</span></div>
                       </div>
                     </div>
                   );
                 })
               )}
             </div>
-            
+
             <div className="mt-6 p-6 bg-bg-light border-t border-border rounded-lg flex justify-between items-center">
-                <span className="text-[11px] font-bold uppercase tracking-wide">CUSTO TOTAL CALCULADO:</span>
-                <strong className="text-[28px] font-bold text-text-main">{formatarReal(totalGeral)}</strong>
+              <span className="text-[11px] font-bold uppercase tracking-wide">CUSTO TOTAL CALCULADO:</span>
+              <strong className="text-[28px] font-bold text-text-main">{formatarReal(totalGeral)}</strong>
             </div>
           </div>
         </div>
-        
+
         <div>
           {/* Summary Sidebar */}
           <div className="bg-bg-dark text-white rounded-lg p-8 shadow-sm">
             <div className="text-lg font-bold uppercase mb-2">Resumo Executivo da Obra</div>
             <p className="text-[12px] text-[#8C9CAB] mb-6">Análise instantânea do orçamento gerado.</p>
-            
+
             <div className="flex justify-between text-[13px] text-[#8C9CAB] mb-3">
               <span>Etapas Definidas</span>
               <span className="text-white font-semibold">{etapas.length} Etapas</span>
             </div>
-            
+
             <div className="h-px bg-white/10 my-6"></div>
 
             <div className="flex justify-between text-[13px] text-[#8C9CAB] mb-3">
               <span>LOCALIDADE</span>
-              <span className="text-white font-semibold">Curitiba, PR</span>
+              <span className="text-white font-semibold">{data.estado || "Não informado"}</span>
             </div>
             <div className="flex justify-between text-[13px] text-[#8C9CAB] mb-3">
               <span>DURAÇÃO (EST.)</span>
               <span className="text-white font-semibold">14 Meses</span>
             </div>
-            
+
             <div className="h-px bg-white/10 my-6"></div>
 
             <div className="text-[10px] font-bold text-brand-primary uppercase tracking-wide mb-2">Muralha Orçamentária Total</div>
             <div className="text-4xl font-bold mb-6">{formatarReal(totalGeral)}</div>
           </div>
-          
+
           <div className="mt-6 flex flex-col gap-4">
-            <Link href="/obras" className="w-full flex items-center justify-center gap-2 py-4 bg-brand-primary text-bg-dark rounded-lg font-bold transition-colors hover:bg-brand-primaryHover">
-              <Check weight="bold" size={20} /> CONCLUIR E CRIAR PROJETO
-            </Link>
+            <button
+              onClick={handleFinish}
+              disabled={isSubmitting}
+              className="w-full flex items-center justify-center gap-2 py-4 bg-brand-primary text-bg-dark rounded-lg font-bold transition-colors hover:bg-brand-primaryHover disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                "CRIANDO PROJETO..."
+              ) : (
+                <>
+                  <Check weight="bold" size={20} /> CONCLUIR E CRIAR PROJETO
+                </>
+              )}
+            </button>
             <Link href="/obras/novo/etapa-2" className="w-full flex items-center justify-center gap-2 py-4 bg-white border border-border rounded-lg font-bold transition-colors hover:bg-bg-light text-text-main text-sm">
               <ArrowLeft size={16} /> VOLTAR AO PASSO 2
             </Link>
@@ -295,7 +403,7 @@ export default function NovaObraEtapa3Page() {
 
         </div>
       </div>
-      
+
     </div>
   );
 }
