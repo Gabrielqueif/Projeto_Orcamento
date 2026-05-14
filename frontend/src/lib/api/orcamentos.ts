@@ -68,6 +68,7 @@ export interface OrcamentoItemCreate {
   memoria_calculo?: string;
   fonte?: string;
   variaveis?: any;
+  preco_unitario?: number;
 }
 
 export interface OrcamentoItemUpdate {

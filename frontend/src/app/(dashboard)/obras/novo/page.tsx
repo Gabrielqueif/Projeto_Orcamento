@@ -41,11 +41,6 @@ export default function NovaObraPage() {
             <div className="w-8 h-8 rounded bg-bg-light text-text-muted border border-border flex items-center justify-center text-sm">2</div>
             <span>EQUIPE & ACESSOS</span>
           </div>
-          <div className="flex-1 h-[2px] bg-border mx-6"></div>
-          <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-wide text-text-muted">
-            <div className="w-8 h-8 rounded bg-bg-light text-text-muted border border-border flex items-center justify-center text-sm">3</div>
-            <span>ORÇAMENTO & METAS</span>
-          </div>
         </div>
       </div>
 
@@ -114,17 +109,73 @@ export default function NovaObraPage() {
                   <option value="TO">TO - Tocantins</option>
                 </select>
               </div>
+              <div className="flex flex-col col-span-2">
+                <label className="text-[11px] font-bold text-text-muted uppercase tracking-wide mb-2">Tipo de Construção</label>
+                <div className="flex flex-wrap gap-2">
+                  {["Residencial Vertical", "Residencial Horizontal", "Comercial", "Industrial", "Hospitalar", "Escolar"].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => {
+                        const current = data.tipo || [];
+                        if (current.includes(t)) {
+                          updateData({ tipo: current.filter(x => x !== t) });
+                        } else {
+                          updateData({ tipo: [...current, t] });
+                        }
+                      }}
+                      className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
+                        data.tipo?.includes(t) 
+                          ? "bg-brand-primary border-brand-primary text-bg-dark" 
+                          : "bg-white border-border text-text-muted hover:border-brand-primary"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                  <div className="flex items-center gap-2 ml-2">
+                    <input 
+                      type="text" 
+                      placeholder="Outro..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = (e.target as HTMLInputElement).value.trim();
+                          if (val && !data.tipo?.includes(val)) {
+                            updateData({ tipo: [...(data.tipo || []), val] });
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 rounded-full text-xs border border-border outline-none focus:border-brand-primary w-32"
+                    />
+                  </div>
+                </div>
+              </div>
+              
               <div className="flex flex-col">
-                <label className="text-[11px] font-bold text-text-muted uppercase tracking-wide mb-2 min-h-[48px] flex items-end">Tipo de Construção</label>
+                <label className="text-[11px] font-bold text-text-muted uppercase tracking-wide mb-2 min-h-[48px] flex items-end">BDI (%)</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  placeholder="0.00" 
+                  value={data.bdi}
+                  onChange={(e) => updateData({ bdi: parseFloat(e.target.value) || 0 })}
+                  className="w-full p-3 border border-border rounded-md text-sm text-text-main bg-white outline-none transition-colors focus:border-brand-primary" 
+                />
+              </div>
+              
+              <div className="flex flex-col">
+                <label className="text-[11px] font-bold text-text-muted uppercase tracking-wide mb-2 min-h-[48px] flex items-end">Status Inicial</label>
                 <select 
-                  value={data.tipo}
-                  onChange={(e) => updateData({ tipo: e.target.value })}
+                  value={data.status}
+                  onChange={(e) => updateData({ status: e.target.value })}
                   className="w-full p-3 border border-border rounded-md text-sm text-text-main bg-white outline-none transition-colors focus:border-brand-primary"
                 >
-                  <option value="Residencial Vertical">Residencial Vertical</option>
-                  <option value="Residencial Horizontal">Residencial Horizontal</option>
-                  <option value="Comercial">Comercial</option>
-                  <option value="Industrial">Industrial</option>
+                  <option value="em_elaboracao">Em Elaboração</option>
+                  <option value="orcamento_concluido">Orçamento Concluído</option>
+                  <option value="em_execucao">Em Execução</option>
+                  <option value="concluido">Concluído</option>
                 </select>
               </div>
               <div className="flex flex-col">
@@ -148,6 +199,23 @@ export default function NovaObraPage() {
                       </option>
                     ))
                   )}
+                </select>
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-[11px] font-bold text-text-muted uppercase tracking-wide mb-2 min-h-[48px] flex flex-col justify-end">
+                  <span>Desoneração (SINAPI)</span>
+                  <span className="text-gray-300 text-[9px] block normal-case font-normal leading-tight mt-1">
+                    (define se os preços terão os encargos sociais desonerados)
+                  </span>
+                </label>
+                <select 
+                  value={data.tipoComposicao}
+                  onChange={(e) => updateData({ tipoComposicao: e.target.value })}
+                  className="w-full p-3 border border-border rounded-md text-sm text-text-main bg-white outline-none transition-colors focus:border-brand-primary"
+                >
+                  <option value="Sem Desoneração">Sem Desoneração</option>
+                  <option value="Com Desoneração">Com Desoneração</option>
                 </select>
               </div>
             </div>
