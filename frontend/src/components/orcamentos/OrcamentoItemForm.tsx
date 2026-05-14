@@ -336,6 +336,7 @@ export function OrcamentoItemForm({
           memoria_calculo: formula,
           variaveis: variables,
           fonte: composicaoSelecionada.fonte,
+          preco_unitario: composicaoSelecionada.preco,
         };
         await addItem(orcamentoId, itemData);
 

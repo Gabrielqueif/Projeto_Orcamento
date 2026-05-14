@@ -3,12 +3,51 @@
 import Link from "next/link";
 import { Check, MagnifyingGlass, User, Lock, ListChecks, Camera, FileText, Trash, Info, ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 import { useState } from "react";
-import { useWizard } from "@/contexts/WizardContext";
+import { useWizard, Etapa, Item } from "@/contexts/WizardContext";
+import { createOrcamento, createEtapa, addItem as apiAddItem } from "@/lib/api/orcamentos";
+import { useRouter } from "next/navigation";
 
 export default function NovaObraEtapa2Page() {
   const { data, updateData } = useWizard();
   const [selectedMember, setSelectedMember] = useState<string>("JP");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
+  const { etapas } = data;
+
+  const setEtapas = (e: Etapa[]) => updateData({ etapas: e });
+
+
+  const handleFinish = async () => {
+      if (!data.nome || !data.cliente) {
+        alert("Por favor, preencha os dados básicos na Etapa 1.");
+        router.push("/obras/novo");
+        return;
+      }
+  
+      setIsSubmitting(true);
+      try {
+        const orcamento = await createOrcamento({
+          nome: data.nome,
+          cliente: data.cliente,
+          data: data.dataInicio || new Date().toISOString().split('T')[0],
+          base_referencia: data.baseReferencia,
+          tipo_composicao: data.tipoComposicao || "Sem Desoneração",
+          estado: data.estado,
+          fonte: "SINAPI",
+          bdi: data.bdi,
+          status: data.status 
+        });
+  
+        alert("Projeto e orçamento criados com sucesso!");
+        router.push("/obras");
+      } catch (error) {
+        console.error("Erro ao salvar projeto:", error);
+        alert("Ocorreu um erro ao salvar o projeto.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
 
   return (
     <div className="flex flex-col h-full -mx-6 -mb-6 -mt-6">
@@ -23,11 +62,6 @@ export default function NovaObraEtapa2Page() {
           <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-wide text-text-main">
             <div className="w-8 h-8 rounded bg-brand-primary text-bg-dark border border-brand-primary flex items-center justify-center text-sm">2</div>
             <span>EQUIPE & ACESSOS</span>
-          </div>
-          <div className="flex-1 h-[2px] bg-border mx-6"></div>
-          <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-wide text-text-muted">
-            <div className="w-8 h-8 rounded bg-bg-light text-text-muted border border-border flex items-center justify-center text-sm">3</div>
-            <span>ORÇAMENTO & METAS</span>
           </div>
         </div>
       </div>
@@ -194,10 +228,19 @@ export default function NovaObraEtapa2Page() {
           <ArrowLeft weight="bold" /> Anterior: Dados da Obra
         </Link>
         <div className="flex items-center gap-6">
-          <button className="text-xs font-bold text-text-main uppercase tracking-wide hover:underline">SALVAR RASCUNHO</button>
-          <Link href="/obras/novo/etapa-3" className="flex items-center gap-2 px-6 py-3 bg-brand-primary text-bg-dark rounded-lg text-sm font-bold transition-all hover:bg-brand-primaryHover">
-            PRÓXIMO: ORÇAMENTO E METAS <ArrowRight weight="bold" />
-          </Link>
+          <button
+              onClick={handleFinish}
+              disabled={isSubmitting}
+              className="flex items-center gap-2 px-6 py-3 bg-brand-primary text-bg-dark rounded-lg text-sm font-bold transition-all hover:bg-brand-primaryHover disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                "CRIANDO PROJETO..."
+              ) : (
+                <>
+                  <Check weight="bold" size={20} /> CONCLUIR E CRIAR PROJETO
+                </>
+              )}
+            </button>
         </div>
       </div>
 

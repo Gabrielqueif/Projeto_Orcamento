@@ -19,12 +19,16 @@ interface WizardData {
   // Etapa 1: Dados Gerais
   nome: string;
   cliente: string;
-  tipo: string;
-  estado: string; // Adicionado para preços regionais
+  tipo: string[];
+  tipoComposicao: string;
+  estado: string; 
   endereco: string;
   dataInicio: string;
   dataTermino: string;
-  baseReferencia: string; // Adicionado para selecionar a base do SINAPI
+  baseReferencia: string; 
+  bdi: number; 
+  status: string; 
+
   
   // Etapa 2: Equipe
   membros: string[]; 
@@ -43,12 +47,17 @@ interface WizardContextType {
 const initialData: WizardData = {
   nome: "",
   cliente: "",
-  tipo: "",
-  estado: "", 
+  tipo: [],
+  tipoComposicao: "Sem Desoneração",
+  estado: "SP", 
   endereco: "",
   dataInicio: "",
   dataTermino: "",
   baseReferencia: "", 
+  bdi: 0, 
+  status: "em_elaboracao",   
+
+// etapa 02
   membros: ["Você (Gestor)"],
   metragem: 500,
   etapas: [],
