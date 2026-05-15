@@ -2,40 +2,102 @@ name: Backend CI
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
     paths:
-      - 'backend/**'
-      - '.github/workflows/backend-ci.yml'
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
   pull_request:
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
     paths:
-      - 'backend/**'
-      - '.github/workflows/backend-ci.yml'
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+# Cancel in-progress runs for the same branch/PR
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  # ---------------------------------------------------------------------------
+  # Job 1: Lint — fast static analysis (runs in parallel with test)
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint (ruff)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./backend
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.10"
-        cache: 'pip'
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        # Ensure pytest is installed even if not in requirements (though it should be)
-        pip install pytest httpx
+      - name: Install ruff
+        run: pip install ruff
 
-    - name: Run Tests
-      run: |
-        # Using pytest.ini configuration implicitly
-        python -m pytest tests
+      - name: Run ruff (lint + import sort check)
+        run: |
+          ruff check app core schemas --output-format=github
+          ruff format --check app core schemas
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Tests with coverage report
+  # ---------------------------------------------------------------------------
+  test:
+    name: Tests (pytest + coverage)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-cov httpx
+
+      - name: Run tests with coverage
+        run: python -m pytest tests -v
+        # pytest.ini configures --cov, --cov-report=xml, --cov-fail-under=70
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: backend/coverage.xml
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Validate Docker build (catches Dockerfile or dependency issues)
+  # ---------------------------------------------------------------------------
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    # Only run on push to main/master — PRs already use the test job
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend Docker image
+        run: |
+          docker build ./backend \
+            --tag projeto-orcamento-backend:ci \
+            --label "git-sha=${{ github.sha }}"

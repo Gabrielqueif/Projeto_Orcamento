@@ -1,6 +1,9 @@
+import pytest
 from unittest.mock import MagicMock
 from datetime import date
 
+
+@pytest.mark.integration
 def test_criar_orcamento(client, mock_supabase):
     # Setup Mock
     payload = {
@@ -34,6 +37,7 @@ def test_criar_orcamento(client, mock_supabase):
     assert data["nome"] == payload["nome"]
     assert data["status"] == "em_elaboracao"
 
+@pytest.mark.integration
 def test_listar_orcamentos(client, mock_supabase):
     # Setup Mock
     mock_data = [
@@ -51,6 +55,7 @@ def test_listar_orcamentos(client, mock_supabase):
     assert len(data) == 2
     assert data[0]["nome"] == "Orc 1"
 
+@pytest.mark.integration
 def test_buscar_orcamento_por_id(client, mock_supabase):
     # Setup Mock
     orc_id = "orc-1"
@@ -66,6 +71,7 @@ def test_buscar_orcamento_por_id(client, mock_supabase):
     data = response.json()
     assert data["id"] == orc_id
 
+@pytest.mark.integration
 def test_atualizar_orcamento(client, mock_supabase):
     # Setup Mock
     orc_id = "orc-1"
@@ -95,6 +101,7 @@ def test_atualizar_orcamento(client, mock_supabase):
     data = response.json()
     assert data["nome"] == "Novo Nome"
 
+@pytest.mark.integration
 def test_deletar_orcamento(client, mock_supabase):
     # Setup Mock
     orc_id = "orc-1"
