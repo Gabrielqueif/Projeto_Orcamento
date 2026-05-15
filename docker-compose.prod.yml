@@ -1,18 +1,19 @@
 services:
-  nginx:
-    build:
-      context: ./nginx
-    ports:
-      - "80:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-      frontend:
-        condition: service_healthy
+  # O Porteiro com Interface Visual
+  proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
     restart: unless-stopped
+    ports:
+      - '80:80'              # Tráfego HTTP público
+      - '81:81'              # Interface administrativa visual do NPM
+      - '443:443'            # Tráfego HTTPS público
+    volumes:
+      - ./npm/data:/data
+      - ./npm/letsencrypt:/etc/letsencrypt
     networks:
       - app-network
 
+  # O Seu Backend Python
   backend:
     build:
       context: ./backend
@@ -21,16 +22,7 @@ services:
     environment:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - SECRET_KEY=${SECRET_KEY}
-      - CORS_ORIGINS=${CORS_ORIGINS}
-      - ENVIRONMENT=production
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DB_HOST=${DB_HOST} # etc...
     healthcheck:
       test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" ]
       interval: 30s
@@ -41,29 +33,11 @@ services:
     networks:
       - app-network
 
-  frontend:
-    build:
-      context: ./frontend
-      args:
-        NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-        NEXT_PUBLIC_API_URL: ${API_URL}
-    expose:
-      - "3000"
-    environment:
-      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-      - NEXT_PUBLIC_API_URL=${API_URL}
-    healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    depends_on:
-      backend:
-        condition: service_healthy
+  # O Túnel que conecta sua casa à Internet (Sem abrir portas no roteador)
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
     restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     networks:
       - app-network
 
