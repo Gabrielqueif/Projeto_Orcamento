@@ -14,7 +14,7 @@ export interface PrecosEstado {
     [key: string]: number | string | null;
 }
 
-export async function buscarComposicoes(termo: string, fonte: string = "SINAPI"): Promise<ItemComposicao[]> {
+export async function buscarComposicoes(termo: string, fonte: string): Promise<ItemComposicao[]> {
     if (!termo) return [];
 
     const url = `/composicoes/buscar/${encodeURIComponent(termo)}?fonte=${encodeURIComponent(fonte)}`;
@@ -27,7 +27,7 @@ export async function buscarComposicoes(termo: string, fonte: string = "SINAPI")
     return response.json();
 }
 
-export async function getEstadosComposicao(codigo: string, mes_referencia: string, fonte: string = "SINAPI"): Promise<PrecosEstado[]> {
+export async function getEstadosComposicao(codigo: string, mes_referencia: string, fonte: string): Promise<PrecosEstado[]> {
     if (!codigo || !mes_referencia) return [];
 
     const response = await fetchWithAuth(`/composicoes/${encodeURIComponent(codigo)}/estados?mes_referencia=${encodeURIComponent(mes_referencia)}&fonte=${encodeURIComponent(fonte)}`);

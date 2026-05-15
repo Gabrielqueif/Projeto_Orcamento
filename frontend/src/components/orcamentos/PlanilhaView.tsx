@@ -268,11 +268,11 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                                     {expandedRows.has(item.id) ? <CaretDown size={14} weight="bold" /> : <CaretRight size={14} weight="bold" />}
                                   </button>
                                   <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
-                                    item.fonte === 'SEINFRA' 
+                                    item.fonte === 'SEINFRA'
                                       ? 'bg-orange-100 text-orange-700 border border-orange-200' 
                                       : 'bg-blue-100 text-blue-700 border border-blue-200'
                                   }`}>
-                                    {item.fonte || "SINAPI"}
+                                    {item.fonte}
                                   </span>
                                 </div>
                               </td>
