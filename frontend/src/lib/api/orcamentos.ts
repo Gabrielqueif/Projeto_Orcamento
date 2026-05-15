@@ -63,11 +63,12 @@ export interface OrcamentoItemCreate {
   descricao: string;
   quantidade: number;
   unidade: string;
-  estado?: string; // Opcional, será pego do orçamento se não fornecido
+  estado?: string;
   etapa_id?: string;
   memoria_calculo?: string;
   fonte?: string;
   variaveis?: any;
+  preco_unitario?: number;
 }
 
 export interface OrcamentoItemUpdate {

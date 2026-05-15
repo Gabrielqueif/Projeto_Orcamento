@@ -61,7 +61,7 @@ const doughnutData = {
       data: [45, 55],
       backgroundColor: ['#AEE112', '#F4F6F8'],
       borderWidth: 0,
-      cutout: '80%',
+      cutout: '82%',
       circumference: 180,
       rotation: 270,
     },
@@ -70,7 +70,8 @@ const doughnutData = {
 
 const doughnutOptions = {
   responsive: true,
-  maintainAspectRatio: false,
+  maintainAspectRatio: true,
+  aspectRatio: 2,
   plugins: { legend: { display: false }, tooltip: { enabled: false } },
 };
 
@@ -181,11 +182,13 @@ export default function DashboardPage() {
             <h3 className="text-base font-bold text-text-main mb-1">UTILIZAÇÃO DE VERBA</h3>
             <p className="text-[13px] text-text-muted">Consolidado Financeiro Geral</p>
           </div>
-          <div className="relative h-[200px] flex items-center justify-center -mt-6">
-            <Doughnut data={doughnutData} options={doughnutOptions} />
-            <div className="absolute flex flex-col items-center mt-6">
-              <span className="text-[42px] font-bold text-text-main leading-none">45%</span>
-              <small className="text-[11px] text-text-muted uppercase tracking-[1px] mt-1">Alocado</small>
+          <div className="relative w-full flex flex-col items-center justify-center mt-8 mb-4">
+            <div className="w-full max-w-[280px] aspect-[2/1]">
+              <Doughnut data={doughnutData} options={doughnutOptions} />
+            </div>
+            <div className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-center">
+              <span className="text-3xl lg:text-[44px] font-bold text-text-main leading-none">45%</span>
+              <small className="text-[10px] lg:text-[11px] font-bold text-text-muted uppercase tracking-[2px] mt-1">Alocado</small>
             </div>
           </div>
           <div className="flex gap-3 mt-auto">
