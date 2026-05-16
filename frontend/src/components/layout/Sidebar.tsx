@@ -12,9 +12,11 @@ import {
   BookOpen, 
   Plus, 
   Gear, 
-  Question 
+  Question,
+  SignOut
 } from "@phosphor-icons/react";
 import clsx from "clsx";
+import { logout } from "@/app/auth/actions";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -70,6 +72,12 @@ export function Sidebar() {
         <a href="mailto:suporte@gpobras.com.br" className="flex items-center gap-4 py-3 px-5 text-[#8C9CAB] no-underline rounded-lg font-medium transition-all duration-200 hover:text-white hover:bg-white/5 text-sm">
           <Question size={20} /> Suporte
         </a>
+        <button 
+          onClick={() => logout()}
+          className="w-full flex items-center gap-4 py-3 px-5 text-status-danger/80 no-underline rounded-lg font-medium transition-all duration-200 hover:text-status-danger hover:bg-status-danger/10 text-sm border-none bg-transparent cursor-pointer"
+        >
+          <SignOut size={20} /> Sair da conta
+        </button>
       </div>
     </aside>
   );
