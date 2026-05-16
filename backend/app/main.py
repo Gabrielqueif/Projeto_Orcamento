@@ -43,7 +43,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://projeto-orcamento-git-main-gabrielqueifs-projects.vercel.app","https://projeto-orcamento-git-gabrielqueifs-projects.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
