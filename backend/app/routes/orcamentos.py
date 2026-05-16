@@ -11,7 +11,7 @@ router = APIRouter(
     prefix="/orcamentos", 
     tags=["Orçamentos"],
     dependencies=[Depends(get_current_user)],
-    strict_slashes=False
+    redirect_slashes=False
 )
 
 @router.post(
