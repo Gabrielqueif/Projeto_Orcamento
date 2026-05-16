@@ -9,7 +9,7 @@ from core.supabase_client import get_supabase_client
 
 # Setup Router
 logger = logging.getLogger("projeto_orcamento")
-router = APIRouter(prefix="/importacao", tags=["Importacao"])
+router = APIRouter(prefix="/importacao", tags=["Importacao"], redirect_slashes=False)
 
 # Dependencies
 from core.security import require_admin, get_current_user

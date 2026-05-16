@@ -8,7 +8,8 @@ from core.security import get_current_user
 router = APIRouter(
     prefix="/orcamentos", 
     tags=["Itens do Orçamento"],
-    dependencies=[Depends(get_current_user)]
+    dependencies=[Depends(get_current_user)],
+    redirect_slashes=False
 )
 
 router.add_api_route(

@@ -6,7 +6,8 @@ from core.security import get_current_user
 router = APIRouter(
     prefix="/composicoes", 
     tags=["Composições"],
-    dependencies=[Depends(get_current_user)]
+    dependencies=[Depends(get_current_user)],
+    redirect_slashes=False
 )
 
 router.add_api_route("/importar", itens.importar_sinapi, methods=["POST"], summary="Importar SINAPI (Completo)")
