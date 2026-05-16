@@ -115,7 +115,7 @@ export interface EtapaUpdate {
 export async function createOrcamento(
   data: OrcamentoCreate,
 ): Promise<Orcamento> {
-  const response = await fetchWithAuth("/orcamentos", {
+  const response = await fetchWithAuth("/orcamentos/", {
     method: "POST",
     body: JSON.stringify(data),
   });
