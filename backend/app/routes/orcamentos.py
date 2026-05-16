@@ -10,7 +10,8 @@ from app.dependencies import get_supabase
 router = APIRouter(
     prefix="/orcamentos", 
     tags=["Orçamentos"],
-    dependencies=[Depends(get_current_user)]
+    dependencies=[Depends(get_current_user)],
+    strict_slashes=False
 )
 
 @router.post(
