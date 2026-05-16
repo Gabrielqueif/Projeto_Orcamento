@@ -93,6 +93,18 @@ export default async function LoginPage({
                     </button>
                 </form>
 
+                <div className="mt-6 flex flex-col gap-3">
+                    <div className="flex items-center gap-4 text-text-muted text-[10px] uppercase font-bold tracking-widest before:content-[''] before:flex-1 before:h-[1px] before:bg-border after:content-[''] after:flex-1 after:h-[1px] after:bg-border">
+                        Ou
+                    </div>
+                    <Link
+                        href="/signup"
+                        className="w-full p-4 border border-border text-text-main font-bold text-sm rounded-lg cursor-pointer transition-colors hover:bg-[#F8FAFC] flex items-center justify-center gap-2 no-underline"
+                    >
+                        Criar nova conta
+                    </Link>
+                </div>
+
                 <div className="text-center text-[10px] text-text-muted uppercase mt-6 tracking-wide">
                     SYSTEM VERSION 2.4.1
                 </div>
