@@ -63,8 +63,25 @@ export async function signup(formData: FormData) {
         redirect(`/signup?error=${encodeURIComponent(error.message)}`)
     }
 
+    if (authData.user) {
+        const { error: dbError } = await supabase.from('users').insert({
+            id: authData.user.id,
+            email: email,
+            username: username,
+            account_type: accountType,
+            role: 'user'
+        })
+        
+        if (dbError) {
+            console.error('Database Insert Error:', dbError);
+            // Even if it fails to insert in the public table, the auth user is created.
+            // We can log the error and continue, or redirect with an error.
+            // For now we just log it, but ideally we'd have a trigger to handle this automatically.
+        }
+    }
+
     revalidatePath('/', 'layout')
-    redirect('/login?message=Cadastro realizado com sucesso! Verifique seu email para confirmar.')
+    redirect('/login?message=Cadastro realizado com sucesso!')
 }
 
 export async function logout() {
