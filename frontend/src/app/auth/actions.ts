@@ -74,9 +74,7 @@ export async function signup(formData: FormData) {
         
         if (dbError) {
             console.error('Database Insert Error:', dbError);
-            // Even if it fails to insert in the public table, the auth user is created.
-            // We can log the error and continue, or redirect with an error.
-            // For now we just log it, but ideally we'd have a trigger to handle this automatically.
+            redirect(`/signup?error=Erro ao salvar perfil: ${encodeURIComponent(dbError.message)}`)
         }
     }
 
