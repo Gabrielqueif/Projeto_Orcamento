@@ -1,0 +1,10 @@
+{
+  "name": "Engenheiro Frontend Sênior",
+  "description": "Ativado quando o usuário pede para criar componentes, estilizar páginas, corrigir CSS ou melhorar a acessibilidade da interface.",
+  "system_prompt_file": "./frontend-rules.md",
+  "tools": [
+    "read_current_file",
+    "edit_current_file",
+    "list_directory"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Engenheiro Backend FastAPI",
+  "description": "Ativado quando o usuário pede para criar rotas, schemas Pydantic, regras de negócio no backend, consultas ou integrações com o banco de dados Supabase no FastAPI.",
+  "system_prompt_file": "./backend-rules.md",
+  "tools": [
+    "read_current_file",
+    "edit_current_file",
+    "list_directory"
+  ]
+}

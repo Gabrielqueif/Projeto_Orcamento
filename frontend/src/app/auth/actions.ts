@@ -63,21 +63,6 @@ export async function signup(formData: FormData) {
         redirect(`/signup?error=${encodeURIComponent(error.message)}`)
     }
 
-    if (authData.user) {
-        const { error: dbError } = await supabase.from('profiles').insert({
-            id: authData.user.id,
-            email: email,
-            username: username,
-            account_type: accountType,
-            role: 'user'
-        })
-        
-        if (dbError) {
-            console.error('Database Insert Error:', dbError);
-            redirect(`/signup?error=Erro ao salvar perfil: ${encodeURIComponent(dbError.message)}`)
-        }
-    }
-
     revalidatePath('/', 'layout')
     redirect('/login?message=Cadastro realizado com sucesso!')
 }

@@ -21,5 +21,34 @@
     --status-warning: #F59E0B;
     --status-danger: #EF4444;
     --status-info: #06B6D4;
+
+    /* Nova Identidade Visual - Design Tokens */
+    --color-primary-dark: #0A192F;
+    --color-secondary-dark: #233554;
+    --color-text-muted: #64748B;
+    --color-text-subtle: #94A3B8;
+    --color-bg-subtle: #F1F5F9;
+    --color-bg-soft: #F8FAFC;
+    --color-border: #E2E8F0;
+    --color-white: #FFFFFF;
+    --color-heading: #112240;
+    --color-text-secondary: #6B7280;
+
+    --color-brand-accent: #9FD300;
+    --color-success: #059669;
+    --color-success-dark: #047857;
+    --color-success-bg: #ECFDF5;
+    --color-success-bg-alt: #D1FAE5;
+
+    --color-danger: #DC2626;
+    --color-danger-strong: #EF4444;
+    --color-danger-dark: #B91C1C;
+    --color-danger-bg: #FEE2E2;
+    --color-danger-bg-alt: #FEF2F2;
+
+    --color-warning: #F97316;
+    --color-warning-dark: #C2410C;
+    --color-warning-bg: #FFEDD5;
+    --color-warning-bg-alt: #FFF7ED;
   }
 }
