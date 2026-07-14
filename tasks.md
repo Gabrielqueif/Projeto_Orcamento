@@ -1,6 +1,6 @@
 ### Tasks
     #### Front-end
-        - tela de cadastros (olhar sistema de cadastros) [ ]
+        - tela de cadastros (olhar sistema de cadastros) [ x ]
         
         - Nova obra: 
             - Remover o cronograma estimado. [ ]
