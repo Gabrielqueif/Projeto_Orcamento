@@ -236,31 +236,7 @@ export default function NovaObraPage() {
             </div>
           </div>
           
-          <div className="bg-surface border border-border rounded-lg p-8 shadow-sm">
-            <h2 className="text-lg font-bold text-bg-dark mb-6 flex items-center gap-3">
-              <CalendarBlank size={24} className="text-text-muted" /> Cronograma Estimado
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wide mb-2">Data de Início</label>
-                <input 
-                  type="date" 
-                  value={data.dataInicio}
-                  onChange={(e) => updateData({ dataInicio: e.target.value })}
-                  className="w-full p-3 border border-border rounded-md text-sm text-text-main bg-white outline-none transition-colors focus:border-brand-primary" 
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wide mb-2">Previsão de Término</label>
-                <input 
-                  type="date" 
-                  value={data.dataTermino}
-                  onChange={(e) => updateData({ dataTermino: e.target.value })}
-                  className="w-full p-3 border border-border rounded-md text-sm text-text-main bg-white outline-none transition-colors focus:border-brand-primary" 
-                />
-              </div>
-            </div>
-          </div>
+          
         </div>
         
         <div>

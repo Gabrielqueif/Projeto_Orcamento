@@ -215,7 +215,7 @@ class ItemService:
         return self.repository.listar(limit=100) # Deveria filtrar por fonte no repo se necessário
 
     def buscar_composicao(self, termo: str, fonte: str = "SINAPI"):
-        if termo.isdigit():
+        if "%" in termo or termo.isdigit():
             return self.repository.buscar_por_codigo(termo, fonte=fonte)
         else:
             return self.repository.buscar_por_descricao(termo, fonte=fonte)
