@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  Buildings, 
-  SquaresFour, 
-  HardHat, 
-  Money, 
-  Users, 
-  FileText, 
-  BookOpen, 
-  Plus, 
-  Gear, 
+import {
+  Buildings,
+  SquaresFour,
+  HardHat,
+  Money,
+  Users,
+  UserPlus,
+  FileText,
+  BookOpen,
+  Plus,
+  Gear,
   Question,
-  SignOut
+  SignOut,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { logout } from "@/app/auth/actions";
@@ -31,52 +32,88 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-[260px] bg-color-primary-dark text-white flex flex-col fixed h-screen left-0 top-0 z-50 transition-all duration-300">
-      <Link href="/" className="flex items-center gap-3 py-8 px-6 text-2xl font-bold text-white no-underline">
-        <Buildings weight="fill" />
-        GP<span className="text-color-brand-accent">Obras</span>
-      </Link>
-      
-      <nav className="flex-1 p-4 flex flex-col gap-2">
+    <aside className="w-[256px] bg-[#001b3d] text-white flex flex-col fixed h-screen left-0 top-0 z-50">
+      {/* Logo */}
+      <div className="flex flex-col gap-0.5 py-6 px-6 border-b border-[rgba(255,255,255,0.06)]">
+        <Link href="/" className="no-underline">
+          <span className="font-['Manrope'] font-extrabold text-[22px] text-white tracking-[-0.5px]">
+            GP<span className="text-[#9fd300]">Obras</span>
+          </span>
+        </Link>
+        <span className="font-['JetBrains_Mono'] text-[#94a3b8] text-[10px] uppercase tracking-[1px]">
+          Gestão de Obras
+        </span>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 py-5 px-3 flex flex-col gap-1">
         {links.map((link) => {
-          const isActive = pathname === link.href || pathname?.startsWith(link.href + "/");
+          const isActive =
+            pathname === link.href ||
+            (link.href !== "/" && pathname?.startsWith(link.href + "/"));
           return (
-            <Link 
-              key={link.href} 
-              href={link.href} 
+            <Link
+              key={link.href}
+              href={link.href}
               className={clsx(
-                "flex items-center gap-4 py-3.5 px-5 no-underline rounded-lg font-medium transition-all duration-200",
-                isActive 
-                  ? "bg-color-brand-accent text-color-primary-dark shadow-[0_4px_12px_rgba(159,211,0,0.2)]" 
-                  : "text-color-text-subtle hover:text-white hover:bg-white/5"
+                "flex items-center gap-3 py-[10px] px-4 no-underline rounded-[8px] font-['Manrope'] text-[14px] font-medium transition-all duration-150",
+                isActive
+                  ? "bg-[#9fd300] text-[#001b3d] font-bold shadow-[0_4px_12px_rgba(159,211,0,0.25)]"
+                  : "text-[#94a3b8] hover:text-white hover:bg-[rgba(255,255,255,0.06)]"
               )}
             >
-              <link.icon size={20} weight={isActive ? "fill" : "regular"} className={isActive ? "text-color-primary-dark" : "text-color-text-subtle"} />
+              <link.icon
+                size={18}
+                weight={isActive ? "fill" : "regular"}
+                className={isActive ? "text-[#001b3d]" : "text-[#64748b]"}
+              />
               {link.label}
             </Link>
           );
         })}
       </nav>
-      
-      <Link 
-        href="/obras/novo" 
-        className="mx-4 my-5 py-3.5 px-5 bg-color-brand-accent text-color-primary-dark rounded-lg font-semibold flex items-center justify-center gap-2 transition-all duration-200 text-[15px] hover:opacity-90"
-      >
-        <Plus weight="bold" /> Nova Obra
-      </Link>
-      
-      <div className="p-4 border-t border-white/5 bg-color-secondary-dark">
-        <Link href="/configuracoes" className="flex items-center gap-4 py-3 px-5 text-color-text-subtle no-underline rounded-lg font-medium transition-all duration-200 hover:text-white hover:bg-white/5 text-sm">
-          <Gear size={20} /> Configurações
-        </Link>
-        <a href="mailto:suporte@gpobras.com.br" className="flex items-center gap-4 py-3 px-5 text-color-text-subtle no-underline rounded-lg font-medium transition-all duration-200 hover:text-white hover:bg-white/5 text-sm">
-          <Question size={20} /> Suporte
-        </a>
-        <button 
-          onClick={() => logout()}
-          className="w-full flex items-center gap-4 py-3 px-5 text-color-danger/80 no-underline rounded-lg font-medium transition-all duration-200 hover:text-color-danger hover:bg-color-danger/10 text-sm border-none bg-transparent cursor-pointer"
+
+      {/* Novo Membro / Nova Obra CTA */}
+      {pathname?.startsWith("/equipe") ? (
+        <Link
+          href="/equipe/novo"
+          className="mx-4 mb-4 py-[11px] px-4 bg-[#9fd300] text-[#001b3d] rounded-[8px] font-['Manrope'] font-bold text-[14px] flex items-center justify-center gap-2 transition-all duration-150 hover:opacity-90 no-underline"
         >
-          <SignOut size={20} /> Sair da conta
+          <UserPlus size={18} weight="bold" />
+          Novo Membro
+        </Link>
+      ) : (
+        <Link
+          href="/obras/novo"
+          className="mx-4 mb-4 py-[11px] px-4 bg-[#9fd300] text-[#001b3d] rounded-[8px] font-['Manrope'] font-bold text-[14px] flex items-center justify-center gap-2 transition-all duration-150 hover:opacity-90 no-underline"
+        >
+          <Plus size={16} weight="bold" />
+          Nova Obra
+        </Link>
+      )}
+
+      {/* Bottom */}
+      <div className="p-4 border-t border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]">
+        <Link
+          href="/configuracoes"
+          className="flex items-center gap-3 py-[10px] px-4 text-[#64748b] no-underline rounded-[8px] font-['Manrope'] text-[13px] transition-all duration-150 hover:text-white hover:bg-[rgba(255,255,255,0.06)]"
+        >
+          <Gear size={16} />
+          Configurações
+        </Link>
+        <a
+          href="mailto:suporte@gpobras.com.br"
+          className="flex items-center gap-3 py-[10px] px-4 text-[#64748b] no-underline rounded-[8px] font-['Manrope'] text-[13px] transition-all duration-150 hover:text-white hover:bg-[rgba(255,255,255,0.06)]"
+        >
+          <Question size={16} />
+          Suporte
+        </a>
+        <button
+          onClick={() => logout()}
+          className="w-full flex items-center gap-3 py-[10px] px-4 text-[rgba(239,68,68,0.7)] no-underline rounded-[8px] font-['Manrope'] text-[13px] transition-all duration-150 hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] bg-transparent border-none cursor-pointer"
+        >
+          <SignOut size={16} />
+          Sair da conta
         </button>
       </div>
     </aside>

@@ -1,40 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --bg-dark: #081225;
-    --bg-darker: #050a15;
-    --bg-light: #F4F6F8;
+    --bg-dark: #001b3d;
+    --bg-darker: #00102a;
+    --bg-light: #F8FAFC;
     
-    --color-primary: #AEE112;
-    --color-primary-hover: #98C40F;
+    --color-primary: #9fd300;
+    --color-primary-hover: #8bc400;
     
-    --text-main: #1D2C4D;
-    --text-muted: #6B7280;
+    --text-main: #001b3d;
+    --text-muted: #64748b;
     
     --surface: #FFFFFF;
-    --border: #E5E7EB;
+    --border: #E2E8F0;
 
-    --status-success: #AEE112;
+    --status-success: #9fd300;
     --status-warning: #F59E0B;
     --status-danger: #EF4444;
-    --status-info: #06B6D4;
+    --status-info: #00a3b1;
 
-    /* Nova Identidade Visual - Design Tokens */
-    --color-primary-dark: #0A192F;
-    --color-secondary-dark: #233554;
-    --color-text-muted: #64748B;
-    --color-text-subtle: #94A3B8;
-    --color-bg-subtle: #F1F5F9;
-    --color-bg-soft: #F8FAFC;
-    --color-border: #E2E8F0;
-    --color-white: #FFFFFF;
-    --color-heading: #112240;
-    --color-text-secondary: #6B7280;
+    /* Nova Identidade Visual GPObras — Design Tokens */
+    --color-primary-dark: #001b3d;
+    --color-secondary-dark: #002855;
+    --color-teal: #00a3b1;
+    --color-text-muted: #64748b;
+    --color-text-subtle: #94a3b8;
+    --color-bg-subtle: #f1f5f9;
+    --color-bg-soft: #f8fafc;
+    --color-border: #e2e8f0;
+    --color-white: #ffffff;
+    --color-heading: #001b3d;
+    --color-text-secondary: #64748b;
 
-    --color-brand-accent: #9FD300;
+    --color-brand-accent: #9fd300;
     --color-success: #059669;
     --color-success-dark: #047857;
     --color-success-bg: #ECFDF5;

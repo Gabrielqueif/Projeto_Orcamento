@@ -1,249 +1,349 @@
 "use client";
 
 import Link from "next/link";
-import { Check, MagnifyingGlass, User, Lock, ListChecks, Camera, FileText, Trash, Info, ArrowLeft, ArrowRight } from "@phosphor-icons/react";
+import {
+  Check,
+  MagnifyingGlass,
+  User,
+  Lock,
+  ListChecks,
+  Camera,
+  FileText,
+  Trash,
+  ArrowLeft,
+  ArrowRight,
+} from "@phosphor-icons/react";
 import { useState } from "react";
-import { useWizard, Etapa, Item } from "@/contexts/WizardContext";
-import { createOrcamento, createEtapa, addItem as apiAddItem } from "@/lib/api/orcamentos";
+import { useWizard } from "@/contexts/WizardContext";
+import { createOrcamento } from "@/lib/api/orcamentos";
 import { useRouter } from "next/navigation";
 
+const MOCK_PROFESSIONALS = [
+  {
+    id: "RA",
+    name: "Ricardo Almeida",
+    role: "Engenheiro Civil • Senior",
+    color: "#001b3d",
+  },
+  {
+    id: "MC",
+    name: "Mariana Costa",
+    role: "Arquiteta Urbanista",
+    color: "#00a3b1",
+  },
+  {
+    id: "JP",
+    name: "João Pedro Silva",
+    role: "Mestre de Obras",
+    color: "#94a3b8",
+    initials: "JP",
+  },
+  {
+    id: "FO",
+    name: "Fernanda Oliveira",
+    role: "Gestora de Projetos",
+    color: "#9fd300",
+    initials: "FO",
+  },
+];
+
+const TEAM_MEMBERS = [
+  { id: "VP", name: "Você (Gestor)", role: "CRIADOR", badge: "GERENTE", fixed: true },
+  { id: "JP", name: "João Pedro Silva", role: "Mestre de Obras", badge: "MESTRE", fixed: false },
+  { id: "MC", name: "Mariana Costa", role: "Arquitetura", badge: "ARQUITETO", fixed: false },
+];
+
 export default function NovaObraEtapa2Page() {
-  const { data, updateData } = useWizard();
+  const { data } = useWizard();
   const [selectedMember, setSelectedMember] = useState<string>("JP");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  const { etapas } = data;
-
-  const setEtapas = (e: Etapa[]) => updateData({ etapas: e });
-
-
   const handleFinish = async () => {
-      if (!data.nome || !data.cliente) {
-        alert("Por favor, preencha os dados básicos na Etapa 1.");
-        router.push("/obras/novo");
-        return;
-      }
-  
-      setIsSubmitting(true);
-      try {
-        const orcamento = await createOrcamento({
-          nome: data.nome,
-          cliente: data.cliente,
-          data: data.dataInicio || new Date().toISOString().split('T')[0],
-          base_referencia: data.baseReferencia,
-          tipo_composicao: data.tipoComposicao || "Sem Desoneração",
-          estado: data.estado,
-          fonte: "SINAPI",
-          bdi: data.bdi,
-          status: data.status 
-        });
-  
-        alert("Projeto e orçamento criados com sucesso!");
-        router.push("/obras");
-      } catch (error) {
-        console.error("Erro ao salvar projeto:", error);
-        alert("Ocorreu um erro ao salvar o projeto.");
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
+    if (!data.nome || !data.cliente) {
+      alert("Por favor, preencha os dados básicos na Etapa 1.");
+      router.push("/obras/novo");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await createOrcamento({
+        nome: data.nome,
+        cliente: data.cliente,
+        data: data.dataInicio || new Date().toISOString().split("T")[0],
+        base_referencia: data.baseReferencia,
+        tipo_composicao: data.tipoComposicao || "Sem Desoneração",
+        estado: data.estado,
+        fonte: "SINAPI",
+        bdi: data.bdi,
+        status: data.status,
+      });
+      alert("Projeto criado com sucesso!");
+      router.push("/obras");
+    } catch (error) {
+      console.error("Erro ao salvar projeto:", error);
+      alert("Ocorreu um erro ao salvar o projeto.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const steps = [
+    { num: 1, label: "Dados Gerais", active: false, done: true },
+    { num: 2, label: "Equipe e Acessos", active: true, done: false },
+  ];
 
   return (
-    <div className="flex flex-col h-full -mx-6 -mb-6 -mt-6">
-      {/* Wizard Progress Header */}
-      <div className="flex items-center justify-center h-20 px-10 bg-white border-b border-border">
-        <div className="flex items-center w-full max-w-[800px] justify-between">
-          <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-wide text-text-main">
-            <div className="w-8 h-8 rounded bg-brand-primary text-bg-dark border border-brand-primary flex items-center justify-center text-lg"><Check weight="bold" /></div>
-            <span>DADOS GERAIS</span>
-          </div>
-          <div className="flex-1 h-[2px] bg-brand-primary mx-6"></div>
-          <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-wide text-text-main">
-            <div className="w-8 h-8 rounded bg-brand-primary text-bg-dark border border-brand-primary flex items-center justify-center text-sm">2</div>
-            <span>EQUIPE & ACESSOS</span>
-          </div>
+    <div className="flex flex-col h-full -mx-8 -mb-8 -mt-8">
+      {/* Stepper Header */}
+      <div className="bg-white border-b border-[#d1d5db] px-16 py-6">
+        <div className="max-w-[896px] flex items-center justify-between">
+          {steps.map((step, idx) => (
+            <div key={step.num} className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-[8px] flex items-center justify-center shadow-[0_1px_1px_rgba(0,0,0,0.05)] ${
+                    step.done || step.active
+                      ? "bg-[#9fd300]"
+                      : "bg-white border border-[#d1d5db]"
+                  }`}
+                >
+                  {step.done ? (
+                    <Check size={16} weight="bold" className="text-[#001b3d]" />
+                  ) : (
+                    <span
+                      className={`font-['JetBrains_Mono'] font-bold text-[12px] ${
+                        step.active ? "text-[#001b3d]" : "text-[#94a3b8]"
+                      }`}
+                    >
+                      {step.num}
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={`font-['Inter'] font-bold text-[10px] uppercase tracking-[1px] ${
+                    step.active ? "text-[#001b3c]" : "text-[rgba(0,27,60,0.4)]"
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </div>
+              {idx < steps.length - 1 && (
+                <div className="flex-1 mx-4 h-1 rounded-full bg-[rgba(159,211,0,0.2)] min-w-[60px]" />
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Form Area */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-8 p-10 bg-bg-light overflow-y-auto">
-        
-        {/* Left Card: Add Members */}
-        <div className="bg-surface border border-border rounded-lg p-8 self-start shadow-sm">
-          <h2 className="text-lg font-bold text-bg-dark mb-2 uppercase">Adicionar Membros</h2>
-          <p className="text-[13px] text-text-muted mb-4">Busque por nome ou cargo na sua rede de profissionais.</p>
-          
-          <div className="relative mb-6">
-            <MagnifyingGlass size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
-            <input type="text" placeholder="Buscar profissional..." className="w-full py-3 pr-4 pl-12 border border-border rounded-md text-sm text-text-main bg-white outline-none transition-colors focus:border-brand-primary" />
-          </div>
-          
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-3 p-3 border border-transparent rounded-lg cursor-pointer hover:bg-bg-light transition-colors" onClick={() => setSelectedMember("RA")}>
-              <div className="w-10 h-10 rounded-full bg-bg-dark text-white flex items-center justify-center overflow-hidden"><User weight="fill" size={20} /></div>
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-text-main mb-0.5">Ricardo Almeida</div>
-                <div className="text-[11px] font-semibold text-text-muted uppercase tracking-wide">Engenheiro Civil • Senior</div>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 p-3 border border-transparent rounded-lg cursor-pointer hover:bg-bg-light transition-colors" onClick={() => setSelectedMember("MC")}>
-              <div className="w-10 h-10 rounded-full bg-[#06B6D4] text-white flex items-center justify-center overflow-hidden"><User weight="fill" size={20} /></div>
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-text-main mb-0.5">Mariana Costa</div>
-                <div className="text-[11px] font-semibold text-text-muted uppercase tracking-wide">Arquiteta Urbanista</div>
-              </div>
-            </div>
-            
-            <div className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${selectedMember === "JP" ? "border-brand-primary bg-[#F8FBEA]" : "border-transparent hover:bg-bg-light"}`} onClick={() => setSelectedMember("JP")}>
-              <div className="w-10 h-10 rounded-full bg-[#E0F2FE] text-[#0369A1] font-bold text-sm flex items-center justify-center">JP</div>
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-text-main mb-0.5">João Pedro Silva</div>
-                <div className="text-[11px] font-semibold text-text-muted uppercase tracking-wide">Mestre de Obras</div>
-              </div>
-              {selectedMember === "JP" && <div className="w-5 h-5 rounded-full bg-brand-primary text-bg-dark flex items-center justify-center"><Check weight="bold" size={12} /></div>}
-            </div>
-            
-            <div className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${selectedMember === "FO" ? "border-brand-primary bg-[#F8FBEA]" : "border-transparent hover:bg-bg-light"}`} onClick={() => setSelectedMember("FO")}>
-              <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#DC2626] font-bold text-sm flex items-center justify-center">FO</div>
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-text-main mb-0.5">Fernanda Oliveira</div>
-                <div className="text-[11px] font-semibold text-text-muted uppercase tracking-wide">Gestora de Projetos</div>
-              </div>
-              {selectedMember === "FO" && <div className="w-5 h-5 rounded-full bg-brand-primary text-bg-dark flex items-center justify-center"><Check weight="bold" size={12} /></div>}
-            </div>
-          </div>
-        </div>
-        
-        {/* Right Card: Team Table */}
-        <div className="bg-surface border border-border rounded-lg p-8 self-start shadow-sm">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-bold text-bg-dark m-0 uppercase">Equipe do Projeto</h2>
-            <span className="px-3 py-1 bg-[#E6F6D0] text-[#4D7E05] text-[11px] font-bold uppercase tracking-wide rounded-full">3 MEMBROS SELECIONADOS</span>
-          </div>
-          <p className="text-[13px] text-text-muted mb-6">Defina funções e permissões para cada membro.</p>
-
-          <table className="w-full border-collapse text-left">
-            <thead>
-              <tr>
-                <th className="p-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Membro</th>
-                <th className="p-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Função</th>
-                <th className="p-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Permissões</th>
-                <th className="p-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="p-4 pl-3 border-b border-border">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-bg-dark text-white font-bold text-xs flex items-center justify-center">VP</div>
-                    <div>
-                      <div className="text-[13px] font-semibold text-text-main">Você (Gestor)</div>
-                      <div className="text-[10px] font-bold text-text-muted uppercase tracking-wide">CRIADOR</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-4 border-b border-border">
-                  <span className="px-2.5 py-1 bg-bg-dark text-white text-[10px] font-bold uppercase tracking-wide rounded">GERENTE</span>
-                </td>
-                <td className="p-4 border-b border-border text-[13px] font-semibold text-text-main">
-                  Acesso Total
-                </td>
-                <td className="p-4 border-b border-border text-center text-border">
-                  <Lock weight="fill" size={20} className="mx-auto" />
-                </td>
-              </tr>
-              
-              <tr>
-                <td className="p-4 pl-3 border-b border-border">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#E0F2FE] text-[#0369A1] font-bold text-xs flex items-center justify-center">JP</div>
-                    <div>
-                      <div className="text-[13px] font-semibold text-text-main">João Pedro Silva</div>
-                      <div className="text-[10px] font-bold text-text-muted uppercase tracking-wide">Mestre de Obras</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-4 border-b border-border">
-                  <select className="p-2 border border-border rounded text-[13px] text-text-main bg-white outline-none cursor-pointer">
-                    <option>Mestre de Obras</option>
-                  </select>
-                </td>
-                <td className="p-4 border-b border-border">
-                  <div className="flex gap-2">
-                    <div className="w-7 h-7 rounded border border-bg-dark bg-bg-dark text-white flex items-center justify-center"><ListChecks size={16} /></div>
-                    <div className="w-7 h-7 rounded border border-border bg-bg-light text-text-main flex items-center justify-center"><Camera size={16} /></div>
-                    <div className="w-7 h-7 rounded border border-bg-dark bg-bg-dark text-white flex items-center justify-center"><FileText size={16} /></div>
-                  </div>
-                </td>
-                <td className="p-4 border-b border-border text-center text-text-muted">
-                  <Trash size={20} className="mx-auto cursor-pointer hover:text-status-danger transition-colors" />
-                </td>
-              </tr>
-              
-              <tr>
-                <td className="p-4 pl-3 border-b border-border">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#06B6D4] text-white flex items-center justify-center"><User weight="fill" size={16} /></div>
-                    <div>
-                      <div className="text-[13px] font-semibold text-text-main">Mariana Costa</div>
-                      <div className="text-[10px] font-bold text-text-muted uppercase tracking-wide">Arquitetura</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-4 border-b border-border">
-                  <select className="p-2 border border-border rounded text-[13px] text-text-main bg-white outline-none cursor-pointer">
-                    <option>Arquiteto</option>
-                  </select>
-                </td>
-                <td className="p-4 border-b border-border">
-                  <div className="flex gap-2">
-                    <div className="w-7 h-7 rounded border border-border bg-bg-light text-text-main flex items-center justify-center"><ListChecks size={16} /></div>
-                    <div className="w-7 h-7 rounded border border-bg-dark bg-bg-dark text-white flex items-center justify-center"><Camera size={16} /></div>
-                    <div className="w-7 h-7 rounded border border-bg-dark bg-bg-dark text-white flex items-center justify-center"><FileText size={16} /></div>
-                  </div>
-                </td>
-                <td className="p-4 border-b border-border text-center text-text-muted">
-                  <Trash size={20} className="mx-auto cursor-pointer hover:text-status-danger transition-colors" />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div className="mt-6 p-4 bg-[#F8FBEA] border border-[#E6F6D0] rounded-lg flex gap-4">
-            <Info size={24} className="text-[#4D7E05] shrink-0" />
+      <div className="flex-1 bg-[#f4f7f9] overflow-y-auto">
+        <div className="px-16 pt-[32px] pb-[145px]">
+          <div className="grid grid-cols-[5fr_7fr] gap-8 max-w-full">
+            {/* Left Column: Search & Selection */}
             <div>
-              <h4 className="text-[12px] font-bold text-[#4D7E05] uppercase tracking-wide mb-1">Resumo de Responsabilidades</h4>
-              <p className="text-[12px] text-[#4D7E05] leading-relaxed">Engenheiro e Arquiteto têm permissão para aprovar medições. O Mestre de Obras tem acesso restrito apenas ao Diário de Obra e visualização de plantas.</p>
+              <div className="bg-white border border-[#d1d5db] rounded-[8px] shadow-[0_1px_1px_rgba(0,0,0,0.05)] p-[33px] flex flex-col gap-1">
+                <h2 className="font-['Manrope'] font-extrabold text-[20px] text-[#001b3c] uppercase tracking-[-0.5px] leading-[28px]">
+                  Adicionar Membros
+                </h2>
+                <div className="w-12 h-1 bg-[#9fd300] mb-5" />
+                <p className="font-['Inter'] font-medium text-[14px] text-[#64748b] leading-[20px] mb-5">
+                  Busque por nome ou cargo na sua rede de profissionais.
+                </p>
+
+                {/* Search */}
+                <div className="relative mb-6">
+                  <div className="absolute left-[14px] top-1/2 -translate-y-1/2 pointer-events-none">
+                    <MagnifyingGlass size={14} className="text-[#6b7280]" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Buscar profissional..."
+                    className="w-full bg-[#f8fafc] border border-[#d1d5db] rounded-[8px] pl-[41px] pr-4 pt-[10px] pb-[11px] font-['Inter'] text-[14px] text-[#6b7280] placeholder:text-[#6b7280] outline-none focus:border-[#9fd300] transition-colors"
+                  />
+                </div>
+
+                {/* List */}
+                <div className="flex flex-col gap-2">
+                  {MOCK_PROFESSIONALS.map((person) => (
+                    <div
+                      key={person.id}
+                      onClick={() => setSelectedMember(person.id)}
+                      className={`flex items-center gap-3 p-3 rounded-[8px] cursor-pointer transition-colors ${
+                        selectedMember === person.id
+                          ? "border border-[#9fd300] bg-[rgba(159,211,0,0.06)]"
+                          : "border border-transparent hover:bg-[#f8fafc]"
+                      }`}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-[8px] flex items-center justify-center text-white font-['Manrope'] font-bold text-sm shrink-0 overflow-hidden"
+                        style={{ backgroundColor: person.color }}
+                      >
+                        {person.initials ? (
+                          <span className="text-[#001b3d]">{person.initials}</span>
+                        ) : (
+                          <User size={18} weight="fill" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-['Manrope'] font-bold text-[14px] text-[#001b3c] truncate">
+                          {person.name}
+                        </div>
+                        <div className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
+                          {person.role}
+                        </div>
+                      </div>
+                      {selectedMember === person.id && (
+                        <div className="w-5 h-5 rounded-full bg-[#9fd300] flex items-center justify-center shrink-0">
+                          <Check size={11} weight="bold" className="text-[#001b3d]" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Team Table */}
+            <div>
+              <div className="bg-white border border-[#d1d5db] rounded-[8px] shadow-[0_1px_1px_rgba(0,0,0,0.05)] p-[33px]">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h2 className="font-['Manrope'] font-extrabold text-[20px] text-[#001b3c] uppercase tracking-[-0.5px] leading-[28px]">
+                      Equipe do Projeto
+                    </h2>
+                    <div className="w-12 h-1 bg-[#9fd300] mt-1" />
+                  </div>
+                  <span className="px-3 py-1 bg-[rgba(159,211,0,0.1)] text-[#5a7f00] font-['JetBrains_Mono'] font-medium text-[10px] uppercase tracking-[0.5px] rounded-full">
+                    {TEAM_MEMBERS.length} membros
+                  </span>
+                </div>
+                <p className="font-['Inter'] font-medium text-[14px] text-[#64748b] mb-6 mt-4">
+                  Defina funções e permissões para cada membro.
+                </p>
+
+                <table className="w-full border-collapse text-left">
+                  <thead>
+                    <tr>
+                      {["Membro", "Função", "Permissões", "Ações"].map((h) => (
+                        <th
+                          key={h}
+                          className="pb-3 font-['JetBrains_Mono'] font-medium text-[10px] text-[#94a3b8] uppercase tracking-[0.5px] border-b border-[#f1f5f9]"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {TEAM_MEMBERS.map((member) => (
+                      <tr key={member.id} className="border-b border-[#f1f5f9] last:border-b-0">
+                        <td className="py-4 pr-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-[8px] bg-[#001b3d] text-white font-['Manrope'] font-bold text-xs flex items-center justify-center shrink-0">
+                              {member.id}
+                            </div>
+                            <div>
+                              <div className="font-['Manrope'] font-semibold text-[13px] text-[#001b3c]">
+                                {member.name}
+                              </div>
+                              <div className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
+                                {member.role}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 pr-3">
+                          {member.fixed ? (
+                            <span className="inline-flex items-center px-2.5 py-1 bg-[#001b3d] text-white font-['JetBrains_Mono'] font-medium text-[10px] uppercase tracking-[0.5px] rounded-[6px]">
+                              {member.badge}
+                            </span>
+                          ) : (
+                            <select className="px-2 py-[6px] border border-[#e2e8f0] rounded-[6px] font-['Manrope'] text-[13px] text-[#001b3c] bg-white outline-none cursor-pointer focus:border-[#9fd300] transition-colors">
+                              <option>{member.badge}</option>
+                            </select>
+                          )}
+                        </td>
+                        <td className="py-4 pr-3">
+                          {member.fixed ? (
+                            <span className="font-['Manrope'] font-semibold text-[13px] text-[#001b3c]">
+                              Acesso Total
+                            </span>
+                          ) : (
+                            <div className="flex gap-1.5">
+                              <div className="w-7 h-7 rounded-[6px] border border-[#001b3d] bg-[#001b3d] text-white flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                                <ListChecks size={14} />
+                              </div>
+                              <div className="w-7 h-7 rounded-[6px] border border-[#e2e8f0] bg-white text-[#64748b] flex items-center justify-center cursor-pointer hover:border-[#9fd300] transition-colors">
+                                <Camera size={14} />
+                              </div>
+                              <div className="w-7 h-7 rounded-[6px] border border-[#001b3d] bg-[#001b3d] text-white flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                                <FileText size={14} />
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-4 text-center">
+                          {member.fixed ? (
+                            <Lock size={18} className="mx-auto text-[#e2e8f0]" weight="fill" />
+                          ) : (
+                            <Trash
+                              size={18}
+                              className="mx-auto text-[#94a3b8] cursor-pointer hover:text-[#ef4444] transition-colors"
+                            />
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Summary box */}
+                <div className="mt-6 p-4 bg-[rgba(159,211,0,0.06)] border border-[rgba(159,211,0,0.3)] rounded-[8px] flex gap-3">
+                  <div className="w-5 h-5 rounded-full bg-[#9fd300] flex items-center justify-center shrink-0 mt-0.5">
+                    <Check size={11} weight="bold" className="text-[#001b3d]" />
+                  </div>
+                  <div>
+                    <h4 className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#5a7f00] uppercase tracking-[0.5px] mb-1">
+                      Resumo de Responsabilidades
+                    </h4>
+                    <p className="font-['Inter'] text-[12px] text-[#5a7f00] leading-relaxed">
+                      Engenheiro e Arquiteto têm permissão para aprovar medições.
+                      O Mestre de Obras tem acesso restrito ao Diário de Obra.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          
-        </div>
-      </div>
-      
-      {/* Footer */}
-      <div className="px-10 py-6 bg-white border-t border-border flex justify-between items-center mt-auto">
-        <Link href="/obras/novo" className="text-xs font-bold text-text-main uppercase tracking-wide flex items-center gap-2 hover:underline">
-          <ArrowLeft weight="bold" /> Anterior: Dados da Obra
-        </Link>
-        <div className="flex items-center gap-6">
-          <button
-              onClick={handleFinish}
-              disabled={isSubmitting}
-              className="flex items-center gap-2 px-6 py-3 bg-brand-primary text-bg-dark rounded-lg text-sm font-bold transition-all hover:bg-brand-primaryHover disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                "CRIANDO PROJETO..."
-              ) : (
-                <>
-                  <Check weight="bold" size={20} /> CONCLUIR E CRIAR PROJETO
-                </>
-              )}
-            </button>
         </div>
       </div>
 
+      {/* Footer */}
+      <div className="px-16 py-6 bg-white border-t border-[#d1d5db] flex justify-between items-center">
+        <Link
+          href="/obras/novo"
+          className="font-['Manrope'] font-bold text-[14px] text-[#001b3c] flex items-center gap-2 no-underline hover:underline"
+        >
+          <ArrowLeft size={14} weight="bold" />
+          Anterior: Dados da Obra
+        </Link>
+        <button
+          onClick={handleFinish}
+          disabled={isSubmitting}
+          className="flex items-center gap-2 px-6 py-3 bg-[#9fd300] text-[#001b3d] rounded-[8px] font-['Manrope'] font-bold text-[14px] transition-all hover:opacity-90 disabled:opacity-50 border-none cursor-pointer shadow-[0_10px_15px_-3px_rgba(159,211,0,0.2)]"
+        >
+          {isSubmitting ? (
+            "Criando projeto..."
+          ) : (
+            <>
+              <Check size={16} weight="bold" />
+              Concluir e Criar Projeto
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

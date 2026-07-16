@@ -10,25 +10,26 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          dark: "#081225",
-          darker: "#050a15",
-          light: "#F4F6F8",
+          dark: "#001b3d",
+          darker: "#00102a",
+          light: "#F8FAFC",
         },
         brand: {
-          primary: "#AEE112",
-          primaryHover: "#98C40F",
+          primary: "#9fd300",
+          primaryHover: "#8bc400",
         },
         text: {
-          main: "#1D2C4D",
-          muted: "#6B7280",
+          main: "#001b3d",
+          muted: "#64748b",
         },
         surface: "#FFFFFF",
-        border: "#E5E7EB",
+        border: "#E2E8F0",
+        teal: "#00a3b1",
         status: {
-          success: "#AEE112",
+          success: "#9fd300",
           warning: "#F59E0B",
           danger: "#EF4444",
-          info: "#06B6D4",
+          info: "#00a3b1",
         },
         // Nova Identidade Visual - Design Tokens
         'color-primary-dark': 'var(--color-primary-dark)',
@@ -55,6 +56,10 @@ const config: Config = {
         'color-warning-dark': 'var(--color-warning-dark)',
         'color-warning-bg': 'var(--color-warning-bg)',
         'color-warning-bg-alt': 'var(--color-warning-bg-alt)',
+      },
+      fontFamily: {
+        manrope: ['Manrope', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

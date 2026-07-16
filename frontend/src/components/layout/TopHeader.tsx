@@ -1,35 +1,63 @@
 "use client";
 
-import { MagnifyingGlass, Bell, Question, User } from "@phosphor-icons/react";
+import { MagnifyingGlass, Bell, Gear, User } from "@phosphor-icons/react";
 
-export function TopHeader() {
+interface TopHeaderProps {
+  searchPlaceholder?: string;
+  userName?: string;
+  userRole?: string;
+}
+
+export function TopHeader({
+  searchPlaceholder = "Buscar dados do projeto...",
+  userName = "Ricardo Silva",
+  userRole = "Gerente de Obras",
+}: TopHeaderProps) {
   return (
-    <header className="h-[80px] bg-white/85 backdrop-blur-[12px] border-b border-gray-200/60 flex items-center justify-between px-10 sticky top-0 z-40">
-      <div className="flex items-center bg-bg-light rounded-lg px-4 py-2.5 w-[400px] border border-border">
-        <MagnifyingGlass className="text-text-muted mr-3" size={20} />
-        <input 
-          type="text" 
-          placeholder="Buscar obras, arquivos ou tarefas..." 
-          className="border-none bg-transparent outline-none w-full text-sm text-text-main"
-        />
-      </div>
-      
-      <div className="flex items-center gap-6">
-        <div className="text-text-muted text-[22px] cursor-pointer relative transition-colors duration-200 hover:text-text-main">
-          <Bell />
-          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-status-danger rounded-full"></span>
-        </div>
-        <div className="text-text-muted text-[22px] cursor-pointer relative transition-colors duration-200 hover:text-text-main">
-          <Question />
-        </div>
-        
-        <div className="flex items-center gap-3 border-l border-border pl-6">
-          <div className="text-right">
-            <div className="font-semibold text-sm text-text-main">Carlos Mendes</div>
-            <div className="text-[11px] text-text-muted uppercase tracking-wide mt-0.5">Gestor de Obras</div>
+    <header className="h-[64px] bg-white border-b border-[#f1f5f9] flex items-center justify-between px-8 sticky top-0 z-40">
+      {/* Search */}
+      <div className="flex-1 flex items-center pr-[227px]">
+        <div className="relative w-full max-w-[448px]">
+          <div className="absolute left-[14px] top-1/2 -translate-y-1/2 pointer-events-none">
+            <MagnifyingGlass size={15} className="text-[#6b7280]" />
           </div>
-          <div className="w-10 h-10 rounded-full bg-[#E2E8F0] flex items-center justify-center overflow-hidden">
-            <User weight="fill" className="text-[#AEE112]" size={24} />
+          <input
+            type="text"
+            placeholder={searchPlaceholder}
+            className="w-full bg-[#f8fafc] rounded-[8px] pl-[40px] pr-4 pb-[9px] pt-[8px] font-['Manrope'] text-[14px] text-[#6b7280] placeholder:text-[#6b7280] border-none outline-none"
+          />
+        </div>
+      </div>
+
+      {/* Right actions */}
+      <div className="flex items-center gap-6">
+        {/* Icon buttons */}
+        <div className="flex items-center gap-2">
+          {/* Bell with lime badge */}
+          <button className="relative flex flex-col items-center justify-center p-[8px] rounded-[8px] hover:bg-[#f8fafc] transition-colors">
+            <Bell size={18} className="text-[#64748b]" />
+            <span className="absolute top-[8px] right-[7px] w-[8px] h-[8px] rounded-full bg-[#9fd300] border-2 border-white" />
+          </button>
+          {/* Settings */}
+          <button className="flex flex-col items-center justify-center p-[8px] rounded-[8px] hover:bg-[#f8fafc] transition-colors">
+            <Gear size={18} className="text-[#64748b]" />
+          </button>
+        </div>
+
+        {/* Vertical divider + user info */}
+        <div className="flex items-center gap-3 border-l border-[#f1f5f9] pl-6">
+          {/* Name + role */}
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="font-['Manrope'] font-bold text-[14px] text-[#001b3d] leading-[17.5px]">
+              {userName}
+            </span>
+            <span className="font-['JetBrains_Mono'] font-normal text-[10px] text-[#94a3b8] tracking-[0.5px] uppercase leading-[15px]">
+              {userRole}
+            </span>
+          </div>
+          {/* Avatar */}
+          <div className="w-[36px] h-[36px] rounded-[8px] bg-[#e2e8f0] border border-[#e2e8f0] flex items-center justify-center overflow-hidden shrink-0">
+            <User size={20} weight="fill" className="text-[#94a3b8]" />
           </div>
         </div>
       </div>
