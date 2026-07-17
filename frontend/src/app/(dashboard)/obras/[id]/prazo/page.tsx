@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Info } from "@phosphor-icons/react";
+import { ArrowLeft, Calendar, Info, Coins } from "@phosphor-icons/react";
 import { getOrcamento, getEtapas, updateEtapa, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
 
 export default function PrazosPage() {
@@ -83,7 +83,7 @@ export default function PrazosPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Top Actions */}
-      <div className="flex justify-between items-end mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
         <div>
           <Link href={`/obras/${id}`} className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-[13px] font-semibold text-text-main shadow-sm mb-6 transition-all hover:bg-bg-light hover:-translate-x-0.5">
             <ArrowLeft size={16} className="text-text-muted" /> Voltar para Obra
@@ -91,6 +91,11 @@ export default function PrazosPage() {
           <p className="text-[12px] font-semibold tracking-wide text-[#06B6D4] uppercase mb-1">PLANEJAMENTO / CRONOGRAMA</p>
           <h1 className="text-[28px] font-bold text-text-main">Prazos e Etapas</h1>
           <p className="text-[15px] text-text-muted mt-2">Defina as datas de início e fim das etapas de <strong>{orcamento.nome}</strong>.</p>
+        </div>
+        <div>
+          <Link href={`/obras/${id}/planilha`} className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-primary hover:bg-brand-primary/95 text-white rounded-lg text-[13px] font-semibold shadow-sm transition-all hover:-translate-y-0.5">
+            <Coins size={16} /> Ver Planilha de Orçamento
+          </Link>
         </div>
       </div>
 

@@ -16,8 +16,15 @@ class ItemRepository:
         total = 0
         for i in range(0, len(dados), 1000):
             try:
+                # Remove o campo 'grupo' que não existe no banco de dados na tabela 'composicao'
+                lote = []
+                for d in dados[i:i+1000]:
+                    d_copy = d.copy()
+                    d_copy.pop("grupo", None)
+                    lote.append(d_copy)
+
                 r = self.supabase.table(TABELA_COMPOSICOES).upsert(
-                    dados[i:i+1000],
+                    lote,
                     on_conflict="codigo_composicao,mes_referencia,fonte"
                 ).execute()
                 if r.data: total += len(r.data)

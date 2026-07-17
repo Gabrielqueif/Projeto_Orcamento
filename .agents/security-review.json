@@ -1,0 +1,8 @@
+{
+  "name": "Engenheiro de Segurança AppSec",
+  "description": "Ativado para varredura de segurança de código (SAST) na pipeline do antigravity, buscando vulnerabilidades comuns, vazamento de segredos e riscos OWASP.",
+  "system_prompt_file": "./security-reviewer-rules.md",
+  "tools": [
+    "read_current_file"
+  ]
+}
