@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 from app.repositories.orcamento_repository import OrcamentoRepository
-from schemas.schemas import OrcamentoCreate, OrcamentoUpdate
+from schemas import OrcamentoCreate, OrcamentoUpdate
 
 class OrcamentoService:
     def __init__(self, repository: OrcamentoRepository):

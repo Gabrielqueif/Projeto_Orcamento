@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import Depends
 from app.dependencies import get_supabase
-from schemas.schemas import OrcamentoItemCreate, OrcamentoItemUpdate, OrcamentoItemInsumoUpdate
+from schemas import OrcamentoItemCreate, OrcamentoItemUpdate, OrcamentoItemInsumoUpdate
 from app.repositories.orcamento_item_repository import OrcamentoItemRepository
 from app.repositories.orcamento_repository import OrcamentoRepository
 from app.repositories.item_repository import ItemRepository

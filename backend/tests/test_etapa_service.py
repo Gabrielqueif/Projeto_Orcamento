@@ -5,7 +5,7 @@ All external dependencies (repository) are mocked.
 import pytest
 from unittest.mock import MagicMock
 from app.services.etapa_service import EtapaService
-from schemas.schemas import EtapaCreate
+from schemas import EtapaCreate
 
 
 @pytest.fixture
@@ -59,3 +59,34 @@ def test_deletar_etapa(etapa_service, repository_mock):
 
     assert resultado["message"] == "Etapa deletada com sucesso"
     repository_mock.deletar.assert_called_once_with("etapa1", "orc1")
+
+
+# ---------------------------------------------------------------------------
+# atualizar_etapa — cenários faltantes
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+def test_atualizar_etapa_sucesso(etapa_service, repository_mock):
+    """atualizar_etapa com dados válidos → retorna resultado do repository."""
+    # Arrange
+    retorno_esperado = {"id": "1", "nome": "Fundação Revisada", "ordem": 2}
+    repository_mock.atualizar.return_value = retorno_esperado
+
+    # Act
+    resultado = etapa_service.atualizar_etapa("1", {"nome": "Fundação Revisada", "ordem": 2})
+
+    # Assert
+    assert resultado == retorno_esperado
+    repository_mock.atualizar.assert_called_once_with("1", {"nome": "Fundação Revisada", "ordem": 2})
+
+
+@pytest.mark.unit
+def test_atualizar_etapa_falha_repositorio_retorna_none(etapa_service, repository_mock):
+    """repository.atualizar retorna None → EtapaService lança Exception."""
+    # Arrange
+    repository_mock.atualizar.return_value = None
+
+    # Act + Assert
+    with pytest.raises(Exception, match="Erro ao atualizar etapa"):
+        etapa_service.atualizar_etapa("1", {"nome": "X"})
+

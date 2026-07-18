@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import MagicMock
 from datetime import datetime
 from app.services.orcamento_service import OrcamentoService
-from schemas.schemas import OrcamentoCreate, OrcamentoUpdate
+from schemas import OrcamentoCreate, OrcamentoUpdate
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def test_listar_orcamentos(orcamento_service, repository_mock):
     resultado = orcamento_service.listar_orcamentos(status="ativo", cliente="João")
 
     assert resultado == retorno_esperado
-    repository_mock.listar.assert_called_once_with("ativo", "João")
+    repository_mock.listar.assert_called_once_with(None, "ativo", "João")
 
 
 @pytest.mark.unit
@@ -112,3 +112,60 @@ def test_deletar_orcamento_sucesso(orcamento_service, repository_mock):
 
     assert resultado is True
     repository_mock.deletar.assert_called_once_with("1")
+
+
+# ---------------------------------------------------------------------------
+# Cenários faltantes (Prioridade 2 do plano)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+def test_criar_orcamento_fonte_seinfra(orcamento_service, repository_mock):
+    """fonte=SEINFRA é persistida corretamente sem substituição por padrão."""
+    # Arrange
+    dados_entrada = OrcamentoCreate(
+        nome="Obra SEINFRA",
+        cliente="Governo",
+        data=datetime.now().date(),
+        base_referencia="SEINFRA 01/2025",
+        tipo_composicao="Sem Desoneração",
+        estado="RJ",
+        fonte="SEINFRA",
+    )
+    repository_mock.criar.return_value = {"id": "42", "fonte": "SEINFRA"}
+
+    # Act
+    resultado = orcamento_service.criar_orcamento(dados_entrada)
+
+    # Assert
+    args, _ = repository_mock.criar.call_args
+    assert args[0]["fonte"] == "SEINFRA"
+
+
+@pytest.mark.unit
+def test_atualizar_orcamento_estado_normalizado(orcamento_service, repository_mock):
+    """estado='RJ' enviado no update deve ser salvo como 'rj' (lowercase)."""
+    # Arrange
+    repository_mock.buscar_por_id.return_value = {"id": "1", "estado": "sp"}
+    repository_mock.atualizar.return_value = {"id": "1", "estado": "rj"}
+
+    update_data = OrcamentoUpdate(estado="RJ")
+
+    # Act
+    resultado = orcamento_service.atualizar_orcamento("1", update_data)
+
+    # Assert
+    args, _ = repository_mock.atualizar.call_args
+    assert args[1]["estado"] == "rj"
+
+
+@pytest.mark.unit
+def test_deletar_orcamento_nao_encontrado_levanta_value_error(orcamento_service, repository_mock):
+    """buscar_por_id retorna None → deletar lança ValueError."""
+    # Arrange
+    repository_mock.buscar_por_id.return_value = None
+
+    # Act + Assert
+    with pytest.raises(ValueError, match="Orçamento não encontrado"):
+        orcamento_service.deletar_orcamento("id-inexistente")
+
+    repository_mock.deletar.assert_not_called()

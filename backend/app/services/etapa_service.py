@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 from app.repositories.etapa_repository import EtapaRepository
-from schemas.schemas import EtapaCreate
+from schemas import EtapaCreate
 
 class EtapaService:
     def __init__(self, repository: EtapaRepository):

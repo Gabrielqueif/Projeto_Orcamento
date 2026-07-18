@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends
 from app.controllers import orcamentos
-from schemas.schemas import OrcamentoResponse, OrcamentoCreate, OrcamentoUpdate
+from schemas import OrcamentoResponse, OrcamentoCreate, OrcamentoUpdate
 from app.services.orcamento_service import OrcamentoService
 
 from core.security import get_current_user

@@ -10,37 +10,19 @@ import {
   List,
   SquaresFour,
   Trash,
-  Users,
   Info,
   FilePdf,
   FileText,
-  UserPlus,
   Plus,
   MagnifyingGlass,
-  CaretDown,
 } from "@phosphor-icons/react";
-
-interface Member {
-  id: number;
-  nome: string;
-  code: string;
-  cargo: string;
-  projeto: string;
-  remuneracao: string;
-  status: "ATIVO" | "INATIVO";
-  dataInicio?: string;
-  descricao?: string;
-}
-
-const DEFAULT_MEMBERS: Member[] = [
-  { id: 1, nome: "Ricardo Silva", code: "#GP-0421", cargo: "Engenheiro Civil Sênior", projeto: "Residencial Aurora", remuneracao: "R$ 14.500,00", status: "ATIVO" },
-  { id: 2, nome: "Ana Paula Martins", code: "#GP-0892", cargo: "Mestre de Obras", projeto: "Edifício Skyline", remuneracao: "R$ 7.800,00", status: "ATIVO" },
-  { id: 3, nome: "Marcos Oliveira", code: "#GP-1102", cargo: "Pedreiro Especialista", projeto: "Ponte Central", remuneracao: "R$ 4.200,00", status: "ATIVO" },
-  { id: 4, nome: "Juliana Costa", code: "#GP-0331", cargo: "Auxiliar Administrativo", projeto: "—", remuneracao: "R$ 2.800,00", status: "INATIVO" },
-];
+import { getMembrosEquipe, deleteMembroEquipe, type MembroEquipe } from "@/lib/api/membros_equipe";
+import { getOrcamentos, type Orcamento } from "@/lib/api/orcamentos";
 
 export default function EquipePage() {
-  const [members, setMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<MembroEquipe[]>([]);
+  const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedObra, setSelectedObra] = useState("Todas as Obras");
   const [selectedCargo, setSelectedCargo] = useState("Todos os Cargos");
@@ -48,36 +30,47 @@ export default function EquipePage() {
   const [page, setPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Load from localstorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem("team_members");
-    if (stored) {
-      setMembers(JSON.parse(stored));
-    } else {
-      localStorage.setItem("team_members", JSON.stringify(DEFAULT_MEMBERS));
-      setMembers(DEFAULT_MEMBERS);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [membersData, orcamentosData] = await Promise.all([
+        getMembrosEquipe(),
+        getOrcamentos(),
+      ]);
+      setMembers(membersData);
+      setOrcamentos(orcamentosData);
+    } catch (err) {
+      console.error("Erro ao carregar dados da equipe:", err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
-  // Parse remuneration string to float number (e.g. "R$ 14.500,00" -> 14500)
-  const parseSalary = (val: string) => {
-    const clean = val.replace(/[^\d]/g, "");
-    return clean ? parseFloat(clean) / 100 : 0;
-  };
-
-  // Delete handler
-  const handleDeleteMember = (id: number) => {
+  const handleDeleteMember = async (id: string) => {
     if (confirm("Deseja realmente remover este colaborador da equipe?")) {
-      const updated = members.filter((m) => m.id !== id);
-      setMembers(updated);
-      localStorage.setItem("team_members", JSON.stringify(updated));
+      try {
+        await deleteMembroEquipe(id);
+        loadData();
+      } catch (err) {
+        console.error("Erro ao deletar colaborador:", err);
+        alert("Ocorreu um erro ao remover o colaborador da equipe.");
+      }
     }
   };
 
+  // Compile a map of orcamento_id -> name
+  const orcamentoMap = React.useMemo(() => {
+    const map = new Map<string, string>();
+    orcamentos.forEach((o) => map.set(o.id, o.nome));
+    return map;
+  }, [orcamentos]);
+
   // Unique options for filters
-  const uniqueObras = Array.from(
-    new Set(members.map((m) => m.projeto).filter((p) => p && p !== "—"))
-  );
+  const uniqueObras = Array.from(new Set(orcamentos.map((o) => o.nome)));
   const uniqueCargos = Array.from(new Set(members.map((m) => m.cargo)));
 
   // Filtered members list
@@ -87,8 +80,9 @@ export default function EquipePage() {
       m.cargo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       m.code.toLowerCase().includes(searchTerm.toLowerCase());
     
+    const projNome = m.orcamento_id ? orcamentoMap.get(m.orcamento_id) : "—";
     const matchesObra =
-      selectedObra === "Todas as Obras" || m.projeto === selectedObra;
+      selectedObra === "Todas as Obras" || projNome === selectedObra;
     
     const matchesCargo =
       selectedCargo === "Todos os Cargos" || m.cargo === selectedCargo;
@@ -100,20 +94,19 @@ export default function EquipePage() {
   const activeMembers = members.filter((m) => m.status === "ATIVO");
   
   const totalCost = activeMembers.reduce(
-    (sum, m) => sum + parseSalary(m.remuneracao),
+    (sum, m) => sum + m.remuneracao,
     0
   );
   
   const activeCount = activeMembers.length;
   
   const activeProjectsCount = new Set(
-    activeMembers.map((m) => m.projeto).filter((p) => p && p !== "—" && p !== "Sem Alocação")
+    activeMembers.map((m) => m.orcamento_id).filter(Boolean)
   ).size;
 
   const averageSalary =
     members.length > 0
-      ? members.reduce((sum, m) => sum + parseSalary(m.remuneracao), 0) /
-        members.length
+      ? members.reduce((sum, m) => sum + m.remuneracao, 0) / members.length
       : 0;
 
   // Pagination helper
@@ -125,7 +118,6 @@ export default function EquipePage() {
   );
 
   useEffect(() => {
-    // Reset page if it exceeds total pages after filtering
     if (page > totalPages) {
       setPage(1);
     }
@@ -194,17 +186,19 @@ export default function EquipePage() {
               {activeCount}
             </div>
           </div>
-          {/* Overlapping small avatar icons representing team members */}
           <div className="flex items-center mt-2 pl-2">
-            <div className="w-[28px] h-[28px] rounded-full bg-[#e2e8f0] border-2 border-white -ml-2 overflow-hidden flex items-center justify-center font-bold text-[8px] text-[#001b3d]">
-              RS
-            </div>
-            <div className="w-[28px] h-[28px] rounded-full bg-[#cbd5e1] border-2 border-white -ml-2 overflow-hidden flex items-center justify-center font-bold text-[8px] text-[#001b3d]">
-              AP
-            </div>
-            <div className="w-[28px] h-[28px] rounded-full bg-[#94a3b8] border-2 border-white -ml-2 overflow-hidden flex items-center justify-center font-bold text-[8px] text-[#001b3d]">
-              MO
-            </div>
+            {activeMembers.slice(0, 5).map((m) => {
+              const initials = m.nome.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+              return (
+                <div 
+                  key={m.id}
+                  className="w-[28px] h-[28px] rounded-full bg-[#e2e8f0] border-2 border-white -ml-2 overflow-hidden flex items-center justify-center font-bold text-[8px] text-[#001b3d]"
+                  title={m.nome}
+                >
+                  {initials}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -325,7 +319,14 @@ export default function EquipePage() {
       </div>
 
       {/* Main Content Area: Table List or Cards Grid */}
-      {viewMode === "list" ? (
+      {loading ? (
+        <div className="bg-white border border-[#f1f5f9] rounded-[8px] p-16 text-center flex flex-col items-center justify-center gap-4 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
+          <div className="w-10 h-10 border-4 border-[#001b3d] border-t-[#9fd300] rounded-full animate-spin" />
+          <span className="font-['Manrope'] font-bold text-[14px] text-[#64748b]">
+            Carregando membros da equipe...
+          </span>
+        </div>
+      ) : viewMode === "list" ? (
         <div className="bg-white border border-[#f1f5f9] rounded-[8px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] overflow-hidden">
           <div className="overflow-x-auto w-full">
             <table className="w-full border-collapse text-left">
@@ -362,70 +363,76 @@ export default function EquipePage() {
                     </td>
                   </tr>
                 ) : (
-                  paginatedMembers.map((member) => (
-                    <tr
-                      key={member.id}
-                      className={`hover:bg-[#f8fafc] transition-colors ${
-                        member.status === "INATIVO" ? "opacity-60" : ""
-                      }`}
-                    >
-                      <td className="p-4 px-6">
-                        <div className="flex items-center gap-4">
-                          <img
-                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                              member.nome
-                            )}&background=001b3d&color=9fd300`}
-                            alt={member.nome}
-                            className="w-[40px] h-[40px] rounded-[8px] border border-[#e2e8f0]"
-                          />
-                          <div>
-                            <div className="font-['Manrope'] font-bold text-[14px] text-[#001b3d] leading-tight mb-0.5">
-                              {member.nome}
-                            </div>
-                            <div className="font-['JetBrains_Mono'] font-normal text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
-                              ID: {member.code}
+                  paginatedMembers.map((member) => {
+                    const projNome = member.orcamento_id ? orcamentoMap.get(member.orcamento_id) : "—";
+                    return (
+                      <tr
+                        key={member.id}
+                        className={`hover:bg-[#f8fafc] transition-colors ${
+                          member.status === "INATIVO" ? "opacity-60" : ""
+                        }`}
+                      >
+                        <td className="p-4 px-6">
+                          <div className="flex items-center gap-4">
+                            <img
+                              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                member.nome
+                              )}&background=001b3d&color=9fd300`}
+                              alt={member.nome}
+                              className="w-[40px] h-[40px] rounded-[8px] border border-[#e2e8f0]"
+                            />
+                            <div>
+                              <div className="font-['Manrope'] font-bold text-[14px] text-[#001b3d] leading-tight mb-0.5">
+                                {member.nome}
+                              </div>
+                              <div className="font-['JetBrains_Mono'] font-normal text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
+                                ID: {member.code}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="p-4 px-6 font-['Manrope'] font-bold text-[12px] text-[#001b3d] uppercase">
-                        {member.cargo}
-                      </td>
-                      <td className="p-4 px-6">
-                        {member.projeto && member.projeto !== "—" ? (
-                          <span className="inline-flex items-center px-[8px] py-[4px] rounded-[8px] font-['JetBrains_Mono'] font-medium text-[10px] text-[#00a3b1] uppercase tracking-[0.5px] bg-[rgba(0,163,177,0.05)]">
-                            {member.projeto}
-                          </span>
-                        ) : (
-                          <span className="font-['JetBrains_Mono'] text-[10px] text-[#cbd5e1] font-medium">
-                            —
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4 px-6 font-['Manrope'] font-extrabold text-[14px] text-[#001b3d]">
-                        {member.remuneracao}
-                      </td>
-                      <td className="p-4 px-6 text-center">
-                        {member.status === "ATIVO" ? (
-                          <span className="inline-flex items-center justify-center px-[9px] py-[3px] rounded-[8px] font-['Manrope'] font-bold text-[9px] text-[#001b3d] tracking-[0.45px] uppercase bg-[rgba(159,211,0,0.1)] border border-[rgba(159,211,0,0.2)]">
-                            Ativo
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center justify-center px-[9px] py-[3px] rounded-[8px] font-['Manrope'] font-bold text-[9px] text-[#94a3b8] tracking-[0.45px] uppercase bg-[#f1f5f9] border border-[#e2e8f0]">
-                            Inativo
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4 px-6 text-right">
-                        <button
-                          onClick={() => handleDeleteMember(member.id)}
-                          className="text-[#94a3b8] hover:text-red-500 transition-colors p-1"
-                        >
-                          <Trash size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td className="p-4 px-6 font-['Manrope'] font-bold text-[12px] text-[#001b3d] uppercase">
+                          {member.cargo}
+                        </td>
+                        <td className="p-4 px-6">
+                          {projNome && projNome !== "—" ? (
+                            <span className="inline-flex items-center px-[8px] py-[4px] rounded-[8px] font-['JetBrains_Mono'] font-medium text-[10px] text-[#00a3b1] uppercase tracking-[0.5px] bg-[rgba(0,163,177,0.05)]">
+                              {projNome}
+                            </span>
+                          ) : (
+                            <span className="font-['JetBrains_Mono'] text-[10px] text-[#cbd5e1] font-medium">
+                              —
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4 px-6 font-['Manrope'] font-extrabold text-[14px] text-[#001b3d]">
+                          {member.remuneracao.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })}
+                        </td>
+                        <td className="p-4 px-6 text-center">
+                          {member.status === "ATIVO" ? (
+                            <span className="inline-flex items-center justify-center px-[9px] py-[3px] rounded-[8px] font-['Manrope'] font-bold text-[9px] text-[#001b3d] tracking-[0.45px] uppercase bg-[rgba(159,211,0,0.1)] border border-[rgba(159,211,0,0.2)]">
+                              Ativo
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center px-[9px] py-[3px] rounded-[8px] font-['Manrope'] font-bold text-[9px] text-[#94a3b8] tracking-[0.45px] uppercase bg-[#f1f5f9] border border-[#e2e8f0]">
+                              Inativo
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4 px-6 text-right">
+                          <button
+                            onClick={() => handleDeleteMember(member.id)}
+                            className="text-[#94a3b8] hover:text-red-500 transition-colors p-1 cursor-pointer bg-transparent border-none outline-none"
+                          >
+                            <Trash size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -436,139 +443,147 @@ export default function EquipePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {paginatedMembers.length === 0 ? (
             <div className="col-span-full bg-white border border-[#f1f5f9] rounded-[8px] p-12 text-center font-['Manrope'] text-[14px] text-[#94a3b8]">
-              Nenhum membro encontrado com os filtros atuais.
+              Nenhum membro encontrado com os filtros antigos.
             </div>
           ) : (
-            paginatedMembers.map((member) => (
-              <div
-                key={member.id}
-                className={`bg-white border border-[#f1f5f9] rounded-[8px] p-6 shadow-[0px_1px_2px_rgba(0,0,0,0.05)] flex flex-col justify-between gap-4 transition-all hover:shadow-[0px_4px_12px_rgba(0,0,0,0.05)] ${
-                  member.status === "INATIVO" ? "opacity-60" : ""
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        member.nome
-                      )}&background=001b3d&color=9fd300`}
-                      alt={member.nome}
-                      className="w-[48px] h-[48px] rounded-[8px] border border-[#e2e8f0]"
-                    />
-                    <div>
-                      <h4 className="font-['Manrope'] font-bold text-[15px] text-[#001b3d] leading-tight">
-                        {member.nome}
-                      </h4>
-                      <span className="font-['JetBrains_Mono'] text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
-                        {member.code}
+            paginatedMembers.map((member) => {
+              const projNome = member.orcamento_id ? orcamentoMap.get(member.orcamento_id) : "—";
+              return (
+                <div
+                  key={member.id}
+                  className={`bg-white border border-[#f1f5f9] rounded-[8px] p-6 shadow-[0px_1px_2px_rgba(0,0,0,0.05)] flex flex-col justify-between gap-4 transition-all hover:shadow-[0px_4px_12px_rgba(0,0,0,0.05)] ${
+                    member.status === "INATIVO" ? "opacity-60" : ""
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          member.nome
+                        )}&background=001b3d&color=9fd300`}
+                        alt={member.nome}
+                        className="w-[48px] h-[48px] rounded-[8px] border border-[#e2e8f0]"
+                      />
+                      <div>
+                        <h4 className="font-['Manrope'] font-bold text-[15px] text-[#001b3d] leading-tight">
+                          {member.nome}
+                        </h4>
+                        <span className="font-['JetBrains_Mono'] text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
+                          {member.code}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteMember(member.id)}
+                      className="text-[#94a3b8] hover:text-red-500 transition-colors p-1 cursor-pointer bg-transparent border-none outline-none"
+                    >
+                      <Trash size={16} />
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-2 pt-2 border-t border-[#f8fafc]">
+                    <div className="flex items-center justify-between">
+                      <span className="font-['JetBrains_Mono'] text-[9px] text-[#94a3b8] uppercase tracking-[0.5px]">
+                        Cargo
+                      </span>
+                      <span className="font-['Manrope'] font-bold text-[12px] text-[#001b3d] uppercase">
+                        {member.cargo}
                       </span>
                     </div>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteMember(member.id)}
-                    className="text-[#94a3b8] hover:text-red-500 transition-colors p-1"
-                  >
-                    <Trash size={16} />
-                  </button>
-                </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="font-['JetBrains_Mono'] text-[9px] text-[#94a3b8] uppercase tracking-[0.5px]">
+                        Alocação
+                      </span>
+                      {projNome && projNome !== "—" ? (
+                        <span className="px-2 py-0.5 rounded-[6px] font-['JetBrains_Mono'] font-medium text-[9px] text-[#00a3b1] bg-[rgba(0,163,177,0.05)] uppercase">
+                          {projNome}
+                        </span>
+                      ) : (
+                        <span className="font-['JetBrains_Mono'] text-[10px] text-[#cbd5e1] font-medium">
+                          —
+                        </span>
+                      )}
+                    </div>
 
-                <div className="flex flex-col gap-2 pt-2 border-t border-[#f8fafc]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-['JetBrains_Mono'] text-[9px] text-[#94a3b8] uppercase tracking-[0.5px]">
-                      Cargo
-                    </span>
-                    <span className="font-['Manrope'] font-bold text-[12px] text-[#001b3d] uppercase">
-                      {member.cargo}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="font-['JetBrains_Mono'] text-[9px] text-[#94a3b8] uppercase tracking-[0.5px]">
-                      Alocação
-                    </span>
-                    {member.projeto && member.projeto !== "—" ? (
-                      <span className="px-2 py-0.5 rounded-[6px] font-['JetBrains_Mono'] font-medium text-[9px] text-[#00a3b1] bg-[rgba(0,163,177,0.05)] uppercase">
-                        {member.projeto}
+                    <div className="flex items-center justify-between">
+                      <span className="font-['JetBrains_Mono'] text-[9px] text-[#94a3b8] uppercase tracking-[0.5px]">
+                        Remuneração
                       </span>
-                    ) : (
-                      <span className="font-['JetBrains_Mono'] text-[10px] text-[#cbd5e1] font-medium">
-                        —
+                      <span className="font-['Manrope'] font-extrabold text-[13px] text-[#001b3d]">
+                        {member.remuneracao.toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
                       </span>
-                    )}
-                  </div>
+                    </div>
 
-                  <div className="flex items-center justify-between">
-                    <span className="font-['JetBrains_Mono'] text-[9px] text-[#94a3b8] uppercase tracking-[0.5px]">
-                      Remuneração
-                    </span>
-                    <span className="font-['Manrope'] font-extrabold text-[13px] text-[#001b3d]">
-                      {member.remuneracao}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="font-['JetBrains_Mono'] text-[9px] text-[#94a3b8] uppercase tracking-[0.5px]">
-                      Status
-                    </span>
-                    {member.status === "ATIVO" ? (
-                      <span className="px-2 py-0.5 rounded-[6px] font-['Manrope'] font-bold text-[8px] text-[#001b3d] tracking-[0.4px] uppercase bg-[rgba(159,211,0,0.1)] border border-[rgba(159,211,0,0.2)]">
-                        Ativo
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="font-['JetBrains_Mono'] text-[9px] text-[#94a3b8] uppercase tracking-[0.5px]">
+                        Status
                       </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-[6px] font-['Manrope'] font-bold text-[8px] text-[#94a3b8] tracking-[0.4px] uppercase bg-[#f1f5f9] border border-[#e2e8f0]">
-                        Inativo
-                      </span>
-                    )}
+                      {member.status === "ATIVO" ? (
+                        <span className="px-2 py-0.5 rounded-[6px] font-['Manrope'] font-bold text-[8px] text-[#001b3d] tracking-[0.4px] uppercase bg-[rgba(159,211,0,0.1)] border border-[rgba(159,211,0,0.2)]">
+                          Ativo
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-[6px] font-['Manrope'] font-bold text-[8px] text-[#94a3b8] tracking-[0.4px] uppercase bg-[#f1f5f9] border border-[#e2e8f0]">
+                          Inativo
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
 
       {/* Pagination Footer */}
-      <div className="bg-[#f8fafc] border border-t-0 border-[#f1f5f9] rounded-b-[8px] p-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-4 mt-[-24px]">
-        <div className="font-['JetBrains_Mono'] text-[10px] font-medium text-[#94a3b8] uppercase tracking-[0.5px]">
-          Exibindo {paginatedMembers.length} de {filteredMembers.length} membros
-          registrados
-        </div>
+      {!loading && (
+        <div className="bg-[#f8fafc] border border-t-0 border-[#f1f5f9] rounded-b-[8px] p-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-4 mt-[-24px]">
+          <div className="font-['JetBrains_Mono'] text-[10px] font-medium text-[#94a3b8] uppercase tracking-[0.5px]">
+            Exibindo {paginatedMembers.length} de {filteredMembers.length} membros
+            registrados
+          </div>
 
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="w-8 h-8 rounded-[8px] flex items-center justify-center bg-white border border-[#e2e8f0] text-[#001b3d] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#f8fafc] font-bold text-xs"
-          >
-            &lt;
-          </button>
-          
-          {Array.from({ length: totalPages }).map((_, idx) => {
-            const pageNum = idx + 1;
-            return (
-              <button
-                key={pageNum}
-                onClick={() => setPage(pageNum)}
-                className={`w-8 h-8 rounded-[8px] flex items-center justify-center font-['JetBrains_Mono'] text-[10px] font-bold uppercase transition-all ${
-                  page === pageNum
-                    ? "bg-[#001b3d] text-white shadow-[0px_4px_6px_rgba(0,27,61,0.15)]"
-                    : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-[#f8fafc]"
-                }`}
-              >
-                {pageNum}
-              </button>
-            );
-          })}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="w-8 h-8 rounded-[8px] flex items-center justify-center bg-white border border-[#e2e8f0] text-[#001b3d] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#f8fafc] font-bold text-xs cursor-pointer"
+            >
+              &lt;
+            </button>
+            
+            {Array.from({ length: totalPages }).map((_, idx) => {
+              const pageNum = idx + 1;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={`w-8 h-8 rounded-[8px] flex items-center justify-center font-['JetBrains_Mono'] text-[10px] font-bold uppercase transition-all cursor-pointer border ${
+                    page === pageNum
+                      ? "bg-[#001b3d] text-white border-[#001b3d] shadow-[0px_4px_6px_rgba(0,27,61,0.15)]"
+                      : "bg-white border border-[#e2e8f0] text-[#0f172a] hover:bg-[#f8fafc]"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
 
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="w-8 h-8 rounded-[8px] flex items-center justify-center bg-white border border-[#e2e8f0] text-[#001b3d] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#f8fafc] font-bold text-xs"
-          >
-            &gt;
-          </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="w-8 h-8 rounded-[8px] flex items-center justify-center bg-white border border-[#e2e8f0] text-[#001b3d] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#f8fafc] font-bold text-xs cursor-pointer"
+            >
+              &gt;
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Contextual Insights Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-2">
@@ -581,10 +596,7 @@ export default function EquipePage() {
             </h3>
           </div>
           <p className="font-['Manrope'] font-medium text-[14px] text-[#cbd5e1] leading-[22px] z-10">
-            A alocação atual na{" "}
-            <strong className="text-[#9fd300] font-bold">Ponte Central</strong> está
-            15% acima da média operacional. Considere redistribuir membros
-            auxiliares para otimizar custos no próximo ciclo.
+            A alocação atual de pessoal e custos é otimizada com base nas obras em andamento. Certifique-se de associar novos profissionais aos respectivos canteiros de obras.
           </p>
           <div className="absolute right-[-10px] bottom-[-20px] text-[120px] text-white/5 font-bold pointer-events-none select-none">
             !
@@ -598,10 +610,9 @@ export default function EquipePage() {
               Relatório de Folha Mensal
             </h3>
             <p className="font-['Manrope'] font-medium text-[14px] text-[#64748b] leading-[20px] max-w-[420px]">
-              O demonstrativo detalhado de horas, encargos e benefícios por
-              centro de custo está disponível para auditoria.
+              O demonstrativo detalhado de horas, encargos e benefícios por centro de custo está disponível para auditoria.
             </p>
-            <button className="flex items-center gap-2 self-start bg-[#f8fafc] border border-[#e2e8f0] text-[#001b3d] font-['JetBrains_Mono'] font-medium text-[12px] tracking-[0.5px] uppercase px-5 py-3 rounded-[8px] hover:bg-[#f1f5f9] transition-colors">
+            <button className="flex items-center gap-2 self-start bg-[#f8fafc] border border-[#e2e8f0] text-[#001b3d] font-['JetBrains_Mono'] font-medium text-[12px] tracking-[0.5px] uppercase px-5 py-3 rounded-[8px] hover:bg-[#f1f5f9] transition-colors cursor-pointer">
               <FilePdf size={16} /> Gerar PDF Completo
             </button>
           </div>

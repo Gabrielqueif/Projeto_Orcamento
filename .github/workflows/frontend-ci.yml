@@ -18,11 +18,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Job 1: Lint + type-check (fast; runs in parallel with test)
-  # ---------------------------------------------------------------------------
+  # Varredura de Secrets/Credenciais
+  secrets-scan:
+    name: Secrets Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+  # Lint + type-check + npm audit
   lint:
-    name: Lint & Type Check
+    name: Lint, Type Check & Audit
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -47,9 +59,10 @@ jobs:
       - name: ESLint
         run: npm run lint
 
-  # ---------------------------------------------------------------------------
-  # Job 2: Tests with coverage
-  # ---------------------------------------------------------------------------
+      - name: Audit NPM dependencies
+        run: npm audit --audit-level=high
+
+  # Tests with coverage
   test:
     name: Tests (Jest)
     runs-on: ubuntu-latest
@@ -89,9 +102,7 @@ jobs:
           path: frontend/coverage/
           retention-days: 14
 
-  # ---------------------------------------------------------------------------
-  # Job 3: Production build check
-  # ---------------------------------------------------------------------------
+  # Production build check
   build:
     name: Next.js Build
     runs-on: ubuntu-latest

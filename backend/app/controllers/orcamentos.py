@@ -3,7 +3,7 @@ from fastapi import Depends, Response
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from app.dependencies import get_supabase
-from schemas.schemas import OrcamentoCreate, OrcamentoUpdate, OrcamentoResponse
+from schemas import OrcamentoCreate, OrcamentoUpdate, OrcamentoResponse
 from app.repositories.orcamento_repository import OrcamentoRepository
 from app.repositories.orcamento_item_repository import OrcamentoItemRepository
 from app.services.orcamento_service import OrcamentoService

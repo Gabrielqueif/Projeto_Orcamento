@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import HTTPException, Depends
-from schemas.schemas import EtapaCreate
+from schemas import EtapaCreate
 from app.dependencies import get_supabase
 from app.repositories.etapa_repository import EtapaRepository
 from app.services.etapa_service import EtapaService

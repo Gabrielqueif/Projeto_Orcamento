@@ -18,11 +18,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Job 1: Lint — fast static analysis (runs in parallel with test)
-  # ---------------------------------------------------------------------------
+  # Varredura de Secrets/Credenciais
+  secrets-scan:
+    name: Secrets Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+  # Fast Static Analysis + Security SAST
   lint:
-    name: Lint (ruff)
+    name: Lint & SAST
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -38,17 +50,21 @@ jobs:
           cache: "pip"
           cache-dependency-path: backend/requirements.txt
 
-      - name: Install ruff
-        run: pip install ruff
+      - name: Install Linting & SAST Tools
+        run: pip install ruff bandit pip-audit
 
       - name: Run ruff (lint + import sort check)
         run: |
           ruff check app core schemas --output-format=github
           ruff format --check app core schemas
 
-  # ---------------------------------------------------------------------------
-  # Job 2: Tests with coverage report
-  # ---------------------------------------------------------------------------
+      - name: Run Bandit (SAST)
+        run: bandit -r app core schemas -ll
+
+      - name: Run pip-audit (Dependency Scan)
+        run: pip-audit -r requirements.txt
+
+  # Tests with coverage report
   test:
     name: Tests (pytest + coverage)
     runs-on: ubuntu-latest
@@ -84,14 +100,10 @@ jobs:
           path: backend/coverage.xml
           retention-days: 14
 
-  # ---------------------------------------------------------------------------
-  # Job 3: Validate Docker build (catches Dockerfile or dependency issues)
-  # ---------------------------------------------------------------------------
+  # Validate Docker build (catches Dockerfile or dependency issues)
   docker-build:
     name: Docker Build Check
     runs-on: ubuntu-latest
-    # Only run on push to main/master — PRs already use the test job
-    if: github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4

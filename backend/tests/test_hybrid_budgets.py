@@ -7,7 +7,7 @@ Fixtures provided by conftest.py:
   orcamento_item_service
 """
 import pytest
-from schemas.schemas import OrcamentoItemCreate, OrcamentoItemUpdate
+from schemas import OrcamentoItemCreate, OrcamentoItemUpdate
 
 
 # ---------------------------------------------------------------------------

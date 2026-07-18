@@ -89,6 +89,12 @@ def etapa_repo_mock():
     return MagicMock()
 
 
+@pytest.fixture
+def insumo_repo_mock():
+    """Mock for InsumoRepository."""
+    return MagicMock()
+
+
 # ---------------------------------------------------------------------------
 # Shared service fixtures
 # ---------------------------------------------------------------------------
@@ -101,6 +107,30 @@ def orcamento_item_service(orcamento_item_repo_mock, orcamento_repo_mock, item_r
     """
     from app.services.orcamento_item_service import OrcamentoItemService
     return OrcamentoItemService(orcamento_item_repo_mock, orcamento_repo_mock, item_repo_mock)
+
+
+@pytest.fixture
+def orcamento_item_service_com_insumo(
+    orcamento_item_repo_mock, orcamento_repo_mock, item_repo_mock, insumo_repo_mock
+):
+    """
+    OrcamentoItemService pre-wired with all four mocked repositories,
+    including InsumoRepository. Use this fixture for insumo-related tests.
+    """
+    from app.services.orcamento_item_service import OrcamentoItemService
+    return OrcamentoItemService(
+        orcamento_item_repo_mock,
+        orcamento_repo_mock,
+        item_repo_mock,
+        insumo_repository=insumo_repo_mock,
+    )
+
+
+@pytest.fixture
+def item_service_mock(item_repo_mock):
+    """ItemService pré-configurado com ItemRepository mockado (compartilhado)."""
+    from app.services.item_service import ItemService
+    return ItemService(item_repo_mock)
 
 
 # ---------------------------------------------------------------------------

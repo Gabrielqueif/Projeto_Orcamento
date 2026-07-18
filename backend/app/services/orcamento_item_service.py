@@ -4,7 +4,7 @@ from app.repositories.orcamento_item_repository import OrcamentoItemRepository
 from app.repositories.orcamento_repository import OrcamentoRepository
 from app.repositories.item_repository import ItemRepository
 from app.repositories.insumo_repository import InsumoRepository
-from schemas.schemas import OrcamentoItemCreate, OrcamentoItemUpdate
+from schemas import OrcamentoItemCreate, OrcamentoItemUpdate
 
 class OrcamentoItemService:
     def __init__(self, 

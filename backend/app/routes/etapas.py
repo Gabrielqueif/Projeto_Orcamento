@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends
 from app.controllers import etapas
-from schemas.schemas import EtapaCreate, EtapaResponse
+from schemas import EtapaCreate, EtapaResponse
 from core.security import get_current_user
 
 

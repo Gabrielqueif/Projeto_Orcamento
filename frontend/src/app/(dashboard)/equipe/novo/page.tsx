@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,6 +12,8 @@ import {
   ArrowLeft,
   FileText,
 } from "@phosphor-icons/react";
+import { createMembroEquipe } from "@/lib/api/membros_equipe";
+import { getOrcamentos, type Orcamento } from "@/lib/api/orcamentos";
 
 interface FileAttachment {
   name: string;
@@ -27,12 +29,21 @@ export default function NovoMembroPage() {
   const [cargo, setCargo] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [projeto, setProjeto] = useState("Residencial Aurora");
+  const [orcamentoId, setOrcamentoId] = useState<string>("—");
   const [remuneracao, setRemuneracao] = useState("");
+  
+  // Real projects state
+  const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   
   // Drag & drop file states
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    getOrcamentos()
+      .then(setOrcamentos)
+      .catch((err) => console.error("Erro ao carregar orçamentos:", err));
+  }, []);
 
   // Mask CPF
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +64,6 @@ export default function NovoMembroPage() {
       setRemuneracao("");
       return;
     }
-    // Format to currency representation
     const numberValue = parseFloat(value) / 100;
     const formatted = numberValue.toLocaleString("pt-BR", {
       minimumFractionDigits: 2,
@@ -102,7 +112,7 @@ export default function NovoMembroPage() {
   };
 
   // Form Submit / Save
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!nome || !cpf || !cargo || !dataInicio || !remuneracao) {
@@ -110,36 +120,25 @@ export default function NovoMembroPage() {
       return;
     }
 
-    // Default existing members if not initialized
-    const existing = localStorage.getItem("team_members");
-    const currentMembers = existing
-      ? JSON.parse(existing)
-      : [
-          { id: 1, nome: "Ricardo Silva", code: "#GP-0421", cargo: "Engenheiro Civil Sênior", projeto: "Residencial Aurora", remuneracao: "R$ 14.500,00", status: "ATIVO" },
-          { id: 2, nome: "Ana Paula Martins", code: "#GP-0892", cargo: "Mestre de Obras", projeto: "Edifício Skyline", remuneracao: "R$ 7.800,00", status: "ATIVO" },
-          { id: 3, nome: "Marcos Oliveira", code: "#GP-1102", cargo: "Pedreiro Especialista", projeto: "Ponte Central", remuneracao: "R$ 4.200,00", status: "ATIVO" },
-          { id: 4, nome: "Juliana Costa", code: "#GP-0331", cargo: "Auxiliar Administrativo", projeto: "—", remuneracao: "R$ 2.800,00", status: "INATIVO" },
-        ];
+    const rawVal = remuneracao.replace(/\./g, "").replace(",", ".");
+    const numRemuneracao = parseFloat(rawVal) || 0;
 
-    // Generate random code for new member
-    const randomId = Math.floor(100 + Math.random() * 900);
-    const newMember = {
-      id: currentMembers.length + 1,
-      nome,
-      code: `#GP-0${randomId}`,
-      cargo,
-      projeto: projeto || "—",
-      remuneracao: `R$ ${remuneracao}`,
-      status: "ATIVO",
-      dataInicio,
-      descricao,
-    };
-
-    const updatedMembers = [newMember, ...currentMembers];
-    localStorage.setItem("team_members", JSON.stringify(updatedMembers));
-    
-    // Redirect back
-    router.push("/equipe");
+    try {
+      await createMembroEquipe({
+        nome,
+        cpf,
+        cargo,
+        data_inicio: dataInicio,
+        descricao,
+        orcamento_id: orcamentoId === "—" ? null : orcamentoId,
+        remuneracao: numRemuneracao,
+        status: "ATIVO",
+      });
+      router.push("/equipe");
+    } catch (err) {
+      console.error("Erro ao salvar colaborador:", err);
+      alert("Ocorreu um erro ao salvar o colaborador na equipe.");
+    }
   };
 
   return (
@@ -294,18 +293,16 @@ export default function NovoMembroPage() {
                 </label>
                 <select
                   id="projeto"
-                  value={projeto}
-                  onChange={(e) => setProjeto(e.target.value)}
+                  value={orcamentoId}
+                  onChange={(e) => setOrcamentoId(e.target.value)}
                   className="w-full bg-[#f8fafc] border border-[#e2e8f0] focus:border-[#9fd300] rounded-[8px] px-4 py-3 font-['Manrope'] text-[14px] text-[#0f172a] placeholder:text-[#94a3b8] outline-none transition-colors cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_16px_center] bg-no-repeat pr-10"
                 >
                   <option value="—">Sem Alocação (Banco)</option>
-                  <option value="Residencial Aurora">Residencial Aurora</option>
-                  <option value="Residencial Skyline">Residencial Skyline</option>
-                  <option value="Edifício Skyline">Edifício Skyline</option>
-                  <option value="Ponte Central">Ponte Central</option>
-                  <option value="Centro Comercial Norte">Centro Comercial Norte</option>
-                  <option value="Condomínio Ocean Blue">Condomínio Ocean Blue</option>
-                  <option value="Expansão Porto Velho">Expansão Porto Velho</option>
+                  {orcamentos.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.nome}
+                    </option>
+                  ))}
                 </select>
               </div>
 

@@ -113,3 +113,43 @@ def test_deletar_orcamento(client, mock_supabase):
     # Assert
     assert response.status_code == 200
     assert response.json() == {"message": "Orçamento deletado com sucesso", "id": orc_id}
+
+
+@pytest.mark.integration
+def test_download_pdf_orcamento(client, mock_supabase):
+    """GET /orcamentos/{id}/pdf → StreamingResponse com Content-Type application/pdf."""
+    from unittest.mock import patch
+
+    orc_id = "orc-1"
+    orc_data = {
+        "id": orc_id,
+        "nome": "Obra PDF",
+        "cliente": "Cliente X",
+        "data": "2023-01-01",
+        "base_referencia": "SINAPI 01/2025",
+        "tipo_composicao": "Sem Desoneração",
+        "estado": "sp",
+        "status": "em_elaboracao",
+        "valor_total": 5000.0,
+        "bdi": 0.0,
+        "fonte": "SINAPI",
+    }
+
+    # Mock busca do orçamento
+    mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value.data = [orc_data]
+    # Mock lista de itens vazia
+    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value.data = []
+
+    # Mock geração de PDF para não depender de weasyprint
+    pdf_bytes = b"%PDF-1.4 dummy content"
+    with patch("app.controllers.orcamentos.PdfService") as mock_pdf_class:
+        mock_pdf_class.return_value.gerar_pdf.return_value = pdf_bytes
+
+        # Act
+        response = client.get(f"/orcamentos/{orc_id}/pdf")
+
+    # Assert
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.content == pdf_bytes
+

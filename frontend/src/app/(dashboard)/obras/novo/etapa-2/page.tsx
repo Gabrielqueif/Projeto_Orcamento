@@ -11,53 +11,31 @@ import {
   FileText,
   Trash,
   ArrowLeft,
-  ArrowRight,
 } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWizard } from "@/contexts/WizardContext";
 import { createOrcamento } from "@/lib/api/orcamentos";
+import { getMembrosEquipe, alocarMembrosAoOrcamento, type MembroEquipe } from "@/lib/api/membros_equipe";
 import { useRouter } from "next/navigation";
-
-const MOCK_PROFESSIONALS = [
-  {
-    id: "RA",
-    name: "Ricardo Almeida",
-    role: "Engenheiro Civil • Senior",
-    color: "#001b3d",
-  },
-  {
-    id: "MC",
-    name: "Mariana Costa",
-    role: "Arquiteta Urbanista",
-    color: "#00a3b1",
-  },
-  {
-    id: "JP",
-    name: "João Pedro Silva",
-    role: "Mestre de Obras",
-    color: "#94a3b8",
-    initials: "JP",
-  },
-  {
-    id: "FO",
-    name: "Fernanda Oliveira",
-    role: "Gestora de Projetos",
-    color: "#9fd300",
-    initials: "FO",
-  },
-];
-
-const TEAM_MEMBERS = [
-  { id: "VP", name: "Você (Gestor)", role: "CRIADOR", badge: "GERENTE", fixed: true },
-  { id: "JP", name: "João Pedro Silva", role: "Mestre de Obras", badge: "MESTRE", fixed: false },
-  { id: "MC", name: "Mariana Costa", role: "Arquitetura", badge: "ARQUITETO", fixed: false },
-];
 
 export default function NovaObraEtapa2Page() {
   const { data } = useWizard();
-  const [selectedMember, setSelectedMember] = useState<string>("JP");
+  const [professionals, setProfessionals] = useState<MembroEquipe[]>([]);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    getMembrosEquipe()
+      .then((res) => {
+        // Exibe apenas profissionais ativos no pool de alocação
+        setProfessionals(res.filter((m) => m.status === "ATIVO"));
+      })
+      .catch((err) => console.error("Erro ao carregar profissionais:", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleFinish = async () => {
     if (!data.nome || !data.cliente) {
@@ -68,7 +46,8 @@ export default function NovaObraEtapa2Page() {
 
     setIsSubmitting(true);
     try {
-      await createOrcamento({
+      // 1. Criar o orçamento (obra) no backend
+      const newOrcamento = await createOrcamento({
         nome: data.nome,
         cliente: data.cliente,
         data: data.dataInicio || new Date().toISOString().split("T")[0],
@@ -77,8 +56,14 @@ export default function NovaObraEtapa2Page() {
         estado: data.estado,
         fonte: "SINAPI",
         bdi: data.bdi,
-        status: data.status,
+        status: data.status || "em_elaboracao",
       });
+
+      // 2. Alocar os membros selecionados ao novo orçamento criado
+      if (selectedMemberIds.length > 0 && newOrcamento?.id) {
+        await alocarMembrosAoOrcamento(selectedMemberIds, newOrcamento.id);
+      }
+
       alert("Projeto criado com sucesso!");
       router.push("/obras");
     } catch (error) {
@@ -88,6 +73,31 @@ export default function NovaObraEtapa2Page() {
       setIsSubmitting(false);
     }
   };
+
+  const toggleMemberSelection = (id: string) => {
+    setSelectedMemberIds((prev) =>
+      prev.includes(id) ? prev.filter((mId) => mId !== id) : [...prev, id]
+    );
+  };
+
+  const filteredProfessionals = professionals.filter((p) =>
+    p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.cargo.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Lista para renderizar na tabela à direita (incluindo o Criador fixo)
+  const rightSideMembers = [
+    { id: "VP", nome: "Você (Gestor)", cargo: "Criador", badge: "GERENTE", fixed: true },
+    ...professionals
+      .filter((p) => selectedMemberIds.includes(p.id))
+      .map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        cargo: p.cargo,
+        badge: p.cargo.split(" ")[0].toUpperCase(),
+        fixed: false,
+      })),
+  ];
 
   const steps = [
     { num: 1, label: "Dados Gerais", active: false, done: true },
@@ -160,48 +170,60 @@ export default function NovaObraEtapa2Page() {
                   <input
                     type="text"
                     placeholder="Buscar profissional..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full bg-[#f8fafc] border border-[#d1d5db] rounded-[8px] pl-[41px] pr-4 pt-[10px] pb-[11px] font-['Inter'] text-[14px] text-[#6b7280] placeholder:text-[#6b7280] outline-none focus:border-[#9fd300] transition-colors"
                   />
                 </div>
 
                 {/* List */}
-                <div className="flex flex-col gap-2">
-                  {MOCK_PROFESSIONALS.map((person) => (
-                    <div
-                      key={person.id}
-                      onClick={() => setSelectedMember(person.id)}
-                      className={`flex items-center gap-3 p-3 rounded-[8px] cursor-pointer transition-colors ${
-                        selectedMember === person.id
-                          ? "border border-[#9fd300] bg-[rgba(159,211,0,0.06)]"
-                          : "border border-transparent hover:bg-[#f8fafc]"
-                      }`}
-                    >
-                      <div
-                        className="w-10 h-10 rounded-[8px] flex items-center justify-center text-white font-['Manrope'] font-bold text-sm shrink-0 overflow-hidden"
-                        style={{ backgroundColor: person.color }}
-                      >
-                        {person.initials ? (
-                          <span className="text-[#001b3d]">{person.initials}</span>
-                        ) : (
-                          <User size={18} weight="fill" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-['Manrope'] font-bold text-[14px] text-[#001b3c] truncate">
-                          {person.name}
+                {loading ? (
+                  <div className="text-center py-6">
+                    <div className="w-6 h-6 border-2 border-[#001b3d] border-t-[#9fd300] rounded-full animate-spin mx-auto mb-2" />
+                    <span className="font-['Inter'] text-xs text-[#64748b]">Carregando profissionais...</span>
+                  </div>
+                ) : filteredProfessionals.length === 0 ? (
+                  <div className="text-center py-6 font-['Inter'] text-xs text-[#94a3b8]">
+                    Nenhum profissional cadastrado ou ativo encontrado.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 max-h-[350px] overflow-y-auto pr-1">
+                    {filteredProfessionals.map((person) => {
+                      const isSelected = selectedMemberIds.includes(person.id);
+                      const initials = person.nome.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+                      return (
+                        <div
+                          key={person.id}
+                          onClick={() => toggleMemberSelection(person.id)}
+                          className={`flex items-center gap-3 p-3 rounded-[8px] cursor-pointer transition-colors ${
+                            isSelected
+                              ? "border border-[#9fd300] bg-[rgba(159,211,0,0.06)]"
+                              : "border border-transparent hover:bg-[#f8fafc]"
+                          }`}
+                        >
+                          <div
+                            className="w-10 h-10 rounded-[8px] flex items-center justify-center text-white font-['Manrope'] font-bold text-sm shrink-0 overflow-hidden bg-[#001b3d]"
+                          >
+                            <span className="text-[#9fd300]">{initials}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-['Manrope'] font-bold text-[14px] text-[#001b3c] truncate">
+                              {person.nome}
+                            </div>
+                            <div className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
+                              {person.cargo}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <div className="w-5 h-5 rounded-full bg-[#9fd300] flex items-center justify-center shrink-0">
+                              <Check size={11} weight="bold" className="text-[#001b3d]" />
+                            </div>
+                          )}
                         </div>
-                        <div className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-                          {person.role}
-                        </div>
-                      </div>
-                      {selectedMember === person.id && (
-                        <div className="w-5 h-5 rounded-full bg-[#9fd300] flex items-center justify-center shrink-0">
-                          <Check size={11} weight="bold" className="text-[#001b3d]" />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -216,7 +238,7 @@ export default function NovaObraEtapa2Page() {
                     <div className="w-12 h-1 bg-[#9fd300] mt-1" />
                   </div>
                   <span className="px-3 py-1 bg-[rgba(159,211,0,0.1)] text-[#5a7f00] font-['JetBrains_Mono'] font-medium text-[10px] uppercase tracking-[0.5px] rounded-full">
-                    {TEAM_MEMBERS.length} membros
+                    {rightSideMembers.length} membros
                   </span>
                 </div>
                 <p className="font-['Inter'] font-medium text-[14px] text-[#64748b] mb-6 mt-4">
@@ -237,65 +259,69 @@ export default function NovaObraEtapa2Page() {
                     </tr>
                   </thead>
                   <tbody>
-                    {TEAM_MEMBERS.map((member) => (
-                      <tr key={member.id} className="border-b border-[#f1f5f9] last:border-b-0">
-                        <td className="py-4 pr-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-[8px] bg-[#001b3d] text-white font-['Manrope'] font-bold text-xs flex items-center justify-center shrink-0">
-                              {member.id}
-                            </div>
-                            <div>
-                              <div className="font-['Manrope'] font-semibold text-[13px] text-[#001b3c]">
-                                {member.name}
+                    {rightSideMembers.map((member) => {
+                      const initials = member.nome === "Você (Gestor)" ? "VC" : member.nome.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+                      return (
+                        <tr key={member.id} className="border-b border-[#f1f5f9] last:border-b-0">
+                          <td className="py-4 pr-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-[8px] bg-[#001b3d] text-[#9fd300] font-['Manrope'] font-bold text-xs flex items-center justify-center shrink-0">
+                                {initials}
                               </div>
-                              <div className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
-                                {member.role}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 pr-3">
-                          {member.fixed ? (
-                            <span className="inline-flex items-center px-2.5 py-1 bg-[#001b3d] text-white font-['JetBrains_Mono'] font-medium text-[10px] uppercase tracking-[0.5px] rounded-[6px]">
-                              {member.badge}
-                            </span>
-                          ) : (
-                            <select className="px-2 py-[6px] border border-[#e2e8f0] rounded-[6px] font-['Manrope'] text-[13px] text-[#001b3c] bg-white outline-none cursor-pointer focus:border-[#9fd300] transition-colors">
-                              <option>{member.badge}</option>
-                            </select>
-                          )}
-                        </td>
-                        <td className="py-4 pr-3">
-                          {member.fixed ? (
-                            <span className="font-['Manrope'] font-semibold text-[13px] text-[#001b3c]">
-                              Acesso Total
-                            </span>
-                          ) : (
-                            <div className="flex gap-1.5">
-                              <div className="w-7 h-7 rounded-[6px] border border-[#001b3d] bg-[#001b3d] text-white flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
-                                <ListChecks size={14} />
-                              </div>
-                              <div className="w-7 h-7 rounded-[6px] border border-[#e2e8f0] bg-white text-[#64748b] flex items-center justify-center cursor-pointer hover:border-[#9fd300] transition-colors">
-                                <Camera size={14} />
-                              </div>
-                              <div className="w-7 h-7 rounded-[6px] border border-[#001b3d] bg-[#001b3d] text-white flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
-                                <FileText size={14} />
+                              <div>
+                                <div className="font-['Manrope'] font-semibold text-[13px] text-[#001b3c] whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]" title={member.nome}>
+                                  {member.nome}
+                                </div>
+                                <div className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#94a3b8] uppercase tracking-[0.5px] whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]" title={member.cargo}>
+                                  {member.cargo}
+                                </div>
                               </div>
                             </div>
-                          )}
-                        </td>
-                        <td className="py-4 text-center">
-                          {member.fixed ? (
-                            <Lock size={18} className="mx-auto text-[#e2e8f0]" weight="fill" />
-                          ) : (
-                            <Trash
-                              size={18}
-                              className="mx-auto text-[#94a3b8] cursor-pointer hover:text-[#ef4444] transition-colors"
-                            />
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="py-4 pr-3">
+                            {member.fixed ? (
+                              <span className="inline-flex items-center px-2.5 py-1 bg-[#001b3d] text-white font-['JetBrains_Mono'] font-medium text-[10px] uppercase tracking-[0.5px] rounded-[6px]">
+                                {member.badge}
+                              </span>
+                            ) : (
+                              <select className="px-2 py-[6px] border border-[#e2e8f0] rounded-[6px] font-['Manrope'] text-[13px] text-[#001b3c] bg-white outline-none cursor-pointer focus:border-[#9fd300] transition-colors">
+                                <option>{member.badge}</option>
+                              </select>
+                            )}
+                          </td>
+                          <td className="py-4 pr-3">
+                            {member.fixed ? (
+                              <span className="font-['Manrope'] font-semibold text-[13px] text-[#001b3c]">
+                                Acesso Total
+                              </span>
+                            ) : (
+                              <div className="flex gap-1.5">
+                                <div className="w-7 h-7 rounded-[6px] border border-[#001b3d] bg-[#001b3d] text-white flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                                  <ListChecks size={14} />
+                                </div>
+                                <div className="w-7 h-7 rounded-[6px] border border-[#e2e8f0] bg-white text-[#64748b] flex items-center justify-center cursor-pointer hover:border-[#9fd300] transition-colors">
+                                  <Camera size={14} />
+                                </div>
+                                <div className="w-7 h-7 rounded-[6px] border border-[#001b3d] bg-[#001b3d] text-white flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                                  <FileText size={14} />
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-4 text-center">
+                            {member.fixed ? (
+                              <Lock size={18} className="mx-auto text-[#e2e8f0]" weight="fill" />
+                            ) : (
+                              <Trash
+                                size={18}
+                                onClick={() => toggleMemberSelection(member.id)}
+                                className="mx-auto text-[#94a3b8] cursor-pointer hover:text-[#ef4444] transition-colors"
+                              />
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
 
