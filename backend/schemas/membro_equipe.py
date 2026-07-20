@@ -10,6 +10,7 @@ class MembroEquipeCreate(BaseModel):
     data_inicio: date
     descricao: Optional[str] = None
     orcamento_id: Optional[UUID] = None
+    equipe_id: Optional[UUID] = None
     remuneracao: float
     status: Optional[str] = "ATIVO"
 
@@ -22,6 +23,7 @@ class MembroEquipeUpdate(BaseModel):
     data_inicio: Optional[date] = None
     descricao: Optional[str] = None
     orcamento_id: Optional[UUID] = None
+    equipe_id: Optional[UUID] = None
     remuneracao: Optional[float] = None
     status: Optional[str] = None
 
@@ -36,6 +38,7 @@ class MembroEquipeResponse(BaseModel):
     data_inicio: date
     descricao: Optional[str] = None
     orcamento_id: Optional[UUID] = None
+    equipe_id: Optional[UUID] = None
     remuneracao: float
     status: str
     code: str

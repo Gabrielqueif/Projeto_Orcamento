@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends
 from app.controllers import orcamentos
-from schemas import OrcamentoResponse, OrcamentoCreate, OrcamentoUpdate
+from schemas import OrcamentoResponse, OrcamentoCreate, OrcamentoUpdate, OrcamentoStatsResponse, CurvaABCResponse, CronogramaResponse
 from app.services.orcamento_service import OrcamentoService
 
 from core.security import get_current_user
@@ -37,6 +37,16 @@ async def listar_orcamentos(
     service: OrcamentoService = Depends(orcamentos.get_orcamento_service)
 ):
     return orcamentos.listar_orcamentos(nome, status, cliente, service)
+
+@router.get(
+    "/stats",
+    response_model=OrcamentoStatsResponse,
+    summary="Obter estatísticas acumuladas dos orçamentos"
+)
+async def obter_estatisticas_endpoint(
+    service: OrcamentoService = Depends(orcamentos.get_orcamento_service)
+):
+    return orcamentos.obter_estatisticas(service)
 
 @router.get(
     "/{orcamento_id}",
@@ -78,4 +88,26 @@ async def download_pdf_orcamento(
     supabase = Depends(get_supabase)
 ):
     return orcamentos.download_pdf(orcamento_id, service, supabase)
+
+@router.get(
+    "/{orcamento_id}/curva-abc",
+    response_model=CurvaABCResponse,
+    summary="Obter Curva ABC real de insumos do orçamento"
+)
+async def obter_curva_abc_endpoint(
+    orcamento_id: str,
+    service: OrcamentoService = Depends(orcamentos.get_orcamento_service)
+):
+    return orcamentos.obter_curva_abc(orcamento_id, service)
+
+@router.get(
+    "/{orcamento_id}/cronograma",
+    response_model=CronogramaResponse,
+    summary="Obter Cronograma Físico-Financeiro dinâmico do orçamento"
+)
+async def obter_cronograma_endpoint(
+    orcamento_id: str,
+    service: OrcamentoService = Depends(orcamentos.get_orcamento_service)
+):
+    return orcamentos.obter_cronograma(orcamento_id, service)
 

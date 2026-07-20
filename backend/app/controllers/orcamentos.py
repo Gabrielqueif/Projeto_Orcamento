@@ -6,12 +6,15 @@ from app.dependencies import get_supabase
 from schemas import OrcamentoCreate, OrcamentoUpdate, OrcamentoResponse
 from app.repositories.orcamento_repository import OrcamentoRepository
 from app.repositories.orcamento_item_repository import OrcamentoItemRepository
+from app.repositories.etapa_repository import EtapaRepository
 from app.services.orcamento_service import OrcamentoService
 from app.services.pdf_service import PdfService
 
 def get_orcamento_service(supabase=Depends(get_supabase)) -> OrcamentoService:
     repository = OrcamentoRepository(supabase)
-    return OrcamentoService(repository)
+    etapa_repo = EtapaRepository(supabase)
+    item_repo = OrcamentoItemRepository(supabase)
+    return OrcamentoService(repository, etapa_repo, item_repo, supabase)
 
 def criar_orcamento(orcamento: OrcamentoCreate, service: OrcamentoService = Depends(get_orcamento_service)):
     """Cria um novo orçamento"""
@@ -52,14 +55,16 @@ def download_pdf(
     # 1. Buscar dados do orçamento
     orcamento = service.buscar_orcamento(orcamento_id)
     
-    # 2. Buscar itens do orçamento (precisamos do repositório de itens aqui)
-    # Idealmente, o orcamento_service ja deveria trazer tudo, mas vamos buscar direto por enquanto
+    # 2. Buscar itens e etapas do orçamento
     item_repo = OrcamentoItemRepository(supabase)
     itens = item_repo.listar_por_orcamento(orcamento_id)
     
+    etapa_repo = EtapaRepository(supabase)
+    etapas = etapa_repo.listar_por_orcamento(orcamento_id)
+    
     # 3. Gerar PDF
     pdf_service = PdfService()
-    pdf_content = pdf_service.gerar_pdf(orcamento, itens)
+    pdf_content = pdf_service.gerar_pdf(orcamento, itens, etapas)
     
     # 4. Retornar stream
     return StreamingResponse(
@@ -67,6 +72,18 @@ def download_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento_id}.pdf"}
     )
+
+def obter_estatisticas(service: OrcamentoService = Depends(get_orcamento_service)):
+    """Retorna estatísticas globais sobre os orçamentos"""
+    return service.obter_estatisticas()
+
+def obter_curva_abc(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
+    """Retorna a Curva ABC real de insumos do orçamento"""
+    return service.obter_curva_abc(orcamento_id)
+
+def obter_cronograma(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
+    """Retorna o Cronograma Físico-Financeiro dinâmico do orçamento"""
+    return service.obter_cronograma(orcamento_id)
 
 
 

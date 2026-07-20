@@ -5,10 +5,13 @@ import {
   addItem,
   updateItem,
   getEtapas,
+  getOrcamento,
+  updateOrcamento,
   type OrcamentoItemCreate,
   type OrcamentoItemUpdate,
   type Etapa,
   type OrcamentoItem,
+  type Orcamento,
 } from "@/lib/api/orcamentos";
 import { buscarComposicoes as apiBuscarComposicoes } from "@/lib/api/composicoes";
 import { Modal } from "@/components/ui/Modal";
@@ -26,6 +29,40 @@ interface FormulaVariable {
   name: string;
   value: number;
 }
+
+interface MemoriaCalculoElemento {
+  id: string;
+  descricao: string;
+  quantidade: number;
+  largura: number;
+  altura: number;
+  subtotal: number;
+}
+
+const parseSavedVariables = (saved: any): MemoriaCalculoElemento[] => {
+  if (!saved || !Array.isArray(saved)) return [];
+  return saved.map((v: any) => {
+    if (v && typeof v === "object" && "descricao" in v) {
+      return {
+        id: v.id || Math.random().toString(),
+        descricao: v.descricao || "",
+        quantidade: typeof v.quantidade === "number" ? v.quantidade : 1,
+        largura: typeof v.largura === "number" ? v.largura : 0,
+        altura: typeof v.altura === "number" ? v.altura : 0,
+        subtotal: typeof v.subtotal === "number" ? v.subtotal : 0,
+      };
+    }
+    // Formato antigo legacy
+    return {
+      id: v.id || Math.random().toString(),
+      descricao: v.name || "",
+      quantidade: 1,
+      largura: typeof v.value === "number" ? v.value : 0,
+      altura: 1,
+      subtotal: typeof v.value === "number" ? v.value : 0,
+    };
+  });
+};
 
 const ESTADOS = [
   { value: "ac", label: "AC - Acre" },
@@ -95,9 +132,64 @@ export function OrcamentoItemForm({
   // Formula Modal State
   const [showFormulaModal, setShowFormulaModal] = React.useState(false);
   const [formula, setFormula] = React.useState("");
-  const [variables, setVariables] = React.useState<FormulaVariable[]>([]);
+  const [elementos, setElementos] = React.useState<MemoriaCalculoElemento[]>([]);
+  const [isFormulaExpanded, setIsFormulaExpanded] = React.useState(false);
   const [previewResult, setPreviewResult] = React.useState<number | null>(null);
   const [formulaError, setFormulaError] = React.useState<string | null>(null);
+
+  const [orcamento, setOrcamento] = React.useState<Orcamento | null>(null);
+
+  React.useEffect(() => {
+    async function loadOrcamento() {
+      if (!orcamentoId) return;
+      try {
+        const data = await getOrcamento(orcamentoId);
+        setOrcamento(data);
+      } catch (err) {
+        console.error("Erro ao carregar orcamento:", err);
+      }
+    }
+    loadOrcamento();
+  }, [orcamentoId]);
+
+  // Inline Variable Creation States & Handlers
+  const [newVarNome, setNewVarNome] = React.useState("");
+  const [newVarValor, setNewVarValor] = React.useState("");
+  const [isCreatingVar, setIsCreatingVar] = React.useState(false);
+
+  const handleCreateGlobalVariable = async () => {
+    if (!orcamento || !newVarNome.trim() || !newVarValor.trim()) return;
+    
+    const cleanNome = newVarNome.trim().toUpperCase().replace(/[^A-Z0-9_]/g, "_");
+    const valorNum = parseFloat(newVarValor.trim());
+    if (isNaN(valorNum)) {
+      alert("Por favor, digite um valor numérico válido.");
+      return;
+    }
+
+    const antigasVariaveis = orcamento.variaveis_globais || [];
+    if (antigasVariaveis.some((v: any) => v.nome === cleanNome)) {
+      alert(`A variável "${cleanNome}" já existe neste orçamento.`);
+      return;
+    }
+
+    const novasVariaveis = [...antigasVariaveis, { nome: cleanNome, valor: valorNum }];
+    setIsCreatingVar(true);
+
+    try {
+      const updated = await updateOrcamento(orcamento.id, {
+        variaveis_globais: novasVariaveis
+      });
+      setOrcamento(updated);
+      setNewVarNome("");
+      setNewVarValor("");
+    } catch (err) {
+      console.error("Erro ao criar variável global:", err);
+      alert("Não foi possível salvar a variável global.");
+    } finally {
+      setIsCreatingVar(false);
+    }
+  };
 
   const fetchEtapas = async () => {
     try {
@@ -126,7 +218,7 @@ export function OrcamentoItemForm({
       });
       // Load memory and variables
       setFormula(itemToEdit.memoria_calculo || "");
-      setVariables(itemToEdit.variaveis || []);
+      setElementos(parseSavedVariables(itemToEdit.variaveis));
 
       // Clear search related states
       setTermo("");
@@ -139,7 +231,8 @@ export function OrcamentoItemForm({
       setTermo("");
       setResultados([]);
       setFormula("");
-      setVariables([]);
+      setElementos([]);
+      setIsFormulaExpanded(false);
     }
   }, [itemToEdit, fonteOrcamento, initialEtapaId]);
 
@@ -177,108 +270,161 @@ export function OrcamentoItemForm({
 
   // Formula Calculation Logic
   React.useEffect(() => {
-    if (!formula.trim()) {
+    if (elementos.length === 0) {
       setPreviewResult(null);
       setFormulaError(null);
       return;
     }
 
     try {
+      if (!formula.trim()) {
+        // Sem fórmula customizada: soma simples dos subtotais dos elementos
+        const total = elementos.reduce((sum, el) => sum + (el.subtotal || 0), 0);
+        setPreviewResult(Number(total.toFixed(4)));
+        setFormulaError(null);
+        return;
+      }
+
       let expression = formula;
+      const mappings: { pattern: string; value: number }[] = [];
 
-      // Replace variables
-      // Sort by length desc to prevent partial replacements (e.g. VAR1 vs VAR10)
-      const sortedVars = [...variables].sort(
-        (a, b) => b.name.length - a.name.length,
-      );
+      elementos.forEach((el, index) => {
+        if (el.descricao.trim()) {
+          // Padrão 1: Descrição completa
+          mappings.push({
+            pattern: el.descricao.trim(),
+            value: Math.abs(el.subtotal),
+          });
 
-      for (const v of sortedVars) {
-        if (!v.name) continue;
-        // Escape special regex chars in name just in case, though we limit to alphanumeric
-        const safeName = v.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        // Use word boundaries to match exact variable names
-        const regex = new RegExp(`\\b${safeName}\\b`, "g");
-        expression = expression.replace(regex, v.value.toString());
+          // Padrão 2: Sem parênteses (ex: "Parede 01")
+          const cleanName = el.descricao.split("(")[0].trim();
+          if (cleanName && cleanName !== el.descricao.trim()) {
+            mappings.push({
+              pattern: cleanName,
+              value: Math.abs(el.subtotal),
+            });
+          }
+        }
+
+        // Padrão 3: Variável automática de linha (E1, E2, L1, L2, etc.)
+        mappings.push({ pattern: `E${index + 1}`, value: Math.abs(el.subtotal) });
+        mappings.push({ pattern: `L${index + 1}`, value: Math.abs(el.subtotal) });
+      });
+
+      // Adicionar variáveis globais ao mapeamento
+      if (orcamento?.variaveis_globais && Array.isArray(orcamento.variaveis_globais)) {
+        orcamento.variaveis_globais.forEach((v: any) => {
+          if (v && v.nome && typeof v.valor === "number") {
+            mappings.push({
+              pattern: v.nome.trim(),
+              value: v.valor,
+            });
+          }
+        });
       }
 
-      // Validate characters: allowed digits, operators, parens, dot, comma, space
-      if (/[^0-9+\-*/().,\s]/.test(expression)) {
-        // Check if it's a variable that wasn't replaced?
-        throw new Error("Caracteres ou variáveis inválidas");
+      // Ordenar por tamanho decrescente de padrão para evitar substituições parciais
+      mappings.sort((a, b) => b.pattern.length - a.pattern.length);
+
+      // Substituir na expressão
+      for (const m of mappings) {
+        const escapedPattern = m.pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = /^[a-zA-Z0-9_ ]+$/.test(m.pattern)
+          ? new RegExp(`\\b${escapedPattern}\\b`, "gi")
+          : new RegExp(escapedPattern, "gi");
+        expression = expression.replace(regex, m.value.toString());
       }
 
-      // Replace comma with dot for JS evaluation
-      expression = expression.replace(/,/g, ".");
+      // Validar caracteres: permite números, operadores (+ - * /), parênteses, ponto, vírgula e espaços
+      let testExpr = expression.replace(/,/g, ".").trim();
+      if (/[^0-9+\-*/().\s]/.test(testExpr)) {
+        throw new Error("A fórmula contém caracteres ou variáveis não identificadas");
+      }
 
       // Safe evaluation using Function
       // eslint-disable-next-line no-new-func
-      const result = new Function(`return ${expression}`)();
+      const result = new Function(`return ${testExpr}`)();
 
       if (isFinite(result) && !isNaN(result)) {
-        setPreviewResult(Number(result.toFixed(4))); // 4 decimal places precision
+        setPreviewResult(Number(result.toFixed(4)));
         setFormulaError(null);
       } else {
         throw new Error("Resultado inválido");
       }
     } catch (err) {
       setPreviewResult(null);
-      // Only show error if formula is not partial/empty looking
-      setFormulaError("Fórmula inválida");
+      setFormulaError(err instanceof Error ? err.message : "Fórmula inválida");
     }
-  }, [formula, variables]);
+  }, [formula, elementos]);
 
   const handleApplyFormula = () => {
     if (previewResult !== null) {
       setQuantidade(previewResult.toString());
       setShowFormulaModal(false);
-      // Persist formula and variables so they are available if user re-opens
     }
   };
 
   const openFormulaModal = () => {
-    // If formula is empty, start with current quantity. Otherwise keep existing formula/memory.
-    if (!formula) {
-      setFormula(quantidade);
+    // Inicializar elementos se estiver vazio
+    if (elementos.length === 0) {
+      const qtdAtual = parseFloat(quantidade) || 1;
+      setElementos([
+        {
+          id: Date.now().toString(),
+          descricao: "Elemento 1",
+          quantidade: qtdAtual,
+          largura: 1,
+          altura: 1,
+          subtotal: qtdAtual,
+        },
+      ]);
     }
     setShowFormulaModal(true);
   };
 
-  const addVariable = () => {
+  const addElemento = () => {
     const id = Date.now().toString();
-    setVariables([
-      ...variables,
-      { id, name: `VAR${variables.length + 1}`, value: 0 },
+    setElementos([
+      ...elementos,
+      {
+        id,
+        descricao: `Elemento ${elementos.length + 1}`,
+        quantidade: 1,
+        largura: 0,
+        altura: 0,
+        subtotal: 0,
+      },
     ]);
   };
 
-  const updateVariable = (
+  const updateElemento = (
     id: string,
-    field: keyof FormulaVariable,
-    value: string | number,
+    field: keyof MemoriaCalculoElemento,
+    value: string | number
   ) => {
-    setVariables(
-      variables.map((v) => {
-        if (v.id === id) {
-          if (field === "name") {
-            // Restrict name to alphanumeric
-            const sanitized = (value as string).replace(/[^a-zA-Z0-9_]/g, "");
-            return { ...v, name: sanitized.toUpperCase() };
+    setElementos(
+      elementos.map((el) => {
+        if (el.id === id) {
+          const updated = { ...el, [field]: value };
+          if (field === "quantidade") {
+            updated.quantidade = parseFloat(value as string) || 0;
+          } else if (field === "largura") {
+            updated.largura = parseFloat(value as string) || 0;
+          } else if (field === "altura") {
+            updated.altura = parseFloat(value as string) || 0;
           }
-          return { ...v, [field]: value };
+          updated.subtotal = Number(
+            (updated.quantidade * updated.largura * updated.altura).toFixed(4)
+          );
+          return updated;
         }
-        return v;
-      }),
+        return el;
+      })
     );
   };
 
-  const removeVariable = (id: string) => {
-    setVariables(variables.filter((v) => v.id !== id));
-  };
-
-  const insertVariable = (name: string) => {
-    setFormula(
-      (prev) => prev + (prev && !prev.endsWith(" ") ? " " : "") + name + " ",
-    );
+  const removeElemento = (id: string) => {
+    setElementos(elementos.filter((el) => el.id !== id));
   };
 
   const handleSelectComposicao = (composicao: ItemComposicao) => {
@@ -321,7 +467,7 @@ export function OrcamentoItemForm({
           unidade: composicaoSelecionada.unidade,
           etapa_id: etapaId || undefined,
           memoria_calculo: formula,
-          variaveis: variables,
+          variaveis: elementos,
           fonte: composicaoSelecionada.fonte,
         };
         await updateItem(orcamentoId, itemToEdit.id, itemUpdate);
@@ -334,7 +480,7 @@ export function OrcamentoItemForm({
           unidade: composicaoSelecionada.unidade,
           etapa_id: etapaId || undefined,
           memoria_calculo: formula,
-          variaveis: variables,
+          variaveis: elementos,
           fonte: composicaoSelecionada.fonte,
           preco_unitario: composicaoSelecionada.preco,
         };
@@ -344,7 +490,9 @@ export function OrcamentoItemForm({
         setComposicaoSelecionada(null);
         setQuantidade("1");
         setTermo("");
-        setFormula(""); // Clear formula for next item, but keep variables
+        setFormula("");
+        setElementos([]);
+        setIsFormulaExpanded(false);
       }
 
       if (onItemAdded) {
@@ -619,155 +767,310 @@ export function OrcamentoItemForm({
       <Modal
         isOpen={showFormulaModal}
         onClose={() => setShowFormulaModal(false)}
-        title="Memória de Cálculo"
+        title={`Memória de Cálculo — ${composicaoSelecionada?.descricao || "Item"}`}
         maxWidth="max-w-5xl"
       >
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Coluna da Esquerda: Fórmula e Resultado (2/3) */}
-          <div className="md:col-span-8 space-y-4">
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">
-                Fórmula / Memória de Cálculo
-              </label>
-              <textarea
-                className="w-full border border-gray-300 rounded-lg p-4 h-64 font-mono text-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none resize-none shadow-sm"
-                placeholder="Ex: (LARGURA * COMPRIMENTO) + 5"
-                value={formula}
-                onChange={(e) => setFormula(e.target.value)}
-                autoFocus
-              />
-              {formulaError && (
-                <p className="text-red-500 text-sm mt-2 font-medium">
-                  {formulaError}
-                </p>
-              )}
-              <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-100">
-                <p className="text-xs text-blue-700 leading-relaxed">
-                  <span className="font-bold">Dica:</span> Use os nomes das
-                  variáveis criadas à direita. Suporta operações básicas{" "}
-                  <code className="bg-white px-1 rounded">+ - * /</code> e
-                  parênteses.
-                </p>
-              </div>
-            </div>
+        <div className="flex flex-col gap-6 text-slate-800">
+          {/* Action Bar (Adicionar Elemento) */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={addElemento}
+              className="border border-[#74777f] hover:bg-slate-50 text-[#44474e] flex gap-2 items-center px-4 py-2 rounded-lg font-bold transition-all shadow-sm active:scale-95 text-sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Adicionar Elemento
+            </button>
+          </div>
 
-            {/* Resultado em destaque */}
-            <div className="bg-slate-900 text-white p-6 rounded-xl flex justify-between items-center shadow-inner">
-              <span className="text-slate-400 font-medium tracking-wide uppercase text-sm">
-                Resultado Final
-              </span>
-              <div className="text-right">
-                <span className="text-4xl font-black text-brand-primary">
-                  {previewResult !== null
-                    ? previewResult.toLocaleString("pt-BR")
-                    : "---"}
-                </span>
-                <span className="ml-2 text-slate-500 font-bold">
-                  {composicaoSelecionada?.unidade}
-                </span>
-              </div>
-            </div>
+          {/* Table Container */}
+          <div className="border border-[#c4c6cf] rounded-[12px] overflow-hidden bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#f1f4f6] text-[#44474e] font-bold text-xs uppercase border-b border-[#c4c6cf]">
+                    <th className="px-4 py-4 w-1/3">ELEMENTO / DESCRIÇÃO</th>
+                    <th className="px-4 py-4 text-center">QTD / REP.</th>
+                    <th className="px-4 py-4 text-center">LARGURA (M)</th>
+                    <th className="px-4 py-4 text-center">ALTURA / COMPR. (M)</th>
+                    <th className="px-4 py-4 text-right">SUBTOTAL</th>
+                    <th className="px-4 py-4 text-center w-20">AÇÕES</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#c4c6cf]">
+                  {elementos.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-slate-400 italic text-sm">
+                        Nenhum elemento adicionado. Clique em "Adicionar Elemento" para começar.
+                      </td>
+                    </tr>
+                  ) : (
+                    elementos.map((el, index) => {
+                      const isDiscount = el.quantidade < 0;
+                      return (
+                        <tr
+                          key={el.id}
+                          className={`transition-colors ${
+                            isDiscount
+                              ? "bg-[rgba(255,218,214,0.15)] hover:bg-[rgba(255,218,214,0.25)]"
+                              : "hover:bg-slate-50"
+                          }`}
+                        >
+                          {/* ELEMENTO / DESCRIÇÃO */}
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-400 font-bold bg-slate-100 rounded px-1.5 py-0.5" title="Variável de referência">
+                                E{index + 1}
+                              </span>
+                              <input
+                                type="text"
+                                value={el.descricao}
+                                onChange={(e) => updateElemento(el.id, "descricao", e.target.value)}
+                                className={`w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-brand-primary outline-none py-1 text-sm ${
+                                  isDiscount ? "text-[#ba1a1a] font-semibold" : "text-[#181c1e]"
+                                }`}
+                                placeholder="Descrição do elemento"
+                              />
+                              {orcamento?.locais && orcamento.locais.length > 0 && (
+                                <select
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      updateElemento(el.id, "descricao", e.target.value);
+                                    }
+                                  }}
+                                  className="text-[11px] border border-slate-200 rounded px-1.5 py-0.5 bg-white text-slate-600 cursor-pointer max-w-[120px]"
+                                >
+                                  <option value="">Locais...</option>
+                                  {orcamento.locais.map((loc: any, idx: number) => {
+                                    const value = typeof loc === "string" ? loc : loc?.nome || "";
+                                    return (
+                                      <option key={idx} value={value}>
+                                        {value}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                              )}
+                            </div>
+                          </td>
 
-            <div className="flex gap-3 justify-end pt-2">
-              <button
-                type="button"
-                onClick={() => setShowFormulaModal(false)}
-                className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg font-semibold transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleApplyFormula}
-                disabled={previewResult === null}
-                className="px-8 py-2.5 bg-brand-primary text-white rounded-lg font-bold hover:bg-brand-navy disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md active:scale-95"
-              >
-                Aplicar no Item
-              </button>
+                          {/* QTD / REP. */}
+                          <td className="px-4 py-3 text-center">
+                            <input
+                              type="number"
+                              value={el.quantidade}
+                              onChange={(e) => updateElemento(el.id, "quantidade", e.target.value)}
+                              className={`w-20 mx-auto text-center border rounded-md py-1 text-sm outline-none transition-all ${
+                                isDiscount
+                                  ? "bg-[rgba(255,218,214,0.3)] border-[rgba(186,26,26,0.4)] text-[#ba1a1a] font-bold focus:ring-1 focus:ring-red-500"
+                                  : "border-slate-300 text-[#181c1e] focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                              }`}
+                              step="any"
+                            />
+                          </td>
+
+                          {/* LARGURA (M) */}
+                          <td className="px-4 py-3 text-center">
+                            <input
+                              type="number"
+                              value={el.largura}
+                              onChange={(e) => updateElemento(el.id, "largura", e.target.value)}
+                              className="w-20 mx-auto text-center border border-slate-300 rounded-md py-1 text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                              step="any"
+                            />
+                          </td>
+
+                          {/* ALTURA / COMPR. (M) */}
+                          <td className="px-4 py-3 text-center">
+                            <input
+                              type="number"
+                              value={el.altura}
+                              onChange={(e) => updateElemento(el.id, "altura", e.target.value)}
+                              className="w-20 mx-auto text-center border border-slate-300 rounded-md py-1 text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                              step="any"
+                            />
+                          </td>
+
+                          {/* SUBTOTAL */}
+                          <td className={`px-4 py-3 text-right text-sm font-bold whitespace-nowrap ${
+                            isDiscount ? "text-[#ba1a1a]" : "text-[#181c1e]"
+                          }`}>
+                            {el.subtotal.toLocaleString("pt-BR", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 4,
+                            })}{" "}
+                            {composicaoSelecionada?.unidade || "m²"}
+                          </td>
+
+                          {/* AÇÕES */}
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => removeElemento(el.id)}
+                              className="text-slate-400 hover:text-red-500 p-1.5 rounded-full hover:bg-slate-100 transition-all active:scale-90"
+                              title="Remover Elemento"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          {/* Coluna da Direita: Variáveis (1/3) */}
-          <div className="md:col-span-4 flex flex-col bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-200 bg-white flex justify-between items-center">
-              <h4 className="font-bold text-slate-700 text-sm uppercase tracking-wider">
-                Variáveis
-              </h4>
+          {/* Accordion - Fórmula Customizada */}
+          <div className="border-t border-[#c4c6cf] pt-4">
+            <div className="bg-slate-50 border border-[#c4c6cf] rounded-xl overflow-hidden">
               <button
                 type="button"
-                onClick={addVariable}
-                className="text-xs bg-brand-primary text-white hover:bg-brand-navy px-3 py-1.5 rounded-full transition-colors font-bold shadow-sm"
+                onClick={() => setIsFormulaExpanded(!isFormulaExpanded)}
+                className="w-full flex items-center gap-2 p-4 text-[#44474e] font-bold text-sm hover:bg-slate-100 transition-colors"
               >
-                + Nova
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={`transition-transform duration-200 ${
+                    isFormulaExpanded ? "rotate-90" : ""
+                  }`}
+                >
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+                Fórmula Customizada (Opcional)
               </button>
-            </div>
 
-            <div className="p-4 flex-grow space-y-3 overflow-y-auto max-h-[400px]">
-              {variables.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="bg-slate-200 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-slate-400 text-xl font-bold">x</span>
-                  </div>
+              {isFormulaExpanded && (
+                <div className="px-4 pb-4 space-y-3 bg-white border-t border-[#c4c6cf]">
+                  <textarea
+                    value={formula}
+                    onChange={(e) => setFormula(e.target.value)}
+                    placeholder="Ex: E1 + E2 - E3"
+                    className="w-full border border-[#c4c6cf] rounded-lg p-4 h-24 font-mono text-lg focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none resize-none shadow-sm"
+                  />
+                  {formulaError && (
+                    <p className="text-red-500 text-sm font-medium">{formulaError}</p>
+                  )}
                   <p className="text-xs text-slate-500 italic">
-                    Crie variáveis para reutilizar valores na fórmula.
+                    Por padrão, o sistema soma todos os elementos da tabela acima automaticamente.
                   </p>
-                </div>
-              ) : (
-                variables.map((variable) => (
-                  <div
-                    key={variable.id}
-                    className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm space-y-2 group relative"
-                  >
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={variable.name}
-                        onChange={(e) =>
-                          updateVariable(variable.id, "name", e.target.value)
-                        }
-                        placeholder="NOME"
-                        className="w-full text-xs font-bold border-none bg-slate-100 focus:bg-white p-1.5 rounded uppercase outline-brand-primary"
-                      />
-                      <button
-                        onClick={() => removeVariable(variable.id)}
-                        className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Remover"
-                      >
-                        ✕
-                      </button>
+                  <div className="text-[11px] text-slate-400 leading-relaxed bg-slate-50 p-2.5 rounded-md border border-slate-200">
+                    <span className="font-bold text-slate-600">Instruções de Fórmula:</span> Você pode referenciar elementos pelos seus códigos automáticos (ex: <code className="bg-slate-200 px-1 rounded">E1</code>, <code className="bg-slate-200 px-1 rounded">E2</code>) ou pelas suas descrições. As referências resolvem para o valor absoluto do subtotal para que você controle os sinais na própria fórmula.
+                  </div>
+                  <div className="text-[11px] text-slate-500 bg-slate-50 p-3 rounded-md border border-slate-200 space-y-3">
+                    <div>
+                      <span className="font-bold text-slate-600 block mb-1">Variáveis Globais Disponíveis (clique para inserir):</span>
+                      <div className="flex flex-wrap gap-2 mt-1.5">
+                        {!orcamento?.variaveis_globais || orcamento.variaveis_globais.length === 0 ? (
+                          <span className="italic text-slate-400">Nenhuma variável global cadastrada. Use o formulário abaixo para criar uma.</span>
+                        ) : (
+                          orcamento.variaveis_globais.map((v: any, idx: number) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setFormula((f) => f ? `${f} * ${v.nome}` : v.nome)}
+                              className="bg-white border border-slate-200 hover:border-[#9fd300] hover:text-[#001b3d] rounded px-1.5 py-0.5 transition-colors cursor-pointer font-mono font-semibold"
+                              title={`Clique para inserir: ${v.nome} = ${v.valor}`}
+                            >
+                              {v.nome} ({v.valor})
+                            </button>
+                          ))
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={variable.value}
-                        onChange={(e) =>
-                          updateVariable(
-                            variable.id,
-                            "value",
-                            Number(e.target.value),
-                          )
-                        }
-                        placeholder="Valor"
-                        className="flex-1 text-sm border border-slate-200 p-1.5 rounded focus:ring-1 focus:ring-brand-primary outline-none"
-                      />
-                      <button
-                        onClick={() => insertVariable(variable.name)}
-                        className="px-3 py-1.5 text-[10px] bg-blue-50 text-blue-700 font-bold border border-blue-200 rounded-md hover:bg-blue-100 transition-colors uppercase"
-                        title="Inserir na fórmula"
-                      >
-                        Usar
-                      </button>
+
+                    {/* Formulário Inline de Criação de Variável */}
+                    <div className="border-t border-slate-200 pt-2.5">
+                      <span className="font-bold text-slate-600 block mb-1">Criar Nova Variável Global:</span>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          placeholder="NOME (ex: LARGURA)"
+                          value={newVarNome}
+                          onChange={(e) => setNewVarNome(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "_"))}
+                          className="bg-white border border-slate-300 rounded px-2.5 py-1 text-[11px] font-mono outline-none focus:border-[#9fd300] flex-1 max-w-[150px]"
+                        />
+                        <input
+                          type="number"
+                          step="any"
+                          placeholder="Valor (ex: 1.5)"
+                          value={newVarValor}
+                          onChange={(e) => setNewVarValor(e.target.value)}
+                          className="bg-white border border-slate-300 rounded px-2.5 py-1 text-[11px] outline-none focus:border-[#9fd300] w-24"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCreateGlobalVariable}
+                          disabled={isCreatingVar || !newVarNome.trim() || !newVarValor.trim()}
+                          className="bg-[#001b3d] hover:bg-[#00102a] text-white disabled:opacity-40 disabled:cursor-not-allowed rounded px-3 py-1 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-colors border-none"
+                        >
+                          {isCreatingVar ? "Salvando..." : "Criar Variável"}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                ))
+                </div>
               )}
             </div>
+          </div>
 
-            <div className="p-4 bg-white border-t border-slate-200">
-              <p className="text-[10px] text-slate-400 text-center uppercase font-bold tracking-tighter">
-                Reutilize variáveis clicando em "USAR"
-              </p>
+          {/* Footer Result Bar */}
+          <div className="bg-[#001b3d] rounded-lg p-5 flex justify-between items-center shadow-md">
+            <span className="text-[#6f84ac] text-xs font-bold tracking-widest uppercase font-sans">
+              RESULTADO TOTAL DO ITEM
+            </span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black text-[#b9f61d] tracking-tight">
+                {previewResult !== null
+                  ? previewResult.toLocaleString("pt-BR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 4,
+                    })
+                  : "---"}
+              </span>
+              <span className="text-xs font-bold text-[#b9f61d] uppercase ml-1">
+                {composicaoSelecionada?.unidade || "m²"}
+              </span>
             </div>
+          </div>
+
+          {/* Final Actions */}
+          <div className="flex gap-3 justify-end pt-2 border-t border-[#c4c6cf]">
+            <button
+              type="button"
+              onClick={() => setShowFormulaModal(false)}
+              className="px-6 py-2.5 text-[#44474e] hover:bg-slate-100 rounded-lg font-bold transition-all text-sm"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleApplyFormula}
+              disabled={previewResult === null}
+              className="bg-[#b9f61d] text-[#141f00] flex gap-2 items-center px-6 py-2.5 rounded-xl font-bold hover:bg-[#a6de1a] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-sm active:scale-95"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Aplicar no Orçamento
+            </button>
           </div>
         </div>
       </Modal>

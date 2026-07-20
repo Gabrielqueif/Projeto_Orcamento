@@ -16,24 +16,30 @@ import { useState, useEffect } from "react";
 import { useWizard } from "@/contexts/WizardContext";
 import { createOrcamento } from "@/lib/api/orcamentos";
 import { getMembrosEquipe, alocarMembrosAoOrcamento, type MembroEquipe } from "@/lib/api/membros_equipe";
+import { getEquipes, type Equipe } from "@/lib/api/equipes";
 import { useRouter } from "next/navigation";
 
 export default function NovaObraEtapa2Page() {
   const { data } = useWizard();
   const [professionals, setProfessionals] = useState<MembroEquipe[]>([]);
+  const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [selectedEquipeId, setSelectedEquipeId] = useState<string>("—");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    getMembrosEquipe()
-      .then((res) => {
-        // Exibe apenas profissionais ativos no pool de alocação
-        setProfessionals(res.filter((m) => m.status === "ATIVO"));
+    Promise.all([
+      getMembrosEquipe().then((res) => res.filter((m) => m.status === "ATIVO")),
+      getEquipes(),
+    ])
+      .then(([membrosActivos, equipesList]) => {
+        setProfessionals(membrosActivos);
+        setEquipes(equipesList);
       })
-      .catch((err) => console.error("Erro ao carregar profissionais:", err))
+      .catch((err) => console.error("Erro ao carregar dados de equipe:", err))
       .finally(() => setLoading(false));
   }, []);
 
@@ -78,6 +84,19 @@ export default function NovaObraEtapa2Page() {
     setSelectedMemberIds((prev) =>
       prev.includes(id) ? prev.filter((mId) => mId !== id) : [...prev, id]
     );
+  };
+
+  const handleSelectEquipe = (equipeId: string) => {
+    setSelectedEquipeId(equipeId);
+    if (equipeId === "—") {
+      setSelectedMemberIds([]);
+      return;
+    }
+    // Seleciona todos os profissionais ativos que pertencem a esta equipe
+    const teamMemberIds = professionals
+      .filter((p) => p.equipe_id === equipeId)
+      .map((p) => p.id);
+    setSelectedMemberIds(teamMemberIds);
   };
 
   const filteredProfessionals = professionals.filter((p) =>
@@ -161,6 +180,26 @@ export default function NovaObraEtapa2Page() {
                 <p className="font-['Inter'] font-medium text-[14px] text-[#64748b] leading-[20px] mb-5">
                   Busque por nome ou cargo na sua rede de profissionais.
                 </p>
+
+                 {/* Selecionar Equipe Pronta */}
+                 <div className="mb-4">
+                  <label htmlFor="equipe-select" className="block font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px] mb-2">
+                    Selecionar por Equipe/Grupo
+                  </label>
+                  <select
+                    id="equipe-select"
+                    value={selectedEquipeId}
+                    onChange={(e) => handleSelectEquipe(e.target.value)}
+                    className="w-full bg-[#f8fafc] border border-[#d1d5db] rounded-[8px] px-4 py-2.5 font-['Inter'] text-[14px] text-[#001b3c] outline-none focus:border-[#9fd300] cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_16px_center] bg-no-repeat pr-10"
+                  >
+                    <option value="—">Selecione uma equipe para auto-alocar...</option>
+                    {equipes.map((eq) => (
+                      <option key={eq.id} value={eq.id}>
+                        {eq.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 {/* Search */}
                 <div className="relative mb-6">

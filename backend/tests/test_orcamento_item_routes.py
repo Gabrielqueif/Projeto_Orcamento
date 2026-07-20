@@ -20,6 +20,7 @@ def test_adicionar_item(client, mock_supabase):
     configure_mock_table_side_effect(mock_supabase, {
         "orcamento_itens": mock_orc_itens_table,
         "itens": mock_itens_table,
+        "composicao_estados": mock_itens_table,
         "orcamentos": mock_orcamentos_table
     })
     
@@ -33,7 +34,7 @@ def test_adicionar_item(client, mock_supabase):
     }
     
     # Mock Orcamento exists
-    mock_orcamentos_table.select.return_value.eq.return_value.execute.return_value.data = [{"id": orcamento_id, "estado": "SP"}]
+    mock_orcamentos_table.select.return_value.eq.return_value.execute.return_value.data = [{"id": orcamento_id, "estado": "SP", "base_referencia": "2026-07", "tipo_composicao": "Sem Desoneração", "fonte": "SINAPI"}]
     
     # Mock Item Price (ItemRepository)
     # listar_estados_por_item -> .select().eq().execute()

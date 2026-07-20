@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import itens, orcamentos, orcamento_itens, etapas, importacao, membros_equipe
+from app.routes import itens, orcamentos, orcamento_itens, etapas, importacao, membros_equipe, equipes, obras
 from core.config import settings
 
 # Configurar logging
@@ -55,6 +55,8 @@ app.include_router(orcamento_itens.router)
 app.include_router(etapas.router)
 app.include_router(importacao.router)
 app.include_router(membros_equipe.router)
+app.include_router(equipes.router)
+app.include_router(obras.router)
 
 
 @app.get("/health")

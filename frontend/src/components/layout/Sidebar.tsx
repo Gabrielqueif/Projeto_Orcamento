@@ -15,6 +15,7 @@ import {
   Gear,
   Question,
   SignOut,
+  Coins,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { logout } from "@/app/auth/actions";
@@ -26,6 +27,7 @@ export function Sidebar() {
     { href: "/", icon: SquaresFour, label: "Dashboard" },
     { href: "/obras", icon: HardHat, label: "Obras" },
     { href: "/financeiro", icon: Money, label: "Custos" },
+    { href: "/orcamentos", icon: Coins, label: "Orçamentos" },
     { href: "/equipe", icon: Users, label: "Equipe" },
     { href: "/docs", icon: FileText, label: "Docs" },
     { href: "/diario", icon: BookOpen, label: "Diário de Obra" },

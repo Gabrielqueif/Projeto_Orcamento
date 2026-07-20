@@ -226,26 +226,42 @@ export default function NovaObraPage() {
                 </div>
                 <div>
                   <label className="block font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px] mb-2">
-                    Base de Referência
+                    Bases de Referência *
                     <span className="block normal-case font-normal text-[9px] text-[#94a3b8] mt-0.5">
-                      (define o mês de referência SINAPI)
+                      (selecione uma ou mais bases SINAPI/SEINFRA)
                     </span>
                   </label>
-                  <select
-                    value={data.baseReferencia}
-                    onChange={(e) => updateData({ baseReferencia: e.target.value })}
-                    className="w-full px-4 py-3 border border-[#d1d5db] rounded-[8px] font-['Inter'] text-[14px] text-[#001b3c] bg-white outline-none transition-colors focus:border-[#9fd300]"
-                  >
+                  <div className="flex flex-col gap-2 border border-[#d1d5db] rounded-[8px] p-3.5 max-h-[120px] overflow-y-auto bg-white focus-within:border-[#9fd300] transition-colors">
                     {bases.length === 0 ? (
-                      <option value="">Carregando bases...</option>
+                      <span className="font-['Inter'] text-[13px] text-[#94a3b8]">Carregando bases...</span>
                     ) : (
-                      bases.map((base) => (
-                        <option key={base.mes_referencia} value={base.mes_referencia}>
-                          {base.mes_referencia} ({base.fonte})
-                        </option>
-                      ))
+                      bases.map((base) => {
+                        const selectedBases = data.baseReferencia ? data.baseReferencia.split(", ").filter(Boolean) : [];
+                        const isChecked = selectedBases.includes(base.mes_referencia);
+                        return (
+                          <label key={base.mes_referencia} className="flex items-center gap-2 cursor-pointer py-0.5 hover:bg-slate-50 rounded px-1 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                let newBases = [...selectedBases];
+                                if (e.target.checked) {
+                                  newBases.push(base.mes_referencia);
+                                } else {
+                                  newBases = newBases.filter((b) => b !== base.mes_referencia);
+                                }
+                                updateData({ baseReferencia: newBases.join(", ") });
+                              }}
+                              className="w-4 h-4 text-[#001b3d] accent-[#9fd300] cursor-pointer"
+                            />
+                            <span className="font-['Inter'] text-[13px] text-[#001b3c]">
+                              {base.mes_referencia} ({base.fonte})
+                            </span>
+                          </label>
+                        );
+                      })
                     )}
-                  </select>
+                  </div>
                 </div>
                 <div>
                   <label className="block font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px] mb-2">

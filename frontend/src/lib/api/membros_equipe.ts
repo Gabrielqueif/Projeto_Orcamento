@@ -9,6 +9,7 @@ export interface MembroEquipe {
   data_inicio: string;
   descricao?: string;
   orcamento_id?: string | null;
+  equipe_id?: string | null;
   remuneracao: number;
   status: "ATIVO" | "INATIVO";
   code: string;
@@ -23,6 +24,7 @@ export interface MembroEquipeCreate {
   data_inicio: string;
   descricao?: string;
   orcamento_id?: string | null;
+  equipe_id?: string | null;
   remuneracao: number;
   status?: string;
 }
@@ -34,6 +36,7 @@ export interface MembroEquipeUpdate {
   data_inicio?: string;
   descricao?: string;
   orcamento_id?: string | null;
+  equipe_id?: string | null;
   remuneracao?: number;
   status?: string;
 }
@@ -43,12 +46,14 @@ export async function getMembrosEquipe(params?: {
   cargo?: string;
   status?: string;
   orcamento_id?: string | null;
+  equipe_id?: string | null;
 }): Promise<MembroEquipe[]> {
   const queryParams = new URLSearchParams();
   if (params?.nome) queryParams.append("nome", params.nome);
   if (params?.cargo) queryParams.append("cargo", params.cargo);
   if (params?.status) queryParams.append("status", params.status);
   if (params?.orcamento_id) queryParams.append("orcamento_id", params.orcamento_id);
+  if (params?.equipe_id) queryParams.append("equipe_id", params.equipe_id);
 
   const url = `/membros-equipe/${queryParams.toString() ? "?" + queryParams.toString() : ""}`;
   const response = await fetchWithAuth(url);

@@ -32,6 +32,7 @@ class MembroEquipeService:
             "data_inicio": membro.data_inicio.isoformat() if hasattr(membro.data_inicio, 'isoformat') else str(membro.data_inicio),
             "descricao": membro.descricao,
             "orcamento_id": str(membro.orcamento_id) if membro.orcamento_id else None,
+            "equipe_id": str(membro.equipe_id) if membro.equipe_id else None,
             "remuneracao": membro.remuneracao,
             "status": membro.status or "ATIVO",
             "code": code,
@@ -46,9 +47,10 @@ class MembroEquipeService:
         nome: Optional[str] = None, 
         cargo: Optional[str] = None, 
         status: Optional[str] = None,
-        orcamento_id: Optional[str] = None
+        orcamento_id: Optional[str] = None,
+        equipe_id: Optional[str] = None
     ):
-        return self.repository.listar(user_id, nome, cargo, status, orcamento_id)
+        return self.repository.listar(user_id, nome, cargo, status, orcamento_id, equipe_id)
 
     def buscar_membro(self, membro_id: str, user_id: str):
         membro = self.repository.buscar_por_id(membro_id, user_id)
@@ -76,6 +78,8 @@ class MembroEquipeService:
             dados_atualizacao["descricao"] = membro_update.descricao
         if membro_update.orcamento_id is not None:
             dados_atualizacao["orcamento_id"] = str(membro_update.orcamento_id) if membro_update.orcamento_id else None
+        if membro_update.equipe_id is not None:
+            dados_atualizacao["equipe_id"] = str(membro_update.equipe_id) if membro_update.equipe_id else None
         if membro_update.remuneracao is not None:
             dados_atualizacao["remuneracao"] = membro_update.remuneracao
         if membro_update.status is not None:

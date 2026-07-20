@@ -12,6 +12,8 @@ export interface Orcamento {
   bdi: number;
   valor_total: number | null;
   status: string;
+  variaveis_globais?: any[] | null;
+  locais?: any[] | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -26,6 +28,8 @@ export interface OrcamentoCreate {
   fonte?: string;
   bdi?: number;
   status?: string;
+  variaveis_globais?: any[] | null;
+  locais?: any[] | null;
 }
 
 export interface OrcamentoUpdate {
@@ -39,6 +43,8 @@ export interface OrcamentoUpdate {
   bdi?: number;
   status?: string;
   valor_total?: number;
+  variaveis_globais?: any[] | null;
+  locais?: any[] | null;
 }
 
 export interface OrcamentoItem {
@@ -375,5 +381,60 @@ export async function updateInsumo(
     }
   );
   if (!response.ok) throw new Error("Erro ao atualizar insumo");
+  return response.json();
+}
+
+export interface OrcamentoStats {
+  total_orcamentos: number;
+  valor_total: number;
+  taxa_aprovacao: number;
+  ticket_medio: number;
+  tempo_resposta_medio: number;
+}
+
+export interface CurvaABCInsumo {
+  codigo_insumo: string;
+  descricao: string;
+  unidade: string;
+  quantidade: number;
+  total: number;
+  porcentagem: number;
+  acumulado: number;
+  classe: string;
+}
+
+export interface CurvaABCResponse {
+  valor_total: number;
+  insumos: CurvaABCInsumo[];
+  resumo_classes: Record<string, number>;
+}
+
+export interface CronogramaMes {
+  mes: string;
+  servicos: string;
+  valor: number;
+  acumulado_pct: number;
+}
+
+export interface CronogramaResponse {
+  valor_total: number;
+  mensal: CronogramaMes[];
+}
+
+export async function getOrcamentoStats(): Promise<OrcamentoStats> {
+  const response = await fetchWithAuth("/orcamentos/stats");
+  if (!response.ok) throw new Error("Erro ao buscar estatísticas de orçamentos");
+  return response.json();
+}
+
+export async function getOrcamentoCurvaABC(orcamentoId: string): Promise<CurvaABCResponse> {
+  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/curva-abc`);
+  if (!response.ok) throw new Error("Erro ao buscar curva ABC do orçamento");
+  return response.json();
+}
+
+export async function getOrcamentoCronograma(orcamentoId: string): Promise<CronogramaResponse> {
+  const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/cronograma`);
+  if (!response.ok) throw new Error("Erro ao buscar cronograma do orçamento");
   return response.json();
 }

@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import HTTPException, Depends
-from schemas import EtapaCreate
+from schemas import EtapaCreate, EtapaUpdate
 from app.dependencies import get_supabase
 from app.repositories.etapa_repository import EtapaRepository
 from app.services.etapa_service import EtapaService
@@ -30,9 +30,9 @@ def deletar_etapa(etapa_id: str, orcamento_id: str, service: EtapaService = Depe
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao deletar etapa: {str(e)}")
 
-def atualizar_etapa(orcamento_id: str, etapa_id: str, etapa_update: dict, service: EtapaService = Depends(get_etapa_service)) -> dict:
+def atualizar_etapa(orcamento_id: str, etapa_id: str, etapa_update: EtapaUpdate, service: EtapaService = Depends(get_etapa_service)) -> dict:
     """Atualiza uma etapa (nome, ordem ou hierarquia)"""
     try:
-        return service.atualizar_etapa(etapa_id, etapa_update)
+        return service.atualizar_etapa(etapa_id, etapa_update.model_dump(exclude_unset=True))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar etapa: {str(e)}")

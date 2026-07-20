@@ -1,9 +1,0 @@
-{
-  "name": "Engenheiro Code Reviewer",
-  "description": "Ativado para revisar alterações de código na pipeline do antigravity, avaliando legibilidade, complexidade, performance, e padrões de design da linguagem.",
-    "system_prompt_file": "./code-reviewer-rules.md",
-    "tools": [
-        "read_current_file",
-        "edit_current_file"
-    ]
-}

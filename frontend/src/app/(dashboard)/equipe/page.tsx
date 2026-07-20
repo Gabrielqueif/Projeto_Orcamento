@@ -15,6 +15,7 @@ import {
   FileText,
   Plus,
   MagnifyingGlass,
+  PencilSimple,
 } from "@phosphor-icons/react";
 import { getMembrosEquipe, deleteMembroEquipe, type MembroEquipe } from "@/lib/api/membros_equipe";
 import { getOrcamentos, type Orcamento } from "@/lib/api/orcamentos";
@@ -422,10 +423,18 @@ export default function EquipePage() {
                             </span>
                           )}
                         </td>
-                        <td className="p-4 px-6 text-right">
+                        <td className="p-4 px-6 text-right flex items-center justify-end gap-2">
+                          <Link
+                            href={`/equipe/editar/${member.id}`}
+                            className="text-[#94a3b8] hover:text-[#00a3b1] transition-colors p-1"
+                            title="Editar Colaborador"
+                          >
+                            <PencilSimple size={18} />
+                          </Link>
                           <button
                             onClick={() => handleDeleteMember(member.id)}
                             className="text-[#94a3b8] hover:text-red-500 transition-colors p-1 cursor-pointer bg-transparent border-none outline-none"
+                            title="Excluir Colaborador"
                           >
                             <Trash size={18} />
                           </button>
@@ -473,12 +482,22 @@ export default function EquipePage() {
                         </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDeleteMember(member.id)}
-                      className="text-[#94a3b8] hover:text-red-500 transition-colors p-1 cursor-pointer bg-transparent border-none outline-none"
-                    >
-                      <Trash size={16} />
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <Link
+                        href={`/equipe/editar/${member.id}`}
+                        className="text-[#94a3b8] hover:text-[#00a3b1] transition-colors p-1"
+                        title="Editar Colaborador"
+                      >
+                        <PencilSimple size={16} />
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteMember(member.id)}
+                        className="text-[#94a3b8] hover:text-red-500 transition-colors p-1 cursor-pointer bg-transparent border-none outline-none"
+                        title="Excluir Colaborador"
+                      >
+                        <Trash size={16} />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex flex-col gap-2 pt-2 border-t border-[#f8fafc]">

@@ -27,7 +27,8 @@ class MembroEquipeRepository:
         nome: Optional[str] = None, 
         cargo: Optional[str] = None, 
         status: Optional[str] = None,
-        orcamento_id: Optional[str] = None
+        orcamento_id: Optional[str] = None,
+        equipe_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         try:
             query = self.supabase.table(TABELA_MEMBROS).select("*").eq("user_id", user_id)
@@ -38,6 +39,8 @@ class MembroEquipeRepository:
                 query = query.eq("cargo", cargo)
             if status:
                 query = query.eq("status", status)
+            if equipe_id:
+                query = query.eq("equipe_id", equipe_id)
             if orcamento_id:
                 if orcamento_id == "—" or orcamento_id == "null" or orcamento_id == "None":
                     query = query.is_("orcamento_id", "null")

@@ -35,11 +35,12 @@ async def listar_membros(
     cargo: Optional[str] = None,
     status: Optional[str] = None,
     orcamento_id: Optional[str] = None,
+    equipe_id: Optional[str] = None,
     current_user: dict = Depends(get_current_user),
     service: MembroEquipeService = Depends(membros_equipe.get_membro_equipe_service)
 ):
     user_id = current_user.get("id")
-    return membros_equipe.listar_membros(user_id, nome, cargo, status, orcamento_id, service)
+    return membros_equipe.listar_membros(user_id, nome, cargo, status, orcamento_id, equipe_id, service)
 
 @router.get(
     "/{membro_id}",

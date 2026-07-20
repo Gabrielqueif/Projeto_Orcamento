@@ -75,6 +75,17 @@ class ItemRepository:
 
     def buscar_preco(self, codigo_composicao: str, estado: str, mes_referencia: str, tipo_composicao: str, fonte: str = "SINAPI") -> Optional[float]:
         """Busca o preço de uma composição para um estado, mês, tipo e fonte específicos."""
+        if not mes_referencia:
+            return None
+            
+        if "," in mes_referencia:
+            meses = [m.strip() for m in mes_referencia.split(",") if m.strip()]
+            for mes in meses:
+                preco = self.buscar_preco(codigo_composicao, estado, mes, tipo_composicao, fonte)
+                if preco is not None:
+                    return preco
+            return None
+
         try:
             logger.info(
                 f"[buscar_preco] Buscando: codigo={codigo_composicao!r}, estado={estado!r}, "

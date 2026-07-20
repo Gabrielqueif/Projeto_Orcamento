@@ -22,9 +22,10 @@ def listar_membros(
     cargo: Optional[str] = None,
     status: Optional[str] = None,
     orcamento_id: Optional[str] = None,
+    equipe_id: Optional[str] = None,
     service: MembroEquipeService = Depends(get_membro_equipe_service)
 ):
-    return service.listar_membros(user_id, nome, cargo, status, orcamento_id)
+    return service.listar_membros(user_id, nome, cargo, status, orcamento_id, equipe_id)
 
 def buscar_membro(
     membro_id: str,
