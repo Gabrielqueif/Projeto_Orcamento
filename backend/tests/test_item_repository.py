@@ -5,7 +5,7 @@ Destaque especial para buscar_preco — 3 tentativas de fallback.
 """
 import pytest
 from unittest.mock import MagicMock, call
-from app.repositories.item_repository import ItemRepository
+from app.modules.item.repositories import ItemRepository
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +130,7 @@ def test_buscar_preco_fallback_ilike(repo, supabase):
     Tentativa 1 falha (data=[]) → tentativa 2 com ilike encontra registro.
     Configura o encadeamento de mock para simular 2 execuções sequenciais.
     """
-    from app.repositories.item_repository import ItemRepository
+    from app.modules.item.repositories import ItemRepository
 
     # Arrange: supabase mock que retorna [] na 1ª consulta e dados na 2ª
     call_count = 0

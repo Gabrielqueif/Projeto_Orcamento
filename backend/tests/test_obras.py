@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 from datetime import date
 from fastapi.testclient import TestClient
 
-from schemas.obra import ObraTransitionCreate
-from app.services.obra_service import ObraService
+from app.modules.obra.schemas import ObraTransitionCreate
+from app.modules.obra.services import ObraService
 
 # ---------------------------------------------------------------------------
 # Service Unit Tests
@@ -202,7 +202,7 @@ def test_service_listar_limites():
 def test_routes_obras_endpoints(client):
     # Mocking ObraService methods through dependency overrides
     # The fixture client in conftest.py overrides authentication and get_supabase
-    from app.controllers.obras import get_obra_service
+    from app.modules.obra.routes import get_obra_service
     
     mock_service = MagicMock()
     
@@ -284,7 +284,7 @@ def test_routes_obras_endpoints(client):
 # ObraRepository Unit Tests
 # ---------------------------------------------------------------------------
 
-from app.repositories.obra_repository import ObraRepository
+from app.modules.obra.repositories import ObraRepository
 
 def test_repo_criar_obra_sucesso():
     supabase = MagicMock()

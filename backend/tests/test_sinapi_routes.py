@@ -93,7 +93,7 @@ def test_listar_bases_disponiveis(client: TestClient, mock_supabase):
     ]
     mock_supabase.table.return_value.select.return_value.execute.return_value.data = dados
 
-    with patch("app.routes.importacao.get_supabase_client", return_value=mock_supabase):
+    with patch("app.modules.importacao.routes.get_supabase_client", return_value=mock_supabase):
         # Act
         response = client.get("/importacao/bases")
 

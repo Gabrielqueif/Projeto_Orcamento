@@ -3,7 +3,12 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import itens, orcamentos, orcamento_itens, etapas, importacao, membros_equipe, equipes, obras
+from app.modules.item import router as item_router
+from app.modules.orcamento import router as orcamento_router
+from app.modules.etapa import router as etapa_router
+from app.modules.importacao import router as importacao_router
+from app.modules.equipe import router_equipes, router_membros
+from app.modules.obra import router as obra_router
 from core.config import settings
 
 # Configurar logging
@@ -49,14 +54,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(itens.router)
-app.include_router(orcamentos.router)
-app.include_router(orcamento_itens.router)
-app.include_router(etapas.router)
-app.include_router(importacao.router)
-app.include_router(membros_equipe.router)
-app.include_router(equipes.router)
-app.include_router(obras.router)
+app.include_router(item_router)
+app.include_router(orcamento_router)
+app.include_router(etapa_router)
+app.include_router(importacao_router)
+app.include_router(router_equipes)
+app.include_router(router_membros)
+app.include_router(obra_router)
 
 
 @app.get("/health")

@@ -142,7 +142,7 @@ def test_download_pdf_orcamento(client, mock_supabase):
 
     # Mock geração de PDF para não depender de weasyprint
     pdf_bytes = b"%PDF-1.4 dummy content"
-    with patch("app.controllers.orcamentos.PdfService") as mock_pdf_class:
+    with patch("app.modules.orcamento.routes.PdfService") as mock_pdf_class:
         mock_pdf_class.return_value.gerar_pdf.return_value = pdf_bytes
 
         # Act

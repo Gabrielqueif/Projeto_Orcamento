@@ -6,7 +6,7 @@ Covers: remover_acentos, limpar_link_excel, gerar_chave_match,
 """
 import pytest
 
-from app.services.sinapi_text_utils import (
+from app.modules.importacao.services.sinapi_text_utils import (
     gerar_chave_match,
     limpar_link_excel,
     limpar_valor_moeda,

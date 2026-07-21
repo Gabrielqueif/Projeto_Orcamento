@@ -4,7 +4,7 @@ Supabase client is mocked via chain MagicMock.
 """
 import pytest
 from unittest.mock import MagicMock
-from app.repositories.membro_equipe_repository import MembroEquipeRepository
+from app.modules.equipe.repositories import MembroEquipeRepository
 
 
 @pytest.fixture

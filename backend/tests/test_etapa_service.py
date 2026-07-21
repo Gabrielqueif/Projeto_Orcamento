@@ -4,8 +4,8 @@ All external dependencies (repository) are mocked.
 """
 import pytest
 from unittest.mock import MagicMock
-from app.services.etapa_service import EtapaService
-from schemas import EtapaCreate
+from app.modules.etapa.services import EtapaService
+from app.modules.etapa.schemas import EtapaCreate
 
 
 @pytest.fixture

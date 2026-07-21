@@ -6,11 +6,11 @@ file so tests run in any environment without physical spreadsheet files.
 """
 import pytest
 import unittest.mock as mock
-from app.services.parser_factory import get_parser
-from app.services.sinapi_excel_parser import SinapiExcelParser
-from app.services.seinfra_excel_parser import SeinfraExcelParser
-from app.services.base_excel_parser import BaseExcelParser
-from app.services.import_service import extract_metadata
+from app.modules.importacao.services.parser_factory import get_parser
+from app.modules.importacao.services.sinapi_excel_parser import SinapiExcelParser
+from app.modules.importacao.services.seinfra_excel_parser import SeinfraExcelParser
+from app.modules.importacao.services.base_excel_parser import BaseExcelParser
+from app.modules.importacao.services.import_service import extract_metadata
 
 
 # ---------------------------------------------------------------------------

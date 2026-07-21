@@ -7,7 +7,7 @@ physical spreadsheet files in the repository.
 """
 import pytest
 from unittest.mock import MagicMock, patch
-from app.services.import_service import extract_metadata, process_import_file
+from app.modules.importacao.services.import_service import extract_metadata, process_import_file
 
 
 @pytest.mark.unit
@@ -78,7 +78,7 @@ def test_process_import_file_parser_error_propaga_value_error(sinapi_excel_conte
     mock_repo = MagicMock()
 
     with patch(
-        "app.services.import_service.get_parser",
+        "app.modules.importacao.services.import_service.get_parser",
         side_effect=RuntimeError("Parser corrompido"),
     ):
         # Act + Assert

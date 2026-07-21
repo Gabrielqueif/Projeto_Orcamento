@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from app.services.import_service import process_import_file, _deduplicar_composicoes
+from app.modules.importacao.services.import_service import process_import_file, _deduplicar_composicoes
 import pandas as pd
 from io import BytesIO
 

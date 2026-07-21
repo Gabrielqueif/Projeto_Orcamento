@@ -4,7 +4,7 @@ Supabase client é mockado via encadeamento MagicMock.
 """
 import pytest
 from unittest.mock import MagicMock
-from app.repositories.orcamento_repository import OrcamentoRepository
+from app.modules.orcamento.repositories import OrcamentoRepository
 
 
 # ---------------------------------------------------------------------------

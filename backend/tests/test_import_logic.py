@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 from io import BytesIO
 from unittest.mock import MagicMock
-from app.services.import_service import process_import_file
+from app.modules.importacao.services.import_service import process_import_file
 
 def test_sheet_identification():
     # 1. Create a mock Excel file with CSD, CCD, CSE sheets

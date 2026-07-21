@@ -5,8 +5,8 @@ All external dependencies (repository) are mocked.
 import pytest
 from unittest.mock import MagicMock
 from datetime import datetime
-from app.services.orcamento_service import OrcamentoService
-from schemas import OrcamentoCreate, OrcamentoUpdate
+from app.modules.orcamento.services import OrcamentoService
+from app.modules.orcamento.schemas import OrcamentoCreate, OrcamentoUpdate
 
 
 @pytest.fixture

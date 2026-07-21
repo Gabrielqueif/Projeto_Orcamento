@@ -2,8 +2,8 @@ import pytest
 from unittest.mock import MagicMock
 from datetime import date
 from uuid import uuid4
-from app.services.membro_equipe_service import MembroEquipeService
-from schemas.membro_equipe import MembroEquipeCreate, MembroEquipeUpdate
+from app.modules.equipe.services import MembroEquipeService
+from app.modules.equipe.schemas import MembroEquipeCreate, MembroEquipeUpdate
 
 @pytest.fixture
 def repository_mock():

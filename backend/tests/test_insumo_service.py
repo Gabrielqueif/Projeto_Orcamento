@@ -55,7 +55,7 @@ def test_listar_insumos_sem_repo_retorna_lista_vazia(
     orcamento_item_repo_mock, orcamento_repo_mock, item_repo_mock
 ):
     """Quando insumo_repository=None, retorna [] sem chamar nada."""
-    from app.services.orcamento_item_service import OrcamentoItemService
+    from app.modules.orcamento.services import OrcamentoItemService
 
     # Arrange
     service = OrcamentoItemService(
@@ -144,7 +144,7 @@ def test_atualizar_insumo_sem_repo_levanta_value_error(
     orcamento_item_repo_mock, orcamento_repo_mock, item_repo_mock
 ):
     """Quando insumo_repository=None → ValueError."""
-    from app.services.orcamento_item_service import OrcamentoItemService
+    from app.modules.orcamento.services import OrcamentoItemService
 
     # Arrange
     service = OrcamentoItemService(

@@ -105,7 +105,7 @@ def orcamento_item_service(orcamento_item_repo_mock, orcamento_repo_mock, item_r
     OrcamentoItemService pre-wired with mocked repositories.
     Imported lazily to avoid circular import issues at collection time.
     """
-    from app.services.orcamento_item_service import OrcamentoItemService
+    from app.modules.orcamento.services import OrcamentoItemService
     return OrcamentoItemService(orcamento_item_repo_mock, orcamento_repo_mock, item_repo_mock)
 
 
@@ -117,7 +117,7 @@ def orcamento_item_service_com_insumo(
     OrcamentoItemService pre-wired with all four mocked repositories,
     including InsumoRepository. Use this fixture for insumo-related tests.
     """
-    from app.services.orcamento_item_service import OrcamentoItemService
+    from app.modules.orcamento.services import OrcamentoItemService
     return OrcamentoItemService(
         orcamento_item_repo_mock,
         orcamento_repo_mock,
@@ -129,7 +129,7 @@ def orcamento_item_service_com_insumo(
 @pytest.fixture
 def item_service_mock(item_repo_mock):
     """ItemService pré-configurado com ItemRepository mockado (compartilhado)."""
-    from app.services.item_service import ItemService
+    from app.modules.item.services import ItemService
     return ItemService(item_repo_mock)
 
 

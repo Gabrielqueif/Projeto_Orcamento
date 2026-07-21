@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 from datetime import date, datetime
-from app.services.orcamento_service import OrcamentoService
+from app.modules.orcamento.services import OrcamentoService
 
 @pytest.fixture
 def orcamento_repo():

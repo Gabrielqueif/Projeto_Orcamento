@@ -4,7 +4,7 @@ Supabase client é mockado via MagicMock.
 """
 import pytest
 from unittest.mock import MagicMock
-from app.repositories.insumo_repository import InsumoRepository
+from app.modules.orcamento.repositories import InsumoRepository
 
 
 # ---------------------------------------------------------------------------
