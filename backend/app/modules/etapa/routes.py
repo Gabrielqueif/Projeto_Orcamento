@@ -61,7 +61,7 @@ async def atualizar_etapa(
 ):
     """Atualiza uma etapa (nome, ordem ou hierarquia)"""
     try:
-        return service.atualizar_etapa(etapa_id, etapa_update.model_dump(exclude_unset=True))
+        return service.atualizar_etapa(etapa_id, etapa_update.model_dump(exclude_unset=True, mode="json"))
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Erro ao atualizar etapa: {str(e)}")
 
@@ -79,3 +79,28 @@ async def deletar_etapa(
         return service.deletar_etapa(etapa_id, orcamento_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Erro ao deletar etapa: {str(e)}")
+
+@router.patch(
+    "/{orcamento_id}/etapas/{etapa_id}/progresso",
+    response_model=EtapaResponse,
+    summary="Atualizar progresso de uma etapa"
+)
+async def atualizar_progresso_etapa(
+    orcamento_id: str,
+    etapa_id: str,
+    payload: dict,
+    service: EtapaService = Depends(get_etapa_service)
+):
+    """Atualiza apenas o campo progresso (0-100) de uma etapa"""
+    progresso = payload.get("progresso")
+    if progresso is None or not isinstance(progresso, int) or not (0 <= progresso <= 100):
+        raise HTTPException(status_code=422, detail="progresso deve ser um inteiro entre 0 e 100")
+    try:
+        resultado = service.atualizar_etapa(etapa_id, {"progresso": progresso})
+        if not resultado:
+            raise HTTPException(status_code=404, detail="Etapa não encontrada")
+        return resultado
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao atualizar progresso: {str(e)}")

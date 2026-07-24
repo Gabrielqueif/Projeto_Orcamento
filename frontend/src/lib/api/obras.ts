@@ -85,3 +85,20 @@ export async function getObraLimites(obraId: string): Promise<LimiteRequisicao[]
 
   return response.json();
 }
+
+export async function atualizarStatusObra(
+  obraId: string,
+  status: "EM_ANDAMENTO" | "CONCLUIDA"
+): Promise<Obra> {
+  const response = await fetchWithAuth(`/obras/${obraId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || "Erro ao atualizar status da obra");
+  }
+
+  return response.json();
+}

@@ -9,7 +9,10 @@ from app.modules.etapa import router as etapa_router
 from app.modules.importacao import router as importacao_router
 from app.modules.equipe import router_equipes, router_membros
 from app.modules.obra import router as obra_router
+from app.modules.almoxarifado import router as almoxarifado_router
+from app.modules.financeiro import router as financeiro_router, router_portfolio as financeiro_portfolio_router
 from core.config import settings
+
 
 # Configurar logging
 logging.basicConfig(
@@ -35,6 +38,7 @@ async def value_error_handler(request: Request, exc: ValueError):
     return JSONResponse(
         status_code=status_code,
         content={"detail": str(exc)},
+        headers={"Access-Control-Allow-Origin": "*"}
     )
 
 @app.exception_handler(Exception)
@@ -42,7 +46,8 @@ async def generic_exception_handler(request: Request, exc: Exception):
     logger.error(f"INTERNAL SERVER ERROR: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "Ocorreu um erro interno no servidor. Por favor, contate o suporte."},
+        content={"detail": f"Erro interno do servidor: {str(exc)}"},
+        headers={"Access-Control-Allow-Origin": "*"}
     )
 
 
@@ -61,6 +66,10 @@ app.include_router(importacao_router)
 app.include_router(router_equipes)
 app.include_router(router_membros)
 app.include_router(obra_router)
+app.include_router(almoxarifado_router)
+app.include_router(financeiro_router)
+app.include_router(financeiro_portfolio_router)
+
 
 
 @app.get("/health")

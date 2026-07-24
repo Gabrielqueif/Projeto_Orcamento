@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends
-from app.modules.obra.schemas import ObraTransitionCreate, ObraResponse, LimiteRequisicaoResponse
+from app.modules.obra.schemas import ObraTransitionCreate, ObraResponse, LimiteRequisicaoResponse, ObraStatusUpdate
 from app.modules.obra.services import ObraService
 from app.modules.obra.repositories import ObraRepository
 from app.modules.orcamento.repositories import OrcamentoRepository, OrcamentoItemRepository
@@ -67,3 +67,15 @@ async def listar_limites_endpoint(
     service: ObraService = Depends(get_obra_service)
 ):
     return service.listar_limites(obra_id)
+
+@router.patch(
+    "/{obra_id}/status",
+    response_model=ObraResponse,
+    summary="Atualizar o status de uma obra"
+)
+async def atualizar_status_obra_endpoint(
+    obra_id: str,
+    payload: ObraStatusUpdate,
+    service: ObraService = Depends(get_obra_service)
+):
+    return service.atualizar_status(obra_id, payload.status)

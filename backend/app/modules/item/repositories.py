@@ -56,10 +56,11 @@ class ItemRepository:
 
     def buscar_por_descricao(self, termo: str, fonte: str = "SINAPI", limit: int = 50) -> List[Dict[str, Any]]:
         return self.supabase.table(TABELA_COMPOSICOES).select("*")\
-            .ilike("descricao", f"%{termo}%")\
             .eq("fonte", fonte)\
-            .limit(limit).execute().data
-
+            .limit(limit)\
+            .text_search("descricao", termo, options={"config": "portuguese", "type": "websearch"})\
+            .execute().data
+    
     def listar_estados_por_item(self, codigo_composicao: str, mes_referencia: str, fonte: str = "SINAPI") -> List[Dict[str, Any]]:
         return self.supabase.table(TABELA_COMPOSICOES_ESTADOS).select("*")\
             .eq("codigo_composicao", codigo_composicao)\

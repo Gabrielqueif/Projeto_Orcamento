@@ -127,3 +127,12 @@ class ObraService:
 
     def listar_limites(self, obra_id: str) -> List[Dict[str, Any]]:
         return self.obra_repository.listar_limites_por_obra(obra_id)
+
+    def atualizar_status(self, obra_id: str, status: str) -> Dict[str, Any]:
+        obra = self.obra_repository.buscar_obra_por_id(obra_id)
+        if not obra:
+            raise ValueError("Obra não encontrada")
+        status_upper = status.upper()
+        if status_upper not in ["EM_ANDAMENTO", "CONCLUIDA"]:
+            raise ValueError("Status inválido. Use EM_ANDAMENTO ou CONCLUIDA")
+        return self.obra_repository.atualizar_obra_status(obra_id, status_upper)

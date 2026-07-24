@@ -129,7 +129,7 @@ export default function OrcamentosPage() {
           </button>
           
           <button 
-            onClick={() => router.push("/obras/novo")}
+            onClick={() => router.push("/orcamentos/novo")}
             className="bg-[#b9f61d] text-[#141f00] font-['Inter'] font-bold text-[14px] px-6 py-3 rounded-[8px] transition-all hover:bg-[#a5dd15] flex items-center gap-2 shadow-[0px_4px_12px_rgba(185,246,29,0.2)]"
           >
             <Plus size={16} weight="bold" />

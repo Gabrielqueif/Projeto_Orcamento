@@ -58,3 +58,36 @@ def test_deletar_etapa(client, mock_supabase):
     # Assert
     assert response.status_code == 200
     assert response.json() == {"message": "Etapa deletada com sucesso"}
+
+def test_atualizar_etapa_sucesso(client, mock_supabase):
+    # Setup Mock
+    orcamento_id = "orc-123"
+    etapa_id = "etapa-1"
+    payload = {"data_inicio": "2026-07-21", "data_fim": "2026-08-15"}
+    
+    # Simulate update success return
+    mock_supabase.table.return_value.update.return_value.eq.return_value.execute.return_value.data = [
+        {
+            "id": etapa_id, 
+            "orcamento_id": orcamento_id, 
+            "nome": "Fundação", 
+            "ordem": 1, 
+            "data_inicio": "2026-07-21", 
+            "data_fim": "2026-08-15"
+        }
+    ]
+
+    # Act
+    response = client.put(f"/orcamentos/{orcamento_id}/etapas/{etapa_id}", json=payload)
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == etapa_id
+    assert data["data_inicio"] == "2026-07-21"
+    assert data["data_fim"] == "2026-08-15"
+    mock_supabase.table.return_value.update.assert_called_with({
+        "data_inicio": "2026-07-21", 
+        "data_fim": "2026-08-15"
+    })
+

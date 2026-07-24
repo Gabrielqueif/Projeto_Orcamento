@@ -15,6 +15,7 @@ class EtapaUpdate(BaseModel):
     parent_id: Optional[str] = None
     data_inicio: Optional[date] = None
     data_fim: Optional[date] = None
+    progresso: Optional[int] = None
 
 class EtapaResponse(BaseModel):
     id: str
@@ -24,6 +25,7 @@ class EtapaResponse(BaseModel):
     parent_id: Optional[str] = None
     data_inicio: Optional[date] = None
     data_fim: Optional[date] = None
+    progresso: Optional[int] = 0
     created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -27,6 +27,7 @@ export interface OrcamentoCreate {
   estado: string;
   fonte?: string;
   bdi?: number;
+  valor_total?: number;
   status?: string;
   variaveis_globais?: any[] | null;
   locais?: any[] | null;
@@ -98,6 +99,7 @@ export interface Etapa {
   parent_id: string | null;
   data_inicio?: string | null;
   data_fim?: string | null;
+  progresso?: number;
   created_at?: string;
 }
 
@@ -200,6 +202,16 @@ export async function downloadOrcamentoPDF(id: string): Promise<Blob> {
 
   if (!response.ok) {
     throw new Error("Erro ao baixar PDF");
+  }
+
+  return response.blob();
+}
+
+export async function downloadOrcamentoExcel(id: string): Promise<Blob> {
+  const response = await fetchWithAuth(`/orcamentos/${id}/excel`);
+
+  if (!response.ok) {
+    throw new Error("Erro ao baixar planilha Excel");
   }
 
   return response.blob();
@@ -324,6 +336,25 @@ export async function updateEtapa(
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.detail || "Erro ao atualizar etapa");
+  }
+  return response.json();
+}
+
+export async function atualizarProgressoEtapa(
+  orcamentoId: string,
+  etapaId: string,
+  progresso: number,
+): Promise<Etapa> {
+  const response = await fetchWithAuth(
+    `/orcamentos/${orcamentoId}/etapas/${etapaId}/progresso`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ progresso }),
+    },
+  );
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || "Erro ao atualizar progresso da etapa");
   }
   return response.json();
 }

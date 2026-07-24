@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { MagnifyingGlass, Bell, Gear, User } from "@phosphor-icons/react";
+import { createClient } from "@/utils/supabase/client";
 
 interface TopHeaderProps {
   searchPlaceholder?: string;
@@ -10,9 +12,51 @@ interface TopHeaderProps {
 
 export function TopHeader({
   searchPlaceholder = "Buscar dados do projeto...",
-  userName = "Ricardo Silva",
-  userRole = "Gerente de Obras",
+  userName: customUserName,
+  userRole: customUserRole,
 }: TopHeaderProps) {
+  const [userName, setUserName] = useState<string>(customUserName || "Buscando...");
+  const [userRole, setUserRole] = useState<string>(customUserRole || "Engenharia / Gestão");
+
+  useEffect(() => {
+    // Se o usuário passou props customizadas explícitas, utiliza elas
+    if (customUserName) {
+      setUserName(customUserName);
+      if (customUserRole) setUserRole(customUserRole);
+      return;
+    }
+
+    const loadUser = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const fullName =
+            user.user_metadata?.full_name ||
+            user.user_metadata?.username ||
+            "Engenheiro Responsável";
+          
+          const role =
+            user.user_metadata?.role ||
+            user.user_metadata?.cargo ||
+            "Gerente de Obras";
+          
+          setUserName(fullName);
+          setUserRole(role);
+        } else {
+          setUserName("Usuário Visitante");
+          setUserRole("Engenheiro");
+        }
+      } catch (err) {
+        console.error("Erro ao carregar dados do usuário no TopHeader:", err);
+        setUserName("Engenheiro Responsável");
+        setUserRole("Gerente de Obras");
+      }
+    };
+
+    loadUser();
+  }, [customUserName, customUserRole]);
+
   return (
     <header className="h-[64px] bg-white border-b border-[#f1f5f9] flex items-center justify-between px-8 sticky top-0 z-40">
       {/* Search */}
@@ -48,7 +92,7 @@ export function TopHeader({
         <div className="flex items-center gap-3 border-l border-[#f1f5f9] pl-6">
           {/* Name + role */}
           <div className="flex flex-col items-end gap-0.5">
-            <span className="font-['Manrope'] font-bold text-[14px] text-[#001b3d] leading-[17.5px]">
+            <span className="font-['Manrope'] font-bold text-[14px] text-[#001b3d] leading-[17.5px] capitalize">
               {userName}
             </span>
             <span className="font-['JetBrains_Mono'] font-normal text-[10px] text-[#94a3b8] tracking-[0.5px] uppercase leading-[15px]">

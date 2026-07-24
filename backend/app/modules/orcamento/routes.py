@@ -139,28 +139,56 @@ async def download_pdf_orcamento(
     service: OrcamentoService = Depends(get_orcamento_service),
     supabase = Depends(get_supabase)
 ):
-    """Gera e retorna o PDF do orçamento"""
+    """Gera e retorna um relatório em PDF do orçamento"""
     try:
         orcamento = service.buscar_orcamento(orcamento_id)
-        
-        item_repo = OrcamentoItemRepository(supabase)
-        itens = item_repo.listar_por_orcamento(orcamento_id)
-        
-        etapa_repo = EtapaRepository(supabase)
-        etapas = etapa_repo.listar_por_orcamento(orcamento_id)
+        itens = service.item_repository.listar_por_orcamento(orcamento_id)
         
         pdf_service = PdfService()
-        pdf_content = pdf_service.gerar_pdf(orcamento, itens, etapas)
+        pdf_bytes = pdf_service.gerar_pdf_orcamento(orcamento, itens)
         
-        return StreamingResponse(
-            BytesIO(pdf_content),
+        return Response(
+            content=pdf_bytes,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento_id}.pdf"}
+            headers={
+                "Content-Disposition": f"attachment; filename=orcamento_{orcamento_id}.pdf"
+            }
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {str(e)}")
+
+@router.get(
+    "/{orcamento_id}/excel",
+    tags=["Orçamentos"]
+)
+async def download_excel_orcamento(
+    orcamento_id: str,
+    service: OrcamentoService = Depends(get_orcamento_service)
+):
+    """Gera e retorna a planilha orçamentária em formato Excel (.xlsx)"""
+    try:
+        from app.modules.orcamento.export import gerar_planilha_orcamento_excel
+        orcamento = service.buscar_orcamento(orcamento_id)
+        itens = service.item_repository.listar_por_orcamento(orcamento_id)
+        
+        excel_bytes = gerar_planilha_orcamento_excel(
+            orcamento.model_dump() if hasattr(orcamento, "model_dump") else dict(orcamento),
+            [i.model_dump() if hasattr(i, "model_dump") else dict(i) for i in itens]
+        )
+        
+        return Response(
+            content=excel_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename=orcamento_{orcamento_id}.xlsx"
+            }
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar planilha Excel: {str(e)}")
 
 @router.get(
     "/{orcamento_id}/curva-abc",

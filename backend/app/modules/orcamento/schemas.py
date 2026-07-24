@@ -14,6 +14,7 @@ class OrcamentoCreate(BaseModel):
     estado: str
     fonte: Optional[str] = "SINAPI"
     bdi: Optional[float] = 0.0
+    valor_total: Optional[float] = 0.0
     status: Optional[str] = "em_elaboracao"
     variaveis_globais: Optional[List[Any]] = []
     locais: Optional[List[Any]] = []

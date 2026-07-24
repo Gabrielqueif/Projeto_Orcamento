@@ -18,6 +18,7 @@ import { createOrcamento } from "@/lib/api/orcamentos";
 import { getMembrosEquipe, alocarMembrosAoOrcamento, type MembroEquipe } from "@/lib/api/membros_equipe";
 import { getEquipes, type Equipe } from "@/lib/api/equipes";
 import { useRouter } from "next/navigation";
+import { ObraWizardStepper } from "@/components/obras/ObraWizardStepper";
 
 export default function NovaObraEtapa2Page() {
   const { data } = useWizard();
@@ -118,53 +119,10 @@ export default function NovaObraEtapa2Page() {
       })),
   ];
 
-  const steps = [
-    { num: 1, label: "Dados Gerais", active: false, done: true },
-    { num: 2, label: "Equipe e Acessos", active: true, done: false },
-  ];
-
   return (
-    <div className="flex flex-col h-full -mx-8 -mb-8 -mt-8">
-      {/* Stepper Header */}
-      <div className="bg-white border-b border-[#d1d5db] px-16 py-6">
-        <div className="max-w-[896px] flex items-center justify-between">
-          {steps.map((step, idx) => (
-            <div key={step.num} className="flex items-center gap-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-10 h-10 rounded-[8px] flex items-center justify-center shadow-[0_1px_1px_rgba(0,0,0,0.05)] ${
-                    step.done || step.active
-                      ? "bg-[#9fd300]"
-                      : "bg-white border border-[#d1d5db]"
-                  }`}
-                >
-                  {step.done ? (
-                    <Check size={16} weight="bold" className="text-[#001b3d]" />
-                  ) : (
-                    <span
-                      className={`font-['JetBrains_Mono'] font-bold text-[12px] ${
-                        step.active ? "text-[#001b3d]" : "text-[#94a3b8]"
-                      }`}
-                    >
-                      {step.num}
-                    </span>
-                  )}
-                </div>
-                <span
-                  className={`font-['Inter'] font-bold text-[10px] uppercase tracking-[1px] ${
-                    step.active ? "text-[#001b3c]" : "text-[rgba(0,27,60,0.4)]"
-                  }`}
-                >
-                  {step.label}
-                </span>
-              </div>
-              {idx < steps.length - 1 && (
-                <div className="flex-1 mx-4 h-1 rounded-full bg-[rgba(159,211,0,0.2)] min-w-[60px]" />
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+    <div className="flex flex-col min-h-screen bg-[#f4f7f9] -mx-8 -mb-8 -mt-8 font-['Inter']">
+      {/* Header / Stepper Progress Header */}
+      <ObraWizardStepper currentStep={2} nextStepLabel="Financeiro Inicial" />
 
       {/* Form Area */}
       <div className="flex-1 bg-[#f4f7f9] overflow-y-auto">
@@ -394,20 +352,13 @@ export default function NovaObraEtapa2Page() {
           <ArrowLeft size={14} weight="bold" />
           Anterior: Dados da Obra
         </Link>
-        <button
-          onClick={handleFinish}
-          disabled={isSubmitting}
-          className="flex items-center gap-2 px-6 py-3 bg-[#9fd300] text-[#001b3d] rounded-[8px] font-['Manrope'] font-bold text-[14px] transition-all hover:opacity-90 disabled:opacity-50 border-none cursor-pointer shadow-[0_10px_15px_-3px_rgba(159,211,0,0.2)]"
+        <Link
+          href="/obras/novo/etapa-3"
+          className="flex items-center gap-2 px-6 py-3.5 bg-[#001b3d] text-white rounded-lg font-['Manrope'] font-bold text-[14px] no-underline hover:bg-[#00102a] transition-all shadow-[0_10px_15px_-3px_rgba(0,27,61,0.1)] hover:-translate-y-0.5"
         >
-          {isSubmitting ? (
-            "Criando projeto..."
-          ) : (
-            <>
-              <Check size={16} weight="bold" />
-              Concluir e Criar Projeto
-            </>
-          )}
-        </button>
+          Próximo Passo: Financeiro Inicial
+          <Check size={16} weight="bold" />
+        </Link>
       </div>
     </div>
   );

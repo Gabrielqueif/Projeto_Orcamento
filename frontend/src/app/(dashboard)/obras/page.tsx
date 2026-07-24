@@ -3,35 +3,105 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Calendar, CaretDown, MagnifyingGlass, ArrowRight } from "@phosphor-icons/react";
-import { getOrcamentos, type Orcamento } from "@/lib/api/orcamentos";
+import { getOrcamentos, getEtapas, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
+import { getObras, type Obra } from "@/lib/api/obras";
+
+interface ObraItemData {
+  orcamento: Orcamento;
+  obra?: Obra;
+  etapas: Etapa[];
+  progressoCalculado: number;
+  faseAtual: string;
+  statusCalculado: string;
+}
 
 const STATUS_LABELS: Record<string, string> = {
   em_elaboracao: "EM ELABORAÇÃO",
   orcamento_concluido: "ORÇAMENTO PRONTO",
-  em_execucao: "EM EXECUÇÃO",
+  EM_ANDAMENTO: "EM ANDAMENTO",
+  em_execucao: "EM ANDAMENTO",
+  CONCLUIDA: "CONCLUÍDO",
   concluido: "CONCLUÍDO",
+  ATRASADO: "ATRASADO",
 };
 
 const STATUS_STYLES: Record<string, string> = {
   em_elaboracao: "bg-[rgba(0,163,177,0.1)] text-[#00a3b1]",
   orcamento_concluido: "bg-[rgba(159,211,0,0.12)] text-[#5a7f00]",
+  EM_ANDAMENTO: "bg-[rgba(0,163,177,0.1)] text-[#00a3b1]",
   em_execucao: "bg-[rgba(0,163,177,0.1)] text-[#00a3b1]",
+  CONCLUIDA: "bg-[#f0fdf4] text-[#15803d]",
   concluido: "bg-[#f0fdf4] text-[#15803d]",
+  ATRASADO: "bg-[#fef2f2] text-[#dc2626]",
 };
 
-type FilterStatus = "todos" | "em_execucao" | "concluido" | "em_elaboracao";
+type FilterStatus = "todos" | "EM_ANDAMENTO" | "CONCLUIDA" | "em_elaboracao";
 
 export default function ObrasPage() {
-  const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
+  const [obrasItems, setObrasItems] = useState<ObraItemData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("todos");
 
-  const carregarOrcamentos = async (nome?: string) => {
+  const carregarDados = async (nome?: string) => {
     try {
       setLoading(true);
-      const data = await getOrcamentos(undefined, undefined, nome);
-      setOrcamentos(data);
+      const [orcamentosData, obrasData] = await Promise.all([
+        getOrcamentos(undefined, undefined, nome),
+        getObras().catch(() => []),
+      ]);
+
+      const itemsCompletos: ObraItemData[] = await Promise.all(
+        orcamentosData.map(async (orc) => {
+          const obraRelacionada = obrasData.find((o) => o.orcamento_id === orc.id);
+          const etapas = await getEtapas(orc.id).catch(() => []);
+
+          // Cálculo do progresso médio
+          let progressoCalculado = 0;
+          if (etapas.length > 0) {
+            const somaProgresso = etapas.reduce((acc, e) => {
+              let p = e.progresso || 0;
+              if (p === 0 && e.data_inicio && e.data_fim) {
+                const ini = new Date(e.data_inicio + "T12:00:00").getTime();
+                const fim = new Date(e.data_fim + "T12:00:00").getTime();
+                const agora = Date.now();
+                if (agora > fim) p = 100;
+                else if (agora >= ini) p = Math.round(((agora - ini) / (fim - ini)) * 100);
+              }
+              return acc + p;
+            }, 0);
+            progressoCalculado = Math.round(somaProgresso / etapas.length);
+          }
+
+          // Determinação da fase atual
+          let faseAtual = "Planejamento";
+          if (etapas.length > 0) {
+            const etapaEmAndamento = etapas.find((e) => (e.progresso || 0) < 100);
+            if (etapaEmAndamento) {
+              faseAtual = etapaEmAndamento.nome;
+            } else {
+              faseAtual = "Concluído";
+            }
+          }
+
+          // Status final
+          let statusCalculado = obraRelacionada?.status || orc.status || "EM_ANDAMENTO";
+          if (progressoCalculado === 100) {
+            statusCalculado = "CONCLUIDA";
+          }
+
+          return {
+            orcamento: orc,
+            obra: obraRelacionada,
+            etapas,
+            progressoCalculado,
+            faseAtual,
+            statusCalculado,
+          };
+        })
+      );
+
+      setObrasItems(itemsCompletos);
     } catch (err) {
       console.error("Erro ao carregar obras:", err);
     } finally {
@@ -41,21 +111,30 @@ export default function ObrasPage() {
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      carregarOrcamentos(searchTerm);
+      carregarDados(searchTerm);
     }, 500);
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
-  const filteredOrcamentos = orcamentos.filter((o) => {
+  const filteredItems = obrasItems.filter((item) => {
     if (activeFilter === "todos") return true;
-    return o.status === activeFilter;
+    if (activeFilter === "EM_ANDAMENTO") {
+      return item.statusCalculado === "EM_ANDAMENTO" || item.statusCalculado === "em_execucao";
+    }
+    if (activeFilter === "CONCLUIDA") {
+      return item.statusCalculado === "CONCLUIDA" || item.statusCalculado === "concluido";
+    }
+    if (activeFilter === "em_elaboracao") {
+      return item.statusCalculado === "em_elaboracao" || item.statusCalculado === "ATRASADO";
+    }
+    return true;
   });
 
   const filterTabs: { key: FilterStatus; label: string }[] = [
     { key: "todos", label: "Todos" },
-    { key: "em_execucao", label: "Em Andamento" },
-    { key: "concluido", label: "Concluídos" },
-    { key: "em_elaboracao", label: "Atrasados" },
+    { key: "EM_ANDAMENTO", label: "Em Andamento" },
+    { key: "CONCLUIDA", label: "Concluídos" },
+    { key: "em_elaboracao", label: "Em Elaboração / Atrasados" },
   ];
 
   return (
@@ -104,22 +183,9 @@ export default function ObrasPage() {
           </div>
         </div>
 
-        {/* Right: Period + Team + Search */}
+        {/* Right: Period + Search */}
         <div className="flex items-center gap-4">
-          {/* Vertical divider */}
           <div className="h-[32px] w-px bg-[#f1f5f9]" />
-
-          {/* Period filter */}
-          <div className="flex items-center gap-3">
-            <span className="font-['JetBrains_Mono'] font-normal text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
-              Período:
-            </span>
-            <button className="flex items-center gap-2 bg-[#f8fafc] border border-[#f1f5f9] rounded-[8px] px-4 py-[9px] font-['Manrope'] font-medium text-[14px] text-[#001b3d] cursor-pointer hover:bg-[#f1f5f9] transition-colors">
-              <Calendar size={13.5} className="text-[#64748b]" />
-              Últimos 30 dias
-              <CaretDown size={9} className="text-[#64748b]" />
-            </button>
-          </div>
 
           {/* Search */}
           <div className="relative">
@@ -131,7 +197,7 @@ export default function ObrasPage() {
               placeholder="Buscar obras..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-[#f8fafc] border border-[#f1f5f9] rounded-[8px] pl-[36px] pr-4 py-[9px] font-['Manrope'] text-[14px] text-[#001b3d] placeholder:text-[#94a3b8] outline-none focus:border-[#9fd300] transition-colors w-[200px]"
+              className="bg-[#f8fafc] border border-[#f1f5f9] rounded-[8px] pl-[36px] pr-4 py-[9px] font-['Manrope'] text-[14px] text-[#001b3d] placeholder:text-[#94a3b8] outline-none focus:border-[#9fd300] transition-colors w-[220px]"
             />
           </div>
         </div>
@@ -152,7 +218,7 @@ export default function ObrasPage() {
                 Fase
               </th>
               <th className="px-6 py-4 font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-                Progresso
+                Progresso Real
               </th>
               <th className="px-6 py-4 font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
                 Status
@@ -170,7 +236,7 @@ export default function ObrasPage() {
                   Carregando obras...
                 </td>
               </tr>
-            ) : filteredOrcamentos.length === 0 ? (
+            ) : filteredItems.length === 0 ? (
               <tr>
                 <td
                   colSpan={6}
@@ -180,73 +246,71 @@ export default function ObrasPage() {
                 </td>
               </tr>
             ) : (
-              filteredOrcamentos.map((o, idx) => (
+              filteredItems.map((item, idx) => (
                 <tr
-                  key={o.id}
+                  key={item.orcamento.id}
                   className={`group cursor-pointer transition-colors hover:bg-[#f8fafc] ${
-                    idx < filteredOrcamentos.length - 1
-                      ? "border-b border-[#f8fafc]"
-                      : ""
+                    idx < filteredItems.length - 1 ? "border-b border-[#f8fafc]" : ""
                   }`}
                 >
                   {/* Nome */}
-                  <td className="px-6 py-[28.5px] align-middle">
-                    <Link href={`/obras/${o.id}`} className="no-underline">
-                      <div className="font-['Manrope'] font-bold text-[16px] text-[#001b3d] leading-tight">
-                        {o.nome}
+                  <td className="px-6 py-[20px] align-middle">
+                    <Link href={`/obras/${item.orcamento.id}`} className="no-underline">
+                      <div className="font-['Manrope'] font-bold text-[16px] text-[#001b3d] leading-tight hover:text-[#00a3b1] transition-colors">
+                        {item.orcamento.nome}
                       </div>
                       <div className="font-['JetBrains_Mono'] font-normal text-[10px] text-[#94a3b8] mt-0.5">
-                        #{`GP-${o.id.substring(0, 8).toUpperCase()}`}
+                        #{`GP-${item.orcamento.id.substring(0, 8).toUpperCase()}`}
                       </div>
                     </Link>
                   </td>
 
                   {/* Cliente */}
-                  <td className="px-6 py-[28.5px] align-middle">
+                  <td className="px-6 py-[20px] align-middle">
                     <span className="font-['Manrope'] font-medium text-[14px] text-[#475569]">
-                      {o.cliente || "—"}
+                      {item.orcamento.cliente || "—"}
                     </span>
                   </td>
 
                   {/* Fase */}
-                  <td className="px-6 py-[38.5px] align-middle">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full font-['JetBrains_Mono'] font-medium text-[10px] uppercase tracking-[0.5px] bg-[rgba(0,163,177,0.1)] text-[#00a3b1]">
-                      Estrutural
+                  <td className="px-6 py-[20px] align-middle">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full font-['JetBrains_Mono'] font-medium text-[10px] uppercase tracking-[0.5px] bg-[rgba(0,163,177,0.1)] text-[#00a3b1] max-w-[150px] truncate" title={item.faseAtual}>
+                      {item.faseAtual}
                     </span>
                   </td>
 
                   {/* Progresso */}
-                  <td className="px-6 py-[36.5px] align-middle">
+                  <td className="px-6 py-[20px] align-middle">
                     <div className="flex flex-col gap-1.5 w-[192px]">
                       <div className="flex items-center justify-between">
-                        <span className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#001b3d]">
-                          68.0%
+                        <span className="font-['JetBrains_Mono'] font-semibold text-[11px] text-[#001b3d]">
+                          {item.progressoCalculado.toFixed(1)}%
                         </span>
                       </div>
                       <div className="bg-[#f1f5f9] h-[6px] rounded-full overflow-hidden w-full">
                         <div
-                          className="bg-[#9fd300] h-full rounded-full"
-                          style={{ width: "68%" }}
+                          className="bg-[#9fd300] h-full rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, Math.max(0, item.progressoCalculado))}%` }}
                         />
                       </div>
                     </div>
                   </td>
 
                   {/* Status */}
-                  <td className="px-6 py-[34px] align-middle">
+                  <td className="px-6 py-[20px] align-middle">
                     <span
-                      className={`inline-flex items-center px-2 py-1 rounded-[8px] font-['JetBrains_Mono'] font-medium text-[10px] uppercase tracking-[0.5px] ${
-                        STATUS_STYLES[o.status] || "bg-[#f1f5f9] text-[#64748b]"
+                      className={`inline-flex items-center px-2.5 py-1 rounded-[8px] font-['JetBrains_Mono'] font-semibold text-[10px] uppercase tracking-[0.5px] ${
+                        STATUS_STYLES[item.statusCalculado] || "bg-[#f1f5f9] text-[#64748b]"
                       }`}
                     >
-                      {STATUS_LABELS[o.status] || o.status}
+                      {STATUS_LABELS[item.statusCalculado] || item.statusCalculado}
                     </span>
                   </td>
 
                   {/* Action */}
                   <td className="px-6 py-4 align-middle text-right">
                     <Link
-                      href={`/obras/${o.id}`}
+                      href={`/obras/${item.orcamento.id}`}
                       className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] text-[#94a3b8] hover:text-[#001b3d] hover:bg-[#f1f5f9] transition-colors no-underline"
                     >
                       <ArrowRight size={16} weight="bold" />
@@ -261,7 +325,7 @@ export default function ObrasPage() {
         {/* Footer */}
         <div className="px-6 py-4 flex items-center justify-between border-t border-[#f1f5f9] bg-white">
           <span className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
-            Mostrando {filteredOrcamentos.length} obras
+            Mostrando {filteredItems.length} obras
           </span>
           <div className="flex gap-1">
             <button className="w-7 h-7 flex items-center justify-center rounded-[6px] font-['Manrope'] font-bold text-[12px] bg-[#001b3d] text-white cursor-pointer border-none">
@@ -273,3 +337,4 @@ export default function ObrasPage() {
     </div>
   );
 }
+

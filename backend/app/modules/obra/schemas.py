@@ -65,3 +65,8 @@ class LimiteRequisicaoResponse(BaseModel):
     updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+class ObraStatusUpdate(BaseModel):
+    status: str
+
+    model_config = ConfigDict(from_attributes=True)

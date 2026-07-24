@@ -1,5 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopHeader } from "@/components/layout/TopHeader";
+import { ErrorBoundary } from "@/components/common/error-boundary";
+import { ToastProvider } from "@/components/common/toast";
 
 export default function DashboardLayout({
   children,
@@ -7,14 +9,18 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-[#f8fafc] overflow-x-hidden">
-      <Sidebar />
-      <main className="ml-[256px] flex-1 flex flex-col min-h-screen">
-        <TopHeader />
-        <div className="p-8 flex-1">
-          {children}
-        </div>
-      </main>
-    </div>
+    <ToastProvider>
+      <div className="flex min-h-screen bg-[#f8fafc] overflow-x-hidden">
+        <Sidebar />
+        <main className="ml-[256px] flex-1 flex flex-col min-h-screen">
+          <TopHeader />
+          <div className="p-8 flex-1">
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </div>
+        </main>
+      </div>
+    </ToastProvider>
   );
 }

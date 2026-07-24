@@ -74,5 +74,22 @@ class MembroEquipeResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class AlocacaoRequest(BaseModel):
-    membro_ids: List[UUID]
-    orcamento_id: Optional[UUID] = None
+    equipe_id: str
+    membro_ids: List[str]
+
+# --- Schemas de Apontamento Diário ---
+
+class ApontamentoDiarioCreate(BaseModel):
+    membro_id: str
+    obra_id: str
+    etapa_id: Optional[str] = None
+    data: date
+    presente: bool = True
+    horas_trabalhadas: float = 8.0
+    observacao: Optional[str] = None
+
+class ApontamentoDiarioResponse(ApontamentoDiarioCreate):
+    id: str
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)

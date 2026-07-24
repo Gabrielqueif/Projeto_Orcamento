@@ -25,9 +25,9 @@ export function Sidebar() {
 
   const links = [
     { href: "/", icon: SquaresFour, label: "Dashboard" },
+    { href: "/orcamentos", icon: Coins, label: "Orçamentos" },
     { href: "/obras", icon: HardHat, label: "Obras" },
     { href: "/financeiro", icon: Money, label: "Custos" },
-    { href: "/orcamentos", icon: Coins, label: "Orçamentos" },
     { href: "/equipe", icon: Users, label: "Equipe" },
     { href: "/docs", icon: FileText, label: "Docs" },
     { href: "/diario", icon: BookOpen, label: "Diário de Obra" },

@@ -76,3 +76,13 @@ class ObraRepository:
         except Exception as e:
             logger.error(f"Erro ao listar limites da obra {obra_id}: {e}")
             return []
+
+    def atualizar_obra_status(self, obra_id: str, status: str) -> Dict[str, Any]:
+        try:
+            resultado = self.supabase.table(TABELA_OBRAS).update({"status": status, "updated_at": "now()"}).eq("id", obra_id).execute()
+            if not resultado.data:
+                raise Exception(f"Falha ao atualizar status da obra {obra_id}")
+            return resultado.data[0]
+        except Exception as e:
+            logger.error(f"Erro no ObraRepository.atualizar_obra_status: {e}")
+            raise e

@@ -197,6 +197,34 @@ def test_service_listar_limites():
 
 # ---------------------------------------------------------------------------
 # Router / Endpoint Tests
+def test_atualizar_status_obra_sucesso():
+    obra_repo = MagicMock()
+    orcamento_repo = MagicMock()
+    etapa_repo = MagicMock()
+    item_repo = MagicMock()
+    supabase_client = MagicMock()
+
+    obra_id = "test-obra-uuid"
+    obra_mock = {
+        "id": obra_id,
+        "status": "EM_ANDAMENTO"
+    }
+    obra_repo.buscar_obra_por_id.return_value = obra_mock
+    obra_repo.atualizar_obra_status.return_value = {**obra_mock, "status": "CONCLUIDA"}
+
+    service = ObraService(
+        obra_repository=obra_repo,
+        orcamento_repository=orcamento_repo,
+        etapa_repository=etapa_repo,
+        orcamento_item_repository=item_repo,
+        supabase_client=supabase_client
+    )
+
+    result = service.atualizar_status(obra_id, "CONCLUIDA")
+    assert result["status"] == "CONCLUIDA"
+    obra_repo.buscar_obra_por_id.assert_called_once_with(obra_id)
+    obra_repo.atualizar_obra_status.assert_called_once_with(obra_id, "CONCLUIDA")
+
 # ---------------------------------------------------------------------------
 
 def test_routes_obras_endpoints(client):
@@ -273,6 +301,13 @@ def test_routes_obras_endpoints(client):
         response = client.get("/obras/test-obra-uuid/limites")
         assert response.status_code == 200
         assert response.json()[0]["codigo_insumo"] == "INS-1"
+
+        # 5. PATCH atualizar status
+        mock_service.atualizar_status.return_value = {**obra_dummy, "status": "CONCLUIDA"}
+        response = client.patch("/obras/test-obra-uuid/status", json={"status": "CONCLUIDA"})
+        assert response.status_code == 200
+        assert response.json()["status"] == "CONCLUIDA"
+        mock_service.atualizar_status.assert_called_once_with("test-obra-uuid", "CONCLUIDA")
 
     finally:
         # Clean override
@@ -418,4 +453,13 @@ def test_repo_listar_limites_excecao():
     
     res = repo.listar_limites_por_obra("1")
     assert res == []
+
+def test_repo_atualizar_status_sucesso():
+    supabase = MagicMock()
+    repo = ObraRepository(supabase)
+    dados = {"id": "1", "status": "CONCLUIDA"}
+    supabase.table.return_value.update.return_value.eq.return_value.execute.return_value.data = [dados]
+    
+    res = repo.atualizar_obra_status("1", "CONCLUIDA")
+    assert res == dados
 

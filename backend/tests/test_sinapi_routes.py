@@ -69,9 +69,9 @@ def test_buscar_composicao_por_termo(client: TestClient, mock_supabase):
     # Arrange
     dados = [{"codigo_composicao": "200", "descricao": "Alvenaria de tijolo"}]
     chain = mock_supabase.table.return_value.select.return_value
-    chain.ilike.return_value = chain
     chain.eq.return_value = chain
     chain.limit.return_value = chain
+    chain.text_search.return_value = chain
     chain.execute.return_value.data = dados
 
     # Act
