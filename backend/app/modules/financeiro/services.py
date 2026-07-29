@@ -32,11 +32,11 @@ class FinanceiroService:
         if orcamento_id:
             total_orcado = self.repository.obter_valor_total_planejado(orcamento_id)
             planejado_detalhado = self.repository.obter_planejado_por_categoria(orcamento_id)
-            for k, v in planejado_detalhado.items():
-                if k in planejado_categorias:
-                    planejado_categorias[k] = v
+            for categoria, valor in planejado_detalhado.items():
+                if categoria in planejado_categorias:
+                    planejado_categorias[categoria] = valor
                 else:
-                    planejado_categorias["Outros"] += v
+                    planejado_categorias["Outros"] += valor
 
         # 2. Obter gastos reais por categoria
         realizado_categorias = self.repository.obter_gastos_reais_por_categoria(obra_id)
@@ -100,10 +100,10 @@ class FinanceiroService:
             "Outros": {"orc": Decimal("0.0"), "real": Decimal("0.0")},
         }
 
-        for o in obras:
-            obra_id = o.get("id")
-            nome_obra = o.get("escopo") or f"Obra {o.get('cliente', '')}"
-            gestor = o.get("engenheiro_responsavel_id") or "Engenharia"
+        for obra in obras:
+            obra_id = obra.get("id")
+            nome_obra = obra.get("escopo") or f"Obra {obra.get('cliente', '')}"
+            gestor = obra.get("engenheiro_responsavel_id") or "Engenharia"
 
             consolidado = self.obter_consolidado_financeiro(obra_id)
             orcado = Decimal(str(consolidado["total_orcado"]))

@@ -20,7 +20,7 @@ class ObraService:
         self.orcamento_item_repository = orcamento_item_repository
         self.supabase = supabase_client
 
-    def gerar_obra(self, orcamento_id: str, dados_transicao: ObraTransitionCreate) -> Dict[str, Any]:
+    def gerar_obra(self, orcamento_id: str, obra_id: str, dados_transicao: ObraTransitionCreate) -> Dict[str, Any]:
         # 1. Validar orçamento
         orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
         if not orcamento:
@@ -33,6 +33,7 @@ class ObraService:
         # 2. Criar obra
         dados_obra = {
             "orcamento_id": orcamento_id,
+            "obra_id": obra_id,
             "cliente": orcamento.get("cliente"),
             "endereco": orcamento.get("endereco") or {},
             "escopo": orcamento.get("nome"),

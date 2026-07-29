@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.modules.item.services import ItemService
-from app.modules.item.repositories import ItemRepository
+from app.modules.composicao.services import ItemService
+from app.modules.composicao.repositories import ItemRepository
 from app.dependencies import get_supabase
 from core.security import get_current_user
 
@@ -14,15 +14,6 @@ router = APIRouter(
 def get_item_service(supabase = Depends(get_supabase)) -> ItemService:
     repository = ItemRepository(supabase)
     return ItemService(repository)
-
-@router.post("/importar", summary="Importar SINAPI (Completo)")
-async def importar_sinapi(service: ItemService = Depends(get_item_service)):
-    try:
-        return service.importar_sinapi()
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
 
 @router.get("/")
 async def listar_composicoes(fonte: str = "SINAPI", service: ItemService = Depends(get_item_service)):

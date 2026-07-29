@@ -11,6 +11,7 @@ export interface ObraTransitionCreate {
 export interface Obra {
   id: string;
   orcamento_id?: string | null;
+  obra_id: string;
   cliente: string;
   endereco?: any | null;
   escopo?: string | null;
@@ -40,10 +41,13 @@ export async function gerarObra(
   orcamentoId: string,
   data: ObraTransitionCreate
 ): Promise<Obra> {
-  const response = await fetchWithAuth(`/obras/transicao/${orcamentoId}`, {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  const response = await fetchWithAuth(
+    `/obras/transicao/${orcamentoId}`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
 
   if (!response.ok) {
     const error = await response.json();
