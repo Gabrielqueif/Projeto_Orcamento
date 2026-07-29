@@ -8,8 +8,8 @@ e preços a partir de arquivos Excel no formato SINAPI.
 import logging
 from typing import Any, Dict, List
 
-from app.modules.item.repositories import ItemRepository
-from app.modules.item.schemas import SinapiMetadata
+from app.modules.composicao.repositories import ItemRepository
+from app.modules.composicao.schemas import SinapiMetadata
 from .parser_factory import get_parser
 from .sinapi_text_utils import normalizar_nome_aba
 

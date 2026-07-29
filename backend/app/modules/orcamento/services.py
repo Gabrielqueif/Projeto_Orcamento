@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 import logging
 
 from app.modules.orcamento.repositories import OrcamentoRepository, OrcamentoItemRepository, InsumoRepository
-from app.modules.item.repositories import ItemRepository
+from app.modules.composicao.repositories import ItemRepository
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.orcamento.schemas import OrcamentoCreate, OrcamentoUpdate, OrcamentoItemCreate, OrcamentoItemUpdate
 

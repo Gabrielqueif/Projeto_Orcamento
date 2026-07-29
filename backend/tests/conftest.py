@@ -129,7 +129,7 @@ def orcamento_item_service_com_insumo(
 @pytest.fixture
 def item_service_mock(item_repo_mock):
     """ItemService pré-configurado com ItemRepository mockado (compartilhado)."""
-    from app.modules.item.services import ItemService
+    from app.modules.composicao.services import ItemService
     return ItemService(item_repo_mock)
 
 

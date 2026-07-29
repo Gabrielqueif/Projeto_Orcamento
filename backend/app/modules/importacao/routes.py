@@ -2,8 +2,8 @@ import logging
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
 
 from app.modules.importacao.services.import_service import extract_metadata, process_import_file
-from app.modules.item.repositories import ItemRepository
-from app.modules.item.schemas import SinapiMetadata
+from app.modules.composicao.repositories import ItemRepository
+from app.modules.composicao.schemas import SinapiMetadata
 from core.supabase_client import get_supabase_client
 from core.security import require_admin
 

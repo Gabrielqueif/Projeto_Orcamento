@@ -10,7 +10,7 @@ from app.modules.orcamento.schemas import (
 )
 from app.modules.orcamento.services import OrcamentoService, OrcamentoItemService
 from app.modules.orcamento.repositories import OrcamentoRepository, OrcamentoItemRepository, InsumoRepository
-from app.modules.item.repositories import ItemRepository
+from app.modules.composicao.repositories import ItemRepository
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.importacao.services.pdf_service import PdfService
 

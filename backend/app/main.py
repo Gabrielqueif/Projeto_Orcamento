@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.modules.item import router as item_router
+from app.modules.composicao import router as item_router
 from app.modules.orcamento import router as orcamento_router
 from app.modules.etapa import router as etapa_router
 from app.modules.importacao import router as importacao_router
