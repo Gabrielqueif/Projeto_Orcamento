@@ -191,3 +191,70 @@ def test_remover_item(client, mock_supabase):
     assert response.status_code == 200
     assert response.json() == {"message": "Item removido com sucesso", "id": item_id}
 
+
+def test_adicionar_item_com_memoria_calculo_flexivel(client, mock_supabase):
+    mock_orc_itens_table = MagicMock()
+    mock_itens_table = MagicMock()
+    mock_orcamentos_table = MagicMock()
+    
+    configure_mock_table_side_effect(mock_supabase, {
+        "orcamento_itens": mock_orc_itens_table,
+        "itens": mock_itens_table,
+        "composicao_estados": mock_itens_table,
+        "orcamentos": mock_orcamentos_table
+    })
+    
+    orcamento_id = "orc-1"
+    variaveis_payload = {
+        "config": [
+            {"id": "qtd", "label": "QTD / REP.", "key": "quantidade"},
+            {"id": "dim1", "label": "LARGURA (M)", "key": "largura"},
+            {"id": "dim2", "label": "ALTURA (M)", "key": "altura"}
+        ],
+        "elementos": [
+            {"id": "el-1", "descricao": "Parede A", "quantidade": 2, "largura": 3.5, "altura": 2.8, "subtotal": 19.6}
+        ]
+    }
+    
+    payload = {
+        "codigo_composicao": "CODE-999",
+        "descricao": "Pintura de Parede",
+        "quantidade": 19.6,
+        "unidade": "M2",
+        "estado": "SP",
+        "memoria_calculo": "E1",
+        "variaveis": variaveis_payload
+    }
+    
+    mock_orcamentos_table.select.return_value.eq.return_value.execute.return_value.data = [{"id": orcamento_id, "estado": "SP", "base_referencia": "2026-07", "tipo_composicao": "Sem Desoneração", "fonte": "SINAPI"}]
+    mock_itens_table.select.return_value.eq.return_value.execute.return_value.data = [{"sp": 25.0}]
+    
+    mock_response_db = {
+        "id": "item-flex-1",
+        "orcamento_id": orcamento_id,
+        "codigo_composicao": "CODE-999",
+        "descricao": "Pintura de Parede",
+        "quantidade": 19.6,
+        "unidade": "M2",
+        "estado": "sp",
+        "preco_unitario": 25.0,
+        "preco_total": 490.0,
+        "fonte": "SINAPI",
+        "etapa_id": None,
+        "memoria_calculo": "E1",
+        "variaveis": variaveis_payload,
+        "created_at": "2026-07-29T20:00:00"
+    }
+    
+    mock_orc_itens_table.insert.return_value.execute.return_value.data = [mock_response_db]
+    mock_orcamentos_table.update.return_value.eq.return_value.execute.return_value.data = [{}]
+
+    response = client.post(f"/orcamentos/{orcamento_id}/itens", json=payload)
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["id"] == "item-flex-1"
+    assert data["variaveis"]["config"][0]["key"] == "quantidade"
+    assert len(data["variaveis"]["elementos"]) == 1
+
+

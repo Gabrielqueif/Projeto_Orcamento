@@ -102,16 +102,6 @@ export default function NovoOrcamentoPage() {
 
     try {
       const activeStatus = statusOverride || status;
-      const variaveisGlobais = [
-        { nome: "ENDERECO", valor: endereco },
-        { nome: "TIPO_CONSTRUCAO", valor: tipoConstrucao },
-        { nome: "AREA_TOTAL", valor: Number(areaTotal) },
-        { nome: "CPF_CNPJ", valor: cpfCnpj },
-        { nome: "TELEFONE", valor: telefone },
-        { nome: "EMAIL", valor: email },
-        { nome: "MARGEM", valor: Number(margem) },
-        { nome: "PRAZO", valor: Number(prazo) }
-      ];
 
       const orcamentoData = {
         nome,
@@ -123,7 +113,7 @@ export default function NovoOrcamentoPage() {
         fonte: baseReferencia,
         bdi: Number(bdi),
         status: activeStatus,
-        variaveis_globais: variaveisGlobais,
+        variaveis_globais: [],
         locais: []
       };
 

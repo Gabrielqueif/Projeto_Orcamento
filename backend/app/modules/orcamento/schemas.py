@@ -101,6 +101,30 @@ class CronogramaResponse(BaseModel):
 
 # --- Schemas de Item de Orçamento ---
 
+class VariableConfigSchema(BaseModel):
+    id: str
+    label: str
+    key: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class MemoriaCalculoElementoSchema(BaseModel):
+    id: str
+    descricao: str
+    quantidade: float = 1.0
+    largura: float = 1.0
+    altura: float = 1.0
+    valores: Optional[Any] = None
+    subtotal: float = 0.0
+
+    model_config = ConfigDict(from_attributes=True)
+
+class MemoriaCalculoPayloadSchema(BaseModel):
+    config: List[VariableConfigSchema]
+    elementos: List[MemoriaCalculoElementoSchema]
+
+    model_config = ConfigDict(from_attributes=True)
+
 class OrcamentoItemCreate(BaseModel):
     codigo_composicao: str
     descricao: str

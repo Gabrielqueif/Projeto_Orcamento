@@ -37,7 +37,6 @@ export default function OrcamentoDetalhePage() {
   const [editNome, setEditNome] = useState("");
   const [editCliente, setEditCliente] = useState("");
   const [editBdi, setEditBdi] = useState(0);
-  const [editVariaveis, setEditVariaveis] = useState<{ nome: string; valor: number }[]>([]);
   const [editLocais, setEditLocais] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [isTransitionDrawerOpen, setIsTransitionDrawerOpen] = useState(false);
@@ -91,7 +90,6 @@ export default function OrcamentoDetalhePage() {
     setEditNome(orcamento.nome);
     setEditCliente(orcamento.cliente || "");
     setEditBdi(orcamento.bdi || 0);
-    setEditVariaveis(orcamento.variaveis_globais || []);
     setEditLocais(orcamento.locais || []);
     setIsEditModalOpen(true);
   };
@@ -105,7 +103,6 @@ export default function OrcamentoDetalhePage() {
         nome: editNome,
         cliente: editCliente,
         bdi: editBdi,
-        variaveis_globais: editVariaveis,
         locais: editLocais,
       });
       setIsEditModalOpen(false);
@@ -116,29 +113,6 @@ export default function OrcamentoDetalhePage() {
     } finally {
       setSaving(false);
     }
-  };
-
-  const addVariavel = () => {
-    setEditVariaveis([...editVariaveis, { nome: `VAR_${editVariaveis.length + 1}`, valor: 0 }]);
-  };
-
-  const updateVariavel = (index: number, field: "nome" | "valor", value: string | number) => {
-    setEditVariaveis(
-      editVariaveis.map((v, idx) => {
-        if (idx === index) {
-          if (field === "nome") {
-            return { ...v, nome: (value as string).toUpperCase().replace(/[^A-Z0-9_]/g, "_") };
-          } else {
-            return { ...v, valor: parseFloat(value as string) || 0 };
-          }
-        }
-        return v;
-      })
-    );
-  };
-
-  const removeVariavel = (index: number) => {
-    setEditVariaveis(editVariaveis.filter((_, idx) => idx !== index));
   };
 
   const addLocal = () => {
@@ -476,76 +450,7 @@ export default function OrcamentoDetalhePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-[#c4c6cf] pt-4">
-            {/* Variáveis Globais Section */}
-            <div className="flex flex-col gap-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-bold text-[13px] text-slate-700 uppercase tracking-wide font-mono">
-                  Variáveis Globais da Obra
-                </h3>
-                <button
-                  type="button"
-                  onClick={addVariavel}
-                  className="text-[10px] font-bold text-[#001b3d] bg-[#9fd300] hover:bg-[#9fd300]/90 px-3 py-1.5 rounded-lg flex items-center gap-1 border-none cursor-pointer uppercase tracking-wider font-mono"
-                >
-                  <Plus size={12} weight="bold" /> Add Variável
-                </button>
-              </div>
-
-              <div className="border border-[#c4c6cf] rounded-lg overflow-hidden bg-white max-h-[220px] overflow-y-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-500 font-bold text-[10px] uppercase border-b border-[#c4c6cf]">
-                      <th className="px-3 py-2">Variável (Nome)</th>
-                      <th className="px-3 py-2 text-right">Valor</th>
-                      <th className="px-3 py-2 w-10 text-center">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#c4c6cf]">
-                    {editVariaveis.length === 0 ? (
-                      <tr>
-                        <td colSpan={3} className="text-center py-6 text-xs text-slate-400 italic">
-                          Nenhuma variável cadastrada.
-                        </td>
-                      </tr>
-                    ) : (
-                      editVariaveis.map((v, index) => (
-                        <tr key={index}>
-                          <td className="px-3 py-1">
-                            <input
-                              type="text"
-                              value={v.nome}
-                              onChange={(e) => updateVariavel(index, "nome", e.target.value)}
-                              className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#9fd300] outline-none text-xs font-mono font-bold py-1"
-                              placeholder="EX: PE_DIREITO"
-                            />
-                          </td>
-                          <td className="px-3 py-1 text-right">
-                            <input
-                              type="number"
-                              step="any"
-                              value={v.valor}
-                              onChange={(e) => updateVariavel(index, "valor", e.target.value)}
-                              className="w-20 bg-transparent border border-slate-200 rounded px-1.5 py-0.5 text-right text-xs outline-none focus:border-[#9fd300]"
-                            />
-                          </td>
-                          <td className="px-3 py-1 text-center">
-                            <button
-                              type="button"
-                              onClick={() => removeVariavel(index)}
-                              className="text-slate-400 hover:text-red-500 p-1 bg-transparent border-none cursor-pointer"
-                            >
-                              <Trash size={14} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
+          <div className="border-t border-[#c4c6cf] pt-4">
             {/* Locais Section */}
             <div className="flex flex-col gap-4">
               <div className="flex justify-between items-center">

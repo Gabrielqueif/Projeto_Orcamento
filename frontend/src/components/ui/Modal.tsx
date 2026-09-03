@@ -37,11 +37,11 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-md" 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-all duration-200">
             <div
-                className={`bg-white rounded-lg shadow-xl w-full ${maxWidth} transform transition-all duration-200 scale-100 opacity-100 border border-slate-200`}
+                className={`bg-white rounded-lg shadow-xl w-full ${maxWidth} transform transition-all duration-200 scale-100 opacity-100 border border-slate-200 flex flex-col max-h-[90vh]`}
                 role="dialog"
                 aria-modal="true"
             >
-                <div className="flex items-center justify-between p-4 border-b border-slate-100">
+                <div className="flex items-center justify-between p-4 border-b border-slate-100 shrink-0">
                     <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
                     <button
                         onClick={onClose}
@@ -54,7 +54,7 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-md" 
                     </button>
                 </div>
 
-                <div className="p-4">
+                <div className="p-4 overflow-y-auto">
                     {children}
                 </div>
             </div>

@@ -48,6 +48,27 @@ export interface OrcamentoUpdate {
   locais?: any[] | null;
 }
 
+export interface VariableConfig {
+  id: string;
+  label: string;
+  key: string;
+}
+
+export interface MemoriaCalculoElementoApi {
+  id: string;
+  descricao: string;
+  quantidade: number;
+  largura: number;
+  altura: number;
+  valores?: Record<string, number>;
+  subtotal: number;
+}
+
+export interface MemoriaCalculoContainer {
+  config: VariableConfig[];
+  elementos: MemoriaCalculoElementoApi[];
+}
+
 export interface OrcamentoItem {
   id: string;
   orcamento_id: string;
@@ -60,7 +81,7 @@ export interface OrcamentoItem {
   estado: string;
   etapa_id?: string;
   memoria_calculo?: string;
-  variaveis?: any;
+  variaveis?: MemoriaCalculoContainer | any;
   fonte: string;
   created_at?: string;
 }
@@ -74,7 +95,7 @@ export interface OrcamentoItemCreate {
   etapa_id?: string;
   memoria_calculo?: string;
   fonte?: string;
-  variaveis?: any;
+  variaveis?: MemoriaCalculoContainer | any;
   preco_unitario?: number;
 }
 
@@ -87,7 +108,7 @@ export interface OrcamentoItemUpdate {
   etapa_id?: string;
   memoria_calculo?: string;
   fonte?: string;
-  variaveis?: any;
+  variaveis?: MemoriaCalculoContainer | any;
 }
 
 // Interfaces para Etapas
