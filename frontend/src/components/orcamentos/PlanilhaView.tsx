@@ -449,13 +449,6 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                           />
 
                           {renderItemTable(itensDaSubEtapa, sub.id)}
-
-                          <button 
-                            onClick={() => openModalToCreate(sub.id)} 
-                            className="mt-2 px-3 py-1.5 bg-[#F1F5F9] hover:bg-[#E2E8F0] border border-[#CBD5E1] border-solid rounded text-[11px] font-bold text-text-main transition-colors flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Plus size={12} /> ADICIONAR ITEM À SUB-ETAPA
-                          </button>
                         </div>
                       );
                     })}
@@ -475,7 +468,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                       onClick={() => openModalToCreate(etapa.id)} 
                       className="px-4 py-2 bg-slate-900 text-white rounded text-[12px] font-bold hover:bg-slate-800 transition-colors flex items-center gap-2 cursor-pointer shadow-sm border-none"
                     >
-                      <Plus size={14} /> ADICIONAR ITEM NA ETAPA PAI
+                      <Plus size={14} /> ADICIONAR ITEM À ETAPA
                     </button>
                   </div>
                   <div className="font-bold text-text-main text-sm">
