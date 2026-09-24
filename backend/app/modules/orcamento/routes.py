@@ -6,8 +6,9 @@ from io import BytesIO
 from app.modules.orcamento.schemas import (
     OrcamentoResponse, OrcamentoCreate, OrcamentoUpdate, OrcamentoStatsResponse,
     CurvaABCResponse, CronogramaResponse, OrcamentoItemResponse, OrcamentoItemCreate,
-    OrcamentoItemUpdate, OrcamentoItemInsumoUpdate
+    OrcamentoItemUpdate, OrcamentoItemInsumoUpdate, BDICalculateRequest, BDICalculateResponse
 )
+from app.modules.orcamento.bdi import calcular_bdi_tcu, FAIXAS_REFERENCIA_TCU
 from app.modules.orcamento.services import OrcamentoService, OrcamentoItemService
 from app.modules.orcamento.repositories import OrcamentoRepository, OrcamentoItemRepository, InsumoRepository
 from app.modules.composicao.repositories import ItemRepository
@@ -40,6 +41,30 @@ def get_orcamento_item_service(supabase = Depends(get_supabase)) -> OrcamentoIte
 
 
 # --- Rotas de Orçamentos ---
+
+@router.post(
+    "/calcular-bdi",
+    response_model=BDICalculateResponse,
+    summary="Simular e calcular BDI Analítico TCU",
+    tags=["Orçamentos"]
+)
+async def simular_calculo_bdi(payload: BDICalculateRequest):
+    """Calcula a taxa de BDI pela fórmula oficial TCU (Acórdão 2622/2013) sem persistir."""
+    try:
+        bdi_resultado = calcular_bdi_tcu(payload.config)
+        impostos = payload.config.calcular_impostos_total()
+        return {
+            "bdi": bdi_resultado,
+            "bdi_diferenciado": payload.config.bdi_diferenciado,
+            "impostos_total": impostos,
+            "detalhamento": {
+                "formula": "BDI = [ ((1 + AC + SG + R) * (1 + DF) * (1 + L)) / (1 - I) ] - 1",
+                "faixas_referencia_edificios": FAIXAS_REFERENCIA_TCU["CONSTRUCAO_EDIFICIOS"],
+                "faixas_referencia_equipamentos": FAIXAS_REFERENCIA_TCU["FORNECIMENTO_MATERIAIS_EQUIPAMENTOS"],
+            }
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post(
     "/",
@@ -145,7 +170,7 @@ async def download_pdf_orcamento(
         itens = service.item_repository.listar_por_orcamento(orcamento_id)
         
         pdf_service = PdfService()
-        pdf_bytes = pdf_service.gerar_pdf_orcamento(orcamento, itens)
+        pdf_bytes = pdf_service.gerar_pdf(orcamento, itens)
         
         return Response(
             content=pdf_bytes,

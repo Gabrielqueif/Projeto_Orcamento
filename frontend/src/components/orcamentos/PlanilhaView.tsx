@@ -24,13 +24,15 @@ interface PlanilhaViewProps {
   orcamentoId: string;
   estadoOrcamento?: string;
   fonteOrcamento?: string;
+  bdiOrcamento?: number;
   onTotalChanged?: () => void;
 }
 
-export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "SINAPI", onTotalChanged }: PlanilhaViewProps) {
+export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "SINAPI", bdiOrcamento = 0, onTotalChanged }: PlanilhaViewProps) {
   const [etapas, setEtapas] = React.useState<Etapa[]>([]);
   const [itens, setItens] = React.useState<OrcamentoItem[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [modoPreco, setModoPreco] = React.useState<"VENDA" | "DIRETO">("VENDA");
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = React.useState(false);
@@ -202,19 +204,30 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
   };
 
   const renderItemTable = (itensDaEtapa: OrcamentoItem[], etapaId: string) => {
-    const subtotal = itensDaEtapa.reduce((acc, curr) => acc + (curr.preco_total || 0), 0);
+    const subtotal = itensDaEtapa.reduce((acc, curr) => {
+      const taxa = curr.bdi_aplicado !== null && curr.bdi_aplicado !== undefined ? curr.bdi_aplicado : bdiOrcamento;
+      const tot = modoPreco === "VENDA" 
+        ? (curr.preco_total_bdi ?? ((curr.preco_total || 0) * (1 + taxa / 100))) 
+        : (curr.preco_total || 0);
+      return acc + tot;
+    }, 0);
+
     return (
       <div className="overflow-x-auto mt-2 mb-4">
         <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             <tr>
-              <th className="w-[8%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Fonte</th>
+              <th className="w-[10%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Fonte / BDI</th>
               <th className="w-[12%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Código</th>
-              <th className="w-[30%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Descrição</th>
-              <th className="w-[8%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Und</th>
+              <th className="w-[28%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Descrição</th>
+              <th className="w-[8%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-center">Und</th>
               <th className="w-[8%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-center">Qtd</th>
-              <th className="w-[12%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-right">Preço Un.</th>
-              <th className="w-[12%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-right">Subtotal</th>
+              <th className="w-[12%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-right">
+                {modoPreco === "VENDA" ? "Preço Venda Un." : "Custo Direto Un."}
+              </th>
+              <th className="w-[12%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-right">
+                {modoPreco === "VENDA" ? "Subtotal Venda" : "Subtotal Direto"}
+              </th>
               <th className="w-[10%] pb-3 border-b border-border"></th>
             </tr>
           </thead>
@@ -226,63 +239,87 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                 </td>
               </tr>
             ) : (
-              itensDaEtapa.map(item => (
-                <React.Fragment key={item.id}>
-                  <tr className={`hover:bg-bg-light/35 transition-colors group ${expandedRows.has(item.id) ? 'bg-bg-light' : ''}`}>
-                    <td className="py-3 pr-2 border-b border-border border-dashed align-middle">
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => toggleRow(item.id)}
-                          className="p-1 hover:bg-border rounded transition-colors text-text-muted cursor-pointer border-none bg-transparent"
-                        >
-                          {expandedRows.has(item.id) ? <CaretDown size={14} weight="bold" /> : <CaretRight size={14} weight="bold" />}
-                        </button>
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
-                          item.fonte === 'SEINFRA'
-                            ? 'bg-orange-100 text-orange-700 border border-orange-200' 
-                            : 'bg-blue-100 text-blue-700 border border-blue-200'
-                        }`}>
-                          {item.fonte}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 pr-2 border-b border-border border-dashed text-xs font-semibold text-text-main align-middle">
-                      {item.codigo_composicao}
-                    </td>
-                    <td className="py-3 pr-2 border-b border-border border-dashed text-xs text-text-main align-middle">
-                      {item.descricao}
-                    </td>
-                    <td className="py-3 pr-2 border-b border-border border-dashed text-xs text-text-muted font-bold align-middle text-center">
-                      {item.unidade}
-                    </td>
-                    <td className="py-3 pr-2 border-b border-border border-dashed text-xs font-semibold text-text-main text-center align-middle">
-                      {item.quantidade}
-                    </td>
-                    <td className="py-3 pr-2 border-b border-border border-dashed text-xs text-text-main text-right align-middle font-medium">
-                      {formatarReal(item.preco_unitario)}
-                    </td>
-                    <td className="py-3 pr-2 border-b border-border border-dashed text-xs font-bold text-brand-primary text-right align-middle">
-                      {formatarReal(item.preco_total)}
-                    </td>
-                    <td className="py-3 pl-2 border-b border-border border-dashed text-right align-middle">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => setDrawerItem(item)} className="p-1.5 text-text-muted hover:text-[#A78BFA] hover:bg-purple-50 rounded transition-colors cursor-pointer border-none bg-transparent" title="Ver Recursos (Insumos)">
-                          <Cube size={16} />
-                        </button>
-                        <button onClick={() => openModalToEdit(item)} className="p-1.5 text-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded transition-colors cursor-pointer border-none bg-transparent" title="Editar Item">
-                          <PencilSimple size={16} />
-                        </button>
-                        <button onClick={() => handleRemoveItem(item.id)} className="p-1.5 text-text-muted hover:text-status-danger hover:bg-red-50 rounded transition-colors cursor-pointer border-none bg-transparent" title="Remover Item">
-                          <Trash size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  
-                  {expandedRows.has(item.id) && (
-                    <tr className="bg-[#F8FAFC]">
-                      <td colSpan={8} className="p-0 border-b border-border">
-                        <div className="px-12 py-4">
+              itensDaEtapa.map(item => {
+                const taxaBdiItem = item.bdi_aplicado !== null && item.bdi_aplicado !== undefined ? item.bdi_aplicado : bdiOrcamento;
+                const precoUn = modoPreco === "VENDA" 
+                  ? (item.preco_unitario_bdi ?? ((item.preco_unitario || 0) * (1 + taxaBdiItem / 100))) 
+                  : item.preco_unitario;
+                const precoTot = modoPreco === "VENDA" 
+                  ? (item.preco_total_bdi ?? ((item.preco_total || 0) * (1 + taxaBdiItem / 100))) 
+                  : item.preco_total;
+
+                return (
+                  <React.Fragment key={item.id}>
+                    <tr className={`hover:bg-bg-light/35 transition-colors group ${expandedRows.has(item.id) ? 'bg-bg-light' : ''}`}>
+                      <td className="py-3 pr-2 border-b border-border border-dashed align-middle">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <button 
+                              onClick={() => toggleRow(item.id)}
+                              className="p-1 hover:bg-border rounded transition-colors text-text-muted cursor-pointer border-none bg-transparent"
+                            >
+                              {expandedRows.has(item.id) ? <CaretDown size={14} weight="bold" /> : <CaretRight size={14} weight="bold" />}
+                            </button>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                              item.fonte === 'SEINFRA'
+                                ? 'bg-orange-100 text-orange-700 border border-orange-200' 
+                                : 'bg-blue-100 text-blue-700 border border-blue-200'
+                            }`}>
+                              {item.fonte}
+                            </span>
+                          </div>
+                          {item.tipo_bdi_item === "DIFERENCIADO" ? (
+                            <span className="text-[8px] px-1 py-0.2 rounded font-bold uppercase bg-purple-100 text-purple-700 border border-purple-200 w-fit">
+                              BDI Dif. {item.bdi_aplicado ? `${item.bdi_aplicado}%` : ''}
+                            </span>
+                          ) : (
+                            modoPreco === "VENDA" && (
+                              <span className="text-[8px] px-1 py-0.2 rounded font-medium bg-slate-100 text-slate-600 w-fit">
+                                BDI {taxaBdiItem}%
+                              </span>
+                            )
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 pr-2 border-b border-border border-dashed text-xs font-semibold text-text-main align-middle">
+                        {item.codigo_composicao}
+                      </td>
+                      <td className="py-3 pr-2 border-b border-border border-dashed text-xs text-text-main align-middle">
+                        {item.descricao}
+                      </td>
+                      <td className="py-3 pr-2 border-b border-border border-dashed text-xs text-text-muted font-bold align-middle text-center">
+                        {item.unidade}
+                      </td>
+                      <td className="py-3 pr-2 border-b border-border border-dashed text-xs font-semibold text-text-main text-center align-middle">
+                        {item.quantidade}
+                      </td>
+                      <td className="py-3 pr-2 border-b border-border border-dashed text-xs text-text-main text-right align-middle font-medium">
+                        {formatarReal(precoUn)}
+                      </td>
+                      <td className={`py-3 pr-2 border-b border-border border-dashed text-xs font-bold text-right align-middle ${
+                        modoPreco === "VENDA" ? "text-emerald-700" : "text-brand-primary"
+                      }`}>
+                        {formatarReal(precoTot)}
+                      </td>
+                      <td className="py-3 pl-2 border-b border-border border-dashed text-right align-middle">
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => setDrawerItem(item)} className="p-1.5 text-text-muted hover:text-[#A78BFA] hover:bg-purple-50 rounded transition-colors cursor-pointer border-none bg-transparent" title="Ver Recursos (Insumos)">
+                            <Cube size={16} />
+                          </button>
+                          <button onClick={() => openModalToEdit(item)} className="p-1.5 text-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded transition-colors cursor-pointer border-none bg-transparent" title="Editar Item">
+                            <PencilSimple size={16} />
+                          </button>
+                          <button onClick={() => handleRemoveItem(item.id)} className="p-1.5 text-text-muted hover:text-status-danger hover:bg-red-50 rounded transition-colors cursor-pointer border-none bg-transparent" title="Remover Item">
+                            <Trash size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    
+                    {expandedRows.has(item.id) && (
+                      <tr className="bg-[#F8FAFC]">
+                        <td colSpan={8} className="p-0 border-b border-border">
+                          <div className="px-12 py-4">
                           {loadingInsumos.has(item.id) ? (
                             <div className="flex items-center gap-2 text-[11px] text-text-muted py-2">
                               <Spinner size={14} className="animate-spin" />
@@ -339,9 +376,10 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                     </tr>
                   )}
                 </React.Fragment>
-              ))
-            )}
-          </tbody>
+              );
+            })
+          )}
+        </tbody>
         </table>
         {itensDaEtapa.length > 0 && (
           <div className="flex justify-end gap-2 text-xs font-bold text-text-main mt-3 pr-2">
@@ -364,17 +402,46 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
 
   return (
     <div className="flex flex-col">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <div>
           <h3 className="text-lg font-bold text-text-main mb-1">Composição Dinâmica de Custos</h3>
           <p className="text-[12px] text-text-muted">Gerencie as etapas, sub-etapas e insumos do seu orçamento.</p>
         </div>
-        <button 
-          onClick={handleAddEtapa} 
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded text-[12px] font-bold transition-colors hover:bg-bg-light shadow-sm text-text-main cursor-pointer"
-        >
-          <Plus size={16} /> NOVA ETAPA
-        </button>
+        
+        <div className="flex items-center gap-3">
+          {/* Toggle Custo Direto vs Preço de Venda */}
+          <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setModoPreco("VENDA")}
+              className={`px-3 py-1 rounded transition-colors cursor-pointer ${
+                modoPreco === "VENDA"
+                  ? "bg-white text-emerald-700 shadow-2xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Preço de Venda (com BDI)
+            </button>
+            <button
+              type="button"
+              onClick={() => setModoPreco("DIRETO")}
+              className={`px-3 py-1 rounded transition-colors cursor-pointer ${
+                modoPreco === "DIRETO"
+                  ? "bg-white text-blue-700 shadow-2xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Custo Direto (sem BDI)
+            </button>
+          </div>
+
+          <button 
+            onClick={handleAddEtapa} 
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded text-[12px] font-bold transition-colors hover:bg-bg-light shadow-sm text-text-main cursor-pointer"
+          >
+            <Plus size={16} /> NOVA ETAPA
+          </button>
+        </div>
       </div>
 
       {etapas.length === 0 && itensSemEtapa.length === 0 ? (
@@ -391,7 +458,13 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
             const idsEtapas = [etapa.id, ...subEtapas.map(s => s.id)];
             const totalEtapaAcumulado = itens
               .filter(i => i.etapa_id && idsEtapas.includes(i.etapa_id))
-              .reduce((acc, curr) => acc + (curr.preco_total || 0), 0);
+              .reduce((acc, curr) => {
+                const taxa = curr.bdi_aplicado !== null && curr.bdi_aplicado !== undefined ? curr.bdi_aplicado : bdiOrcamento;
+                const tot = modoPreco === "VENDA" 
+                  ? (curr.preco_total_bdi ?? ((curr.preco_total || 0) * (1 + taxa / 100))) 
+                  : (curr.preco_total || 0);
+                return acc + tot;
+              }, 0);
 
             return (
               <div key={etapa.id} className="relative p-6 bg-white border border-border rounded-lg shadow-sm">

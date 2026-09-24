@@ -6,6 +6,7 @@ from app.modules.orcamento.repositories import OrcamentoRepository, OrcamentoIte
 from app.modules.composicao.repositories import ItemRepository
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.orcamento.schemas import OrcamentoCreate, OrcamentoUpdate, OrcamentoItemCreate, OrcamentoItemUpdate
+from app.modules.orcamento.bdi import BDIConfig, calcular_bdi_tcu, determinar_tipo_bdi_item
 
 logger = logging.getLogger("projeto_orcamento")
 
@@ -20,9 +21,18 @@ class OrcamentoService:
         self.repository = repository
         self.etapa_repository = etapa_repository
         self.orcamento_item_repository = orcamento_item_repository
+        self.item_repository = orcamento_item_repository
         self.supabase = supabase_client
 
     def criar_orcamento(self, orcamento: OrcamentoCreate):
+        tipo_bdi = orcamento.tipo_bdi or "ANALITICO"
+        bdi_config = orcamento.bdi_config or BDIConfig()
+
+        if tipo_bdi == "ANALITICO":
+            bdi_calculado = calcular_bdi_tcu(bdi_config)
+        else:
+            bdi_calculado = orcamento.bdi or 0.0
+
         dados = {
             "nome": orcamento.nome,
             "cliente": orcamento.cliente,
@@ -31,7 +41,9 @@ class OrcamentoService:
             "tipo_composicao": orcamento.tipo_composicao,
             "estado": orcamento.estado.lower(),
             "fonte": orcamento.fonte or "SINAPI",
-            "bdi": orcamento.bdi or 0.0,
+            "bdi": bdi_calculado,
+            "tipo_bdi": tipo_bdi,
+            "bdi_config": bdi_config.model_dump(),
             "status": orcamento.status or "em_elaboracao",
             "valor_total": 0.0,
             "variaveis_globais": orcamento.variaveis_globais or [],
@@ -57,6 +69,7 @@ class OrcamentoService:
 
         dados_atualizacao = {}
         dados_atualizacao["updated_at"] = datetime.now().isoformat()
+        bdi_alterado = False
         
         if orcamento_update.nome is not None:
             dados_atualizacao["nome"] = orcamento_update.nome
@@ -72,8 +85,16 @@ class OrcamentoService:
             dados_atualizacao["estado"] = orcamento_update.estado.lower()
         if orcamento_update.fonte is not None:
             dados_atualizacao["fonte"] = orcamento_update.fonte
+        if orcamento_update.tipo_bdi is not None:
+            dados_atualizacao["tipo_bdi"] = orcamento_update.tipo_bdi
+            bdi_alterado = True
+        if orcamento_update.bdi_config is not None:
+            bdi_config = orcamento_update.bdi_config
+            dados_atualizacao["bdi_config"] = bdi_config.model_dump()
+            bdi_alterado = True
         if orcamento_update.bdi is not None:
             dados_atualizacao["bdi"] = orcamento_update.bdi
+            bdi_alterado = True
         if orcamento_update.status is not None:
             dados_atualizacao["status"] = orcamento_update.status
         if orcamento_update.valor_total is not None:
@@ -82,8 +103,54 @@ class OrcamentoService:
             dados_atualizacao["variaveis_globais"] = orcamento_update.variaveis_globais
         if orcamento_update.locais is not None:
             dados_atualizacao["locais"] = orcamento_update.locais
-            
-        return self.repository.atualizar(orcamento_id, dados_atualizacao)
+
+        # Recalcula BDI analítico quando bdi_config é enviado
+        tipo_bdi_efetivo = dados_atualizacao.get("tipo_bdi") or existente.get("tipo_bdi", "ANALITICO")
+        if bdi_alterado and tipo_bdi_efetivo == "ANALITICO" and orcamento_update.bdi_config is not None:
+            dados_atualizacao["bdi"] = calcular_bdi_tcu(orcamento_update.bdi_config)
+
+        resultado = self.repository.atualizar(orcamento_id, dados_atualizacao)
+
+        # Recalcula preços com BDI de todos os itens quando a taxa muda
+        if bdi_alterado and self.orcamento_item_repository:
+            self._recalcular_bdi_itens(orcamento_id)
+
+        return resultado
+
+    def _recalcular_bdi_itens(self, orcamento_id: str):
+        """Recalcula preços com BDI de todos os itens do orçamento em lote."""
+        orcamento = self.repository.buscar_por_id(orcamento_id)
+        if not orcamento or not self.orcamento_item_repository:
+            return
+
+        bdi_padrao = float(orcamento.get("bdi") or 0.0)
+        bdi_config_raw = orcamento.get("bdi_config")
+        bdi_diferenciado = float(bdi_config_raw.get("bdi_diferenciado", 15.0)) if isinstance(bdi_config_raw, dict) else 15.0
+
+        itens = self.orcamento_item_repository.listar_por_orcamento(orcamento_id)
+        valor_total_geral = 0.0
+
+        for item in itens:
+            tipo_item = item.get("tipo_bdi_item", "PADRAO")
+            taxa_bdi = bdi_diferenciado if tipo_item == "DIFERENCIADO" else bdi_padrao
+            preco_unitario = float(item.get("preco_unitario") or 0.0)
+            quantidade = float(item.get("quantidade") or 0.0)
+
+            preco_unitario_bdi = round(preco_unitario * (1 + taxa_bdi / 100), 2)
+            preco_total_bdi = round(quantidade * preco_unitario_bdi, 2)
+
+            self.orcamento_item_repository.atualizar(item["id"], {
+                "bdi_aplicado": taxa_bdi,
+                "preco_unitario_bdi": preco_unitario_bdi,
+                "preco_total_bdi": preco_total_bdi,
+            })
+
+            valor_total_geral += preco_total_bdi
+
+        self.repository.atualizar(orcamento_id, {
+            "valor_total": round(valor_total_geral, 2),
+            "updated_at": datetime.now().isoformat()
+        })
 
     def deletar_orcamento(self, orcamento_id: str):
         existente = self.repository.buscar_por_id(orcamento_id)
@@ -341,17 +408,41 @@ class OrcamentoItemService:
         orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
         if not orcamento:
             return 0.0
-            
-        bdi = float(orcamento.get("bdi") or 0.0)
-        total_itens = self.repository.calcular_total_itens(orcamento_id)
-        
-        valor_total = total_itens * (1 + bdi / 100)
-        
+
+        bdi_padrao = float(orcamento.get("bdi") or 0.0)
+        bdi_config_raw = orcamento.get("bdi_config")
+        bdi_diferenciado = float(bdi_config_raw.get("bdi_diferenciado", 15.0)) if isinstance(bdi_config_raw, dict) else 15.0
+
+        itens = self.repository.listar_por_orcamento(orcamento_id)
+        valor_total_geral = 0.0
+
+        if itens and isinstance(itens, list) and len(itens) > 0 and isinstance(itens[0], dict):
+            for item in itens:
+                tipo_item = item.get("tipo_bdi_item", "PADRAO")
+                taxa_bdi = bdi_diferenciado if tipo_item == "DIFERENCIADO" else bdi_padrao
+                preco_unitario = float(item.get("preco_unitario") or 0.0)
+                quantidade = float(item.get("quantidade") or 0.0)
+
+                preco_unitario_bdi = round(preco_unitario * (1 + taxa_bdi / 100), 2)
+                preco_total_bdi = round(quantidade * preco_unitario_bdi, 2)
+
+                if "id" in item:
+                    self.repository.atualizar(item["id"], {
+                        "bdi_aplicado": taxa_bdi,
+                        "preco_unitario_bdi": preco_unitario_bdi,
+                        "preco_total_bdi": preco_total_bdi,
+                    })
+
+                valor_total_geral += preco_total_bdi
+        else:
+            total_direto = self.repository.calcular_total_itens(orcamento_id)
+            valor_total_geral = float(total_direto or 0.0) * (1 + bdi_padrao / 100)
+
         self.orcamento_repository.atualizar(orcamento_id, {
-            "valor_total": valor_total,
+            "valor_total": round(valor_total_geral, 2),
             "updated_at": datetime.now().isoformat()
         })
-        return valor_total
+        return round(valor_total_geral, 2)
 
     def adicionar_item(self, orcamento_id: str, item: OrcamentoItemCreate):
         orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
@@ -396,6 +487,19 @@ class OrcamentoItemService:
         descricao = item.descricao or composicao.get("descricao", "")
         unidade = item.unidade or composicao.get("unidade", "")
         
+        tipo_bdi_item = item.tipo_bdi_item or determinar_tipo_bdi_item(item.codigo_composicao, descricao)
+        bdi_padrao = float(orcamento.get("bdi") or 0.0)
+        bdi_config_raw = orcamento.get("bdi_config")
+        bdi_diferenciado = float(bdi_config_raw.get("bdi_diferenciado", 15.0)) if isinstance(bdi_config_raw, dict) else 15.0
+
+        if item.bdi_aplicado is not None:
+            bdi_aplicado = float(item.bdi_aplicado)
+        else:
+            bdi_aplicado = bdi_diferenciado if tipo_bdi_item == "DIFERENCIADO" else bdi_padrao
+
+        preco_unitario_bdi = round(preco_unitario * (1 + bdi_aplicado / 100), 2)
+        preco_total_bdi = round(item.quantidade * preco_unitario_bdi, 2)
+
         dados_item = {
             "orcamento_id": orcamento_id,
             "codigo_composicao": item.codigo_composicao,
@@ -404,6 +508,10 @@ class OrcamentoItemService:
             "unidade": unidade,
             "preco_unitario": preco_unitario,
             "preco_total": preco_total,
+            "tipo_bdi_item": tipo_bdi_item,
+            "bdi_aplicado": bdi_aplicado,
+            "preco_unitario_bdi": preco_unitario_bdi,
+            "preco_total_bdi": preco_total_bdi,
             "estado": estado_para_buscar.lower(),
             "fonte": fonte,
             "etapa_id": item.etapa_id,
@@ -438,7 +546,7 @@ class OrcamentoItemService:
         dados_atualizacao = {}
         codigo_composicao = item_update.codigo_composicao or item_atual.get("codigo_composicao")
         estado = item_update.estado or item_atual.get("estado")
-        quantidade = item_update.quantidade if item_update.quantidade is not None else item_atual.get("quantidade")
+        quantidade = item_update.quantidade if item_update.quantidade is not None else item_atual.get("quantidade", 1.0)
 
         if item_update.codigo_composicao is not None or item_update.estado is not None or item_update.fonte is not None:
             orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
@@ -459,7 +567,7 @@ class OrcamentoItemService:
             if item_update.fonte is not None:
                 dados_atualizacao["fonte"] = item_update.fonte
         else:
-            preco_unitario = item_atual.get("preco_unitario")
+            preco_unitario = float(item_atual.get("preco_unitario") or 0.0)
 
         if item_update.quantidade is not None:
             if quantidade <= 0:
@@ -477,6 +585,33 @@ class OrcamentoItemService:
             dados_atualizacao["memoria_calculo"] = item_update.memoria_calculo
         if item_update.variaveis is not None:
             dados_atualizacao["variaveis"] = item_update.variaveis
+
+        # Atualização de parâmetros BDI do item
+        if item_update.tipo_bdi_item is not None:
+            dados_atualizacao["tipo_bdi_item"] = item_update.tipo_bdi_item
+        if item_update.bdi_aplicado is not None:
+            dados_atualizacao["bdi_aplicado"] = item_update.bdi_aplicado
+
+        # Recálculo de preços com BDI do item
+        orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
+        tipo_bdi_item = dados_atualizacao.get("tipo_bdi_item") or item_atual.get("tipo_bdi_item", "PADRAO")
+        bdi_padrao = float(orcamento.get("bdi") or 0.0) if orcamento else 0.0
+        bdi_config_raw = orcamento.get("bdi_config") if orcamento else {}
+        bdi_diferenciado = float(bdi_config_raw.get("bdi_diferenciado", 15.0)) if isinstance(bdi_config_raw, dict) else 15.0
+
+        if "bdi_aplicado" in dados_atualizacao:
+            taxa_bdi = float(dados_atualizacao["bdi_aplicado"])
+        elif "tipo_bdi_item" in dados_atualizacao:
+            taxa_bdi = bdi_diferenciado if tipo_bdi_item == "DIFERENCIADO" else bdi_padrao
+            dados_atualizacao["bdi_aplicado"] = taxa_bdi
+        else:
+            taxa_bdi = float(item_atual.get("bdi_aplicado") or (bdi_diferenciado if tipo_bdi_item == "DIFERENCIADO" else bdi_padrao))
+
+        preco_unit_efetivo = dados_atualizacao.get("preco_unitario") or preco_unitario
+        qtd_efetiva = dados_atualizacao.get("quantidade") or float(item_atual.get("quantidade") or 1.0)
+        
+        dados_atualizacao["preco_unitario_bdi"] = round(preco_unit_efetivo * (1 + taxa_bdi / 100), 2)
+        dados_atualizacao["preco_total_bdi"] = round(qtd_efetiva * dados_atualizacao["preco_unitario_bdi"], 2)
 
         if not dados_atualizacao:
             return item_atual

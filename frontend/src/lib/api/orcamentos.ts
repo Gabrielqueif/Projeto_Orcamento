@@ -1,5 +1,35 @@
 import { fetchWithAuth } from "./client";
 
+export type TipoBDI = "ANALITICO" | "SINTETICO";
+export type RegimeTributario = "LUCRO_PRESUMIDO_REAL" | "SIMPLES_NACIONAL";
+export type TipoBDIItem = "PADRAO" | "DIFERENCIADO";
+
+export interface BDIConfig {
+  regime_tributario: RegimeTributario;
+  ac: number;
+  sg: number;
+  r: number;
+  df: number;
+  lucro: number;
+  pis: number;
+  cofins: number;
+  iss: number;
+  cprb: number;
+  aliquota_simples: number;
+  bdi_diferenciado: number;
+}
+
+export interface BDICalculateResponse {
+  bdi: number;
+  bdi_diferenciado: number;
+  impostos_total: number;
+  detalhamento: {
+    formula: string;
+    faixas_referencia_edificios: Record<string, { min: number; medio: number; max: number }>;
+    faixas_referencia_equipamentos: Record<string, { min: number; medio: number; max: number }>;
+  };
+}
+
 export interface Orcamento {
   id: string;
   nome: string;
@@ -10,6 +40,8 @@ export interface Orcamento {
   estado: string;
   fonte: string;
   bdi: number;
+  tipo_bdi?: TipoBDI;
+  bdi_config?: BDIConfig | null;
   valor_total: number | null;
   status: string;
   variaveis_globais?: any[] | null;
@@ -27,6 +59,8 @@ export interface OrcamentoCreate {
   estado: string;
   fonte?: string;
   bdi?: number;
+  tipo_bdi?: TipoBDI;
+  bdi_config?: BDIConfig;
   valor_total?: number;
   status?: string;
   variaveis_globais?: any[] | null;
@@ -42,6 +76,8 @@ export interface OrcamentoUpdate {
   estado?: string;
   fonte?: string;
   bdi?: number;
+  tipo_bdi?: TipoBDI;
+  bdi_config?: BDIConfig;
   status?: string;
   valor_total?: number;
   variaveis_globais?: any[] | null;
@@ -78,6 +114,10 @@ export interface OrcamentoItem {
   unidade: string;
   preco_unitario: number | null;
   preco_total: number | null;
+  tipo_bdi_item?: TipoBDIItem;
+  bdi_aplicado?: number | null;
+  preco_unitario_bdi?: number | null;
+  preco_total_bdi?: number | null;
   estado: string;
   etapa_id?: string;
   memoria_calculo?: string;
@@ -97,6 +137,8 @@ export interface OrcamentoItemCreate {
   fonte?: string;
   variaveis?: MemoriaCalculoContainer | any;
   preco_unitario?: number;
+  tipo_bdi_item?: TipoBDIItem;
+  bdi_aplicado?: number;
 }
 
 export interface OrcamentoItemUpdate {
@@ -109,6 +151,8 @@ export interface OrcamentoItemUpdate {
   memoria_calculo?: string;
   fonte?: string;
   variaveis?: MemoriaCalculoContainer | any;
+  tipo_bdi_item?: TipoBDIItem;
+  bdi_aplicado?: number;
 }
 
 // Interfaces para Etapas
@@ -141,6 +185,22 @@ export interface EtapaUpdate {
 }
 
 // Funções para Orçamentos
+export async function simularBdi(
+  config: BDIConfig,
+): Promise<BDICalculateResponse> {
+  const response = await fetchWithAuth("/orcamentos/calcular-bdi", {
+    method: "POST",
+    body: JSON.stringify({ config }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Erro ao calcular BDI");
+  }
+
+  return response.json();
+}
+
 export async function createOrcamento(
   data: OrcamentoCreate,
 ): Promise<Orcamento> {

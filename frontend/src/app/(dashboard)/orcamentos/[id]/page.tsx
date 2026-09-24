@@ -17,8 +17,9 @@ import { getOrcamento, downloadOrcamentoPDF, updateOrcamento, type Orcamento } f
 import { PlanilhaView } from "@/components/orcamentos/PlanilhaView";
 import { CurvaAbcView } from "@/components/orcamentos/CurvaAbcView";
 import { CronogramaFinanceiroView } from "@/components/orcamentos/CronogramaFinanceiroView";
+import { BdiConfigModal } from "@/components/orcamentos/BdiConfigModal";
 import { Modal } from "@/components/ui/Modal";
-import { Plus, Trash, X, HardHat, CaretDown } from "@phosphor-icons/react";
+import { Plus, Trash, X, HardHat, CaretDown, Calculator } from "@phosphor-icons/react";
 import { TransitionDrawer } from "@/components/orcamentos/TransitionDrawer";
 
 type TabType = "planilha" | "abc" | "cronograma" | "anexos";
@@ -31,6 +32,9 @@ export default function OrcamentoDetalhePage() {
   const [orcamento, setOrcamento] = useState<Orcamento | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("planilha");
+
+  // BDI Modal State
+  const [isBdiModalOpen, setIsBdiModalOpen] = useState(false);
 
   // Edit Modal States
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -305,17 +309,27 @@ export default function OrcamentoDetalhePage() {
         </div>
 
         {/* Card 2: BDI APLICADO */}
-        <div className="bg-white border border-[#c4c6cf] border-l-4 border-l-[#b9f61d] rounded-[12px] p-6 shadow-sm flex flex-col justify-between">
-          <span className="font-['Hanken_Grotesk'] font-bold text-[11px] text-[#44474e] uppercase tracking-[0.5px]">
-            BDI APLICADO
-          </span>
+        <div 
+          onClick={() => setIsBdiModalOpen(true)}
+          className="bg-white border border-[#c4c6cf] border-l-4 border-l-[#b9f61d] rounded-[12px] p-6 shadow-sm flex flex-col justify-between cursor-pointer hover:border-slate-400 transition-colors group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-['Hanken_Grotesk'] font-bold text-[11px] text-[#44474e] uppercase tracking-[0.5px]">
+              BDI APLICADO
+            </span>
+            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded group-hover:bg-blue-100 transition-colors flex items-center gap-1">
+              <Calculator size={12} /> {orcamento.tipo_bdi === "SINTETICO" ? "Sintético" : "Analítico TCU"}
+            </span>
+          </div>
           <div className="flex items-end justify-between mt-2">
             <h2 className="font-['Inter'] font-bold text-[28px] text-[#181c1e] leading-none">
-              {orcamento.bdi ? `${orcamento.bdi}%` : "25%"}
+              {orcamento.bdi ? `${orcamento.bdi}%` : "0%"}
             </h2>
-            <span className="font-['Inter'] font-bold text-[12px] text-[#16a34a] mb-0.5">
-              +0.5%
-            </span>
+            {orcamento.bdi_config?.bdi_diferenciado ? (
+              <span className="font-['Inter'] font-bold text-[11px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                Dif: {orcamento.bdi_config.bdi_diferenciado}%
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -376,6 +390,7 @@ export default function OrcamentoDetalhePage() {
             orcamentoId={orcamento.id} 
             estadoOrcamento={orcamento.estado}
             fonteOrcamento={orcamento.fonte}
+            bdiOrcamento={orcamento.bdi || 0}
             onTotalChanged={recarregarOrcamento}
           />
         )}
@@ -529,6 +544,15 @@ export default function OrcamentoDetalhePage() {
           </div>
         </form>
       </Modal>
+
+      {isBdiModalOpen && orcamento && (
+        <BdiConfigModal
+          isOpen={isBdiModalOpen}
+          onClose={() => setIsBdiModalOpen(false)}
+          orcamento={orcamento}
+          onUpdated={recarregarOrcamento}
+        />
+      )}
 
       {isTransitionDrawerOpen && orcamento && (
         <TransitionDrawer

@@ -277,4 +277,44 @@ class PdfService(FPDF):
         self.cell(160, 10, 'PREÇO DE VENDA TOTAL:', align='R')
         self.cell(30, 10, self._formatar_real(valor_venda), border=1, align='R', fill=True)
 
+        self._render_demonstrativo_bdi(orcamento)
+
         return self.output()
+
+    def _render_demonstrativo_bdi(self, orcamento: Dict[str, Any]):
+        bdi_config = orcamento.get('bdi_config')
+        if not bdi_config or not isinstance(bdi_config, dict):
+            return
+
+        self.ln(8)
+        if self.get_y() + 60 > self.page_break_trigger:
+            self.add_page()
+
+        self.set_font('helvetica', 'B', 10)
+        self.set_fill_color(230, 240, 255)
+        self.cell(190, 7, 'DEMONSTRATIVO ANALÍTICO DE BDI (ACÓRDÃO 2622/2013 TCU)', border=1, fill=True, new_x="LMARGIN", new_y="NEXT")
+
+        self.set_font('helvetica', '', 9)
+        regime = bdi_config.get('regime_tributario', 'LUCRO_PRESUMIDO_REAL')
+        regime_label = "Simples Nacional" if regime == "SIMPLES_NACIONAL" else "Lucro Presumido / Real"
+        
+        self.cell(95, 6, f"Regime Tributário: {regime_label}", border=1)
+        self.cell(95, 6, f"Administração Central (AC): {float(bdi_config.get('ac') or 0):.2f}%", border=1, new_x="LMARGIN", new_y="NEXT")
+        
+        self.cell(95, 6, f"Seguros e Garantias (SG): {float(bdi_config.get('sg') or 0):.2f}%", border=1)
+        self.cell(95, 6, f"Riscos e Imprevistos (R): {float(bdi_config.get('r') or 0):.2f}%", border=1, new_x="LMARGIN", new_y="NEXT")
+        
+        self.cell(95, 6, f"Despesas Financeiras (DF): {float(bdi_config.get('df') or 0):.2f}%", border=1)
+        self.cell(95, 6, f"Lucro / Remuneração (L): {float(bdi_config.get('lucro') or 0):.2f}%", border=1, new_x="LMARGIN", new_y="NEXT")
+
+        if regime == "SIMPLES_NACIONAL":
+            self.cell(95, 6, f"Alíquota Simples Nacional: {float(bdi_config.get('aliquota_simples') or 0):.2f}%", border=1)
+        else:
+            impostos_detalhe = f"PIS: {float(bdi_config.get('pis') or 0):.2f}% | COFINS: {float(bdi_config.get('cofins') or 0):.2f}% | ISS: {float(bdi_config.get('iss') or 0):.2f}%"
+            self.cell(95, 6, impostos_detalhe, border=1)
+        
+        bdi_dif = float(bdi_config.get('bdi_diferenciado') or 15.0)
+        self.cell(95, 6, f"BDI Diferenciado (Equip./Mat.): {bdi_dif:.2f}%", border=1, new_x="LMARGIN", new_y="NEXT")
+
+    def gerar_pdf_orcamento(self, orcamento: Dict[str, Any], itens: List[Dict[str, Any]], etapas: Optional[List[Dict[str, Any]]] = None) -> bytes:
+        return self.gerar_pdf(orcamento, itens, etapas)

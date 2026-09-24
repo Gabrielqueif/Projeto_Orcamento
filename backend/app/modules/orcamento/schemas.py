@@ -1,9 +1,19 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Dict
 from datetime import date, datetime
 from uuid import UUID
+from app.modules.orcamento.bdi import BDIConfig, TipoBDI, TipoBDIItem
 
 # --- Schemas de Orçamento ---
+
+class BDICalculateRequest(BaseModel):
+    config: BDIConfig
+
+class BDICalculateResponse(BaseModel):
+    bdi: float
+    bdi_diferenciado: float
+    impostos_total: float
+    detalhamento: Dict[str, Any]
 
 class OrcamentoCreate(BaseModel):
     nome: str
@@ -14,6 +24,8 @@ class OrcamentoCreate(BaseModel):
     estado: str
     fonte: Optional[str] = "SINAPI"
     bdi: Optional[float] = 0.0
+    tipo_bdi: Optional[TipoBDI] = "ANALITICO"
+    bdi_config: Optional[BDIConfig] = None
     valor_total: Optional[float] = 0.0
     status: Optional[str] = "em_elaboracao"
     variaveis_globais: Optional[List[Any]] = []
@@ -30,6 +42,8 @@ class OrcamentoUpdate(BaseModel):
     estado: Optional[str] = None
     fonte: Optional[str] = None
     bdi: Optional[float] = None
+    tipo_bdi: Optional[TipoBDI] = None
+    bdi_config: Optional[BDIConfig] = None
     status: Optional[str] = None
     valor_total: Optional[float] = None
     variaveis_globais: Optional[List[Any]] = None
@@ -47,6 +61,8 @@ class OrcamentoResponse(BaseModel):
     estado: str
     fonte: str
     bdi: float
+    tipo_bdi: Optional[str] = "ANALITICO"
+    bdi_config: Optional[Dict[str, Any]] = None
     valor_total: Optional[float]
     status: str
     variaveis_globais: Optional[List[Any]] = []
@@ -136,6 +152,8 @@ class OrcamentoItemCreate(BaseModel):
     preco_unitario: Optional[float] = None 
     memoria_calculo: Optional[str] = None
     variaveis: Optional[Any] = None
+    tipo_bdi_item: Optional[TipoBDIItem] = None
+    bdi_aplicado: Optional[float] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -149,6 +167,8 @@ class OrcamentoItemUpdate(BaseModel):
     etapa_id: Optional[str] = None
     memoria_calculo: Optional[str] = None
     variaveis: Optional[Any] = None
+    tipo_bdi_item: Optional[TipoBDIItem] = None
+    bdi_aplicado: Optional[float] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -162,6 +182,10 @@ class OrcamentoItemResponse(BaseModel):
     unidade: str
     preco_unitario: Optional[float]
     preco_total: Optional[float]
+    tipo_bdi_item: Optional[str] = "PADRAO"
+    bdi_aplicado: Optional[float] = 0.0
+    preco_unitario_bdi: Optional[float] = 0.0
+    preco_total_bdi: Optional[float] = 0.0
     estado: str
     fonte: str 
     memoria_calculo: Optional[str] = None
