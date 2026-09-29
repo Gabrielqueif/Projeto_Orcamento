@@ -211,14 +211,14 @@ export default function OrcamentoDetalhePage() {
             ORÇAMENTOS
           </Link>
           <span className="text-[#c4c6cf]">&gt;</span>
-          <span className="text-[#6b7280]">#{orcamento.id.substring(0, 8).toUpperCase()}</span>
+          <span className="text-[#6b7280]">{orcamento.nome}</span>
         </div>
 
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div className="flex flex-col gap-1.5 max-w-[550px]">
             <div className="flex items-center gap-3">
               <h1 className="font-['Inter'] font-bold text-[32px] text-[#181c1e] tracking-tight leading-tight">
-                Detalhes do Orçamento: #{orcamento.id.substring(0, 8).toUpperCase()}
+                Detalhes do Orçamento: {orcamento.nome}
               </h1>
               <div className="relative">
                 <button
@@ -254,7 +254,7 @@ export default function OrcamentoDetalhePage() {
               </div>
             </div>
             <p className="font-['Inter'] font-normal text-[16px] text-[#44474e]">
-              {orcamento.nome} — {orcamento.cliente || "Cliente não informado"}
+              {orcamento.id.substring(0, 8).toUpperCase()} — {orcamento.cliente || "Cliente não informado"}
             </p>
           </div>
 

@@ -19,6 +19,7 @@ import {
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { logout } from "@/app/auth/actions";
+import Image from "next/image";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -32,19 +33,17 @@ export function Sidebar() {
     { href: "/docs", icon: FileText, label: "Docs" },
     { href: "/diario", icon: BookOpen, label: "Diário de Obra" },
   ];
-
   return (
     <aside className="w-[256px] bg-[#001b3d] text-white flex flex-col fixed h-screen left-0 top-0 z-50">
       {/* Logo */}
       <div className="flex flex-col gap-0.5 py-6 px-6 border-b border-[rgba(255,255,255,0.06)]">
-        <Link href="/" className="no-underline">
-          <span className="font-['Manrope'] font-extrabold text-[22px] text-white tracking-[-0.5px]">
+        <Link href="/" className="no-underline flex items-center gap-3">
+          <Image src="/logo02.png" alt="Logo" width={40} height={40} className="object-contain" />
+          <span className="font-['Manrope'] font-extrabold text-[22px] text-white tracking-[-0.5px] m-1">
             GP<span className="text-[#9fd300]">Obras</span>
           </span>
         </Link>
-        <span className="font-['JetBrains_Mono'] text-[#94a3b8] text-[10px] uppercase tracking-[1px]">
-          Gestão de Obras
-        </span>
+
       </div>
 
       {/* Nav */}

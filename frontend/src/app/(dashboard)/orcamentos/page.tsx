@@ -109,11 +109,6 @@ export default function OrcamentosPage() {
       {/* Breadcrumbs & Header Actions */}
       <div className="flex items-end justify-between">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1.5 font-['Hanken_Grotesk'] text-[12px] font-bold text-[#44474e] tracking-wider uppercase">
-            <span>WORKSPACE</span>
-            <span className="text-[#c4c6cf] text-[10px]">&gt;</span>
-            <span>OPERAÇÕES</span>
-          </div>
           <h1 className="font-['Inter'] font-bold text-[32px] text-[#181c1e] tracking-tight leading-tight mt-1">
             Orçamentos
           </h1>

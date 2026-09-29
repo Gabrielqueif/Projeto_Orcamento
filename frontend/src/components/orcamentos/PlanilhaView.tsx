@@ -14,7 +14,7 @@ import {
   type OrcamentoItem,
   type OrcamentoItemInsumo
 } from "@/lib/api/orcamentos";
-import { Plus, Trash, PencilSimple, Cube, CaretRight, CaretDown, Spinner } from "@phosphor-icons/react";
+import { Plus, Trash, PencilSimple, Cube, CaretRight, CaretDown, Spinner, Check } from "@phosphor-icons/react";
 
 import { Modal } from "@/components/ui/Modal";
 import { OrcamentoItemForm } from "./OrcamentoItemForm";
@@ -46,6 +46,10 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
   const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
   const [insumosCache, setInsumosCache] = React.useState<Record<string, OrcamentoItemInsumo[]>>({});
   const [loadingInsumos, setLoadingInsumos] = React.useState<Set<string>>(new Set());
+
+  // Refs e estado de edição de nome de etapas/sub-etapas
+  const [editingEtapaId, setEditingEtapaId] = React.useState<string | null>(null);
+  const inputRefs = React.useRef<Record<string, HTMLInputElement | null>>({});
 
   const carregarDados = async () => {
     try {
@@ -154,7 +158,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
     setIsModalOpen(true);
   };
 
-  const handleSuccessForm = () => {
+  const handleSuccessForm = () => { 
     setIsModalOpen(false);
     setEditingItem(null);
     carregarDados();
@@ -479,13 +483,61 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                 <div className="text-[10px] font-bold text-text-muted uppercase tracking-wide mb-2">
                   ETAPA {(index + 1).toString().padStart(2, '0')}
                 </div>
-                <input 
-                  type="text" 
-                  defaultValue={etapa.nome}
-                  onBlur={(e) => handleUpdateEtapaNome(etapa.id, e.target.value)}
-                  className="text-lg font-bold text-text-main mb-4 border-none border-b border-border outline-none w-[80%] pb-2 bg-transparent focus:border-brand-primary transition-colors" 
-                  placeholder="Nome da etapa..."
-                />
+                <div className="flex items-center gap-1.5 mb-4 max-w-[80%] group/etapa-name">
+                  <input 
+                    ref={(el) => { inputRefs.current[etapa.id] = el; }}
+                    type="text" 
+                    defaultValue={etapa.nome}
+                    readOnly={editingEtapaId !== etapa.id}
+                    onMouseDown={(e) => {
+                      if (editingEtapaId !== etapa.id) e.preventDefault();
+                    }}
+                    style={{ 
+                      width: `${Math.max((etapa.nome || "").length + 1, 10)}ch`, 
+                      fieldSizing: "content" 
+                    } as React.CSSProperties}
+                    onInput={(e) => {
+                      const val = e.currentTarget.value;
+                      e.currentTarget.style.width = `${Math.max(val.length + 1, 10)}ch`;
+                    }}
+                    onBlur={(e) => {
+                      handleUpdateEtapaNome(etapa.id, e.target.value);
+                      setEditingEtapaId(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') e.currentTarget.blur();
+                    }}
+                    className={`text-lg font-bold text-text-main outline-none max-w-full pb-2 transition-colors ${
+                      editingEtapaId === etapa.id 
+                        ? 'border-b-2 border-brand-primary bg-white px-2 py-0.5 rounded shadow-2xs cursor-text' 
+                        : 'border-none cursor-default bg-transparent'
+                    }`} 
+                    placeholder="Nome da etapa..."
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editingEtapaId === etapa.id) {
+                        const el = inputRefs.current[etapa.id];
+                        if (el) el.blur();
+                        setEditingEtapaId(null);
+                      } else {
+                        setEditingEtapaId(etapa.id);
+                        setTimeout(() => {
+                          const el = inputRefs.current[etapa.id];
+                          if (el) {
+                            el.focus();
+                            el.select();
+                          }
+                        }, 50);
+                      }
+                    }}
+                    className="p-1.5 text-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center shrink-0 mb-2"
+                    title={editingEtapaId === etapa.id ? "Salvar Nome" : "Alterar Nome da Etapa"}
+                  >
+                    {editingEtapaId === etapa.id ? <Check size={18} className="text-emerald-600 font-bold" /> : <PencilSimple size={18} />}
+                  </button>
+                </div>
 
                 {/* Itens Diretos da Etapa Principal */}
                 {itensDaEtapa.length > 0 && (
@@ -513,13 +565,61 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                           <div className="text-[9px] font-bold text-text-muted uppercase tracking-wide mb-1">
                             SUB-ETAPA {(index + 1)}.{sIdx + 1}
                           </div>
-                          <input 
-                            type="text" 
-                            defaultValue={sub.nome}
-                            onBlur={(e) => handleUpdateEtapaNome(sub.id, e.target.value)}
-                            className="text-sm font-bold text-text-main mb-3 border-none border-b border-slate-200 outline-none w-[70%] pb-1 bg-transparent focus:border-brand-primary transition-colors" 
-                            placeholder="Nome da sub-etapa..."
-                          />
+                          <div className="flex items-center gap-1.5 mb-3 max-w-[80%] group/subetapa-name">
+                            <input 
+                              ref={(el) => { inputRefs.current[sub.id] = el; }}
+                              type="text" 
+                              defaultValue={sub.nome}
+                              readOnly={editingEtapaId !== sub.id}
+                              onMouseDown={(e) => {
+                                if (editingEtapaId !== sub.id) e.preventDefault();
+                              }}
+                              style={{ 
+                                width: `${Math.max((sub.nome || "").length + 1, 10)}ch`, 
+                                fieldSizing: "content" 
+                              } as React.CSSProperties}
+                              onInput={(e) => {
+                                const val = e.currentTarget.value;
+                                e.currentTarget.style.width = `${Math.max(val.length + 1, 10)}ch`;
+                              }}
+                              onBlur={(e) => {
+                                handleUpdateEtapaNome(sub.id, e.target.value);
+                                setEditingEtapaId(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') e.currentTarget.blur();
+                              }}
+                              className={`text-sm font-bold text-text-main outline-none max-w-full pb-1 transition-colors ${
+                                editingEtapaId === sub.id 
+                                  ? 'border-b-2 border-brand-primary bg-white px-2 py-0.5 rounded shadow-2xs cursor-text' 
+                                  : 'border-none cursor-default bg-transparent'
+                              }`} 
+                              placeholder="Nome da sub-etapa..."
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (editingEtapaId === sub.id) {
+                                  const el = inputRefs.current[sub.id];
+                                  if (el) el.blur();
+                                  setEditingEtapaId(null);
+                                } else {
+                                  setEditingEtapaId(sub.id);
+                                  setTimeout(() => {
+                                    const el = inputRefs.current[sub.id];
+                                    if (el) {
+                                      el.focus();
+                                      el.select();
+                                    }
+                                  }, 50);
+                                }
+                              }}
+                              className="p-1 text-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center shrink-0 mb-1"
+                              title={editingEtapaId === sub.id ? "Salvar Nome" : "Alterar Nome da Sub-etapa"}
+                            >
+                              {editingEtapaId === sub.id ? <Check size={16} className="text-emerald-600 font-bold" /> : <PencilSimple size={16} />}
+                            </button>
+                          </div>
 
                           {renderItemTable(itensDaSubEtapa, sub.id)}
                         </div>
@@ -538,7 +638,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                       <Plus size={14} /> ADICIONAR SUB-ETAPA
                     </button>
                     <button 
-                      onClick={() => openModalToCreate(etapa.id)} 
+                      onClick={() => openModalToCreate(etapa.nome)} 
                       className="px-4 py-2 bg-slate-900 text-white rounded text-[12px] font-bold hover:bg-slate-800 transition-colors flex items-center gap-2 cursor-pointer shadow-sm border-none"
                     >
                       <Plus size={14} /> ADICIONAR ITEM À ETAPA
