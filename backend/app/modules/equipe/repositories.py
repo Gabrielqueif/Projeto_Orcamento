@@ -1,11 +1,12 @@
-from typing import List, Optional, Dict, Any
-from datetime import datetime
 import logging
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("projeto_orcamento")
 
 TABELA_EQUIPES = "equipes"
 TABELA_MEMBROS = "membros_equipe"
+
 
 class EquipeRepository:
     def __init__(self, supabase_client):
@@ -36,7 +37,9 @@ class EquipeRepository:
 
     def buscar_por_id(self, equipe_id: str, user_id: str) -> Optional[Dict[str, Any]]:
         try:
-            resultado = self.supabase.table(TABELA_EQUIPES).select("*").eq("id", equipe_id).eq("user_id", user_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_EQUIPES).select("*").eq("id", equipe_id).eq("user_id", user_id).execute()
+            )
             if resultado.data:
                 return resultado.data[0]
             return None
@@ -47,7 +50,13 @@ class EquipeRepository:
     def atualizar(self, equipe_id: str, dados_atualizacao: Dict[str, Any], user_id: str) -> Optional[Dict[str, Any]]:
         try:
             dados_atualizacao["updated_at"] = datetime.now().isoformat()
-            resultado = self.supabase.table(TABELA_EQUIPES).update(dados_atualizacao).eq("id", equipe_id).eq("user_id", user_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_EQUIPES)
+                .update(dados_atualizacao)
+                .eq("id", equipe_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
             if resultado.data:
                 return resultado.data[0]
             return None
@@ -57,7 +66,9 @@ class EquipeRepository:
 
     def deletar(self, equipe_id: str, user_id: str) -> bool:
         try:
-            resultado = self.supabase.table(TABELA_EQUIPES).delete().eq("id", equipe_id).eq("user_id", user_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_EQUIPES).delete().eq("id", equipe_id).eq("user_id", user_id).execute()
+            )
             return len(resultado.data) > 0 if resultado.data else False
         except Exception as e:
             logger.error(f"Erro ao deletar equipe {equipe_id}: {e}")
@@ -80,17 +91,17 @@ class MembroEquipeRepository:
             raise e
 
     def listar(
-        self, 
+        self,
         user_id: str,
-        nome: Optional[str] = None, 
-        cargo: Optional[str] = None, 
+        nome: Optional[str] = None,
+        cargo: Optional[str] = None,
         status: Optional[str] = None,
         orcamento_id: Optional[str] = None,
-        equipe_id: Optional[str] = None
+        equipe_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         try:
             query = self.supabase.table(TABELA_MEMBROS).select("*").eq("user_id", user_id)
-            
+
             if nome:
                 query = query.ilike("nome", f"%{nome}%")
             if cargo:
@@ -104,7 +115,7 @@ class MembroEquipeRepository:
                     query = query.is_("orcamento_id", "null")
                 else:
                     query = query.eq("orcamento_id", orcamento_id)
-                    
+
             query = query.order("nome")
             resultado = query.execute()
             return resultado.data or []
@@ -114,7 +125,9 @@ class MembroEquipeRepository:
 
     def buscar_por_id(self, membro_id: str, user_id: str) -> Optional[Dict[str, Any]]:
         try:
-            resultado = self.supabase.table(TABELA_MEMBROS).select("*").eq("id", membro_id).eq("user_id", user_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_MEMBROS).select("*").eq("id", membro_id).eq("user_id", user_id).execute()
+            )
             if resultado.data:
                 return resultado.data[0]
             return None
@@ -125,7 +138,13 @@ class MembroEquipeRepository:
     def atualizar(self, membro_id: str, dados_atualizacao: Dict[str, Any], user_id: str) -> Optional[Dict[str, Any]]:
         try:
             dados_atualizacao["updated_at"] = datetime.now().isoformat()
-            resultado = self.supabase.table(TABELA_MEMBROS).update(dados_atualizacao).eq("id", membro_id).eq("user_id", user_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_MEMBROS)
+                .update(dados_atualizacao)
+                .eq("id", membro_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
             if resultado.data:
                 return resultado.data[0]
             return None
@@ -135,7 +154,9 @@ class MembroEquipeRepository:
 
     def deletar(self, membro_id: str, user_id: str) -> bool:
         try:
-            resultado = self.supabase.table(TABELA_MEMBROS).delete().eq("id", membro_id).eq("user_id", user_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_MEMBROS).delete().eq("id", membro_id).eq("user_id", user_id).execute()
+            )
             return len(resultado.data) > 0 if resultado.data else False
         except Exception as e:
             logger.error(f"Erro ao deletar membro {membro_id}: {e}")
@@ -145,13 +166,10 @@ class MembroEquipeRepository:
         try:
             if not membro_ids:
                 return True
-                
-            dados = {
-                "orcamento_id": orcamento_id,
-                "updated_at": datetime.now().isoformat()
-            }
-            
-            resultado = self.supabase.table(TABELA_MEMBROS).update(dados).eq("user_id", user_id).in_("id", membro_ids).execute()
+
+            dados = {"orcamento_id": orcamento_id, "updated_at": datetime.now().isoformat()}
+
+            (self.supabase.table(TABELA_MEMBROS).update(dados).eq("user_id", user_id).in_("id", membro_ids).execute())
             return True
         except Exception as e:
             logger.error(f"Erro ao alocar membros ao orcamento {orcamento_id}: {e}")

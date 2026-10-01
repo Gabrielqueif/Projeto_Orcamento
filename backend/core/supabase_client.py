@@ -16,10 +16,7 @@ def get_supabase_client() -> Client:
     api_key = settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY
     if not api_key:
         raise RuntimeError(
-            "Chave do Supabase não configurada. "
-            "Defina SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_ANON_KEY no .env."
+            "Chave do Supabase não configurada. Defina SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_ANON_KEY no .env."
         )
 
     return create_client(settings.SUPABASE_URL, api_key)
-
-

@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Tuple, Optional
-import pandas as pd
 from io import BytesIO
+from typing import Any, Dict, List, Optional, Tuple
+
+import pandas as pd
+
 
 class BaseExcelParser(ABC):
     """
@@ -29,9 +31,7 @@ class BaseExcelParser(ABC):
 
     @abstractmethod
     def extrair_registros_aba(
-        self, 
-        nome_aba: str, 
-        mes_referencia: str
+        self, nome_aba: str, mes_referencia: str
     ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """
         Extrai composições e preços de uma aba específica.

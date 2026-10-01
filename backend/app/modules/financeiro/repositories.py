@@ -1,13 +1,14 @@
-from typing import List, Dict, Any, Optional
 import logging
 import uuid
 from decimal import Decimal
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("projeto_orcamento")
 
 TABELA_CUSTOS = "custos_despesas"
 TABELA_OBRAS = "obras"
 TABELA_ORCAMENTOS = "orcamentos"
+
 
 def _is_valid_uuid(val: str) -> bool:
     if not val:
@@ -17,6 +18,7 @@ def _is_valid_uuid(val: str) -> bool:
         return True
     except Exception:
         return False
+
 
 class FinanceiroRepository:
     def __init__(self, supabase_client):
@@ -78,10 +80,12 @@ class FinanceiroRepository:
 
     def atualizar_status_despesa(self, despesa_id: str, status: str) -> Dict[str, Any]:
         try:
-            resultado = self.supabase.table(TABELA_CUSTOS).update({
-                "status": status,
-                "updated_at": "now()"
-            }).eq("id", despesa_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_CUSTOS)
+                .update({"status": status, "updated_at": "now()"})
+                .eq("id", despesa_id)
+                .execute()
+            )
             if not resultado.data:
                 raise Exception("Falha ao atualizar status da despesa")
             return resultado.data[0]
@@ -119,9 +123,11 @@ class FinanceiroRepository:
                 val = Decimal(str(resultado.data[0]["valor_total"]))
                 if val > Decimal("0.0"):
                     return val
-            
+
             # Fallback: calcula o total pela soma dos itens cadastrados no orçamento
-            res_itens = self.supabase.table("orcamento_itens").select("preco_total").eq("orcamento_id", orcamento_id).execute()
+            res_itens = (
+                self.supabase.table("orcamento_itens").select("preco_total").eq("orcamento_id", orcamento_id).execute()
+            )
             if res_itens.data:
                 total_itens = sum(Decimal(str(item.get("preco_total", 0.0) or 0.0)) for item in res_itens.data)
                 if total_itens > Decimal("0.0"):
@@ -136,23 +142,40 @@ class FinanceiroRepository:
         """
         Consolida o orçamento planejado por tipo de insumo (MATERIAL, MAO_DE_OBRA, EQUIPAMENTO).
         """
-        valores = {"Materiais": Decimal("0.0"), "Mão de Obra": Decimal("0.0"), "Equipamentos": Decimal("0.0"), "Outros": Decimal("0.0")}
+        valores = {
+            "Materiais": Decimal("0.0"),
+            "Mão de Obra": Decimal("0.0"),
+            "Equipamentos": Decimal("0.0"),
+            "Outros": Decimal("0.0"),
+        }
         try:
             if not _is_valid_uuid(orcamento_id):
                 return valores
 
             # 1. Busca os IDs dos itens do orçamento
-            res_itens = self.supabase.table("orcamento_itens").select("id, quantidade").eq("orcamento_id", orcamento_id).execute()
+            res_itens = (
+                self.supabase.table("orcamento_itens")
+                .select("id, quantidade")
+                .eq("orcamento_id", orcamento_id)
+                .execute()
+            )
             if not res_itens.data:
                 return valores
 
-            item_map = {item["id"]: Decimal(str(item.get("quantidade", 1.0))) for item in res_itens.data if "id" in item}
+            item_map = {
+                item["id"]: Decimal(str(item.get("quantidade", 1.0))) for item in res_itens.data if "id" in item
+            }
             item_ids = list(item_map.keys())
             if not item_ids:
                 return valores
 
             # 2. Busca os insumos pertencentes aos itens do orçamento
-            res_insumos = self.supabase.table("orcamento_item_insumo").select("tipo_item, total, orcamento_item_id").in_("orcamento_item_id", item_ids).execute()
+            res_insumos = (
+                self.supabase.table("orcamento_item_insumo")
+                .select("tipo_item, total, orcamento_item_id")
+                .in_("orcamento_item_id", item_ids)
+                .execute()
+            )
             if not res_insumos.data:
                 return valores
 
@@ -183,11 +206,18 @@ class FinanceiroRepository:
             target_ids = [target_obra_id]
 
             if _is_valid_uuid(target_obra_id):
-                res_obra = self.supabase.table(TABELA_OBRAS).select("id, orcamento_id").or_(f"id.eq.{target_obra_id},orcamento_id.eq.{target_obra_id}").execute()
+                res_obra = (
+                    self.supabase.table(TABELA_OBRAS)
+                    .select("id, orcamento_id")
+                    .or_(f"id.eq.{target_obra_id},orcamento_id.eq.{target_obra_id}")
+                    .execute()
+                )
                 if res_obra.data:
                     for row in res_obra.data:
-                        if row.get("id"): target_ids.append(row["id"])
-                        if row.get("orcamento_id"): target_ids.append(row["orcamento_id"])
+                        if row.get("id"):
+                            target_ids.append(row["id"])
+                        if row.get("orcamento_id"):
+                            target_ids.append(row["orcamento_id"])
 
             target_ids = list(set([t for t in target_ids if _is_valid_uuid(t)]))
             if not target_ids:
@@ -203,24 +233,39 @@ class FinanceiroRepository:
             return []
 
     def obter_gastos_reais_por_categoria(self, obra_id: str) -> Dict[str, Decimal]:
-        valores = {"Materiais": Decimal("0.0"), "Mão de Obra": Decimal("0.0"), "Equipamentos": Decimal("0.0"), "Administrativo": Decimal("0.0"), "Outros": Decimal("0.0")}
+        valores = {
+            "Materiais": Decimal("0.0"),
+            "Mão de Obra": Decimal("0.0"),
+            "Equipamentos": Decimal("0.0"),
+            "Administrativo": Decimal("0.0"),
+            "Outros": Decimal("0.0"),
+        }
         try:
             target_obra_id = self.resolver_obra_uuid(obra_id)
             target_ids = [target_obra_id]
 
             if _is_valid_uuid(target_obra_id):
-                res_obra = self.supabase.table(TABELA_OBRAS).select("id, orcamento_id").or_(f"id.eq.{target_obra_id},orcamento_id.eq.{target_obra_id}").execute()
+                res_obra = (
+                    self.supabase.table(TABELA_OBRAS)
+                    .select("id, orcamento_id")
+                    .or_(f"id.eq.{target_obra_id},orcamento_id.eq.{target_obra_id}")
+                    .execute()
+                )
                 if res_obra.data:
                     for row in res_obra.data:
-                        if row.get("id"): target_ids.append(row["id"])
-                        if row.get("orcamento_id"): target_ids.append(row["orcamento_id"])
+                        if row.get("id"):
+                            target_ids.append(row["id"])
+                        if row.get("orcamento_id"):
+                            target_ids.append(row["orcamento_id"])
 
             target_ids = list(set([t for t in target_ids if _is_valid_uuid(t)]))
             if not target_ids:
                 return valores
 
-            resultado = self.supabase.table(TABELA_CUSTOS).select("categoria, valor").in_("obra_id", target_ids).execute()
-            
+            resultado = (
+                self.supabase.table(TABELA_CUSTOS).select("categoria, valor").in_("obra_id", target_ids).execute()
+            )
+
             if not resultado.data:
                 return valores
 

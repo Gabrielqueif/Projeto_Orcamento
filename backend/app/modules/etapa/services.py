@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import List
+
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.etapa.schemas import EtapaCreate
+
 
 class EtapaService:
     def __init__(self, repository: EtapaRepository):
@@ -13,7 +15,7 @@ class EtapaService:
             "nome": etapa.nome,
             "ordem": etapa.ordem,
             "parent_id": etapa.parent_id,
-            "created_at": datetime.now().isoformat()
+            "created_at": datetime.now().isoformat(),
         }
         resultado = self.repository.criar(dados)
         if not resultado:

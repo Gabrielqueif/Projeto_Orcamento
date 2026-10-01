@@ -1,6 +1,8 @@
-from pydantic import BaseModel, ConfigDict
-from typing import Optional
 from datetime import date, datetime
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
+
 
 class EtapaCreate(BaseModel):
     nome: str
@@ -9,6 +11,7 @@ class EtapaCreate(BaseModel):
     data_inicio: Optional[date] = None
     data_fim: Optional[date] = None
 
+
 class EtapaUpdate(BaseModel):
     nome: Optional[str] = None
     ordem: Optional[int] = None
@@ -16,6 +19,7 @@ class EtapaUpdate(BaseModel):
     data_inicio: Optional[date] = None
     data_fim: Optional[date] = None
     progresso: Optional[int] = None
+
 
 class EtapaResponse(BaseModel):
     id: str

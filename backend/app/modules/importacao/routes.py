@@ -1,20 +1,23 @@
 import logging
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
 
-from app.modules.importacao.services.import_service import extract_metadata, process_import_file
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+
 from app.modules.composicao.repositories import ItemRepository
 from app.modules.composicao.schemas import SinapiMetadata
-from core.supabase_client import get_supabase_client
+from app.modules.importacao.services.import_service import extract_metadata, process_import_file
 from core.config import settings
 from core.security import require_admin
+from core.supabase_client import get_supabase_client
 
 logger = logging.getLogger("projeto_orcamento")
 MAX_ARQUIVOS_POR_IMPORTACAO = 10
 
 router = APIRouter(prefix="/importacao", tags=["Importacao"], redirect_slashes=False)
 
+
 def get_item_repository() -> ItemRepository:
     return ItemRepository(get_supabase_client())
+
 
 EXTENSOES_PERMITIDAS = (".xls", ".xlsx")
 
@@ -39,7 +42,7 @@ async def _ler_com_limite(file: UploadFile) -> bytes:
 async def upload_worksheet(
     file: UploadFile = File(...),
     source: str = Query("SINAPI", description="Fonte da planilha (ex: SINAPI, SEINFRA)"),
-    current_user = Depends(require_admin)
+    current_user=Depends(require_admin),
 ):
     """
     Uploads a SINAPI worksheet to extract metadata (Year/Month, UF, Desoneracao type).
@@ -59,11 +62,12 @@ async def upload_worksheet(
         logger.error(f"Unexpected error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error processing file.")
 
+
 @router.post("/import")
 async def import_worksheet_data(
     files: list[UploadFile] = File(...),
     source: str = Query("SINAPI", description="Fonte da planilha (ex: SINAPI, SEINFRA)"),
-    current_user = Depends(require_admin),
+    current_user=Depends(require_admin),
 ):
     """
     Full import: Accepts multiple Excel files (e.g., CSD, CCD, CSE) and processes them all.
@@ -119,11 +123,12 @@ async def import_worksheet_data(
         "falhas": falhas,
     }
 
+
 @router.get("/bases")
 async def listar_bases_disponiveis():
     """Retorna a lista de meses e tipos de desoneração disponíveis para escolha."""
     repo = get_item_repository()
-    
+
     bases = repo.listar_bases_disponiveis()
     unique_bases = []
     seen = set()
@@ -131,14 +136,10 @@ async def listar_bases_disponiveis():
         mes = b.get("mes_referencia")
         tipo = b.get("tipo_composicao", "Sem Desoneração")
         fonte = b.get("fonte", "SINAPI")
-        
+
         key = (mes, tipo, fonte)
         if key not in seen and mes:
             seen.add(key)
-            unique_bases.append({
-                "mes_referencia": mes,
-                "tipo_composicao": tipo,
-                "fonte": fonte
-            })
-            
+            unique_bases.append({"mes_referencia": mes, "tipo_composicao": tipo, "fonte": fonte})
+
     return sorted(unique_bases, key=lambda x: (x["mes_referencia"], x["fonte"]), reverse=True)

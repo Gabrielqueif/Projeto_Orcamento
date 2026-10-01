@@ -1,15 +1,16 @@
-from datetime import date, datetime, timedelta
-from typing import List, Optional, Dict, Any
 import logging
+from datetime import date, datetime, timedelta
+from typing import Any, Dict, Optional
 
-from app.modules.orcamento.repositories import OrcamentoRepository, OrcamentoItemRepository, InsumoRepository
 from app.modules.composicao.repositories import ItemRepository
 from app.modules.etapa.repositories import EtapaRepository
-from app.modules.orcamento.schemas import OrcamentoCreate, OrcamentoUpdate, OrcamentoItemCreate, OrcamentoItemUpdate
 from app.modules.orcamento.bdi import BDIConfig, calcular_bdi_tcu, determinar_tipo_bdi_item
+from app.modules.orcamento.repositories import InsumoRepository, OrcamentoItemRepository, OrcamentoRepository
+from app.modules.orcamento.schemas import OrcamentoCreate, OrcamentoItemCreate, OrcamentoItemUpdate, OrcamentoUpdate
 from core.exceptions import NaoEncontradoError
 
 logger = logging.getLogger("projeto_orcamento")
+
 
 class OrcamentoService:
     def __init__(
@@ -17,7 +18,7 @@ class OrcamentoService:
         repository: OrcamentoRepository,
         etapa_repository: Optional[EtapaRepository] = None,
         orcamento_item_repository: Optional[OrcamentoItemRepository] = None,
-        supabase_client: Optional[Any] = None
+        supabase_client: Optional[Any] = None,
     ):
         self.repository = repository
         self.etapa_repository = etapa_repository
@@ -37,7 +38,7 @@ class OrcamentoService:
         dados = {
             "nome": orcamento.nome,
             "cliente": orcamento.cliente,
-            "data": orcamento.data.isoformat() if hasattr(orcamento.data, 'isoformat') else str(orcamento.data),
+            "data": orcamento.data.isoformat() if hasattr(orcamento.data, "isoformat") else str(orcamento.data),
             "base_referencia": orcamento.base_referencia,
             "tipo_composicao": orcamento.tipo_composicao,
             "estado": orcamento.estado.lower(),
@@ -51,11 +52,17 @@ class OrcamentoService:
             "locais": orcamento.locais or [],
             "user_id": user_id,
             "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
         }
         return self.repository.criar(dados)
 
-    def listar_orcamentos(self, nome: Optional[str] = None, status: Optional[str] = None, cliente: Optional[str] = None, user_id: Optional[str] = None):
+    def listar_orcamentos(
+        self,
+        nome: Optional[str] = None,
+        status: Optional[str] = None,
+        cliente: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ):
         return self.repository.listar(nome, status, cliente, user_id=user_id)
 
     def buscar_orcamento(self, orcamento_id: str):
@@ -72,13 +79,17 @@ class OrcamentoService:
         dados_atualizacao = {}
         dados_atualizacao["updated_at"] = datetime.now().isoformat()
         bdi_alterado = False
-        
+
         if orcamento_update.nome is not None:
             dados_atualizacao["nome"] = orcamento_update.nome
         if orcamento_update.cliente is not None:
             dados_atualizacao["cliente"] = orcamento_update.cliente
         if orcamento_update.data is not None:
-            dados_atualizacao["data"] = orcamento_update.data.isoformat() if hasattr(orcamento_update.data, 'isoformat') else str(orcamento_update.data)
+            dados_atualizacao["data"] = (
+                orcamento_update.data.isoformat()
+                if hasattr(orcamento_update.data, "isoformat")
+                else str(orcamento_update.data)
+            )
         if orcamento_update.base_referencia is not None:
             dados_atualizacao["base_referencia"] = orcamento_update.base_referencia
         if orcamento_update.tipo_composicao is not None:
@@ -127,7 +138,9 @@ class OrcamentoService:
 
         bdi_padrao = float(orcamento.get("bdi") or 0.0)
         bdi_config_raw = orcamento.get("bdi_config")
-        bdi_diferenciado = float(bdi_config_raw.get("bdi_diferenciado", 15.0)) if isinstance(bdi_config_raw, dict) else 15.0
+        bdi_diferenciado = (
+            float(bdi_config_raw.get("bdi_diferenciado", 15.0)) if isinstance(bdi_config_raw, dict) else 15.0
+        )
 
         itens = self.orcamento_item_repository.listar_por_orcamento(orcamento_id)
         valor_total_geral = 0.0
@@ -141,18 +154,20 @@ class OrcamentoService:
             preco_unitario_bdi = round(preco_unitario * (1 + taxa_bdi / 100), 2)
             preco_total_bdi = round(quantidade * preco_unitario_bdi, 2)
 
-            self.orcamento_item_repository.atualizar(item["id"], {
-                "bdi_aplicado": taxa_bdi,
-                "preco_unitario_bdi": preco_unitario_bdi,
-                "preco_total_bdi": preco_total_bdi,
-            })
+            self.orcamento_item_repository.atualizar(
+                item["id"],
+                {
+                    "bdi_aplicado": taxa_bdi,
+                    "preco_unitario_bdi": preco_unitario_bdi,
+                    "preco_total_bdi": preco_total_bdi,
+                },
+            )
 
             valor_total_geral += preco_total_bdi
 
-        self.repository.atualizar(orcamento_id, {
-            "valor_total": round(valor_total_geral, 2),
-            "updated_at": datetime.now().isoformat()
-        })
+        self.repository.atualizar(
+            orcamento_id, {"valor_total": round(valor_total_geral, 2), "updated_at": datetime.now().isoformat()}
+        )
 
     def deletar_orcamento(self, orcamento_id: str):
         existente = self.repository.buscar_por_id(orcamento_id)
@@ -168,13 +183,13 @@ class OrcamentoService:
                 "valor_total": 0.0,
                 "taxa_aprovacao": 0.0,
                 "ticket_medio": 0.0,
-                "tempo_resposta_medio": 0.0
+                "tempo_resposta_medio": 0.0,
             }
 
         total_orcamentos = len(orcamentos)
         valor_total = sum(float(o.get("valor_total") or 0.0) for o in orcamentos)
         aprovados = sum(1 for o in orcamentos if o.get("status", "").lower() in ["aprovado", "concluido"])
-        
+
         taxa_aprovacao = (aprovados / total_orcamentos) * 100.0 if total_orcamentos > 0 else 0.0
         ticket_medio = valor_total / total_orcamentos if total_orcamentos > 0 else 0.0
 
@@ -198,7 +213,7 @@ class OrcamentoService:
             "valor_total": round(valor_total, 2),
             "taxa_aprovacao": round(taxa_aprovacao, 1),
             "ticket_medio": round(ticket_medio, 2),
-            "tempo_resposta_medio": round(tempo_resposta_medio, 1)
+            "tempo_resposta_medio": round(tempo_resposta_medio, 1),
         }
 
     def obter_curva_abc(self, orcamento_id: str) -> Dict[str, Any]:
@@ -211,14 +226,12 @@ class OrcamentoService:
 
         itens = self.orcamento_item_repository.listar_por_orcamento(orcamento_id)
         if not itens:
-            return {
-                "valor_total": 0.0,
-                "insumos": [],
-                "resumo_classes": {"A": 0.0, "B": 0.0, "C": 0.0}
-            }
+            return {"valor_total": 0.0, "insumos": [], "resumo_classes": {"A": 0.0, "B": 0.0, "C": 0.0}}
 
         item_ids = [item["id"] for item in itens]
-        resultado_insumos = self.supabase.table("orcamento_item_insumo").select("*").in_("orcamento_item_id", item_ids).execute()
+        resultado_insumos = (
+            self.supabase.table("orcamento_item_insumo").select("*").in_("orcamento_item_id", item_ids).execute()
+        )
         insumos = resultado_insumos.data or []
 
         grouped_insumos = {}
@@ -226,7 +239,7 @@ class OrcamentoService:
             codigo = insumo.get("codigo_insumo")
             if not codigo:
                 continue
-            
+
             qtd = float(insumo.get("quantidade_unitaria") or 0.0)
             total = float(insumo.get("total") or 0.0)
             desc = insumo.get("descricao") or ""
@@ -238,24 +251,20 @@ class OrcamentoService:
                     "descricao": desc,
                     "unidade": unid,
                     "quantidade": 0.0,
-                    "total": 0.0
+                    "total": 0.0,
                 }
             grouped_insumos[codigo]["quantidade"] += qtd
             grouped_insumos[codigo]["total"] += total
 
         custo_total_acumulado = sum(ins["total"] for ins in grouped_insumos.values())
         if custo_total_acumulado == 0:
-            return {
-                "valor_total": 0.0,
-                "insumos": [],
-                "resumo_classes": {"A": 0.0, "B": 0.0, "C": 0.0}
-            }
+            return {"valor_total": 0.0, "insumos": [], "resumo_classes": {"A": 0.0, "B": 0.0, "C": 0.0}}
 
         insumos_calculados = sorted(grouped_insumos.values(), key=lambda x: x["total"], reverse=True)
 
         acumulado_pct = 0.0
         resumo_classes = {"A": 0.0, "B": 0.0, "C": 0.0}
-        
+
         for ins in insumos_calculados:
             porcentagem = (ins["total"] / custo_total_acumulado) * 100.0
             acumulado_pct += porcentagem
@@ -278,7 +287,7 @@ class OrcamentoService:
         return {
             "valor_total": round(custo_total_acumulado, 2),
             "insumos": insumos_calculados,
-            "resumo_classes": {k: round(v, 2) for k, v in resumo_classes.items()}
+            "resumo_classes": {k: round(v, 2) for k, v in resumo_classes.items()},
         }
 
     def obter_cronograma(self, orcamento_id: str) -> Dict[str, Any]:
@@ -300,7 +309,9 @@ class OrcamentoService:
             etapa_id = item.get("etapa_id")
             if not etapa_id:
                 continue
-            etapa_custo_acumulado[etapa_id] = etapa_custo_acumulado.get(etapa_id, 0.0) + float(item.get("preco_total") or 0.0)
+            etapa_custo_acumulado[etapa_id] = etapa_custo_acumulado.get(etapa_id, 0.0) + float(
+                item.get("preco_total") or 0.0
+            )
 
         def parse_date(val):
             if not val:
@@ -361,9 +372,18 @@ class OrcamentoService:
         total_desembolso = sum(desembolsos_mensais.values())
 
         MESES_PT = {
-            "01": "Jan", "02": "Fev", "03": "Mar", "04": "Abr",
-            "05": "Mai", "06": "Jun", "07": "Jul", "08": "Ago",
-            "09": "Set", "10": "Out", "11": "Nov", "12": "Dez"
+            "01": "Jan",
+            "02": "Fev",
+            "03": "Mar",
+            "04": "Abr",
+            "05": "Mai",
+            "06": "Jun",
+            "07": "Jul",
+            "08": "Ago",
+            "09": "Set",
+            "10": "Out",
+            "11": "Nov",
+            "12": "Dez",
         }
 
         mensal_res = []
@@ -379,31 +399,34 @@ class OrcamentoService:
 
             servicos_ativos = ", ".join(sorted(list(etapas_ativas_no_mes[m])))
 
-            mensal_res.append({
-                "mes": mes_display,
-                "servicos": servicos_ativos,
-                "valor": round(val, 2),
-                "acumulado_pct": round(acumulado_acum, 1)
-            })
+            mensal_res.append(
+                {
+                    "mes": mes_display,
+                    "servicos": servicos_ativos,
+                    "valor": round(val, 2),
+                    "acumulado_pct": round(acumulado_acum, 1),
+                }
+            )
 
-        return {
-            "valor_total": round(total_desembolso, 2),
-            "mensal": mensal_res
-        }
+        return {"valor_total": round(total_desembolso, 2), "mensal": mensal_res}
 
 
 class OrcamentoItemService:
-    def __init__(self, 
-                 repository: OrcamentoItemRepository,
-                 orcamento_repository: OrcamentoRepository,
-                 item_repository: ItemRepository,
-                 insumo_repository: Optional[InsumoRepository] = None):
+    def __init__(
+        self,
+        repository: OrcamentoItemRepository,
+        orcamento_repository: OrcamentoRepository,
+        item_repository: ItemRepository,
+        insumo_repository: Optional[InsumoRepository] = None,
+    ):
         self.repository = repository
         self.orcamento_repository = orcamento_repository
         self.item_repository = item_repository
         self.insumo_repository = insumo_repository
 
-    def _buscar_preco_composicao(self, codigo_composicao: str, estado: str, mes_referencia: str, tipo_composicao: str, fonte: str = "SINAPI") -> Optional[float]:
+    def _buscar_preco_composicao(
+        self, codigo_composicao: str, estado: str, mes_referencia: str, tipo_composicao: str, fonte: str = "SINAPI"
+    ) -> Optional[float]:
         return self.item_repository.buscar_preco(codigo_composicao, estado, mes_referencia, tipo_composicao, fonte)
 
     def _atualizar_valor_total_orcamento(self, orcamento_id: str):
@@ -413,7 +436,9 @@ class OrcamentoItemService:
 
         bdi_padrao = float(orcamento.get("bdi") or 0.0)
         bdi_config_raw = orcamento.get("bdi_config")
-        bdi_diferenciado = float(bdi_config_raw.get("bdi_diferenciado", 15.0)) if isinstance(bdi_config_raw, dict) else 15.0
+        bdi_diferenciado = (
+            float(bdi_config_raw.get("bdi_diferenciado", 15.0)) if isinstance(bdi_config_raw, dict) else 15.0
+        )
 
         itens = self.repository.listar_por_orcamento(orcamento_id)
         valor_total_geral = 0.0
@@ -429,21 +454,23 @@ class OrcamentoItemService:
                 preco_total_bdi = round(quantidade * preco_unitario_bdi, 2)
 
                 if "id" in item:
-                    self.repository.atualizar(item["id"], {
-                        "bdi_aplicado": taxa_bdi,
-                        "preco_unitario_bdi": preco_unitario_bdi,
-                        "preco_total_bdi": preco_total_bdi,
-                    })
+                    self.repository.atualizar(
+                        item["id"],
+                        {
+                            "bdi_aplicado": taxa_bdi,
+                            "preco_unitario_bdi": preco_unitario_bdi,
+                            "preco_total_bdi": preco_total_bdi,
+                        },
+                    )
 
                 valor_total_geral += preco_total_bdi
         else:
             total_direto = self.repository.calcular_total_itens(orcamento_id)
             valor_total_geral = float(total_direto or 0.0) * (1 + bdi_padrao / 100)
 
-        self.orcamento_repository.atualizar(orcamento_id, {
-            "valor_total": round(valor_total_geral, 2),
-            "updated_at": datetime.now().isoformat()
-        })
+        self.orcamento_repository.atualizar(
+            orcamento_id, {"valor_total": round(valor_total_geral, 2), "updated_at": datetime.now().isoformat()}
+        )
         return round(valor_total_geral, 2)
 
     def adicionar_item(self, orcamento_id: str, item: OrcamentoItemCreate):
@@ -457,7 +484,7 @@ class OrcamentoItemService:
 
         fonte = item.fonte or orcamento.get("fonte", "SINAPI")
         composicao = {"descricao": item.descricao, "unidade": item.unidade}
-        
+
         if item.codigo_composicao != "MANUAL":
             comps = self.item_repository.buscar_por_codigo(item.codigo_composicao, fonte=fonte)
             if not comps:
@@ -465,19 +492,19 @@ class OrcamentoItemService:
             composicao = comps[0]
 
         preco_unitario = item.preco_unitario
-        
+
         if preco_unitario is None:
             preco_unitario = self._buscar_preco_composicao(
-                item.codigo_composicao, 
+                item.codigo_composicao,
                 estado_para_buscar,
                 orcamento.get("base_referencia"),
                 orcamento.get("tipo_composicao"),
-                fonte=fonte
+                fonte=fonte,
             )
-            
+
         if preco_unitario is None and item.codigo_composicao != "MANUAL":
             raise NaoEncontradoError(f"Preço não encontrado para a composição {item.codigo_composicao}")
-        
+
         if preco_unitario is None:
             preco_unitario = 0.0
 
@@ -488,11 +515,13 @@ class OrcamentoItemService:
 
         descricao = item.descricao or composicao.get("descricao", "")
         unidade = item.unidade or composicao.get("unidade", "")
-        
+
         tipo_bdi_item = item.tipo_bdi_item or determinar_tipo_bdi_item(item.codigo_composicao, descricao)
         bdi_padrao = float(orcamento.get("bdi") or 0.0)
         bdi_config_raw = orcamento.get("bdi_config")
-        bdi_diferenciado = float(bdi_config_raw.get("bdi_diferenciado", 15.0)) if isinstance(bdi_config_raw, dict) else 15.0
+        bdi_diferenciado = (
+            float(bdi_config_raw.get("bdi_diferenciado", 15.0)) if isinstance(bdi_config_raw, dict) else 15.0
+        )
 
         if item.bdi_aplicado is not None:
             bdi_aplicado = float(item.bdi_aplicado)
@@ -519,7 +548,7 @@ class OrcamentoItemService:
             "etapa_id": item.etapa_id,
             "memoria_calculo": item.memoria_calculo,
             "variaveis": item.variaveis,
-            "created_at": datetime.now().isoformat()
+            "created_at": datetime.now().isoformat(),
         }
 
         novo_item = self.repository.criar(dados_item)
@@ -530,14 +559,14 @@ class OrcamentoItemService:
 
         if self.insumo_repository and isinstance(novo_item, dict):
             self._explodir_insumos(novo_item, orcamento, fonte, estado_para_buscar)
-        
+
         return novo_item
 
     def listar_itens(self, orcamento_id: str):
         orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
         if not orcamento:
             raise NaoEncontradoError("Orçamento não encontrado")
-            
+
         return self.repository.listar_por_orcamento(orcamento_id)
 
     def atualizar_item(self, orcamento_id: str, item_id: str, item_update: OrcamentoItemUpdate):
@@ -554,15 +583,15 @@ class OrcamentoItemService:
             orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
             fonte = item_update.fonte or item_atual.get("fonte") or orcamento.get("fonte", "SINAPI")
             preco_unitario = self._buscar_preco_composicao(
-                codigo_composicao, 
+                codigo_composicao,
                 estado,
                 orcamento.get("base_referencia"),
                 orcamento.get("tipo_composicao"),
-                fonte=fonte
+                fonte=fonte,
             )
             if preco_unitario is None:
                 raise NaoEncontradoError(f"Preço não encontrado para a composição {codigo_composicao} na base {fonte}")
-            
+
             dados_atualizacao["preco_unitario"] = preco_unitario
             dados_atualizacao["codigo_composicao"] = codigo_composicao
             dados_atualizacao["estado"] = estado.lower()
@@ -599,7 +628,9 @@ class OrcamentoItemService:
         tipo_bdi_item = dados_atualizacao.get("tipo_bdi_item") or item_atual.get("tipo_bdi_item", "PADRAO")
         bdi_padrao = float(orcamento.get("bdi") or 0.0) if orcamento else 0.0
         bdi_config_raw = orcamento.get("bdi_config") if orcamento else {}
-        bdi_diferenciado = float(bdi_config_raw.get("bdi_diferenciado", 15.0)) if isinstance(bdi_config_raw, dict) else 15.0
+        bdi_diferenciado = (
+            float(bdi_config_raw.get("bdi_diferenciado", 15.0)) if isinstance(bdi_config_raw, dict) else 15.0
+        )
 
         if "bdi_aplicado" in dados_atualizacao:
             taxa_bdi = float(dados_atualizacao["bdi_aplicado"])
@@ -607,11 +638,13 @@ class OrcamentoItemService:
             taxa_bdi = bdi_diferenciado if tipo_bdi_item == "DIFERENCIADO" else bdi_padrao
             dados_atualizacao["bdi_aplicado"] = taxa_bdi
         else:
-            taxa_bdi = float(item_atual.get("bdi_aplicado") or (bdi_diferenciado if tipo_bdi_item == "DIFERENCIADO" else bdi_padrao))
+            taxa_bdi = float(
+                item_atual.get("bdi_aplicado") or (bdi_diferenciado if tipo_bdi_item == "DIFERENCIADO" else bdi_padrao)
+            )
 
         preco_unit_efetivo = dados_atualizacao.get("preco_unitario") or preco_unitario
         qtd_efetiva = dados_atualizacao.get("quantidade") or float(item_atual.get("quantidade") or 1.0)
-        
+
         dados_atualizacao["preco_unitario_bdi"] = round(preco_unit_efetivo * (1 + taxa_bdi / 100), 2)
         dados_atualizacao["preco_total_bdi"] = round(qtd_efetiva * dados_atualizacao["preco_unitario_bdi"], 2)
 
@@ -620,7 +653,7 @@ class OrcamentoItemService:
 
         item_atualizado = self.repository.atualizar(item_id, dados_atualizacao)
         self._atualizar_valor_total_orcamento(orcamento_id)
-        
+
         return item_atualizado
 
     def listar_insumos(self, orcamento_id: str, item_id: str):
@@ -641,32 +674,27 @@ class OrcamentoItemService:
 
         qtd = dados.get("quantidade_unitaria", insumo_atual.get("quantidade_unitaria", 0))
         preco_custom = dados.get("preco_unitario_custom")
-        
+
         preco_efetivo = preco_custom if preco_custom is not None else insumo_atual.get("preco_unitario_base", 0)
-        
+
         novo_total_insumo = round(float(qtd) * float(preco_efetivo), 2)
 
-        upd_data = {
-            "quantidade_unitaria": qtd,
-            "preco_unitario_custom": preco_custom,
-            "total": novo_total_insumo
-        }
+        upd_data = {"quantidade_unitaria": qtd, "preco_unitario_custom": preco_custom, "total": novo_total_insumo}
 
         insumo_upd = self.insumo_repository.atualizar(insumo_id, upd_data)
 
         insumos = self.insumo_repository.listar_por_item(item_id)
         soma_totais = sum(float(i.get("total") or 0) for i in insumos)
-        
+
         item_pai = self.repository.buscar_por_id(item_id, orcamento_id)
         qtd_pai = float(item_pai.get("quantidade") or 1)
 
         novo_preco_total_pai = round(soma_totais, 2)
         novo_preco_unitario_pai = round(soma_totais / qtd_pai, 2) if qtd_pai > 0 else 0
 
-        self.repository.atualizar(item_id, {
-            "preco_unitario": novo_preco_unitario_pai,
-            "preco_total": novo_preco_total_pai
-        })
+        self.repository.atualizar(
+            item_id, {"preco_unitario": novo_preco_unitario_pai, "preco_total": novo_preco_total_pai}
+        )
 
         self._atualizar_valor_total_orcamento(orcamento_id)
 
@@ -699,35 +727,36 @@ class OrcamentoItemService:
                 if coef <= 0:
                     continue
 
-                preco_base = self.item_repository.buscar_preco(
-                    cod_filho, estado, mes, tipo_composicao, fonte
-                )
+                preco_base = self.item_repository.buscar_preco(cod_filho, estado, mes, tipo_composicao, fonte)
 
                 qtd_total = round(coef * quantidade_pai, 6)
                 total = round(qtd_total * preco_base, 2) if preco_base else None
 
-                batch.append({
-                    "orcamento_item_id": item_id,
-                    "codigo_insumo": cod_filho,
-                    "descricao": filho.get("descricao_filho", ""),
-                    "unidade": filho.get("unidade_filho", "-"),
-                    "quantidade_unitaria": qtd_total,
-                    "preco_unitario_base": preco_base,
-                    "total": total,
-                    "tipo_item": "MATERIAL",
-                })
+                batch.append(
+                    {
+                        "orcamento_item_id": item_id,
+                        "codigo_insumo": cod_filho,
+                        "descricao": filho.get("descricao_filho", ""),
+                        "unidade": filho.get("unidade_filho", "-"),
+                        "quantidade_unitaria": qtd_total,
+                        "preco_unitario_base": preco_base,
+                        "total": total,
+                        "tipo_item": "MATERIAL",
+                    }
+                )
 
             if batch:
                 self.insumo_repository.criar_batch(batch)
         except Exception as e:
             import logging
+
             logging.getLogger(__name__).warning(f"Falha ao explodir insumos: {e}")
 
     def remover_item(self, orcamento_id: str, item_id: str):
         item_existente = self.repository.buscar_por_id(item_id, orcamento_id)
         if not item_existente:
-             raise NaoEncontradoError("Item não encontrado")
-        
+            raise NaoEncontradoError("Item não encontrado")
+
         self.repository.deletar(item_id)
         self._atualizar_valor_total_orcamento(orcamento_id)
         return {"message": "Item removido com sucesso", "id": item_id}

@@ -1,8 +1,10 @@
-from typing import List, Dict, Any
-from decimal import Decimal
 import io
+from decimal import Decimal
+from typing import Any, Dict, List
+
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+
 
 def gerar_planilha_orcamento_excel(orcamento: Dict[str, Any], itens: List[Dict[str, Any]]) -> bytes:
     wb = openpyxl.Workbook()
@@ -19,13 +21,15 @@ def gerar_planilha_orcamento_excel(orcamento: Dict[str, Any], itens: List[Dict[s
         left=Side(style="thin", color="E2E8F0"),
         right=Side(style="thin", color="E2E8F0"),
         top=Side(style="thin", color="E2E8F0"),
-        bottom=Side(style="thin", color="E2E8F0")
+        bottom=Side(style="thin", color="E2E8F0"),
     )
 
     # Cabeçalho do Projeto
     ws["A1"] = f"ORÇAMENTO: {orcamento.get('nome', '')}"
     ws["A1"].font = Font(name="Calibri", size=16, bold=True, color="001B3D")
-    ws["A2"] = f"Cliente: {orcamento.get('cliente', '')} | Base: {orcamento.get('base_referencia', '')} | BDI: {orcamento.get('bdi', 0)}%"
+    ws["A2"] = (
+        f"Cliente: {orcamento.get('cliente', '')} | Base: {orcamento.get('base_referencia', '')} | BDI: {orcamento.get('bdi', 0)}%"
+    )
     ws["A2"].font = Font(name="Calibri", size=11, italic=True, color="64748B")
 
     # Linhas da Tabela
@@ -50,7 +54,7 @@ def gerar_planilha_orcamento_excel(orcamento: Dict[str, Any], itens: List[Dict[s
         ws.cell(row=row_num, column=2, value=item.get("codigo_composicao", "")).alignment = align_center
         ws.cell(row=row_num, column=3, value=item.get("descricao", ""))
         ws.cell(row=row_num, column=4, value=item.get("unidade", "")).alignment = align_center
-        
+
         cell_qtd = ws.cell(row=row_num, column=5, value=float(qtd))
         cell_qtd.number_format = "#,##0.00"
         cell_qtd.alignment = align_right

@@ -55,6 +55,12 @@ def test_listar_despesas(client, mock_supabase):
         }
     ]
 
+    # resolver_obra_uuid: select("id").eq("id", obra_id)
+    (mock_supabase.table.return_value
+        .select.return_value
+        .eq.return_value
+        .execute.return_value.data) = [{"id": obra_id}]
+
     (mock_supabase.table.return_value
         .select.return_value
         .or_.return_value
@@ -89,7 +95,7 @@ def test_deletar_despesa_sucesso(client, mock_supabase):
 
 def test_obter_consolidado_financeiro(client, mock_supabase):
     obra_id = "e9b50e2ddc9943efb387052637738f61"
-    orcamento_id = "orc-123"
+    orcamento_id = "11111111-1111-1111-1111-111111111111"  # o repositório só consulta UUIDs válidos
 
     # 1. Mock obter_orcamento_id_da_obra
     mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value.data = [
@@ -150,7 +156,7 @@ def test_obter_consolidado_financeiro(client, mock_supabase):
         def execute(self):
             mock_res = MagicMock()
             if self.name == "obras":
-                mock_res.data = [{"orcamento_id": orcamento_id}]
+                mock_res.data = [{"id": obra_id, "orcamento_id": orcamento_id}]
             elif self.name == "orcamentos":
                 mock_res.data = [{"valor_total": 250000.0}]
             elif self.name == "orcamento_itens":

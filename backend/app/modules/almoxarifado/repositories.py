@@ -1,11 +1,12 @@
-from typing import List, Optional, Dict, Any
 import logging
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("projeto_orcamento")
 
 TABELA_ESTOQUE = "estoque_insumos"
 TABELA_MOVIMENTACOES = "movimentacoes_estoque"
 TABELA_LOCACOES = "locacoes_equipamentos"
+
 
 class AlmoxarifadoRepository:
     def __init__(self, supabase_client):
@@ -20,11 +21,11 @@ class AlmoxarifadoRepository:
             res = self.supabase.table("obras").select("id").eq("id", obra_id).execute()
             if res.data:
                 return obra_id
-            
+
             res = self.supabase.table("obras").select("id").eq("orcamento_id", obra_id).execute()
             if res.data:
                 return res.data[0]["id"]
-            
+
             return obra_id
         except Exception as e:
             logger.warning(f"Erro ao resolver obra_id {obra_id}: {e}")
@@ -34,9 +35,14 @@ class AlmoxarifadoRepository:
         obra_id_real = self._resolver_obra_id(obra_id)
         try:
             # Consulta otimizada, selecionando colunas específicas
-            resultado = self.supabase.table(TABELA_ESTOQUE).select(
-                "id, obra_id, codigo_insumo, descricao, categoria, quantidade_atual, quantidade_minima, unidade, preco_unitario, created_at, updated_at"
-            ).eq("obra_id", obra_id_real).execute()
+            resultado = (
+                self.supabase.table(TABELA_ESTOQUE)
+                .select(
+                    "id, obra_id, codigo_insumo, descricao, categoria, quantidade_atual, quantidade_minima, unidade, preco_unitario, created_at, updated_at"
+                )
+                .eq("obra_id", obra_id_real)
+                .execute()
+            )
             return resultado.data or []
         except Exception as e:
             logger.error(f"Erro ao listar insumos da obra {obra_id}: {e}")
@@ -44,9 +50,14 @@ class AlmoxarifadoRepository:
 
     def buscar_insumo_por_id(self, insumo_id: str) -> Optional[Dict[str, Any]]:
         try:
-            resultado = self.supabase.table(TABELA_ESTOQUE).select(
-                "id, obra_id, codigo_insumo, descricao, categoria, quantidade_atual, quantidade_minima, unidade, preco_unitario"
-            ).eq("id", insumo_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_ESTOQUE)
+                .select(
+                    "id, obra_id, codigo_insumo, descricao, categoria, quantidade_atual, quantidade_minima, unidade, preco_unitario"
+                )
+                .eq("id", insumo_id)
+                .execute()
+            )
             if resultado.data:
                 return resultado.data[0]
             return None
@@ -68,10 +79,12 @@ class AlmoxarifadoRepository:
 
     def atualizar_quantidade_insumo(self, insumo_id: str, nova_quantidade: float) -> Dict[str, Any]:
         try:
-            resultado = self.supabase.table(TABELA_ESTOQUE).update({
-                "quantidade_atual": nova_quantidade,
-                "updated_at": "now()"
-            }).eq("id", insumo_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_ESTOQUE)
+                .update({"quantidade_atual": nova_quantidade, "updated_at": "now()"})
+                .eq("id", insumo_id)
+                .execute()
+            )
             if not resultado.data:
                 raise Exception("Falha ao atualizar quantidade do insumo")
             return resultado.data[0]
@@ -94,9 +107,14 @@ class AlmoxarifadoRepository:
         obra_id_real = self._resolver_obra_id(obra_id)
         try:
             # Lista todas as movimentações dos insumos daquela obra realizando join com inner select
-            resultado = self.supabase.table(TABELA_MOVIMENTACOES).select(
-                "id, insumo_id, tipo_movimentacao, quantidade, responsavel, observacoes, data_movimentacao, created_at, estoque_insumos!inner(obra_id)"
-            ).eq("estoque_insumos.obra_id", obra_id_real).execute()
+            resultado = (
+                self.supabase.table(TABELA_MOVIMENTACOES)
+                .select(
+                    "id, insumo_id, tipo_movimentacao, quantidade, responsavel, observacoes, data_movimentacao, created_at, estoque_insumos!inner(obra_id)"
+                )
+                .eq("estoque_insumos.obra_id", obra_id_real)
+                .execute()
+            )
             # Limpa o inner select da resposta final se necessário
             data = resultado.data or []
             for item in data:
@@ -110,9 +128,12 @@ class AlmoxarifadoRepository:
     def listar_locacoes(self, obra_id: str) -> List[Dict[str, Any]]:
         obra_id_real = self._resolver_obra_id(obra_id)
         try:
-            resultado = self.supabase.table(TABELA_LOCACOES).select(
-                "id, obra_id, nome_equipamento, locadora, status, devolucao_prevista, responsavel, created_at"
-            ).eq("obra_id", obra_id_real).execute()
+            resultado = (
+                self.supabase.table(TABELA_LOCACOES)
+                .select("id, obra_id, nome_equipamento, locadora, status, devolucao_prevista, responsavel, created_at")
+                .eq("obra_id", obra_id_real)
+                .execute()
+            )
             return resultado.data or []
         except Exception as e:
             logger.error(f"Erro ao listar locações da obra {obra_id}: {e}")
@@ -132,9 +153,7 @@ class AlmoxarifadoRepository:
 
     def atualizar_status_locacao(self, locacao_id: str, status: str) -> Dict[str, Any]:
         try:
-            resultado = self.supabase.table(TABELA_LOCACOES).update({
-                "status": status
-            }).eq("id", locacao_id).execute()
+            resultado = self.supabase.table(TABELA_LOCACOES).update({"status": status}).eq("id", locacao_id).execute()
             if not resultado.data:
                 raise Exception("Falha ao atualizar status da locação")
             return resultado.data[0]

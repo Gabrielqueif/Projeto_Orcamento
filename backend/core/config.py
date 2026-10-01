@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -28,12 +26,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _validar_cors_em_producao(self):
-        if self.ENVIRONMENT == "production" and (
-            not self.cors_origins_list or "*" in self.cors_origins_list
-        ):
-            raise ValueError(
-                "CORS_ORIGINS deve listar origens explícitas em produção (não use '*')."
-            )
+        if self.ENVIRONMENT == "production" and (not self.cors_origins_list or "*" in self.cors_origins_list):
+            raise ValueError("CORS_ORIGINS deve listar origens explícitas em produção (não use '*').")
         return self
 
     @property

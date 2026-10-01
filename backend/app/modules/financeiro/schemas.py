@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
-from decimal import Decimal
 from datetime import date, datetime
+from decimal import Decimal
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class DespesaBase(BaseModel):
     descricao: str = Field(..., min_length=3, max_length=255)
@@ -15,8 +17,10 @@ class DespesaBase(BaseModel):
     insumo_id: Optional[str] = None
     locacao_id: Optional[str] = None
 
+
 class DespesaCreate(DespesaBase):
     pass
+
 
 class DespesaResponse(DespesaBase):
     id: str
@@ -27,6 +31,7 @@ class DespesaResponse(DespesaBase):
     class Config:
         from_attributes = True
 
+
 class CategoriaGasto(BaseModel):
     categoria: str
     orcado: Decimal
@@ -34,12 +39,14 @@ class CategoriaGasto(BaseModel):
     desvio: Decimal
     desvio_percentual: float
 
+
 class ConsolidadoFinanceiro(BaseModel):
     total_orcado: Decimal
     total_realizado: Decimal
     saldo_restante: Decimal
     desvio_percentual: float
     gasto_por_categoria: List[CategoriaGasto]
+
 
 class ObraResumoFinanceiro(BaseModel):
     id: str
@@ -53,6 +60,7 @@ class ObraResumoFinanceiro(BaseModel):
     barColor: str
     href: str
 
+
 class PortfolioConsolidadoResponse(BaseModel):
     total_orcado: float
     total_realizado: float
@@ -61,4 +69,3 @@ class PortfolioConsolidadoResponse(BaseModel):
     projetos: List[ObraResumoFinanceiro]
     gasto_por_categoria: List[CategoriaGasto]
     alerta_critico: Optional[Dict[str, Any]] = None
-

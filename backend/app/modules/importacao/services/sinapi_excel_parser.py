@@ -9,12 +9,12 @@ import logging
 import re
 from dataclasses import dataclass, field
 from io import BytesIO
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 from openpyxl import load_workbook
-from .base_excel_parser import BaseExcelParser
 
+from .base_excel_parser import BaseExcelParser
 from .sinapi_text_utils import (
     limpar_valor_moeda,
     normalizar_nome_aba,
@@ -25,9 +25,33 @@ logger = logging.getLogger(__name__)
 
 # Siglas dos 27 estados brasileiros (incluindo DF)
 COLUNAS_ESTADOS = [
-    "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO",
-    "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
-    "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+    "AC",
+    "AL",
+    "AP",
+    "AM",
+    "BA",
+    "CE",
+    "DF",
+    "ES",
+    "GO",
+    "MA",
+    "MT",
+    "MS",
+    "MG",
+    "PA",
+    "PB",
+    "PR",
+    "PE",
+    "PI",
+    "RJ",
+    "RN",
+    "RS",
+    "RO",
+    "RR",
+    "SC",
+    "SP",
+    "SE",
+    "TO",
 ]
 
 # Abas que devem ser ignoradas no processamento
@@ -110,10 +134,7 @@ class SinapiExcelParser(BaseExcelParser):
         """Identifica a aba Analítico (hierárquia pai→filho).
         Prioriza abas sem 'custo' no nome (o Análitico puro, não o 'com custo').
         """
-        candidatos = [
-            a for a in self._xl.sheet_names
-            if any(t in normalizar_nome_aba(a) for t in _TERMOS_ANALITICO)
-        ]
+        candidatos = [a for a in self._xl.sheet_names if any(t in normalizar_nome_aba(a) for t in _TERMOS_ANALITICO)]
         for a in candidatos:
             if "custo" not in normalizar_nome_aba(a):
                 return a
@@ -130,25 +151,15 @@ class SinapiExcelParser(BaseExcelParser):
         return None
 
     def identificar_abas_precos(self) -> List[str]:
-        """Identifica quais abas contêm dados de preços.
-        """
+        """Identifica quais abas contêm dados de preços."""
         abas = self._xl.sheet_names
         if not abas:
             return []
 
-        abas_precos = [
-            a for a in abas
-            if any(t in normalizar_nome_aba(a) for t in _TERMOS_PRECOS)
-        ]
+        abas_precos = [a for a in abas if any(t in normalizar_nome_aba(a) for t in _TERMOS_PRECOS)]
 
         if not abas_precos:
-            abas_precos = [
-                a for a in abas
-                if not any(
-                    ign in normalizar_nome_aba(a).upper()
-                    for ign in _ABAS_IGNORADAS
-                )
-            ]
+            abas_precos = [a for a in abas if not any(ign in normalizar_nome_aba(a).upper() for ign in _ABAS_IGNORADAS)]
 
         return abas_precos
 
@@ -215,10 +226,7 @@ class SinapiExcelParser(BaseExcelParser):
             if r_idx < 1:
                 continue
 
-            prev_vals = [
-                remover_acentos(str(v)).strip().upper()
-                for v in df.iloc[r_idx - 1].values
-            ]
+            prev_vals = [remover_acentos(str(v)).strip().upper() for v in df.iloc[r_idx - 1].values]
             qtd_estados = sum(1 for v in prev_vals if v in COLUNAS_ESTADOS)
 
             if qtd_estados >= 5:
@@ -285,7 +293,7 @@ class SinapiExcelParser(BaseExcelParser):
             aba_uso = abas[0] if abas else self.sheet_names[0]
 
         df = self.ler_aba(aba_uso, header=None, nrows=20)
-        
+
         mes_referencia = "UNKNOWN"
         desoneracao_raw = "UNKNOWN"
         uf = "BR"
@@ -309,11 +317,7 @@ class SinapiExcelParser(BaseExcelParser):
             if len(u) == 2 and u.isalpha():
                 uf = u
 
-        return {
-            "mes_referencia": mes_referencia,
-            "uf": uf,
-            "desoneracao": desoneracao_raw
-        }
+        return {"mes_referencia": mes_referencia, "uf": uf, "desoneracao": desoneracao_raw}
 
     # ------------------------------------------------------------------
     # Extração de registros
@@ -342,22 +346,21 @@ class SinapiExcelParser(BaseExcelParser):
             return [], []
 
         tipo_comp = self.classificar_tipo_composicao(nome_aba)
-        df_dados = df.iloc[header.linha + 1:]
+        df_dados = df.iloc[header.linha + 1 :]
 
         codigos_formula: Dict[int, str] = {}
         if header.col_codigo != -1:
             primeiros_codigos = df_dados.head(10).iloc[:, header.col_codigo]
-            todos_zero = all(
-                str(v).strip() in ('0', '0.0', '') or pd.isna(v)
-                for v in primeiros_codigos
-            )
+            todos_zero = all(str(v).strip() in ("0", "0.0", "") or pd.isna(v) for v in primeiros_codigos)
             if todos_zero:
                 logger.info(
                     "Detectados códigos zerados na aba '%s', extraindo de fórmulas.",
                     nome_aba,
                 )
                 codigos_formula = self._extrair_codigos_formula(
-                    nome_aba, header.col_codigo, header.linha + 1,
+                    nome_aba,
+                    header.col_codigo,
+                    header.linha + 1,
                 )
 
         composicoes: List[dict] = []
@@ -366,7 +369,11 @@ class SinapiExcelParser(BaseExcelParser):
         for r_idx, row in df_dados.iterrows():
             code_override = codigos_formula.get(r_idx)
             registro = self._processar_linha(
-                row, header, mes_referencia, tipo_comp, code_override,
+                row,
+                header,
+                mes_referencia,
+                tipo_comp,
+                code_override,
             )
             if registro is None:
                 continue
@@ -384,12 +391,11 @@ class SinapiExcelParser(BaseExcelParser):
         col_codigo: int,
         data_start_row: int,
     ) -> Dict[int, str]:
-        """Extrai códigos reais de fórmulas HYPERLINK via openpyxl.
-        """
+        """Extrai códigos reais de fórmulas HYPERLINK via openpyxl."""
         wb = load_workbook(BytesIO(self._file_content), data_only=False, read_only=True)
         ws = wb[nome_aba]
 
-        padrao_hyperlink = re.compile(r'[,)]\s*(\d+)\s*\)\s*$')
+        padrao_hyperlink = re.compile(r"[,)]\s*(\d+)\s*\)\s*$")
 
         codigos: Dict[int, str] = {}
 
@@ -405,17 +411,18 @@ class SinapiExcelParser(BaseExcelParser):
                 continue
 
             val_str = str(val)
-            if val_str.startswith('='):
+            if val_str.startswith("="):
                 match = padrao_hyperlink.search(val_str)
                 if match:
                     codigos[row_idx] = match.group(1)
-            elif val_str.strip() and val_str.strip() != '0':
-                codigos[row_idx] = val_str.replace('.0', '').strip()
+            elif val_str.strip() and val_str.strip() != "0":
+                codigos[row_idx] = val_str.replace(".0", "").strip()
 
         wb.close()
         logger.info(
             "Extraídos %d códigos de fórmulas na aba '%s'.",
-            len(codigos), nome_aba,
+            len(codigos),
+            nome_aba,
         )
         return codigos
 
@@ -427,26 +434,21 @@ class SinapiExcelParser(BaseExcelParser):
         tipo_composicao: str,
         code_override: Optional[str] = None,
     ) -> Optional[Tuple[dict, Optional[dict]]]:
-        """Processa uma linha de dados e retorna composição + preço.
-        """
+        """Processa uma linha de dados e retorna composição + preço."""
         if code_override:
             cod = code_override
         else:
             cod_raw = row.iloc[header.col_codigo] if header.col_codigo != -1 else None
             if pd.isna(cod_raw) or str(cod_raw).strip() == "":
                 return None
-            cod = str(cod_raw).replace('.0', '').strip()
+            cod = str(cod_raw).replace(".0", "").strip()
 
         if not cod.isdigit() and len(cod) < 3:
             return None
 
         desc_raw = row.iloc[header.col_descricao] if header.col_descricao != -1 else None
         desc = str(desc_raw).strip() if desc_raw is not None else ""
-        unid = (
-            str(row.iloc[header.col_unidade]).strip()
-            if header.col_unidade != -1
-            else "-"
-        )
+        unid = str(row.iloc[header.col_unidade]).strip() if header.col_unidade != -1 else "-"
 
         grupo = "-"
         if header.col_grupo != -1:
@@ -473,7 +475,7 @@ class SinapiExcelParser(BaseExcelParser):
             reg_preco[sigla] = val
             if val is not None:
                 tem_valor = True
-        
+
         preco = reg_preco if tem_valor else None
         return composicao, preco
 
@@ -487,12 +489,10 @@ class SinapiExcelParser(BaseExcelParser):
         mes_referencia: str,
         fonte: str = "SINAPI",
     ) -> List[Dict[str, Any]]:
-        """Extrai os relacionamentos composicao→insumo da aba Analítico.
-        """
+        """Extrai os relacionamentos composicao→insumo da aba Analítico."""
         df = self.ler_aba(nome_aba, header=None, dtype=str)
 
         col_cod_pai = -1
-        col_tipo = -1
         col_cod_filho = -1
         col_desc = -1
         col_unid = -1
@@ -509,7 +509,7 @@ class SinapiExcelParser(BaseExcelParser):
                     if "codigo" in v and "composicao" in v:
                         col_cod_pai = c_idx
                     elif "tipo" in v and "item" in v:
-                        col_tipo = c_idx
+                        pass  # coluna "tipo do item" é reconhecida mas não utilizada
                     elif "codigo" in v and "item" in v:
                         col_cod_filho = c_idx
                     elif "descricao" in v or "descri" in v:
@@ -525,7 +525,7 @@ class SinapiExcelParser(BaseExcelParser):
             return []
 
         registros: List[Dict[str, Any]] = []
-        df_dados = df.iloc[header_row + 1:]
+        df_dados = df.iloc[header_row + 1 :]
 
         for _, row in df_dados.iterrows():
             cod_pai_raw = row.iloc[col_cod_pai]
@@ -534,14 +534,11 @@ class SinapiExcelParser(BaseExcelParser):
             if pd.isna(cod_filho_raw) or str(cod_filho_raw).strip() in ("", "None", "nan"):
                 continue
 
-            cod_pai = str(cod_pai_raw).replace('.0', '').strip()
-            cod_filho = str(cod_filho_raw).replace('.0', '').strip()
+            cod_pai = str(cod_pai_raw).replace(".0", "").strip()
+            cod_filho = str(cod_filho_raw).replace(".0", "").strip()
 
             if not cod_pai.isdigit() or not cod_filho.isdigit():
                 continue
-
-            tipo_raw = row.iloc[col_tipo] if col_tipo != -1 else ""
-            tipo = remover_acentos(str(tipo_raw)).strip().upper() if not pd.isna(tipo_raw) else ""
 
             desc_raw = row.iloc[col_desc] if col_desc != -1 else ""
             desc = str(desc_raw).strip() if not pd.isna(desc_raw) else ""
@@ -551,25 +548,24 @@ class SinapiExcelParser(BaseExcelParser):
 
             coef_raw = row.iloc[col_coef] if col_coef != -1 else None
             try:
-                coef = float(str(coef_raw).replace(',', '.')) if coef_raw and not pd.isna(coef_raw) else None
+                coef = float(str(coef_raw).replace(",", ".")) if coef_raw and not pd.isna(coef_raw) else None
             except (ValueError, TypeError):
                 coef = None
 
             if coef is None:
                 continue
 
-            registros.append({
-                "codigo_pai": cod_pai,
-                "codigo_filho": cod_filho,
-                "quantidade_coeficiente": coef,
-                "fonte": fonte,
-                "mes_referencia": mes_referencia,
-                "descricao_filho": desc,
-                "unidade_filho": unid,
-            })
+            registros.append(
+                {
+                    "codigo_pai": cod_pai,
+                    "codigo_filho": cod_filho,
+                    "quantidade_coeficiente": coef,
+                    "fonte": fonte,
+                    "mes_referencia": mes_referencia,
+                    "descricao_filho": desc,
+                    "unidade_filho": unid,
+                }
+            )
 
-        logger.info(
-            "Aba '%s': %d relacionamentos analíticos extraídos.",
-            nome_aba, len(registros)
-        )
+        logger.info("Aba '%s': %d relacionamentos analíticos extraídos.", nome_aba, len(registros))
         return registros

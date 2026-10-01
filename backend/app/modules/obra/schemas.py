@@ -1,6 +1,8 @@
-from pydantic import BaseModel, ConfigDict
-from typing import Optional, Any
 from datetime import date, datetime
+from typing import Any, Optional
+
+from pydantic import BaseModel, ConfigDict
+
 
 class ObraTransitionCreate(BaseModel):
     data_inicio_real: date
@@ -10,6 +12,7 @@ class ObraTransitionCreate(BaseModel):
     bloquear_planilha_base: Optional[bool] = True
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class ObraCreate(BaseModel):
     orcamento_id: Optional[str] = None
@@ -25,6 +28,7 @@ class ObraCreate(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ObraUpdate(BaseModel):
     cliente: Optional[str] = None
     endereco: Optional[Any] = None
@@ -35,6 +39,7 @@ class ObraUpdate(BaseModel):
     status: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class ObraResponse(BaseModel):
     id: str
@@ -53,6 +58,7 @@ class ObraResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class LimiteRequisicaoResponse(BaseModel):
     id: str
     obra_id: str
@@ -65,6 +71,7 @@ class LimiteRequisicaoResponse(BaseModel):
     updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class ObraStatusUpdate(BaseModel):
     status: str
