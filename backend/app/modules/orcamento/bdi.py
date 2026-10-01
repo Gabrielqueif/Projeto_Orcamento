@@ -1,34 +1,39 @@
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Literal, Dict, Any
 import re
+from typing import Literal, Optional
+
+from pydantic import BaseModel, Field
 
 TipoBDI = Literal["ANALITICO", "SINTETICO"]
 RegimeTributario = Literal["LUCRO_PRESUMIDO_REAL", "SIMPLES_NACIONAL"]
 TipoBDIItem = Literal["PADRAO", "DIFERENCIADO"]
+
 
 class BDIConfig(BaseModel):
     """
     Configuração analítica de BDI em conformidade com o Acórdão 2622/2013 do TCU.
     Todos os campos percentuais são expressos de 0 a 100 (ex: 4.0 para 4%).
     """
+
     regime_tributario: RegimeTributario = "LUCRO_PRESUMIDO_REAL"
     ac: float = Field(default=4.00, ge=0.0, le=100.0, description="Administração Central (%)")
     sg: float = Field(default=0.80, ge=0.0, le=100.0, description="Seguros e Garantias (%)")
     r: float = Field(default=1.20, ge=0.0, le=100.0, description="Riscos e Imprevistos (%)")
     df: float = Field(default=1.23, ge=0.0, le=100.0, description="Despesas Financeiras (%)")
     lucro: float = Field(default=7.40, ge=0.0, le=100.0, description="Lucro / Margem de Remuneração (%)")
-    
+
     # Tributos (Lucro Presumido / Real)
     pis: float = Field(default=0.65, ge=0.0, le=100.0, description="PIS (%)")
     cofins: float = Field(default=3.00, ge=0.0, le=100.0, description="COFINS (%)")
     iss: float = Field(default=5.00, ge=0.0, le=100.0, description="ISS Municipal (%)")
     cprb: float = Field(default=0.00, ge=0.0, le=100.0, description="CPRB - Desoneração da Folha (%)")
-    
+
     # Tributo Unificado (Simples Nacional)
     aliquota_simples: float = Field(default=0.00, ge=0.0, le=100.0, description="Alíquota efetiva Simples Nacional (%)")
-    
+
     # BDI Diferenciado para Fornecimento de Materiais e Equipamentos de Vulto
-    bdi_diferenciado: float = Field(default=15.00, ge=0.0, le=100.0, description="BDI Reduzido para Equipamentos/Materiais (%)")
+    bdi_diferenciado: float = Field(
+        default=15.00, ge=0.0, le=100.0, description="BDI Reduzido para Equipamentos/Materiais (%)"
+    )
 
     def calcular_impostos_total(self) -> float:
         """Retorna a alíquota total de tributos em porcentagem (0 a 100)."""
@@ -81,6 +86,7 @@ KEYWORDS_BDI_DIFERENCIADO = [
 
 REGEX_BDI_DIFERENCIADO = re.compile("|".join(KEYWORDS_BDI_DIFERENCIADO), re.IGNORECASE)
 
+
 def determinar_tipo_bdi_item(tipo_composicao: Optional[str] = None, descricao: Optional[str] = None) -> TipoBDIItem:
     """
     Determina automaticamente se um item deve receber BDI Padrão (serviços)
@@ -89,10 +95,10 @@ def determinar_tipo_bdi_item(tipo_composicao: Optional[str] = None, descricao: O
     texto_analise = f"{tipo_composicao or ''} {descricao or ''}".strip().lower()
     if not texto_analise:
         return "PADRAO"
-        
+
     if REGEX_BDI_DIFERENCIADO.search(texto_analise):
         return "DIFERENCIADO"
-        
+
     return "PADRAO"
 
 
@@ -104,9 +110,7 @@ FAIXAS_REFERENCIA_TCU = {
         "r": {"min": 0.97, "medio": 1.27, "max": 1.27},
         "df": {"min": 0.59, "medio": 1.23, "max": 1.39},
         "lucro": {"min": 6.16, "medio": 7.40, "max": 8.96},
-        "bdi_resultado": {"min": 20.34, "medio": 22.12, "max": 25.00}
+        "bdi_resultado": {"min": 20.34, "medio": 22.12, "max": 25.00},
     },
-    "FORNECIMENTO_MATERIAIS_EQUIPAMENTOS": {
-        "bdi_resultado": {"min": 11.10, "medio": 14.02, "max": 16.85}
-    }
+    "FORNECIMENTO_MATERIAIS_EQUIPAMENTOS": {"bdi_resultado": {"min": 11.10, "medio": 14.02, "max": 16.85}},
 }

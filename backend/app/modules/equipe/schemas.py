@@ -1,9 +1,11 @@
-from pydantic import BaseModel, ConfigDict
-from typing import Optional, List
 from datetime import date, datetime
+from typing import List, Optional
 from uuid import UUID
 
+from pydantic import BaseModel, ConfigDict
+
 # --- Schemas de Equipe ---
+
 
 class EquipeCreate(BaseModel):
     nome: str
@@ -11,11 +13,13 @@ class EquipeCreate(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class EquipeUpdate(BaseModel):
     nome: Optional[str] = None
     descricao: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class EquipeResponse(BaseModel):
     id: str
@@ -27,7 +31,9 @@ class EquipeResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 # --- Schemas de Membro de Equipe ---
+
 
 class MembroEquipeCreate(BaseModel):
     nome: str
@@ -42,6 +48,7 @@ class MembroEquipeCreate(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class MembroEquipeUpdate(BaseModel):
     nome: Optional[str] = None
     cpf: Optional[str] = None
@@ -54,6 +61,7 @@ class MembroEquipeUpdate(BaseModel):
     status: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class MembroEquipeResponse(BaseModel):
     id: UUID
@@ -73,11 +81,14 @@ class MembroEquipeResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class AlocacaoRequest(BaseModel):
     equipe_id: str
     membro_ids: List[str]
 
+
 # --- Schemas de Apontamento Diário ---
+
 
 class ApontamentoDiarioCreate(BaseModel):
     membro_id: str
@@ -87,6 +98,7 @@ class ApontamentoDiarioCreate(BaseModel):
     presente: bool = True
     horas_trabalhadas: float = 8.0
     observacao: Optional[str] = None
+
 
 class ApontamentoDiarioResponse(ApontamentoDiarioCreate):
     id: str

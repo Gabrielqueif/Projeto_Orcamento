@@ -1,0 +1,15 @@
+target-version = "py311"
+line-length = 120
+
+[lint]
+# Regras focadas em bugs reais: pyflakes, pycodestyle (erros), isort e bugbear.
+select = ["E", "F", "I", "B"]
+ignore = [
+    "B008",  # Depends()/Query()/File() em defaults é o padrão do FastAPI
+    "E501",  # tamanho de linha é tratado pelo `ruff format`
+    "B904",  # re-raise como HTTPException dentro de except é o idioma das rotas
+]
+
+[lint.per-file-ignores]
+"**/__init__.py" = ["F401"]  # re-export de routers
+"tests/*" = ["B011"]

@@ -133,7 +133,7 @@ export default function ObraDetalhePage() {
 
   // Mapeia etapas com seu progresso — prioriza o valor salvo no banco
   const etapasComProgresso = etapas.map((etapa) => {
-    let hasDates = !!(etapa.data_inicio && etapa.data_fim);
+    const hasDates = !!(etapa.data_inicio && etapa.data_fim);
 
     // Se houver um progresso explícito salvo (> 0) usa ele diretamente
     if (etapa.progresso !== undefined && etapa.progresso > 0) {

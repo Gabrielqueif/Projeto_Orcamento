@@ -1,19 +1,20 @@
 import logging
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.modules.composicao import router as item_router
-from app.modules.orcamento import router as orcamento_router
-from app.modules.etapa import router as etapa_router
-from app.modules.importacao import router as importacao_router
-from app.modules.equipe import router_equipes, router_membros
-from app.modules.obra import router as obra_router
+from fastapi.responses import JSONResponse
+
 from app.modules.almoxarifado import router as almoxarifado_router
-from app.modules.financeiro import router as financeiro_router, router_portfolio as financeiro_portfolio_router
+from app.modules.composicao import router as item_router
+from app.modules.equipe import router_equipes, router_membros
+from app.modules.etapa import router as etapa_router
+from app.modules.financeiro import router as financeiro_router
+from app.modules.financeiro import router_portfolio as financeiro_portfolio_router
+from app.modules.importacao import router as importacao_router
+from app.modules.obra import router as obra_router
+from app.modules.orcamento import router as orcamento_router
 from core.config import settings
 from core.exceptions import NaoEncontradoError
-
 
 # Configurar logging
 logging.basicConfig(
@@ -28,6 +29,7 @@ app = FastAPI(
     docs_url="/docs" if settings.ENVIRONMENT != "production" else None,
     redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
 )
+
 
 @app.exception_handler(NaoEncontradoError)
 async def nao_encontrado_handler(request: Request, exc: NaoEncontradoError):
@@ -76,7 +78,6 @@ app.include_router(financeiro_router)
 app.include_router(financeiro_portfolio_router)
 
 
-
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "environment": settings.ENVIRONMENT}
@@ -85,4 +86,3 @@ def health_check():
 @app.get("/")
 def read_root():
     return {"message": "Hello World"}
-

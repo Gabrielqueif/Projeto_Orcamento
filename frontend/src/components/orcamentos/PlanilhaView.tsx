@@ -450,7 +450,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
 
       {etapas.length === 0 && itensSemEtapa.length === 0 ? (
         <div className="text-center p-10 text-[13px] text-text-muted italic border border-dashed border-border rounded-lg bg-white">
-          Nenhuma etapa adicionada. Clique em "Nova Etapa" para começar.
+          Nenhuma etapa adicionada. Clique em &quot;Nova Etapa&quot; para começar.
         </div>
       ) : (
         <div className="space-y-8">

@@ -1,12 +1,14 @@
-from typing import List, Dict, Any
-from decimal import Decimal
-from datetime import date
 import logging
+from datetime import date
+from decimal import Decimal
+from typing import Any, Dict, List
+
 from app.modules.almoxarifado.repositories import AlmoxarifadoRepository
-from app.modules.almoxarifado.schemas import InsumoCreate, MovimentacaoCreate, LocacaoCreate
+from app.modules.almoxarifado.schemas import InsumoCreate, LocacaoCreate, MovimentacaoCreate
 from core.exceptions import NaoEncontradoError
 
 logger = logging.getLogger("projeto_orcamento")
+
 
 class AlmoxarifadoService:
     def __init__(self, repository: AlmoxarifadoRepository):
@@ -26,10 +28,14 @@ class AlmoxarifadoService:
         dados["quantidade_atual"] = float(dados.get("quantidade_atual") or 0.0)
         dados["quantidade_minima"] = float(dados.get("quantidade_minima") or 0.0)
         dados["preco_unitario"] = float(dados.get("preco_unitario") or 0.0)
-        
+
         insumo = self.repository.criar_insumo(obra_id, dados)
         # Calcula status para o retorno
-        insumo["status"] = "Crítico" if Decimal(str(insumo["quantidade_atual"])) <= Decimal(str(insumo["quantidade_minima"])) else "Normal"
+        insumo["status"] = (
+            "Crítico"
+            if Decimal(str(insumo["quantidade_atual"])) <= Decimal(str(insumo["quantidade_minima"]))
+            else "Normal"
+        )
         return insumo
 
     def registrar_movimentacao(self, insumo_id: str, schema: MovimentacaoCreate) -> Dict[str, Any]:
@@ -44,7 +50,7 @@ class AlmoxarifadoService:
             if qtd_atual < qtd_mov:
                 raise ValueError("Quantidade em estoque insuficiente para realizar a baixa")
             nova_qtd = qtd_atual - qtd_mov
-        else: # ENTRADA
+        else:  # ENTRADA
             nova_qtd = qtd_atual + qtd_mov
 
         # Registrar movimentação no banco
@@ -71,7 +77,7 @@ class AlmoxarifadoService:
                         "data_competencia": str(date.today()),
                         "responsavel": schema.responsavel or "Almoxarife",
                         "origem": "ALMOXARIFADO",
-                        "insumo_id": insumo_id
+                        "insumo_id": insumo_id,
                     }
                     self.repository.supabase.table("custos_despesas").insert(despesa_dados).execute()
                 except Exception as ex:
@@ -100,13 +106,13 @@ class AlmoxarifadoService:
             despesa_dados = {
                 "obra_id": obra_id,
                 "descricao": f"Provisão Locação: {schema.nome_equipamento}",
-                "valor": 0.0, # Preenchido depois pelo financeiro
+                "valor": 0.0,  # Preenchido depois pelo financeiro
                 "categoria": "Equipamentos",
                 "status": "EM_ANALISE",
                 "data_competencia": str(date.today()),
                 "responsavel": schema.responsavel or "Engenharia",
                 "origem": "ALMOXARIFADO",
-                "locacao_id": locacao["id"]
+                "locacao_id": locacao["id"],
             }
             self.repository.supabase.table("custos_despesas").insert(despesa_dados).execute()
         except Exception as ex:

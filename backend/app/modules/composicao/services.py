@@ -1,18 +1,40 @@
-import unicodedata
-import re
 from pathlib import Path
-import pandas as pd
-from typing import Dict, Any, List
+
 from app.modules.composicao.repositories import ItemRepository
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 PLANILHA_SINAPI_CAMINHO = BASE_DIR / "planilhas" / "planilha_sinapi.xlsx"
 
 COLUNAS_ESTADOS = [
-    "ac", "al", "ap", "am", "ba", "ce", "df", "es", "go", 
-    "ma", "mt", "ms", "mg", "pa", "pb", "pr", "pe", "pi", 
-    "rj", "rn", "rs", "ro", "rr", "sc", "sp", "se", "to"
+    "ac",
+    "al",
+    "ap",
+    "am",
+    "ba",
+    "ce",
+    "df",
+    "es",
+    "go",
+    "ma",
+    "mt",
+    "ms",
+    "mg",
+    "pa",
+    "pb",
+    "pr",
+    "pe",
+    "pi",
+    "rj",
+    "rn",
+    "rs",
+    "ro",
+    "rr",
+    "sc",
+    "sp",
+    "se",
+    "to",
 ]
+
 
 class ItemService:
     def __init__(self, repository: ItemRepository):

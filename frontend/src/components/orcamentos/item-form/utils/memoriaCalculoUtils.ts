@@ -182,7 +182,7 @@ export const calculateElementSubtotal = (
   }
 
   // Avaliação segura da expressão aritmética
-  // eslint-disable-next-line no-new-func
+   
   const result = new Function(`return ${testExpr}`)();
 
   if (typeof result === "number" && isFinite(result) && !isNaN(result)) {

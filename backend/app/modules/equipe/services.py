@@ -1,12 +1,14 @@
-from datetime import datetime
-from typing import List, Optional, Dict, Any
-import random
 import logging
+import random
+from datetime import datetime
+from typing import List, Optional
+
 from app.modules.equipe.repositories import EquipeRepository, MembroEquipeRepository
 from app.modules.equipe.schemas import EquipeCreate, EquipeUpdate, MembroEquipeCreate, MembroEquipeUpdate
 from core.exceptions import NaoEncontradoError
 
 logger = logging.getLogger("projeto_orcamento")
+
 
 class EquipeService:
     def __init__(self, repository: EquipeRepository):
@@ -69,7 +71,9 @@ class MembroEquipeService:
             "nome": membro.nome,
             "cpf": cpf,
             "cargo": membro.cargo,
-            "data_inicio": membro.data_inicio.isoformat() if hasattr(membro.data_inicio, 'isoformat') else str(membro.data_inicio),
+            "data_inicio": membro.data_inicio.isoformat()
+            if hasattr(membro.data_inicio, "isoformat")
+            else str(membro.data_inicio),
             "descricao": membro.descricao,
             "orcamento_id": str(membro.orcamento_id) if membro.orcamento_id else None,
             "equipe_id": str(membro.equipe_id) if membro.equipe_id else None,
@@ -77,18 +81,18 @@ class MembroEquipeService:
             "status": membro.status or "ATIVO",
             "code": code,
             "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
         }
         return self.repository.criar(dados, user_id)
 
     def listar_membros(
-        self, 
+        self,
         user_id: str,
-        nome: Optional[str] = None, 
-        cargo: Optional[str] = None, 
+        nome: Optional[str] = None,
+        cargo: Optional[str] = None,
         status: Optional[str] = None,
         orcamento_id: Optional[str] = None,
-        equipe_id: Optional[str] = None
+        equipe_id: Optional[str] = None,
     ):
         return self.repository.listar(user_id, nome, cargo, status, orcamento_id, equipe_id)
 
@@ -105,7 +109,7 @@ class MembroEquipeService:
 
         dados_atualizacao = {}
         dados_atualizacao["updated_at"] = datetime.now().isoformat()
-        
+
         if membro_update.nome is not None:
             dados_atualizacao["nome"] = membro_update.nome
         if membro_update.cpf is not None:
@@ -113,7 +117,11 @@ class MembroEquipeService:
         if membro_update.cargo is not None:
             dados_atualizacao["cargo"] = membro_update.cargo
         if membro_update.data_inicio is not None:
-            dados_atualizacao["data_inicio"] = membro_update.data_inicio.isoformat() if hasattr(membro_update.data_inicio, 'isoformat') else str(membro_update.data_inicio)
+            dados_atualizacao["data_inicio"] = (
+                membro_update.data_inicio.isoformat()
+                if hasattr(membro_update.data_inicio, "isoformat")
+                else str(membro_update.data_inicio)
+            )
         if membro_update.descricao is not None:
             dados_atualizacao["descricao"] = membro_update.descricao
         if membro_update.orcamento_id is not None:
@@ -124,7 +132,7 @@ class MembroEquipeService:
             dados_atualizacao["remuneracao"] = membro_update.remuneracao
         if membro_update.status is not None:
             dados_atualizacao["status"] = membro_update.status
-            
+
         return self.repository.atualizar(membro_id, dados_atualizacao, user_id)
 
     def deletar_membro(self, membro_id: str, user_id: str):

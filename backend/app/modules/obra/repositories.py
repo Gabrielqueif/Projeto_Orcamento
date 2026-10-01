@@ -1,11 +1,12 @@
-from typing import List, Optional, Dict, Any
 import logging
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("projeto_orcamento")
 
 TABELA_OBRAS = "obras"
 TABELA_ORCAMENTOS_META = "orcamentos_meta"
 TABELA_LIMITES = "limites_requisicao"
+
 
 class ObraRepository:
     def __init__(self, supabase_client):
@@ -54,7 +55,9 @@ class ObraRepository:
 
     def buscar_snapshot_meta_por_orcamento(self, orcamento_id: str) -> Optional[Dict[str, Any]]:
         try:
-            resultado = self.supabase.table(TABELA_ORCAMENTOS_META).select("*").eq("orcamento_id", orcamento_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_ORCAMENTOS_META).select("*").eq("orcamento_id", orcamento_id).execute()
+            )
             if resultado.data:
                 return resultado.data[0]
             return None
@@ -82,7 +85,12 @@ class ObraRepository:
 
     def atualizar_obra_status(self, obra_id: str, status: str) -> Dict[str, Any]:
         try:
-            resultado = self.supabase.table(TABELA_OBRAS).update({"status": status, "updated_at": "now()"}).eq("id", obra_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_OBRAS)
+                .update({"status": status, "updated_at": "now()"})
+                .eq("id", obra_id)
+                .execute()
+            )
             if not resultado.data:
                 raise Exception(f"Falha ao atualizar status da obra {obra_id}")
             return resultado.data[0]

@@ -1,42 +1,47 @@
+import logging
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Response
-from fastapi.responses import StreamingResponse
-from io import BytesIO
 
-from app.modules.orcamento.schemas import (
-    OrcamentoResponse, OrcamentoCreate, OrcamentoUpdate, OrcamentoStatsResponse,
-    CurvaABCResponse, CronogramaResponse, OrcamentoItemResponse, OrcamentoItemCreate,
-    OrcamentoItemUpdate, OrcamentoItemInsumoUpdate, BDICalculateRequest, BDICalculateResponse
-)
-from app.modules.orcamento.bdi import calcular_bdi_tcu, FAIXAS_REFERENCIA_TCU
-from app.modules.orcamento.services import OrcamentoService, OrcamentoItemService
-from app.modules.orcamento.repositories import OrcamentoRepository, OrcamentoItemRepository, InsumoRepository
+from fastapi import APIRouter, Depends, HTTPException, Response
+
+from app.dependencies import get_supabase
 from app.modules.composicao.repositories import ItemRepository
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.importacao.services.pdf_service import PdfService
-
-from core.security import get_current_user
+from app.modules.orcamento.bdi import FAIXAS_REFERENCIA_TCU, calcular_bdi_tcu
+from app.modules.orcamento.repositories import InsumoRepository, OrcamentoItemRepository, OrcamentoRepository
+from app.modules.orcamento.schemas import (
+    BDICalculateRequest,
+    BDICalculateResponse,
+    CronogramaResponse,
+    CurvaABCResponse,
+    OrcamentoCreate,
+    OrcamentoItemCreate,
+    OrcamentoItemInsumoUpdate,
+    OrcamentoItemResponse,
+    OrcamentoItemUpdate,
+    OrcamentoResponse,
+    OrcamentoStatsResponse,
+    OrcamentoUpdate,
+)
+from app.modules.orcamento.services import OrcamentoItemService, OrcamentoService
 from core.ownership import enforce_ownership
-from app.dependencies import get_supabase
-import logging
+from core.security import get_current_user
 
 logger = logging.getLogger("projeto_orcamento")
 
-router = APIRouter(
-    prefix="/orcamentos",
-    dependencies=[Depends(enforce_ownership)],
-    redirect_slashes=False
-)
+router = APIRouter(prefix="/orcamentos", dependencies=[Depends(enforce_ownership)], redirect_slashes=False)
 
 # --- Dependências locais ---
 
-def get_orcamento_service(supabase = Depends(get_supabase)) -> OrcamentoService:
+
+def get_orcamento_service(supabase=Depends(get_supabase)) -> OrcamentoService:
     repository = OrcamentoRepository(supabase)
     etapa_repo = EtapaRepository(supabase)
     item_repo = OrcamentoItemRepository(supabase)
     return OrcamentoService(repository, etapa_repo, item_repo, supabase)
 
-def get_orcamento_item_service(supabase = Depends(get_supabase)) -> OrcamentoItemService:
+
+def get_orcamento_item_service(supabase=Depends(get_supabase)) -> OrcamentoItemService:
     item_repo = ItemRepository(supabase)
     orcamento_repo = OrcamentoRepository(supabase)
     orcamento_item_repo = OrcamentoItemRepository(supabase)
@@ -46,11 +51,12 @@ def get_orcamento_item_service(supabase = Depends(get_supabase)) -> OrcamentoIte
 
 # --- Rotas de Orçamentos ---
 
+
 @router.post(
     "/calcular-bdi",
     response_model=BDICalculateResponse,
     summary="Simular e calcular BDI Analítico TCU",
-    tags=["Orçamentos"]
+    tags=["Orçamentos"],
 )
 async def simular_calculo_bdi(payload: BDICalculateRequest):
     """Calcula a taxa de BDI pela fórmula oficial TCU (Acórdão 2622/2013) sem persistir."""
@@ -65,80 +71,59 @@ async def simular_calculo_bdi(payload: BDICalculateRequest):
                 "formula": "BDI = [ ((1 + AC + SG + R) * (1 + DF) * (1 + L)) / (1 - I) ] - 1",
                 "faixas_referencia_edificios": FAIXAS_REFERENCIA_TCU["CONSTRUCAO_EDIFICIOS"],
                 "faixas_referencia_equipamentos": FAIXAS_REFERENCIA_TCU["FORNECIMENTO_MATERIAIS_EQUIPAMENTOS"],
-            }
+            },
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post(
-    "/",
-    response_model=OrcamentoResponse,
-    summary="Criar novo orçamento",
-    tags=["Orçamentos"]
-)
+
+@router.post("/", response_model=OrcamentoResponse, summary="Criar novo orçamento", tags=["Orçamentos"])
 async def criar_orcamento(
-    orcamento: OrcamentoCreate, 
+    orcamento: OrcamentoCreate,
     service: OrcamentoService = Depends(get_orcamento_service),
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(get_current_user),
 ):
     """Cria um novo orçamento pertencente ao usuário autenticado"""
     return service.criar_orcamento(orcamento, user_id=user["id"])
 
-@router.get(
-    "/",
-    response_model=List[OrcamentoResponse],
-    summary="Listar orçamentos",
-    tags=["Orçamentos"]
-)
+
+@router.get("/", response_model=List[OrcamentoResponse], summary="Listar orçamentos", tags=["Orçamentos"])
 async def listar_orcamentos(
     nome: Optional[str] = None,
-    status: Optional[str] = None, 
-    cliente: Optional[str] = None, 
+    status: Optional[str] = None,
+    cliente: Optional[str] = None,
     service: OrcamentoService = Depends(get_orcamento_service),
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(get_current_user),
 ):
     """Lista os orçamentos do usuário autenticado, com filtros opcionais"""
     return service.listar_orcamentos(nome, status, cliente, user_id=user["id"])
+
 
 @router.get(
     "/stats",
     response_model=OrcamentoStatsResponse,
     summary="Obter estatísticas acumuladas dos orçamentos",
-    tags=["Orçamentos"]
+    tags=["Orçamentos"],
 )
 async def obter_estatisticas_endpoint(
-    service: OrcamentoService = Depends(get_orcamento_service),
-    user: dict = Depends(get_current_user)
+    service: OrcamentoService = Depends(get_orcamento_service), user: dict = Depends(get_current_user)
 ):
     """Retorna estatísticas dos orçamentos do usuário autenticado"""
     return service.obter_estatisticas(user_id=user["id"])
 
-@router.get(
-    "/{orcamento_id}",
-    response_model=OrcamentoResponse,
-    summary="Buscar orçamento por ID",
-    tags=["Orçamentos"]
-)
-async def buscar_orcamento(
-    orcamento_id: str, 
-    service: OrcamentoService = Depends(get_orcamento_service)
-):
+
+@router.get("/{orcamento_id}", response_model=OrcamentoResponse, summary="Buscar orçamento por ID", tags=["Orçamentos"])
+async def buscar_orcamento(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
     """Busca um orçamento específico por ID"""
     try:
         return service.buscar_orcamento(orcamento_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-@router.put(
-    "/{orcamento_id}",
-    response_model=OrcamentoResponse,
-    summary="Atualizar orçamento",
-    tags=["Orçamentos"]
-)
+
+@router.put("/{orcamento_id}", response_model=OrcamentoResponse, summary="Atualizar orçamento", tags=["Orçamentos"])
 async def atualizar_orcamento(
-    orcamento_id: str, 
-    orcamento: OrcamentoUpdate, 
-    service: OrcamentoService = Depends(get_orcamento_service)
+    orcamento_id: str, orcamento: OrcamentoUpdate, service: OrcamentoService = Depends(get_orcamento_service)
 ):
     """Atualiza um orçamento existente"""
     try:
@@ -146,15 +131,9 @@ async def atualizar_orcamento(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-@router.delete(
-    "/{orcamento_id}",
-    summary="Deletar orçamento",
-    tags=["Orçamentos"]
-)
-async def deletar_orcamento(
-    orcamento_id: str, 
-    service: OrcamentoService = Depends(get_orcamento_service)
-):
+
+@router.delete("/{orcamento_id}", summary="Deletar orçamento", tags=["Orçamentos"])
+async def deletar_orcamento(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
     """Deleta um orçamento e seus itens relacionados"""
     try:
         service.deletar_orcamento(orcamento_id)
@@ -162,94 +141,78 @@ async def deletar_orcamento(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-@router.get(
-    "/{orcamento_id}/pdf",
-    tags=["Orçamentos"]
-)
+
+@router.get("/{orcamento_id}/pdf", tags=["Orçamentos"])
 async def download_pdf_orcamento(
-    orcamento_id: str,
-    service: OrcamentoService = Depends(get_orcamento_service),
-    supabase = Depends(get_supabase)
+    orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service), supabase=Depends(get_supabase)
 ):
     """Gera e retorna um relatório em PDF do orçamento"""
     try:
         orcamento = service.buscar_orcamento(orcamento_id)
         itens = service.item_repository.listar_por_orcamento(orcamento_id)
-        
+
         pdf_service = PdfService()
         pdf_bytes = pdf_service.gerar_pdf(orcamento, itens)
-        
+
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
-            headers={
-                "Content-Disposition": f"attachment; filename=orcamento_{orcamento_id}.pdf"
-            }
+            headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento_id}.pdf"},
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
+    except Exception:
         logger.error("Erro ao gerar PDF", exc_info=True)
         raise HTTPException(status_code=500, detail="Erro ao gerar PDF")
 
-@router.get(
-    "/{orcamento_id}/excel",
-    tags=["Orçamentos"]
-)
-async def download_excel_orcamento(
-    orcamento_id: str,
-    service: OrcamentoService = Depends(get_orcamento_service)
-):
+
+@router.get("/{orcamento_id}/excel", tags=["Orçamentos"])
+async def download_excel_orcamento(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
     """Gera e retorna a planilha orçamentária em formato Excel (.xlsx)"""
     try:
         from app.modules.orcamento.export import gerar_planilha_orcamento_excel
+
         orcamento = service.buscar_orcamento(orcamento_id)
         itens = service.item_repository.listar_por_orcamento(orcamento_id)
-        
+
         excel_bytes = gerar_planilha_orcamento_excel(
             orcamento.model_dump() if hasattr(orcamento, "model_dump") else dict(orcamento),
-            [i.model_dump() if hasattr(i, "model_dump") else dict(i) for i in itens]
+            [i.model_dump() if hasattr(i, "model_dump") else dict(i) for i in itens],
         )
-        
+
         return Response(
             content=excel_bytes,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={
-                "Content-Disposition": f"attachment; filename=orcamento_{orcamento_id}.xlsx"
-            }
+            headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento_id}.xlsx"},
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
+    except Exception:
         logger.error("Erro ao gerar planilha Excel", exc_info=True)
         raise HTTPException(status_code=500, detail="Erro ao gerar planilha Excel")
+
 
 @router.get(
     "/{orcamento_id}/curva-abc",
     response_model=CurvaABCResponse,
     summary="Obter Curva ABC real de insumos do orçamento",
-    tags=["Orçamentos"]
+    tags=["Orçamentos"],
 )
-async def obter_curva_abc_endpoint(
-    orcamento_id: str,
-    service: OrcamentoService = Depends(get_orcamento_service)
-):
+async def obter_curva_abc_endpoint(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
     """Retorna a Curva ABC real de insumos do orçamento"""
     try:
         return service.obter_curva_abc(orcamento_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+
 @router.get(
     "/{orcamento_id}/cronograma",
     response_model=CronogramaResponse,
     summary="Obter Cronograma Físico-Financeiro dinâmico do orçamento",
-    tags=["Orçamentos"]
+    tags=["Orçamentos"],
 )
-async def obter_cronograma_endpoint(
-    orcamento_id: str,
-    service: OrcamentoService = Depends(get_orcamento_service)
-):
+async def obter_cronograma_endpoint(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
     """Retorna o Cronograma Físico-Financeiro dinâmico do orçamento"""
     try:
         return service.obter_cronograma(orcamento_id)
@@ -259,53 +222,51 @@ async def obter_cronograma_endpoint(
 
 # --- Rotas de Itens do Orçamento ---
 
+
 @router.post(
-    "/{orcamento_id}/itens", 
-    response_model=OrcamentoItemResponse, 
+    "/{orcamento_id}/itens",
+    response_model=OrcamentoItemResponse,
     summary="Adicionar item ao orçamento",
-    tags=["Itens do Orçamento"]
+    tags=["Itens do Orçamento"],
 )
 async def adicionar_item(
-    orcamento_id: str,
-    item: OrcamentoItemCreate,
-    service: OrcamentoItemService = Depends(get_orcamento_item_service)
+    orcamento_id: str, item: OrcamentoItemCreate, service: OrcamentoItemService = Depends(get_orcamento_item_service)
 ):
     """Adiciona um novo item ao orçamento"""
     try:
         return service.adicionar_item(orcamento_id, item)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+    except Exception:
         logger.error("Erro ao adicionar item", exc_info=True)
         raise HTTPException(status_code=500, detail="Erro ao adicionar item")
 
+
 @router.get(
-    "/{orcamento_id}/itens", 
-    response_model=List[OrcamentoItemResponse], 
+    "/{orcamento_id}/itens",
+    response_model=List[OrcamentoItemResponse],
     summary="Listar itens do orçamento",
-    tags=["Itens do Orçamento"]
+    tags=["Itens do Orçamento"],
 )
-async def listar_itens(
-    orcamento_id: str, 
-    service: OrcamentoItemService = Depends(get_orcamento_item_service)
-):
+async def listar_itens(orcamento_id: str, service: OrcamentoItemService = Depends(get_orcamento_item_service)):
     """Lista todos os itens de um orçamento"""
     try:
         return service.listar_itens(orcamento_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+
 @router.put(
-    "/{orcamento_id}/itens/{item_id}", 
-    response_model=OrcamentoItemResponse, 
+    "/{orcamento_id}/itens/{item_id}",
+    response_model=OrcamentoItemResponse,
     summary="Atualizar item do orçamento",
-    tags=["Itens do Orçamento"]
+    tags=["Itens do Orçamento"],
 )
 async def atualizar_item(
     orcamento_id: str,
     item_id: str,
     item_update: OrcamentoItemUpdate,
-    service: OrcamentoItemService = Depends(get_orcamento_item_service)
+    service: OrcamentoItemService = Depends(get_orcamento_item_service),
 ):
     """Atualiza um item do orçamento"""
     try:
@@ -313,15 +274,10 @@ async def atualizar_item(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.delete(
-    "/{orcamento_id}/itens/{item_id}", 
-    summary="Remover item do orçamento",
-    tags=["Itens do Orçamento"]
-)
+
+@router.delete("/{orcamento_id}/itens/{item_id}", summary="Remover item do orçamento", tags=["Itens do Orçamento"])
 async def remover_item(
-    orcamento_id: str,
-    item_id: str,
-    service: OrcamentoItemService = Depends(get_orcamento_item_service)
+    orcamento_id: str, item_id: str, service: OrcamentoItemService = Depends(get_orcamento_item_service)
 ):
     """Remove um item do orçamento"""
     try:
@@ -329,15 +285,14 @@ async def remover_item(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.get(
     "/{orcamento_id}/itens/{item_id}/insumos",
     summary="Listar insumos (explosão analítica) de um item",
-    tags=["Itens do Orçamento"]
+    tags=["Itens do Orçamento"],
 )
 async def listar_insumos(
-    orcamento_id: str,
-    item_id: str,
-    service: OrcamentoItemService = Depends(get_orcamento_item_service)
+    orcamento_id: str, item_id: str, service: OrcamentoItemService = Depends(get_orcamento_item_service)
 ):
     """Lista os insumos (explosão analítica) de um item do orçamento"""
     try:
@@ -345,17 +300,18 @@ async def listar_insumos(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.put(
     "/{orcamento_id}/itens/{item_id}/insumos/{insumo_id}",
     summary="Atualizar um insumo do item",
-    tags=["Itens do Orçamento"]
+    tags=["Itens do Orçamento"],
 )
 async def atualizar_insumo(
     orcamento_id: str,
     item_id: str,
     insumo_id: str,
     insumo_update: OrcamentoItemInsumoUpdate,
-    service: OrcamentoItemService = Depends(get_orcamento_item_service)
+    service: OrcamentoItemService = Depends(get_orcamento_item_service),
 ):
     """Atualiza um insumo e recalcula os totais"""
     try:

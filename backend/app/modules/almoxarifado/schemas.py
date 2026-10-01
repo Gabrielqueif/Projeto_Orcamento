@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field
-from datetime import datetime, date
-from typing import Optional
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Optional
 from uuid import UUID
+
+from pydantic import BaseModel, Field
+
 
 class InsumoBase(BaseModel):
     codigo_insumo: str
@@ -12,25 +14,29 @@ class InsumoBase(BaseModel):
     unidade: str
     preco_unitario: Decimal = Field(default=Decimal("0.00"), ge=0)
 
+
 class InsumoCreate(InsumoBase):
     quantidade_atual: Optional[Decimal] = Field(default=Decimal("0.00"), ge=0)
+
 
 class InsumoResponse(InsumoBase):
     id: UUID
     obra_id: UUID
     quantidade_atual: Decimal
-    status: str # 'Crítico' ou 'Normal'
+    status: str  # 'Crítico' ou 'Normal'
     created_at: datetime
     updated_at: datetime
 
     class Config:
         from_attributes = True
 
+
 class MovimentacaoCreate(BaseModel):
     tipo_movimentacao: str = Field(..., pattern="^(ENTRADA|SAIDA)$")
     quantidade: Decimal = Field(..., gt=0)
     responsavel: str
     observacoes: Optional[str] = None
+
 
 class MovimentacaoResponse(BaseModel):
     id: UUID
@@ -45,12 +51,14 @@ class MovimentacaoResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 class LocacaoCreate(BaseModel):
     nome_equipamento: str
     locadora: str
     status: str = Field(..., pattern="^(EM_USO|AGUARDANDO_RETIRADA|FINALIZADO)$")
     devolucao_prevista: date
     responsavel: Optional[str] = None
+
 
 class LocacaoResponse(LocacaoCreate):
     id: UUID

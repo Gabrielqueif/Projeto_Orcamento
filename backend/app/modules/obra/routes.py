@@ -1,83 +1,61 @@
 from typing import List
+
 from fastapi import APIRouter, Depends
-from app.modules.obra.schemas import ObraTransitionCreate, ObraResponse, LimiteRequisicaoResponse, ObraStatusUpdate
-from app.modules.obra.services import ObraService
-from app.modules.obra.repositories import ObraRepository
-from app.modules.orcamento.repositories import OrcamentoRepository, OrcamentoItemRepository
-from app.modules.etapa.repositories import EtapaRepository
+
 from app.dependencies import get_supabase
-from core.security import get_current_user
+from app.modules.etapa.repositories import EtapaRepository
+from app.modules.obra.repositories import ObraRepository
+from app.modules.obra.schemas import LimiteRequisicaoResponse, ObraResponse, ObraStatusUpdate, ObraTransitionCreate
+from app.modules.obra.services import ObraService
+from app.modules.orcamento.repositories import OrcamentoItemRepository, OrcamentoRepository
 from core.ownership import enforce_ownership
+from core.security import get_current_user
 
-router = APIRouter(
-    prefix="/obras",
-    tags=["Obras"],
-    dependencies=[Depends(enforce_ownership)],
-    redirect_slashes=False
-)
+router = APIRouter(prefix="/obras", tags=["Obras"], dependencies=[Depends(enforce_ownership)], redirect_slashes=False)
 
-def get_obra_service(supabase = Depends(get_supabase)) -> ObraService:
+
+def get_obra_service(supabase=Depends(get_supabase)) -> ObraService:
     return ObraService(
         obra_repository=ObraRepository(supabase),
         orcamento_repository=OrcamentoRepository(supabase),
         etapa_repository=EtapaRepository(supabase),
         orcamento_item_repository=OrcamentoItemRepository(supabase),
-        supabase_client=supabase
+        supabase_client=supabase,
     )
 
+
 @router.post(
-    "/transicao/{orcamento_id}",
-    response_model=ObraResponse,
-    summary="Gerar obra a partir de orçamento aprovado"
+    "/transicao/{orcamento_id}", response_model=ObraResponse, summary="Gerar obra a partir de orçamento aprovado"
 )
 async def gerar_obra_endpoint(
-    orcamento_id: str,
-    dados_transicao: ObraTransitionCreate,
-    service: ObraService = Depends(get_obra_service)
+    orcamento_id: str, dados_transicao: ObraTransitionCreate, service: ObraService = Depends(get_obra_service)
 ):
     return service.gerar_obra(orcamento_id, dados_transicao)
 
-@router.get(
-    "/",
-    response_model=List[ObraResponse],
-    summary="Listar todas as obras"
-)
+
+@router.get("/", response_model=List[ObraResponse], summary="Listar todas as obras")
 async def listar_obras_endpoint(
-    service: ObraService = Depends(get_obra_service),
-    user: dict = Depends(get_current_user)
+    service: ObraService = Depends(get_obra_service), user: dict = Depends(get_current_user)
 ):
     return service.listar_obras(user_id=user["id"])
 
-@router.get(
-    "/{obra_id}",
-    response_model=ObraResponse,
-    summary="Buscar obra por ID"
-)
-async def buscar_obra_endpoint(
-    obra_id: str,
-    service: ObraService = Depends(get_obra_service)
-):
+
+@router.get("/{obra_id}", response_model=ObraResponse, summary="Buscar obra por ID")
+async def buscar_obra_endpoint(obra_id: str, service: ObraService = Depends(get_obra_service)):
     return service.buscar_obra(obra_id)
+
 
 @router.get(
     "/{obra_id}/limites",
     response_model=List[LimiteRequisicaoResponse],
-    summary="Listar limites de requisição da Curve ABC de uma obra"
+    summary="Listar limites de requisição da Curve ABC de uma obra",
 )
-async def listar_limites_endpoint(
-    obra_id: str,
-    service: ObraService = Depends(get_obra_service)
-):
+async def listar_limites_endpoint(obra_id: str, service: ObraService = Depends(get_obra_service)):
     return service.listar_limites(obra_id)
 
-@router.patch(
-    "/{obra_id}/status",
-    response_model=ObraResponse,
-    summary="Atualizar o status de uma obra"
-)
+
+@router.patch("/{obra_id}/status", response_model=ObraResponse, summary="Atualizar o status de uma obra")
 async def atualizar_status_obra_endpoint(
-    obra_id: str,
-    payload: ObraStatusUpdate,
-    service: ObraService = Depends(get_obra_service)
+    obra_id: str, payload: ObraStatusUpdate, service: ObraService = Depends(get_obra_service)
 ):
     return service.atualizar_status(obra_id, payload.status)

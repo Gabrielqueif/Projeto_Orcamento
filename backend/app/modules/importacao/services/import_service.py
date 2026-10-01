@@ -10,8 +10,8 @@ from typing import Any, Dict, List
 
 from app.modules.composicao.repositories import ItemRepository
 from app.modules.composicao.schemas import SinapiMetadata
+
 from .parser_factory import get_parser
-from .sinapi_text_utils import normalizar_nome_aba
 
 logger = logging.getLogger(__name__)
 
@@ -20,21 +20,20 @@ logger = logging.getLogger(__name__)
 # Extração de metadados
 # ---------------------------------------------------------------------------
 
+
 def extract_metadata(
-    file_content: bytes,
-    sheet_name_hint: str | None = None,
-    source_type: str = "SINAPI"
+    file_content: bytes, sheet_name_hint: str | None = None, source_type: str = "SINAPI"
 ) -> SinapiMetadata:
     """Extrai metadados delegando a tarefa ao parser específico."""
     try:
         parser = get_parser(file_content, source_type)
         meta_dict = parser.extrair_metadados(sheet_hint=sheet_name_hint)
-        
+
         return SinapiMetadata(
             mes_referencia=meta_dict.get("mes_referencia", "UNKNOWN"),
             uf=meta_dict.get("uf", "BR"),
             desoneracao=meta_dict.get("desoneracao", "UNKNOWN"),
-            fonte=source_type
+            fonte=source_type,
         )
     except Exception as e:
         raise ValueError(f"Erro ao extrair metadados: {e}") from e
@@ -44,13 +43,9 @@ def extract_metadata(
 # Processamento completo (composições + preços)
 # ---------------------------------------------------------------------------
 
-def process_import_file(
-    file_content: bytes,
-    repository: ItemRepository,
-    source_type: str = "SINAPI"
-) -> Dict[str, Any]:
-    """Processa um arquivo SINAPI completo e importa os dados no banco.
-    """
+
+def process_import_file(file_content: bytes, repository: ItemRepository, source_type: str = "SINAPI") -> Dict[str, Any]:
+    """Processa um arquivo SINAPI completo e importa os dados no banco."""
     try:
         parser = get_parser(file_content, source_type)
         abas_precos = parser.identificar_abas_dados()
@@ -68,9 +63,7 @@ def process_import_file(
         todos_precos: List[dict] = []
 
         for aba in abas_precos:
-            composicoes, precos = parser.extrair_registros_aba(
-                aba, metadata.mes_referencia
-            )
+            composicoes, precos = parser.extrair_registros_aba(aba, metadata.mes_referencia)
             for c in composicoes:
                 c["fonte"] = source_type
             for p in precos:
@@ -89,9 +82,7 @@ def process_import_file(
             aba_analitico = parser.identificar_aba_analitico()
             if aba_analitico:
                 logger.info("Extraindo aba Analítico: '%s'", aba_analitico)
-                relacoes = parser.extrair_analitico(
-                    aba_analitico, metadata.mes_referencia, fonte=source_type
-                )
+                relacoes = parser.extrair_analitico(aba_analitico, metadata.mes_referencia, fonte=source_type)
                 q_analitico = repository.upsert_batch_composicao_itens(relacoes)
                 logger.info("%d relacionamentos analíticos importados.", q_analitico)
 
@@ -100,7 +91,7 @@ def process_import_file(
             "imported_items": q_comp,
             "imported_prices": q_est,
             "imported_analitico": q_analitico,
-            "metadata": metadata.model_dump(), # Pydantic v2 usa model_dump()
+            "metadata": metadata.model_dump(),  # Pydantic v2 usa model_dump()
         }
 
     except Exception as e:

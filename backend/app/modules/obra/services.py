@@ -1,10 +1,12 @@
-from datetime import date, datetime
-from typing import Dict, Any, List, Optional
-from app.modules.obra.schemas import ObraTransitionCreate
-from app.modules.obra.repositories import ObraRepository
-from app.modules.orcamento.repositories import OrcamentoRepository, OrcamentoItemRepository
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 from app.modules.etapa.repositories import EtapaRepository
+from app.modules.obra.repositories import ObraRepository
+from app.modules.obra.schemas import ObraTransitionCreate
+from app.modules.orcamento.repositories import OrcamentoItemRepository, OrcamentoRepository
 from core.exceptions import NaoEncontradoError
+
 
 class ObraService:
     def __init__(
@@ -13,7 +15,7 @@ class ObraService:
         orcamento_repository: OrcamentoRepository,
         etapa_repository: EtapaRepository,
         orcamento_item_repository: OrcamentoItemRepository,
-        supabase_client
+        supabase_client,
     ):
         self.obra_repository = obra_repository
         self.orcamento_repository = orcamento_repository
@@ -21,7 +23,7 @@ class ObraService:
         self.orcamento_item_repository = orcamento_item_repository
         self.supabase = supabase_client
 
-    def gerar_obra(self, orcamento_id: str, obra_id: str, dados_transicao: ObraTransitionCreate) -> Dict[str, Any]:
+    def gerar_obra(self, orcamento_id: str, dados_transicao: ObraTransitionCreate) -> Dict[str, Any]:
         # 1. Validar orçamento
         orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
         if not orcamento:
@@ -35,18 +37,19 @@ class ObraService:
         dados_obra = {
             "orcamento_id": orcamento_id,
             "user_id": orcamento.get("user_id"),
-            "obra_id": obra_id,
             "cliente": orcamento.get("cliente"),
             "endereco": orcamento.get("endereco") or {},
             "escopo": orcamento.get("nome"),
-            "data_inicio_real": dados_transicao.data_inicio_real.isoformat() if hasattr(dados_transicao.data_inicio_real, 'isoformat') else str(dados_transicao.data_inicio_real),
+            "data_inicio_real": dados_transicao.data_inicio_real.isoformat()
+            if hasattr(dados_transicao.data_inicio_real, "isoformat")
+            else str(dados_transicao.data_inicio_real),
             "prazo_estimado_dias": dados_transicao.prazo_estimado_dias,
             "engenheiro_responsavel_id": dados_transicao.engenheiro_responsavel_id,
             "enviar_curva_abc_almoxarifado": dados_transicao.enviar_curva_abc_almoxarifado,
             "bloquear_planilha_base": dados_transicao.bloquear_planilha_base,
             "status": "EM_ANDAMENTO",
             "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
         }
 
         obra_criada = self.obra_repository.criar_obra(dados_obra)
@@ -54,28 +57,24 @@ class ObraService:
 
         # 3. Bloquear planilha base do orçamento original
         if dados_transicao.bloquear_planilha_base:
-            self.orcamento_repository.atualizar(orcamento_id, {
-                "status": "concluido",
-                "updated_at": datetime.now().isoformat()
-            })
+            self.orcamento_repository.atualizar(
+                orcamento_id, {"status": "concluido", "updated_at": datetime.now().isoformat()}
+            )
 
         # 4. Gerar Snapshot do Orçamento Meta
         etapas = self.etapa_repository.listar_por_orcamento(orcamento_id)
         itens = self.orcamento_item_repository.listar_por_orcamento(orcamento_id)
-        
+
         insumos = []
         if itens:
             item_ids = [item["id"] for item in itens]
             # Realiza a busca em batch de todos os insumos dos itens
-            resultado_insumos = self.supabase.table("orcamento_item_insumo").select("*").in_("orcamento_item_id", item_ids).execute()
+            resultado_insumos = (
+                self.supabase.table("orcamento_item_insumo").select("*").in_("orcamento_item_id", item_ids).execute()
+            )
             insumos = resultado_insumos.data or []
 
-        snapshot_data = {
-            "orcamento": orcamento,
-            "etapas": etapas,
-            "itens": itens,
-            "insumos": insumos
-        }
+        snapshot_data = {"orcamento": orcamento, "etapas": etapas, "itens": itens, "insumos": insumos}
 
         dados_meta = {
             "orcamento_id": orcamento_id,
@@ -84,7 +83,7 @@ class ObraService:
             "valor_total": orcamento.get("valor_total") or 0.0,
             "bdi": orcamento.get("bdi") or 0.0,
             "snapshot_data": snapshot_data,
-            "created_at": datetime.now().isoformat()
+            "created_at": datetime.now().isoformat(),
         }
         self.obra_repository.criar_snapshot_meta(dados_meta)
 
@@ -95,7 +94,7 @@ class ObraService:
                 codigo = insumo.get("codigo_insumo")
                 if not codigo:
                     continue
-                
+
                 qtd = float(insumo.get("quantidade_unitaria") or 0.0)
                 desc = insumo.get("descricao") or ""
                 unid = insumo.get("unidade") or ""
@@ -111,9 +110,9 @@ class ObraService:
                         "quantidade_limite": qtd,
                         "quantidade_requisitada": 0.0,
                         "created_at": datetime.now().isoformat(),
-                        "updated_at": datetime.now().isoformat()
+                        "updated_at": datetime.now().isoformat(),
                     }
-            
+
             limites = list(limites_dict.values())
             self.obra_repository.criar_limites_requisicao_batch(limites)
 

@@ -55,11 +55,11 @@ jobs:
 
       - name: Run ruff (lint + import sort check)
         run: |
-          ruff check app core schemas --output-format=github
-          ruff format --check app core schemas
+          ruff check app core --output-format=github
+          ruff format --check app core
 
       - name: Run Bandit (SAST)
-        run: bandit -r app core schemas -ll
+        run: bandit -r app core -ll
 
       - name: Run pip-audit (Dependency Scan)
         run: pip-audit -r requirements.txt

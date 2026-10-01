@@ -22,7 +22,7 @@ def remover_acentos(texto: str) -> str:
     """
     if not isinstance(texto, str):
         return str(texto)
-    nfkd = unicodedata.normalize('NFD', texto)
+    nfkd = unicodedata.normalize("NFD", texto)
     return "".join(c for c in nfkd if not unicodedata.combining(c)).lower()
 
 
@@ -46,7 +46,7 @@ def limpar_link_excel(texto) -> str:
         match = re.search(r'HYPERLINK\s*\(.*,\s*"(.*)"\s*\)', texto, re.IGNORECASE)
         if match:
             return match.group(1)
-        return texto.replace('"', '').replace('=', '')
+        return texto.replace('"', "").replace("=", "")
     return texto
 
 
@@ -64,7 +64,7 @@ def gerar_chave_match(texto: str) -> str:
     """
     texto = limpar_link_excel(texto)
     sem_acento = remover_acentos(texto)
-    return re.sub(r'[^a-z0-9]', '', sem_acento)
+    return re.sub(r"[^a-z0-9]", "", sem_acento)
 
 
 def limpar_valor_moeda(valor) -> float | None:
@@ -82,12 +82,12 @@ def limpar_valor_moeda(valor) -> float | None:
     if pd.isna(valor):
         return None
     s_valor = str(valor).strip()
-    if s_valor == '' or s_valor == '-' or s_valor.lower() == 'nan':
+    if s_valor == "" or s_valor == "-" or s_valor.lower() == "nan":
         return None
     try:
         if isinstance(valor, (int, float)):
             return float(valor)
-        return float(s_valor.replace('.', '').replace(',', '.'))
+        return float(s_valor.replace(".", "").replace(",", "."))
     except (ValueError, TypeError):
         return None
 
