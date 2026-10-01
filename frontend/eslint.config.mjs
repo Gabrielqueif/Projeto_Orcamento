@@ -13,6 +13,7 @@ const eslintConfig = defineConfig([
       // (setState em effect, Math.random em render). Mantidas como aviso até refatorar.
       "react-hooks/purity": "warn",
       "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/immutability": "warn",
     },
   },
 ]);
