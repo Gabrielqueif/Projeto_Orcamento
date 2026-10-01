@@ -4,6 +4,7 @@ from app.modules.obra.schemas import ObraTransitionCreate
 from app.modules.obra.repositories import ObraRepository
 from app.modules.orcamento.repositories import OrcamentoRepository, OrcamentoItemRepository
 from app.modules.etapa.repositories import EtapaRepository
+from core.exceptions import NaoEncontradoError
 
 class ObraService:
     def __init__(
@@ -24,7 +25,7 @@ class ObraService:
         # 1. Validar orçamento
         orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
         if not orcamento:
-            raise ValueError("Orçamento não encontrado")
+            raise NaoEncontradoError("Orçamento não encontrado")
 
         status_orcamento = orcamento.get("status", "").upper()
         if "APROVADO" not in status_orcamento and "CONCLUIDO" not in status_orcamento:
@@ -121,7 +122,7 @@ class ObraService:
     def buscar_obra(self, obra_id: str) -> Optional[Dict[str, Any]]:
         obra = self.obra_repository.buscar_obra_por_id(obra_id)
         if not obra:
-            raise ValueError("Obra não encontrada")
+            raise NaoEncontradoError("Obra não encontrada")
         return obra
 
     def listar_obras(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -133,7 +134,7 @@ class ObraService:
     def atualizar_status(self, obra_id: str, status: str) -> Dict[str, Any]:
         obra = self.obra_repository.buscar_obra_por_id(obra_id)
         if not obra:
-            raise ValueError("Obra não encontrada")
+            raise NaoEncontradoError("Obra não encontrada")
         status_upper = status.upper()
         if status_upper not in ["EM_ANDAMENTO", "CONCLUIDA"]:
             raise ValueError("Status inválido. Use EM_ANDAMENTO ou CONCLUIDA")

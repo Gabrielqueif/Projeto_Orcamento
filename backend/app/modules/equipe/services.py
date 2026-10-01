@@ -4,6 +4,7 @@ import random
 import logging
 from app.modules.equipe.repositories import EquipeRepository, MembroEquipeRepository
 from app.modules.equipe.schemas import EquipeCreate, EquipeUpdate, MembroEquipeCreate, MembroEquipeUpdate
+from core.exceptions import NaoEncontradoError
 
 logger = logging.getLogger("projeto_orcamento")
 
@@ -24,13 +25,13 @@ class EquipeService:
     def buscar_equipe(self, equipe_id: str, user_id: str):
         equipe = self.repository.buscar_por_id(equipe_id, user_id)
         if not equipe:
-            raise ValueError("Equipe não encontrada")
+            raise NaoEncontradoError("Equipe não encontrada")
         return equipe
 
     def atualizar_equipe(self, equipe_id: str, equipe_update: EquipeUpdate, user_id: str):
         existente = self.repository.buscar_por_id(equipe_id, user_id)
         if not existente:
-            raise ValueError("Equipe não encontrada")
+            raise NaoEncontradoError("Equipe não encontrada")
 
         dados_atualizacao = {}
         if equipe_update.nome is not None:
@@ -43,7 +44,7 @@ class EquipeService:
     def deletar_equipe(self, equipe_id: str, user_id: str):
         existente = self.repository.buscar_por_id(equipe_id, user_id)
         if not existente:
-            raise ValueError("Equipe não encontrada")
+            raise NaoEncontradoError("Equipe não encontrada")
         return self.repository.deletar(equipe_id, user_id)
 
 
@@ -94,13 +95,13 @@ class MembroEquipeService:
     def buscar_membro(self, membro_id: str, user_id: str):
         membro = self.repository.buscar_por_id(membro_id, user_id)
         if not membro:
-            raise ValueError("Membro da equipe não encontrado")
+            raise NaoEncontradoError("Membro da equipe não encontrado")
         return membro
 
     def atualizar_membro(self, membro_id: str, membro_update: MembroEquipeUpdate, user_id: str):
         existente = self.repository.buscar_por_id(membro_id, user_id)
         if not existente:
-            raise ValueError("Membro da equipe não encontrado")
+            raise NaoEncontradoError("Membro da equipe não encontrado")
 
         dados_atualizacao = {}
         dados_atualizacao["updated_at"] = datetime.now().isoformat()
@@ -129,7 +130,7 @@ class MembroEquipeService:
     def deletar_membro(self, membro_id: str, user_id: str):
         existente = self.repository.buscar_por_id(membro_id, user_id)
         if not existente:
-            raise ValueError("Membro da equipe não encontrado")
+            raise NaoEncontradoError("Membro da equipe não encontrado")
         return self.repository.deletar(membro_id, user_id)
 
     def alocar_membros(self, membro_ids: List[str], orcamento_id: Optional[str], user_id: str):

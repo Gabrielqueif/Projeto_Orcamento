@@ -7,6 +7,7 @@ from app.modules.composicao.repositories import ItemRepository
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.orcamento.schemas import OrcamentoCreate, OrcamentoUpdate, OrcamentoItemCreate, OrcamentoItemUpdate
 from app.modules.orcamento.bdi import BDIConfig, calcular_bdi_tcu, determinar_tipo_bdi_item
+from core.exceptions import NaoEncontradoError
 
 logger = logging.getLogger("projeto_orcamento")
 
@@ -60,13 +61,13 @@ class OrcamentoService:
     def buscar_orcamento(self, orcamento_id: str):
         orcamento = self.repository.buscar_por_id(orcamento_id)
         if not orcamento:
-            raise ValueError("Orçamento não encontrado")
+            raise NaoEncontradoError("Orçamento não encontrado")
         return orcamento
 
     def atualizar_orcamento(self, orcamento_id: str, orcamento_update: OrcamentoUpdate):
         existente = self.repository.buscar_por_id(orcamento_id)
         if not existente:
-            raise ValueError("Orçamento não encontrado")
+            raise NaoEncontradoError("Orçamento não encontrado")
 
         dados_atualizacao = {}
         dados_atualizacao["updated_at"] = datetime.now().isoformat()
@@ -156,7 +157,7 @@ class OrcamentoService:
     def deletar_orcamento(self, orcamento_id: str):
         existente = self.repository.buscar_por_id(orcamento_id)
         if not existente:
-            raise ValueError("Orçamento não encontrado")
+            raise NaoEncontradoError("Orçamento não encontrado")
         return self.repository.deletar(orcamento_id)
 
     def obter_estatisticas(self, user_id: Optional[str] = None) -> Dict[str, Any]:
@@ -203,7 +204,7 @@ class OrcamentoService:
     def obter_curva_abc(self, orcamento_id: str) -> Dict[str, Any]:
         orcamento = self.repository.buscar_por_id(orcamento_id)
         if not orcamento:
-            raise ValueError("Orçamento não encontrado")
+            raise NaoEncontradoError("Orçamento não encontrado")
 
         if not self.orcamento_item_repository or not self.supabase:
             raise ValueError("Dependências de Curva ABC não injetadas no serviço")
@@ -283,7 +284,7 @@ class OrcamentoService:
     def obter_cronograma(self, orcamento_id: str) -> Dict[str, Any]:
         orcamento = self.repository.buscar_por_id(orcamento_id)
         if not orcamento:
-            raise ValueError("Orçamento não encontrado")
+            raise NaoEncontradoError("Orçamento não encontrado")
 
         if not self.etapa_repository or not self.orcamento_item_repository:
             raise ValueError("Dependências de Cronograma não injetadas no serviço")
@@ -448,7 +449,7 @@ class OrcamentoItemService:
     def adicionar_item(self, orcamento_id: str, item: OrcamentoItemCreate):
         orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
         if not orcamento:
-            raise ValueError("Orçamento não encontrado")
+            raise NaoEncontradoError("Orçamento não encontrado")
 
         estado_para_buscar = item.estado or orcamento.get("estado")
         if not estado_para_buscar:
@@ -460,7 +461,7 @@ class OrcamentoItemService:
         if item.codigo_composicao != "MANUAL":
             comps = self.item_repository.buscar_por_codigo(item.codigo_composicao, fonte=fonte)
             if not comps:
-                raise ValueError(f"Composição {item.codigo_composicao} não encontrada na base {fonte}")
+                raise NaoEncontradoError(f"Composição {item.codigo_composicao} não encontrada na base {fonte}")
             composicao = comps[0]
 
         preco_unitario = item.preco_unitario
@@ -475,7 +476,7 @@ class OrcamentoItemService:
             )
             
         if preco_unitario is None and item.codigo_composicao != "MANUAL":
-            raise ValueError(f"Preço não encontrado para a composição {item.codigo_composicao}")
+            raise NaoEncontradoError(f"Preço não encontrado para a composição {item.codigo_composicao}")
         
         if preco_unitario is None:
             preco_unitario = 0.0
@@ -535,14 +536,14 @@ class OrcamentoItemService:
     def listar_itens(self, orcamento_id: str):
         orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
         if not orcamento:
-            raise ValueError("Orçamento não encontrado")
+            raise NaoEncontradoError("Orçamento não encontrado")
             
         return self.repository.listar_por_orcamento(orcamento_id)
 
     def atualizar_item(self, orcamento_id: str, item_id: str, item_update: OrcamentoItemUpdate):
         item_atual = self.repository.buscar_por_id(item_id, orcamento_id)
         if not item_atual:
-            raise ValueError("Item não encontrado")
+            raise NaoEncontradoError("Item não encontrado")
 
         dados_atualizacao = {}
         codigo_composicao = item_update.codigo_composicao or item_atual.get("codigo_composicao")
@@ -560,7 +561,7 @@ class OrcamentoItemService:
                 fonte=fonte
             )
             if preco_unitario is None:
-                raise ValueError(f"Preço não encontrado para a composição {codigo_composicao} na base {fonte}")
+                raise NaoEncontradoError(f"Preço não encontrado para a composição {codigo_composicao} na base {fonte}")
             
             dados_atualizacao["preco_unitario"] = preco_unitario
             dados_atualizacao["codigo_composicao"] = codigo_composicao
@@ -625,7 +626,7 @@ class OrcamentoItemService:
     def listar_insumos(self, orcamento_id: str, item_id: str):
         item = self.repository.buscar_por_id(item_id, orcamento_id)
         if not item:
-            raise ValueError("Item não encontrado")
+            raise NaoEncontradoError("Item não encontrado")
         if not self.insumo_repository:
             return []
         return self.insumo_repository.listar_por_item(item_id)
@@ -636,7 +637,7 @@ class OrcamentoItemService:
 
         insumo_atual = self.insumo_repository.buscar_por_id(insumo_id)
         if not insumo_atual:
-            raise ValueError("Insumo não encontrado")
+            raise NaoEncontradoError("Insumo não encontrado")
 
         qtd = dados.get("quantidade_unitaria", insumo_atual.get("quantidade_unitaria", 0))
         preco_custom = dados.get("preco_unitario_custom")
@@ -725,7 +726,7 @@ class OrcamentoItemService:
     def remover_item(self, orcamento_id: str, item_id: str):
         item_existente = self.repository.buscar_por_id(item_id, orcamento_id)
         if not item_existente:
-             raise ValueError("Item não encontrado")
+             raise NaoEncontradoError("Item não encontrado")
         
         self.repository.deletar(item_id)
         self._atualizar_valor_total_orcamento(orcamento_id)

@@ -71,3 +71,57 @@ def test_search_long_query(client: TestClient):
     long_query = "a" * 1000
     response = client.get(f"/composicoes/buscar/{long_query}")
     assert response.status_code in [200, 400, 404, 422]
+
+
+# ---------------------------------------------------------------------------
+# Importação — limites e resultado por arquivo
+# ---------------------------------------------------------------------------
+
+@pytest.mark.integration
+def test_test_upload_removido(client: TestClient):
+    files = {"file": ("a.xlsx", b"x", "application/octet-stream")}
+    assert client.post("/importacao/test-upload", files=files).status_code in (404, 405)
+
+
+@pytest.mark.integration
+def test_upload_acima_do_limite_413(client: TestClient, monkeypatch):
+    from core.config import settings
+    monkeypatch.setattr(settings, "MAX_UPLOAD_MB", 1)
+    files = {"file": ("big.xlsx", b"0" * (1024 * 1024 + 10), "application/octet-stream")}
+    assert client.post("/importacao/upload", files=files).status_code == 413
+
+
+@pytest.mark.integration
+def test_upload_extensao_maiuscula_aceita(client: TestClient):
+    files = {"file": ("PLANILHA.XLSX", b"fake excel", "application/vnd.ms-excel")}
+    # passa da validação de extensão; falha depois no parse (400), nunca "Invalid file format"
+    r = client.post("/importacao/upload", files=files)
+    assert "Invalid file format" not in r.text
+
+
+@pytest.mark.integration
+def test_import_parcial_e_total_falha(client: TestClient, monkeypatch):
+    from app.modules.importacao import routes
+
+    def fake_process(content, repo, source_type="SINAPI"):
+        if content == b"bom":
+            return {"imported_items": 2, "imported_prices": 3, "metadata": {"fonte": "SINAPI"}}
+        raise ValueError("planilha corrompida")
+
+    monkeypatch.setattr(routes, "process_import_file", fake_process)
+
+    parcial = client.post("/importacao/import", files=[
+        ("files", ("ok.xlsx", b"bom", "application/octet-stream")),
+        ("files", ("ruim.xlsx", b"ruim", "application/octet-stream")),
+        ("files", ("nota.txt", b"x", "application/octet-stream")),
+    ])
+    body = parcial.json()
+    assert parcial.status_code == 200
+    assert body["status"] == "parcial"
+    assert {f["arquivo"] for f in body["falhas"]} == {"ruim.xlsx", "nota.txt"}
+
+    todos_ruins = client.post("/importacao/import", files=[
+        ("files", ("ruim.xlsx", b"ruim", "application/octet-stream")),
+    ])
+    assert todos_ruins.status_code == 400
+    assert "planilha corrompida" in todos_ruins.json()["detail"]

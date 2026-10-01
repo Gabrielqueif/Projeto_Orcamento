@@ -12,6 +12,7 @@ from app.modules.obra import router as obra_router
 from app.modules.almoxarifado import router as almoxarifado_router
 from app.modules.financeiro import router as financeiro_router, router_portfolio as financeiro_portfolio_router
 from core.config import settings
+from core.exceptions import NaoEncontradoError
 
 
 # Configurar logging
@@ -28,32 +29,36 @@ app = FastAPI(
     redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
 )
 
+@app.exception_handler(NaoEncontradoError)
+async def nao_encontrado_handler(request: Request, exc: NaoEncontradoError):
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
-    status_code = 400
-    msg = str(exc).lower()
-    if "não encontrado" in msg or "not found" in msg:
-        status_code = 404
-        
-    return JSONResponse(
-        status_code=status_code,
-        content={"detail": str(exc)},
-        headers={"Access-Control-Allow-Origin": "*"}
-    )
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
+
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
     logger.error(f"INTERNAL SERVER ERROR: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": f"Erro interno do servidor: {str(exc)}"},
-        headers={"Access-Control-Allow-Origin": "*"}
-    )
+    # Em produção não expõe detalhes internos (mensagens de banco, caminhos etc.)
+    detail = "Erro interno do servidor"
+    if settings.ENVIRONMENT != "production":
+        detail = f"{detail}: {exc}"
+    headers = {}
+    # Este handler roda fora do CORSMiddleware; sem o header o navegador
+    # esconderia o 500 atrás de um erro de CORS. Só ecoa origens permitidas.
+    origin = request.headers.get("origin")
+    if origin and origin in settings.cors_origins_list:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Vary"] = "Origin"
+    return JSONResponse(status_code=500, content={"detail": detail}, headers=headers)
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

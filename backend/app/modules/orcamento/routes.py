@@ -18,6 +18,9 @@ from app.modules.importacao.services.pdf_service import PdfService
 from core.security import get_current_user
 from core.ownership import enforce_ownership
 from app.dependencies import get_supabase
+import logging
+
+logger = logging.getLogger("projeto_orcamento")
 
 router = APIRouter(
     prefix="/orcamentos",
@@ -186,7 +189,8 @@ async def download_pdf_orcamento(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {str(e)}")
+        logger.error("Erro ao gerar PDF", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao gerar PDF")
 
 @router.get(
     "/{orcamento_id}/excel",
@@ -217,7 +221,8 @@ async def download_excel_orcamento(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar planilha Excel: {str(e)}")
+        logger.error("Erro ao gerar planilha Excel", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao gerar planilha Excel")
 
 @router.get(
     "/{orcamento_id}/curva-abc",
@@ -271,7 +276,8 @@ async def adicionar_item(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao adicionar item: {str(e)}")
+        logger.error("Erro ao adicionar item", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao adicionar item")
 
 @router.get(
     "/{orcamento_id}/itens", 

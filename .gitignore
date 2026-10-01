@@ -5,3 +5,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 olhar depois/
+# Artefatos de teste/cobertura
+.coverage
+coverage.xml
+htmlcov/
+.venv/
