@@ -7,11 +7,12 @@ from app.modules.orcamento.repositories import OrcamentoRepository, OrcamentoIte
 from app.modules.etapa.repositories import EtapaRepository
 from app.dependencies import get_supabase
 from core.security import get_current_user
+from core.ownership import enforce_ownership
 
 router = APIRouter(
     prefix="/obras",
     tags=["Obras"],
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Depends(enforce_ownership)],
     redirect_slashes=False
 )
 
@@ -42,9 +43,10 @@ async def gerar_obra_endpoint(
     summary="Listar todas as obras"
 )
 async def listar_obras_endpoint(
-    service: ObraService = Depends(get_obra_service)
+    service: ObraService = Depends(get_obra_service),
+    user: dict = Depends(get_current_user)
 ):
-    return service.listar_obras()
+    return service.listar_obras(user_id=user["id"])
 
 @router.get(
     "/{obra_id}",

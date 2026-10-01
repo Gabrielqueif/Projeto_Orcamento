@@ -16,11 +16,12 @@ from app.modules.etapa.repositories import EtapaRepository
 from app.modules.importacao.services.pdf_service import PdfService
 
 from core.security import get_current_user
+from core.ownership import enforce_ownership
 from app.dependencies import get_supabase
 
 router = APIRouter(
     prefix="/orcamentos",
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Depends(enforce_ownership)],
     redirect_slashes=False
 )
 
@@ -74,10 +75,11 @@ async def simular_calculo_bdi(payload: BDICalculateRequest):
 )
 async def criar_orcamento(
     orcamento: OrcamentoCreate, 
-    service: OrcamentoService = Depends(get_orcamento_service)
+    service: OrcamentoService = Depends(get_orcamento_service),
+    user: dict = Depends(get_current_user)
 ):
-    """Cria um novo orçamento"""
-    return service.criar_orcamento(orcamento)
+    """Cria um novo orçamento pertencente ao usuário autenticado"""
+    return service.criar_orcamento(orcamento, user_id=user["id"])
 
 @router.get(
     "/",
@@ -89,10 +91,11 @@ async def listar_orcamentos(
     nome: Optional[str] = None,
     status: Optional[str] = None, 
     cliente: Optional[str] = None, 
-    service: OrcamentoService = Depends(get_orcamento_service)
+    service: OrcamentoService = Depends(get_orcamento_service),
+    user: dict = Depends(get_current_user)
 ):
-    """Lista todos os orçamentos, com filtros opcionais"""
-    return service.listar_orcamentos(nome, status, cliente)
+    """Lista os orçamentos do usuário autenticado, com filtros opcionais"""
+    return service.listar_orcamentos(nome, status, cliente, user_id=user["id"])
 
 @router.get(
     "/stats",
@@ -101,10 +104,11 @@ async def listar_orcamentos(
     tags=["Orçamentos"]
 )
 async def obter_estatisticas_endpoint(
-    service: OrcamentoService = Depends(get_orcamento_service)
+    service: OrcamentoService = Depends(get_orcamento_service),
+    user: dict = Depends(get_current_user)
 ):
-    """Retorna estatísticas globais sobre os orçamentos"""
-    return service.obter_estatisticas()
+    """Retorna estatísticas dos orçamentos do usuário autenticado"""
+    return service.obter_estatisticas(user_id=user["id"])
 
 @router.get(
     "/{orcamento_id}",

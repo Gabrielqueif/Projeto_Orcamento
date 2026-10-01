@@ -24,7 +24,7 @@ class OrcamentoService:
         self.item_repository = orcamento_item_repository
         self.supabase = supabase_client
 
-    def criar_orcamento(self, orcamento: OrcamentoCreate):
+    def criar_orcamento(self, orcamento: OrcamentoCreate, user_id: Optional[str] = None):
         tipo_bdi = orcamento.tipo_bdi or "ANALITICO"
         bdi_config = orcamento.bdi_config or BDIConfig()
 
@@ -48,13 +48,14 @@ class OrcamentoService:
             "valor_total": 0.0,
             "variaveis_globais": orcamento.variaveis_globais or [],
             "locais": orcamento.locais or [],
+            "user_id": user_id,
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat()
         }
         return self.repository.criar(dados)
 
-    def listar_orcamentos(self, nome: Optional[str] = None, status: Optional[str] = None, cliente: Optional[str] = None):
-        return self.repository.listar(nome, status, cliente)
+    def listar_orcamentos(self, nome: Optional[str] = None, status: Optional[str] = None, cliente: Optional[str] = None, user_id: Optional[str] = None):
+        return self.repository.listar(nome, status, cliente, user_id=user_id)
 
     def buscar_orcamento(self, orcamento_id: str):
         orcamento = self.repository.buscar_por_id(orcamento_id)
@@ -158,8 +159,8 @@ class OrcamentoService:
             raise ValueError("Orçamento não encontrado")
         return self.repository.deletar(orcamento_id)
 
-    def obter_estatisticas(self) -> Dict[str, Any]:
-        orcamentos = self.repository.listar()
+    def obter_estatisticas(self, user_id: Optional[str] = None) -> Dict[str, Any]:
+        orcamentos = self.repository.listar(user_id=user_id)
         if not orcamentos:
             return {
                 "total_orcamentos": 0,

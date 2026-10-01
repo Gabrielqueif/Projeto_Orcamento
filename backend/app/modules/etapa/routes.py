@@ -5,11 +5,12 @@ from app.modules.etapa.services import EtapaService
 from app.modules.etapa.repositories import EtapaRepository
 from app.dependencies import get_supabase
 from core.security import get_current_user
+from core.ownership import enforce_ownership
 
 router = APIRouter(
     prefix="/orcamentos", 
     tags=["Etapas do Orçamento"],
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Depends(enforce_ownership)],
     redirect_slashes=False
 )
 

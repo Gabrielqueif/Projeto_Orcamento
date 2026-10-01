@@ -33,6 +33,7 @@ class ObraService:
         # 2. Criar obra
         dados_obra = {
             "orcamento_id": orcamento_id,
+            "user_id": orcamento.get("user_id"),
             "obra_id": obra_id,
             "cliente": orcamento.get("cliente"),
             "endereco": orcamento.get("endereco") or {},
@@ -123,8 +124,8 @@ class ObraService:
             raise ValueError("Obra não encontrada")
         return obra
 
-    def listar_obras(self) -> List[Dict[str, Any]]:
-        return self.obra_repository.listar_obras()
+    def listar_obras(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        return self.obra_repository.listar_obras(user_id=user_id)
 
     def listar_limites(self, obra_id: str) -> List[Dict[str, Any]]:
         return self.obra_repository.listar_limites_por_obra(obra_id)

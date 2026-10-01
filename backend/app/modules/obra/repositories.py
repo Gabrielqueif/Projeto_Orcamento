@@ -31,9 +31,12 @@ class ObraRepository:
             logger.error(f"Erro ao buscar obra por id {obra_id}: {e}")
             return None
 
-    def listar_obras(self) -> List[Dict[str, Any]]:
+    def listar_obras(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         try:
-            resultado = self.supabase.table(TABELA_OBRAS).select("*").order("created_at", desc=True).execute()
+            query = self.supabase.table(TABELA_OBRAS).select("*")
+            if user_id:
+                query = query.eq("user_id", user_id)
+            resultado = query.order("created_at", desc=True).execute()
             return resultado.data or []
         except Exception as e:
             logger.error(f"Erro ao listar obras: {e}")

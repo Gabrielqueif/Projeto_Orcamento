@@ -82,8 +82,11 @@ class FinanceiroService:
             "gasto_por_categoria": gasto_por_categoria
         }
 
-    def obter_portfolio_consolidado(self) -> Dict[str, Any]:
-        obras = self.repository.supabase.table("obras").select("*").execute().data or []
+    def obter_portfolio_consolidado(self, user_id: Optional[str] = None) -> Dict[str, Any]:
+        query = self.repository.supabase.table("obras").select("*")
+        if user_id:
+            query = query.eq("user_id", user_id)
+        obras = query.execute().data or []
         
         total_orcado_global = Decimal("0.0")
         total_realizado_global = Decimal("0.0")
