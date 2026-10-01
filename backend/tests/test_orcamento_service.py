@@ -60,7 +60,7 @@ def test_listar_orcamentos(orcamento_service, repository_mock):
     resultado = orcamento_service.listar_orcamentos(status="ativo", cliente="João")
 
     assert resultado == retorno_esperado
-    repository_mock.listar.assert_called_once_with(None, "ativo", "João")
+    repository_mock.listar.assert_called_once_with(None, "ativo", "João", user_id=None)
 
 
 @pytest.mark.unit

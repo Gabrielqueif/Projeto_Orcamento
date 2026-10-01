@@ -12,11 +12,12 @@ from app.modules.almoxarifado.services import AlmoxarifadoService
 from app.modules.almoxarifado.repositories import AlmoxarifadoRepository
 from app.dependencies import get_supabase
 from core.security import get_current_user
+from core.ownership import enforce_ownership
 
 router = APIRouter(
     prefix="/obras/{obra_id}/almoxarifado",
     tags=["Almoxarifado"],
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Depends(enforce_ownership)],
     redirect_slashes=False
 )
 

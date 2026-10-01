@@ -21,9 +21,11 @@ class OrcamentoRepository:
         except Exception as e:
             raise e
 
-    def listar(self, nome: Optional[str] = None, status: Optional[str] = None, cliente: Optional[str] = None) -> List[Dict[str, Any]]:
+    def listar(self, nome: Optional[str] = None, status: Optional[str] = None, cliente: Optional[str] = None, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         query = self.supabase.table(TABELA_ORCAMENTOS).select("*")
         
+        if user_id:
+            query = query.eq("user_id", user_id)
         if nome:
             query = query.ilike("nome", f"%{nome}%")
         if status:

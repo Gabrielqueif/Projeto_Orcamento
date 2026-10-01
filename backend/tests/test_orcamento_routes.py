@@ -44,7 +44,7 @@ def test_listar_orcamentos(client, mock_supabase):
         {"id": "orc-1", "nome": "Orc 1", "cliente": "C1", "data": "2023-01-01", "base_referencia": "A", "tipo_composicao": "T1", "estado": "SP", "status": "ok", "valor_total": 100, "bdi": 0.0, "fonte": "SINAPI"},
         {"id": "orc-2", "nome": "Orc 2", "cliente": "C2", "data": "2023-01-02", "base_referencia": "B", "tipo_composicao": "T2", "estado": "RJ", "status": "ok", "valor_total": 200, "bdi": 0.0, "fonte": "SINAPI"}
     ]
-    mock_supabase.table.return_value.select.return_value.order.return_value.execute.return_value.data = mock_data
+    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value.data = mock_data
 
     # Act
     response = client.get("/orcamentos/")

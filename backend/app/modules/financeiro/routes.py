@@ -10,11 +10,12 @@ from app.modules.financeiro.services import FinanceiroService
 from app.modules.financeiro.repositories import FinanceiroRepository
 from app.dependencies import get_supabase
 from core.security import get_current_user
+from core.ownership import enforce_ownership
 
 router = APIRouter(
     prefix="/obras/{obra_id}/financeiro",
     tags=["Financeiro"],
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Depends(enforce_ownership)],
     redirect_slashes=False
 )
 
@@ -34,9 +35,10 @@ def get_financeiro_service(supabase = Depends(get_supabase)) -> FinanceiroServic
     summary="Obter consolidado do portfólio de todas as obras"
 )
 async def obter_portfolio_consolidado_endpoint(
-    service: FinanceiroService = Depends(get_financeiro_service)
+    service: FinanceiroService = Depends(get_financeiro_service),
+    user: dict = Depends(get_current_user)
 ):
-    return service.obter_portfolio_consolidado()
+    return service.obter_portfolio_consolidado(user_id=user["id"])
 
 
 def get_financeiro_service(supabase = Depends(get_supabase)) -> FinanceiroService:
