@@ -6,6 +6,9 @@ from app.modules.etapa.repositories import EtapaRepository
 from app.dependencies import get_supabase
 from core.security import get_current_user
 from core.ownership import enforce_ownership
+import logging
+
+logger = logging.getLogger("projeto_orcamento")
 
 router = APIRouter(
     prefix="/orcamentos", 
@@ -32,7 +35,8 @@ async def criar_etapa(
     try:
         return service.criar_etapa(orcamento_id, etapa)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro ao criar etapa: {str(e)}")
+        logger.error("Erro ao criar etapa", exc_info=True)
+        raise HTTPException(status_code=400, detail="Erro ao criar etapa")
 
 @router.get(
     "/{orcamento_id}/etapas", 
@@ -47,7 +51,8 @@ async def listar_etapas(
     try:
         return service.listar_etapas(orcamento_id)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro ao listar etapas: {str(e)}")
+        logger.error("Erro ao listar etapas", exc_info=True)
+        raise HTTPException(status_code=400, detail="Erro ao listar etapas")
 
 @router.put(
     "/{orcamento_id}/etapas/{etapa_id}", 
@@ -64,7 +69,8 @@ async def atualizar_etapa(
     try:
         return service.atualizar_etapa(etapa_id, etapa_update.model_dump(exclude_unset=True, mode="json"))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro ao atualizar etapa: {str(e)}")
+        logger.error("Erro ao atualizar etapa", exc_info=True)
+        raise HTTPException(status_code=400, detail="Erro ao atualizar etapa")
 
 @router.delete(
     "/{orcamento_id}/etapas/{etapa_id}", 
@@ -79,7 +85,8 @@ async def deletar_etapa(
     try:
         return service.deletar_etapa(etapa_id, orcamento_id)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro ao deletar etapa: {str(e)}")
+        logger.error("Erro ao deletar etapa", exc_info=True)
+        raise HTTPException(status_code=400, detail="Erro ao deletar etapa")
 
 @router.patch(
     "/{orcamento_id}/etapas/{etapa_id}/progresso",
@@ -104,4 +111,5 @@ async def atualizar_progresso_etapa(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro ao atualizar progresso: {str(e)}")
+        logger.error("Erro ao atualizar progresso", exc_info=True)
+        raise HTTPException(status_code=400, detail="Erro ao atualizar progresso")

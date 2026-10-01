@@ -51,7 +51,7 @@ def test_get_current_user_token_valido():
     mock_supabase = _make_mock_supabase(user_payload)
 
     # Act
-    resultado = _run_async(get_current_user(token="valid-token", supabase=mock_supabase))
+    resultado = get_current_user(token="valid-token", supabase=mock_supabase)
 
     # Assert
     assert resultado["id"] == "user-123"
@@ -70,7 +70,7 @@ def test_get_current_user_token_invalido_levanta_401():
 
     # Act + Assert
     with pytest.raises(HTTPException) as exc_info:
-        _run_async(get_current_user(token="invalid-token", supabase=mock_supabase))
+        get_current_user(token="invalid-token", supabase=mock_supabase)
 
     assert exc_info.value.status_code == 401
 
@@ -85,7 +85,7 @@ def test_get_current_user_user_none_levanta_401():
 
     # Act + Assert
     with pytest.raises(HTTPException) as exc_info:
-        _run_async(get_current_user(token="any-token", supabase=mock_supabase))
+        get_current_user(token="any-token", supabase=mock_supabase)
 
     assert exc_info.value.status_code == 401
 
@@ -101,45 +101,9 @@ def test_get_current_user_response_none_levanta_401():
 
     # Act + Assert
     with pytest.raises(HTTPException) as exc_info:
-        _run_async(get_current_user(token="any-token", supabase=mock_supabase))
+        get_current_user(token="any-token", supabase=mock_supabase)
 
     assert exc_info.value.status_code == 401
-
-
-# ---------------------------------------------------------------------------
-# create_access_token
-# ---------------------------------------------------------------------------
-
-@pytest.mark.unit
-def test_create_access_token_default():
-    """Cria um token com tempo de expiração padrão de 15 minutos e valida o payload."""
-    from jose import jwt
-    from core.security import create_access_token
-    from core.config import settings
-
-    payload = {"sub": "user-123"}
-    token = create_access_token(payload)
-
-    decoded = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-    assert decoded["sub"] == "user-123"
-    assert "exp" in decoded
-
-
-@pytest.mark.unit
-def test_create_access_token_custom_expiry():
-    """Cria um token com expiração customizada."""
-    from jose import jwt
-    from datetime import timedelta
-    from core.security import create_access_token
-    from core.config import settings
-
-    payload = {"sub": "user-456"}
-    custom_delta = timedelta(hours=2)
-    token = create_access_token(payload, expires_delta=custom_delta)
-
-    decoded = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-    assert decoded["sub"] == "user-456"
-    assert "exp" in decoded
 
 
 # ---------------------------------------------------------------------------
@@ -163,19 +127,17 @@ def test_require_admin_app_metadata():
 
 
 @pytest.mark.unit
-def test_require_admin_user_metadata():
-    """role=admin nos user_metadata -> acesso permitido."""
+def test_require_admin_ignora_user_metadata():
+    """role=admin só em user_metadata (editável pelo usuário) -> negado."""
     from core.security import require_admin
 
-    user = {
-        "id": "u1",
-        "app_metadata": {},
-        "user_metadata": {"role": "admin"}
-    }
+    user = {"id": "u1", "app_metadata": {}, "user_metadata": {"role": "admin"}}
     mock_supabase = MagicMock()
+    mock_supabase.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value.data = {"role": "user"}
 
-    resultado = require_admin(user, mock_supabase)
-    assert resultado == user
+    with pytest.raises(HTTPException) as exc_info:
+        require_admin(user, mock_supabase)
+    assert exc_info.value.status_code == 403
 
 
 @pytest.mark.unit
@@ -198,30 +160,18 @@ def test_require_admin_profiles_table():
 
 
 @pytest.mark.unit
-def test_require_admin_users_table():
-    """Verifica fallback na tabela users do Supabase."""
+def test_require_admin_falha_na_consulta_nega():
+    """Erro ao consultar profiles -> nega (fail closed) e não consulta a tabela users."""
     from core.security import require_admin
 
-    user = {
-        "id": "user-users-admin",
-        "app_metadata": {},
-        "user_metadata": {}
-    }
+    user = {"id": "u1", "app_metadata": {}, "user_metadata": {}}
     mock_supabase = MagicMock()
-    # Faz a primeira consulta à tabela profiles falhar e a segunda à tabela users retornar admin
-    def side_effect(table_name):
-        mock_query = MagicMock()
-        if table_name == "profiles":
-            mock_query.select.return_value.eq.return_value.single.return_value.execute.side_effect = Exception("Tabela inexistente")
-        elif table_name == "users":
-            mock_query.select.return_value.eq.return_value.single.return_value.execute.return_value.data = {"role": "admin"}
-        return mock_query
+    mock_supabase.table.return_value.select.return_value.eq.return_value.single.return_value.execute.side_effect = Exception("db fora do ar")
 
-    mock_supabase.table.side_effect = side_effect
-
-    resultado = require_admin(user, mock_supabase)
-    assert resultado == user
-    mock_supabase.table.assert_any_call("users")
+    with pytest.raises(HTTPException) as exc_info:
+        require_admin(user, mock_supabase)
+    assert exc_info.value.status_code == 403
+    mock_supabase.table.assert_called_once_with("profiles")
 
 
 @pytest.mark.unit

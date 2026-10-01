@@ -25,9 +25,9 @@ export function useUserRole() {
       }
 
       try {
-        // 1. Try metadata
-        let userRole =
-          currentUser.app_metadata?.role || currentUser.user_metadata?.role;
+        // 1. app_metadata (somente o servidor altera). user_metadata é editável
+        // pelo próprio usuário e não deve ser usado para decidir permissões.
+        let userRole = currentUser.app_metadata?.role;
 
         // 2. Try table checks if metadata doesn't explicitly say 'admin'
         if (userRole !== 'admin') {
@@ -40,23 +40,6 @@ export function useUserRole() {
 
             if (profile) {
               userRole = profile.role;
-            }
-          } catch (e) {
-            // silently ignore
-          }
-        }
-
-        // 3. Fallback to 'users' table
-        if (!userRole) {
-          try {
-            const { data: publicUser } = await supabase
-              .from('users')
-              .select('role')
-              .eq('id', currentUser.id)
-              .maybeSingle();
-
-            if (publicUser) {
-              userRole = publicUser.role;
             }
           } catch (e) {
             // silently ignore

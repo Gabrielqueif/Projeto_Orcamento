@@ -100,7 +100,16 @@ export function ImportUpload() {
 
                 {importResult && (
                     <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md animate-in fade-in duration-500">
-                        <h3 className="font-semibold text-blue-800 mb-2">Importação Concluída com Sucesso!</h3>
+                        <h3 className="font-semibold text-blue-800 mb-2">
+                            {importResult.status === 'parcial' ? 'Importação Concluída com Falhas' : 'Importação Concluída com Sucesso!'}
+                        </h3>
+                        {importResult.falhas?.length > 0 && (
+                            <ul className="list-disc list-inside text-sm text-red-700 mb-2">
+                                {importResult.falhas.map((f: { arquivo: string; motivo: string }) => (
+                                    <li key={f.arquivo}>{f.arquivo}: {f.motivo}</li>
+                                ))}
+                            </ul>
+                        )}
                         <p className="text-sm text-blue-700">
                             Resumo do processamento:
                         </p>

@@ -3,6 +3,9 @@ from app.modules.composicao.services import ItemService
 from app.modules.composicao.repositories import ItemRepository
 from app.dependencies import get_supabase
 from core.security import get_current_user
+import logging
+
+logger = logging.getLogger("projeto_orcamento")
 
 router = APIRouter(
     prefix="/composicoes", 
@@ -24,7 +27,8 @@ async def buscar_composicao(termo: str, fonte: str = "SINAPI", service: ItemServ
     try:
         return service.buscar_composicao(termo, fonte=fonte)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao buscar composição: {str(e)}")
+        logger.error("Erro ao buscar composição", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao buscar composição")
 
 @router.get("/{codigo_composicao}/estados")
 async def listar_estados_composicao(

@@ -4,6 +4,7 @@ from datetime import date
 import logging
 from app.modules.almoxarifado.repositories import AlmoxarifadoRepository
 from app.modules.almoxarifado.schemas import InsumoCreate, MovimentacaoCreate, LocacaoCreate
+from core.exceptions import NaoEncontradoError
 
 logger = logging.getLogger("projeto_orcamento")
 
@@ -34,7 +35,7 @@ class AlmoxarifadoService:
     def registrar_movimentacao(self, insumo_id: str, schema: MovimentacaoCreate) -> Dict[str, Any]:
         insumo = self.repository.buscar_insumo_por_id(insumo_id)
         if not insumo:
-            raise ValueError("Insumo não encontrado no almoxarifado")
+            raise NaoEncontradoError("Insumo não encontrado no almoxarifado")
 
         qtd_atual = Decimal(str(insumo["quantidade_atual"]))
         qtd_mov = Decimal(str(schema.quantidade))
