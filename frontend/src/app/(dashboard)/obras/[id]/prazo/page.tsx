@@ -74,7 +74,7 @@ export default function PrazosPage() {
   const marcadores = [];
   const minDateObj = new Date(escalaMinima);
   const maxDateObj = new Date(escalaMaxima);
-  let atual = new Date(minDateObj.getFullYear(), minDateObj.getMonth(), 1);
+  const atual = new Date(minDateObj.getFullYear(), minDateObj.getMonth(), 1);
   while (atual <= maxDateObj) {
     marcadores.push(new Date(atual));
     atual.setMonth(atual.getMonth() + 1);

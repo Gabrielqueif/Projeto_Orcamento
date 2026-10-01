@@ -59,7 +59,7 @@ export default function NovoMembroPage() {
 
   // Mask Salary (R$ Money)
   const handleRemuneracaoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
+    const value = e.target.value.replace(/\D/g, "");
     if (value === "") {
       setRemuneracao("");
       return;

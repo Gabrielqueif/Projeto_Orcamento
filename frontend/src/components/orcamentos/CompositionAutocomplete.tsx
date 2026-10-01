@@ -101,7 +101,7 @@ export function CompositionAutocomplete({
             </div>
           ) : value.length >= 3 && (
             <div className="p-4 text-center text-text-muted text-xs italic">
-              Nenhuma composição encontrada para "{value}"
+              Nenhuma composição encontrada para &quot;{value}&quot;
             </div>
           )}
           
