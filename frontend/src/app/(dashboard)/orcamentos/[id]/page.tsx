@@ -59,8 +59,8 @@ export default function OrcamentoDetalhePage() {
     },
     pendente: {
       label: "PENDENTE",
-      style: "bg-[rgba(0,163,177,0.1)] text-[#00a3b1]",
-      dot: "bg-[#00a3b1]"
+      style: "bg-[rgba(221, 196, 59, 0.76)] text-[#967809]",
+      dot: "bg-[#967809]"
     },
     aprovado: {
       label: "APROVADO",
