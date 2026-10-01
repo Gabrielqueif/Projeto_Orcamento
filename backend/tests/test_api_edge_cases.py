@@ -109,6 +109,8 @@ def test_import_parcial_e_total_falha(client: TestClient, monkeypatch):
         raise ValueError("planilha corrompida")
 
     monkeypatch.setattr(routes, "process_import_file", fake_process)
+    # evita criar o cliente Supabase real (sem chave no CI)
+    monkeypatch.setattr(routes, "get_item_repository", lambda: None)
 
     parcial = client.post("/importacao/import", files=[
         ("files", ("ok.xlsx", b"bom", "application/octet-stream")),
