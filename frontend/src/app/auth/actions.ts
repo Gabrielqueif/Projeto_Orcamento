@@ -31,7 +31,8 @@ export type SignupState = {
     values?: { username: string; email: string; accountType: string }
 }
 
-const USERNAME_REGEX = /^[a-zA-Z0-9._-]{3,30}$/
+// Nome de exibição: aceita letras (com acento), números, espaço e . _ - '
+const USERNAME_REGEX = /^[\p{L}\p{N}][\p{L}\p{N} ._'-]{1,58}[\p{L}\p{N}.]$/u
 const ACCOUNT_TYPES = ['individual', 'company']
 const PASSWORD_MIN_LENGTH = 8
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -56,7 +57,7 @@ function validateSignup(formData: FormData): { error: string } | {
         return { error: 'Tipo de conta inválido.' }
     }
     if (!USERNAME_REGEX.test(username)) {
-        return { error: 'O nome de usuário deve ter de 3 a 30 caracteres, usando apenas letras, números, ponto, hífen ou sublinhado.' }
+        return { error: 'O nome deve ter de 3 a 60 caracteres, usando letras, números, espaço, ponto, hífen, apóstrofo ou sublinhado.' }
     }
     if (!EMAIL_REGEX.test(email)) {
         return { error: 'Informe um e-mail válido.' }
