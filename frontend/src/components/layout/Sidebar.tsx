@@ -38,7 +38,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex flex-col gap-0.5 py-6 px-6 border-b border-[rgba(255,255,255,0.06)]">
         <Link href="/" className="no-underline flex items-center gap-3">
-          <Image src="/logo02.png" alt="Logo" width={40} height={40} className="object-contain" />
+          <Image src="/logo.png" alt="Logo" width={40} height={40} className="object-contain" />
           <span className="font-['Manrope'] font-extrabold text-[22px] text-white tracking-[-0.5px] m-1">
             GP<span className="text-[#9fd300]">Obras</span>
           </span>
