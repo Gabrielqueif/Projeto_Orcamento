@@ -14,24 +14,11 @@ import {
 } from "@phosphor-icons/react";
 import { getOrcamentos, getOrcamentoStats, type Orcamento, type OrcamentoStats } from "@/lib/api/orcamentos";
 
-const STATUS_LABELS: Record<string, string> = {
-  aprovado: "APROVADO",
-  concluido: "APROVADO",
-  orcamento_concluido: "APROVADO",
-  em_elaboracao: "EM ELABORAÇÃO",
-  pendente: "PENDENTE",
-  recusado: "RECUSADO",
-  cancelado: "RECUSADO"
-};
+import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus, type OrcamentoStatus } from "@/lib/orcamentoStatus";
 
-const STATUS_STYLES: Record<string, string> = {
-  APROVADO: "bg-[#f0fdf4] text-[#15803d]",
-  EM_ELABORACAO: "bg-[#b2b884] text-[#444727]",
-  PENDENTE: "bg-[rgba(0,163,177,0.1)] text-[#00a3b1]",
-  RECUSADO: "bg-[#fef2f2] text-[#dc2626]",
-};
+type FilterStatus = "todos" | OrcamentoStatus;
 
-type FilterStatus = "todos" | "pendente" | "aprovado" | "recusado" | "em_elaboracao";
+const FILTERS: FilterStatus[] = ["todos", ...STATUS_ORDER];
 
 export default function OrcamentosPage() {
   const router = useRouter();
@@ -73,15 +60,9 @@ export default function OrcamentosPage() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
-  const getMappedStatus = (status: string): string => {
-    const s = status.toLowerCase();
-    return STATUS_LABELS[s] || "PENDENTE";
-  };
-
   const filteredOrcamentos = orcamentos.filter((o) => {
     if (activeFilter === "todos") return true;
-    const mapped = getMappedStatus(o.status);
-    return mapped.toLowerCase() === activeFilter;
+    return normalizeStatus(o.status) === activeFilter;
   });
 
   const handleRowClick = (id: string) => {
@@ -218,7 +199,7 @@ export default function OrcamentosPage() {
             Status:
           </span>
           <div className="bg-[#f8fafc] flex items-center p-1 rounded-[8px] gap-0.5">
-            {(["todos", "pendente", "aprovado", "recusado"] as FilterStatus[]).map((filter) => (
+            {FILTERS.map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
@@ -228,7 +209,7 @@ export default function OrcamentosPage() {
                     : "bg-transparent text-[#64748b] font-semibold hover:text-[#001b3d]"
                 }`}
               >
-                {filter === "todos" ? "Todos" : filter === "pendente" ? "Pendentes" : filter === "aprovado" ? "Aprovados" : "Recusados"}
+                {filter === "todos" ? "Todos" : STATUS_INFO[filter].filterLabel}
               </button>
             ))}
           </div>
@@ -292,7 +273,7 @@ export default function OrcamentosPage() {
               </tr>
             ) : (
               filteredOrcamentos.map((o, idx) => {
-                const mappedStatus = getMappedStatus(o.status);
+                const statusDisplay = getStatusDisplay(o.status);
                 return (
                   <tr
                     key={o.id}
@@ -335,11 +316,9 @@ export default function OrcamentosPage() {
                     {/* Status */}
                     <td className="px-6 py-[20px] align-middle">
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-[8px] font-['JetBrains_Mono'] font-semibold text-[10px] uppercase tracking-[0.5px] ${
-                          STATUS_STYLES[mappedStatus] || "bg-[#f1f5f9] text-[#64748b]"
-                        }`}
+                        className={`inline-flex items-center px-2.5 py-1 rounded-[8px] font-['JetBrains_Mono'] font-semibold text-[10px] uppercase tracking-[0.5px] ${statusDisplay.style}`}
                       >
-                        {mappedStatus}
+                        {statusDisplay.label}
                       </span>
                     </td>
 
