@@ -62,7 +62,7 @@ export default function SignupPage() {
 
                 {/* Username */}
                 <div>
-                    <label className={labelClass} htmlFor="username">Nome de Usuário</label>
+                    <label className={labelClass} htmlFor="username">Nome</label>
                     <div className="relative">
                         <User className={iconClass} size={18} />
                         <input
@@ -71,12 +71,10 @@ export default function SignupPage() {
                             type="text"
                             required
                             minLength={3}
-                            maxLength={30}
-                            pattern="[a-zA-Z0-9._\-]+"
-                            title="Letras, números, ponto, hífen ou sublinhado"
+                            maxLength={60}
                             defaultValue={state.values?.username}
                             className={inputClass}
-                            placeholder="Ex: joaosilva"
+                            placeholder="Ex: João Silva"
                         />
                     </div>
                 </div>
