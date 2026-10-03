@@ -20,6 +20,7 @@ import {
   Calculator
 } from "@phosphor-icons/react";
 import { getOrcamento, downloadOrcamentoPDF, updateOrcamento, type Orcamento } from "@/lib/api/orcamentos";
+import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus } from "@/lib/orcamentoStatus";
 import { PlanilhaView } from "@/components/orcamentos/PlanilhaView";
 import { CurvaAbcView } from "@/components/orcamentos/CurvaAbcView";
 import { CronogramaFinanceiroView } from "@/components/orcamentos/CronogramaFinanceiroView";
@@ -50,34 +51,6 @@ export default function OrcamentoDetalhePage() {
   const [saving, setSaving] = useState(false);
   const [isTransitionDrawerOpen, setIsTransitionDrawerOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
-
-  const STATUS_DETAILS: Record<string, { label: string; style: string; dot: string }> = {
-    em_elaboracao: {
-      label: "EM ELABORAÇÃO",
-      style: "bg-[rgba(0,163,177,0.1)] text-[#00a3b1]",
-      dot: "bg-[#00a3b1]"
-    },
-    pendente: {
-      label: "PENDENTE",
-      style: "bg-[rgba(221, 196, 59, 0.76)] text-[#967809]",
-      dot: "bg-[#967809]"
-    },
-    aprovado: {
-      label: "APROVADO",
-      style: "bg-[#f0fdf4] text-[#15803d]",
-      dot: "bg-[#15803d]"
-    },
-    recusado: {
-      label: "RECUSADO",
-      style: "bg-[#fef2f2] text-[#dc2626]",
-      dot: "bg-[#dc2626]"
-    },
-    cancelado: {
-      label: "CANCELADO",
-      style: "bg-[#f1f5f9] text-[#64748b]",
-      dot: "bg-[#64748b]"
-    }
-  };
 
   const handleUpdateStatus = async (newStatus: string) => {
     setIsStatusDropdownOpen(false);
@@ -203,8 +176,8 @@ export default function OrcamentoDetalhePage() {
   }
 
   // Estilo de status dinâmico
-  const mappedStatus = orcamento.status.toUpperCase();
-  const isAprovado = mappedStatus.includes("APROVADO") || mappedStatus.includes("CONCLUIDO");
+  const statusDisplay = getStatusDisplay(orcamento.status);
+  const isAprovado = normalizeStatus(orcamento.status) === "aprovado";
 
   return (
     <div className="flex flex-col gap-6">
@@ -228,12 +201,10 @@ export default function OrcamentoDetalhePage() {
                 <button
                   type="button"
                   onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-[8px] font-['JetBrains_Mono'] font-semibold text-[10px] uppercase tracking-[0.5px] cursor-pointer hover:brightness-95 transition-all border-none ${
-                    STATUS_DETAILS[orcamento.status.toLowerCase()]?.style || "bg-[#f1f5f9] text-[#64748b]"
-                  }`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-[8px] font-['JetBrains_Mono'] font-semibold text-[10px] uppercase tracking-[0.5px] cursor-pointer hover:brightness-95 transition-all border-none ${statusDisplay.style}`}
                 >
-                  <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DETAILS[orcamento.status.toLowerCase()]?.dot || "bg-[#64748b]"}`} />
-                  {STATUS_DETAILS[orcamento.status.toLowerCase()]?.label || orcamento.status.toUpperCase()}
+                  <span className={`w-1.5 h-1.5 rounded-full ${statusDisplay.dot}`} />
+                  {statusDisplay.label}
                   <CaretDown size={10} weight="bold" />
                 </button>
 
@@ -241,15 +212,15 @@ export default function OrcamentoDetalhePage() {
                   <>
                     <div className="fixed inset-0 z-10 bg-transparent" onClick={() => setIsStatusDropdownOpen(false)} />
                     <div className="absolute left-0 mt-1 w-44 bg-white border border-[#f1f5f9] rounded-[8px] shadow-[0_4px_12px_rgba(0,0,0,0.1)] py-1 z-20">
-                      {Object.entries(STATUS_DETAILS).map(([key, val]) => (
+                      {STATUS_ORDER.map((key) => (
                         <button
                           key={key}
                           type="button"
                           onClick={() => handleUpdateStatus(key)}
                           className="w-full text-left px-3 py-2 text-[11px] font-['JetBrains_Mono'] font-semibold text-[#001b3d] hover:bg-[#f8fafc] flex items-center gap-2 border-none bg-transparent cursor-pointer"
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full ${val.dot}`} />
-                          {val.label}
+                          <span className={`w-1.5 h-1.5 rounded-full ${STATUS_INFO[key].dot}`} />
+                          {STATUS_INFO[key].label}
                         </button>
                       ))}
                     </div>
