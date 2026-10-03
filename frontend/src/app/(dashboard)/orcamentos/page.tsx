@@ -1,15 +1,14 @@
+// noinspection SpellCheckingInspection
+
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { 
+import {
   Plus, 
-  DownloadSimple, 
-  Calendar, 
-  Funnel, 
-  MagnifyingGlass, 
-  CaretDown, 
+  DownloadSimple,
+  MagnifyingGlass,
   Clock,
   ArrowRight
 } from "@phosphor-icons/react";
@@ -19,7 +18,7 @@ const STATUS_LABELS: Record<string, string> = {
   aprovado: "APROVADO",
   concluido: "APROVADO",
   orcamento_concluido: "APROVADO",
-  em_elaboracao: "PENDENTE",
+  em_elaboracao: "EM ELABORAÇÃO",
   pendente: "PENDENTE",
   recusado: "RECUSADO",
   cancelado: "RECUSADO"
@@ -27,11 +26,12 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_STYLES: Record<string, string> = {
   APROVADO: "bg-[#f0fdf4] text-[#15803d]",
+  EM_ELABORACAO: "bg-[#b2b884] text-[#444727]",
   PENDENTE: "bg-[rgba(0,163,177,0.1)] text-[#00a3b1]",
   RECUSADO: "bg-[#fef2f2] text-[#dc2626]",
 };
 
-type FilterStatus = "todos" | "pendente" | "aprovado" | "recusado";
+type FilterStatus = "todos" | "pendente" | "aprovado" | "recusado" | "em_elaboracao";
 
 export default function OrcamentosPage() {
   const router = useRouter();
