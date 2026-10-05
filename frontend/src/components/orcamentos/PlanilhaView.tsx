@@ -4,21 +4,19 @@ import * as React from "react";
 import { 
   getEtapas, 
   getItens, 
-  getInsumos,
   updateEtapa, 
   deleteEtapa, 
   createEtapa, 
   deleteItem, 
-  updateInsumo,
   type Etapa, 
-  type OrcamentoItem,
-  type OrcamentoItemInsumo
+  type OrcamentoItem
 } from "@/lib/api/orcamentos";
-import { Plus, Trash, PencilSimple, Cube, CaretRight, CaretDown, Spinner, Check } from "@phosphor-icons/react";
+import { Plus, Trash, PencilSimple, Database, Check } from "@phosphor-icons/react";
 
 import { Modal } from "@/components/ui/Modal";
 import { OrcamentoItemForm } from "./OrcamentoItemForm";
 import { InsumosDrawer } from "./InsumosDrawer";
+import { EtapasEstrutura, MAX_NIVEL_ETAPAS, type DropPos } from "./EtapasEstrutura";
 
 interface PlanilhaViewProps {
   orcamentoId: string;
@@ -43,9 +41,6 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
   const [drawerItem, setDrawerItem] = React.useState<OrcamentoItem | null>(null);
 
   // Expansion State
-  const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
-  const [insumosCache, setInsumosCache] = React.useState<Record<string, OrcamentoItemInsumo[]>>({});
-  const [loadingInsumos, setLoadingInsumos] = React.useState<Set<string>>(new Set());
 
   // Refs e estado de edição de nome de etapas/sub-etapas
   const [editingEtapaId, setEditingEtapaId] = React.useState<string | null>(null);
@@ -86,7 +81,69 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
     }
   };
 
+  const getNivelEtapa = (id: string): number => {
+    let nivel = 1;
+    let atual = etapas.find(e => e.id === id);
+    while (atual?.parent_id) {
+      nivel++;
+      atual = etapas.find(e => e.id === atual!.parent_id);
+    }
+    return nivel;
+  };
+
+  const handleMoveEtapa = async (dragId: string, targetId: string | null, pos: DropPos) => {
+    const dragged = etapas.find(e => e.id === dragId);
+    if (!dragged) return;
+    const target = targetId ? etapas.find(e => e.id === targetId) : null;
+
+    const novoPai = !target ? null : pos === "inside" ? target.id : target.parent_id ?? null;
+    const irmaos = etapas
+      .filter(e => (e.parent_id ?? null) === novoPai && e.id !== dragId)
+      .sort((a, b) => a.ordem - b.ordem);
+
+    let indice = irmaos.length;
+    if (target && pos !== "inside") {
+      indice = irmaos.findIndex(e => e.id === target.id) + (pos === "after" ? 1 : 0);
+    }
+    irmaos.splice(indice, 0, { ...dragged, parent_id: novoPai });
+
+    // Reindexa a nova lista de irmãos e, se o pai mudou, também a lista de origem
+    const alteracoes = new Map<string, { parent_id: string | null; ordem: number }>();
+    irmaos.forEach((e, i) => alteracoes.set(e.id, { parent_id: novoPai, ordem: i }));
+    const paiOriginal = dragged.parent_id ?? null;
+    if (paiOriginal !== novoPai) {
+      etapas
+        .filter(e => (e.parent_id ?? null) === paiOriginal && e.id !== dragId)
+        .sort((a, b) => a.ordem - b.ordem)
+        .forEach((e, i) => alteracoes.set(e.id, { parent_id: paiOriginal, ordem: i }));
+    }
+
+    const mudou = [...alteracoes].filter(([id, v]) => {
+      const atual = etapas.find(e => e.id === id)!;
+      return atual.ordem !== v.ordem || (atual.parent_id ?? null) !== v.parent_id;
+    });
+    if (mudou.length === 0) return;
+
+    // Atualização otimista
+    setEtapas(prev =>
+      prev
+        .map(e => (alteracoes.has(e.id) ? { ...e, ...alteracoes.get(e.id)! } : e))
+        .sort((a, b) => a.ordem - b.ordem)
+    );
+    try {
+      await Promise.all(mudou.map(([id, v]) => updateEtapa(orcamentoId, id, v)));
+      carregarDados();
+    } catch (error) {
+      alert("Erro ao mover etapa.");
+      carregarDados();
+    }
+  };
+
   const handleAddSubEtapa = async (parentId: string) => {
+    if (getNivelEtapa(parentId) >= MAX_NIVEL_ETAPAS) {
+      alert(`O limite é de ${MAX_NIVEL_ETAPAS} níveis de etapas.`);
+      return;
+    }
     try {
       const subEtapasExistentes = etapas.filter(e => e.parent_id === parentId);
       await createEtapa(orcamentoId, {
@@ -101,19 +158,20 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
   };
 
   const handleRemoveEtapa = async (id: string) => {
-    const subEtapas = etapas.filter(e => e.parent_id === id);
-    let msg = "Tem certeza que deseja excluir esta etapa?";
-    if (subEtapas.length > 0) {
-      msg = `Esta etapa possui ${subEtapas.length} sub-etapa(s). Ao excluí-la, todas as sub-etapas e seus itens correspondentes serão excluídos ou ficarão órfãos. Confirma a exclusão?`;
-    } else {
-      msg = "Tem certeza que deseja excluir esta etapa? Os itens nela ficarão sem etapa vinculada.";
+    // Descendentes ordenados do mais profundo para o mais raso, para excluir filhos antes dos pais
+    const coletarDescendentes = (parentId: string): string[] =>
+      etapas.filter(e => e.parent_id === parentId).flatMap(s => [...coletarDescendentes(s.id), s.id]);
+    const descendentes = coletarDescendentes(id);
+    let msg = "Tem certeza que deseja excluir esta etapa? Os itens nela ficarão sem etapa vinculada.";
+    if (descendentes.length > 0) {
+      msg = `Esta etapa possui ${descendentes.length} sub-etapa(s). Ao excluí-la, todas as sub-etapas e seus itens correspondentes serão excluídos ou ficarão órfãos. Confirma a exclusão?`;
     }
-    
+
     if (!confirm(msg)) return;
-    
+
     try {
-      if (subEtapas.length > 0) {
-        await Promise.all(subEtapas.map(sub => deleteEtapa(orcamentoId, sub.id)));
+      for (const subId of descendentes) {
+        await deleteEtapa(orcamentoId, subId);
       }
       await deleteEtapa(orcamentoId, id);
       carregarDados();
@@ -162,44 +220,6 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
     setIsModalOpen(false);
     setEditingItem(null);
     carregarDados();
-  };
-
-  const toggleRow = async (itemId: string) => {
-    const newExpanded = new Set(expandedRows);
-    
-    if (newExpanded.has(itemId)) {
-      newExpanded.delete(itemId);
-    } else {
-      newExpanded.add(itemId);
-      // Carrega insumos se não estiverem no cache
-      if (!insumosCache[itemId]) {
-        try {
-          setLoadingInsumos(prev => new Set(prev).add(itemId));
-          const data = await getInsumos(orcamentoId, itemId);
-          setInsumosCache(prev => ({ ...prev, [itemId]: data }));
-        } catch (err) {
-          console.error("Erro ao carregar insumos para expansão:", err);
-        } finally {
-          setLoadingInsumos(prev => {
-            const n = new Set(prev);
-            n.delete(itemId);
-            return n;
-          });
-        }
-      }
-    }
-    setExpandedRows(newExpanded);
-  };
-
-  const handleUpdateInsumo = async (itemId: string, insumoId: string, data: Partial<OrcamentoItemInsumo>) => {
-    try {
-      await updateInsumo(orcamentoId, itemId, insumoId, data);
-      const newData = await getInsumos(orcamentoId, itemId);
-      setInsumosCache(prev => ({ ...prev, [itemId]: newData }));
-      carregarDados();
-    } catch (error) {
-      alert("Erro ao atualizar insumo.");
-    }
   };
 
   const formatarReal = (valor: number | null) => {
@@ -254,16 +274,10 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
 
                 return (
                   <React.Fragment key={item.id}>
-                    <tr className={`hover:bg-bg-light/35 transition-colors group ${expandedRows.has(item.id) ? 'bg-bg-light' : ''}`}>
+                    <tr className={`hover:bg-bg-light/35 transition-colors group`}>
                       <td className="py-3 pr-2 border-b border-border border-dashed align-middle">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-1.5">
-                            <button 
-                              onClick={() => toggleRow(item.id)}
-                              className="p-1 hover:bg-border rounded transition-colors text-text-muted cursor-pointer border-none bg-transparent"
-                            >
-                              {expandedRows.has(item.id) ? <CaretDown size={14} weight="bold" /> : <CaretRight size={14} weight="bold" />}
-                            </button>
                             <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
                               item.fonte === 'SEINFRA'
                                 ? 'bg-orange-100 text-orange-700 border border-orange-200' 
@@ -308,7 +322,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                       <td className="py-3 pl-2 border-b border-border border-dashed text-right align-middle">
                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => setDrawerItem(item)} className="p-1.5 text-text-muted hover:text-[#A78BFA] hover:bg-purple-50 rounded transition-colors cursor-pointer border-none bg-transparent" title="Ver Recursos (Insumos)">
-                            <Cube size={16} />
+                            <Database size={16} />
                           </button>
                           <button onClick={() => openModalToEdit(item)} className="p-1.5 text-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded transition-colors cursor-pointer border-none bg-transparent" title="Editar Item">
                             <PencilSimple size={16} />
@@ -319,66 +333,6 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                         </div>
                       </td>
                     </tr>
-                    
-                    {expandedRows.has(item.id) && (
-                      <tr className="bg-[#F8FAFC]">
-                        <td colSpan={8} className="p-0 border-b border-border">
-                          <div className="px-12 py-4">
-                          {loadingInsumos.has(item.id) ? (
-                            <div className="flex items-center gap-2 text-[11px] text-text-muted py-2">
-                              <Spinner size={14} className="animate-spin" />
-                              Carregando recursos...
-                            </div>
-                          ) : !insumosCache[item.id] || insumosCache[item.id].length === 0 ? (
-                            <div className="text-[11px] text-text-muted py-2 italic">
-                              Nenhum recurso encontrado para esta composição.
-                            </div>
-                          ) : (
-                            <div className="border border-border/60 rounded overflow-hidden bg-white shadow-sm">
-                              <table className="w-full text-left border-collapse">
-                                <thead>
-                                  <tr className="bg-bg-light/50 border-b border-border/40">
-                                    <th className="px-3 py-2 text-[9px] font-bold text-text-muted uppercase tracking-wider">Insumo</th>
-                                    <th className="px-3 py-2 text-[9px] font-bold text-text-muted uppercase tracking-wider text-center w-16">Un</th>
-                                    <th className="px-3 py-2 text-[9px] font-bold text-text-muted uppercase tracking-wider text-right w-20">Coef.</th>
-                                    <th className="px-3 py-2 text-[9px] font-bold text-text-muted uppercase tracking-wider text-right w-24">P. Unit.</th>
-                                    <th className="px-3 py-2 text-[9px] font-bold text-text-muted uppercase tracking-wider text-right w-28">Total</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {insumosCache[item.id].map(ins => (
-                                    <tr key={ins.id} className="border-t border-border/40 hover:bg-bg-light/30 transition-colors">
-                                      <td className="px-3 py-2">
-                                        <div className="text-[11px] font-medium text-text-main line-clamp-1">{ins.descricao}</div>
-                                        <div className="text-[9px] text-text-muted">{ins.codigo_insumo}</div>
-                                      </td>
-                                      <td className="px-3 py-2 text-[10px] text-text-muted text-center font-bold uppercase">{ins.unidade}</td>
-                                      <td className="px-3 py-2 text-[10px] text-center font-bold uppercase">
-                                        <input 
-                                          type="number" 
-                                          defaultValue={(ins.quantidade_unitaria / item.quantidade).toFixed(6)}
-                                          onBlur={(e) => {
-                                            const novoCoef = parseFloat(e.target.value);
-                                            if (isNaN(novoCoef) || novoCoef <= 0) return;
-                                            handleUpdateInsumo(item.id, ins.id, {
-                                              quantidade_unitaria: novoCoef * item.quantidade
-                                            });
-                                          }}
-                                          className="w-16 text-center border border-border/80 rounded px-1 py-0.5 text-xs outline-none focus:border-brand-primary"
-                                        />
-                                      </td>
-                                      <td className="px-3 py-2 text-[10px] text-text-main text-right">{formatarReal(ins.preco_unitario_base)}</td>
-                                      <td className="px-3 py-2 text-[10px] text-brand-primary font-bold text-right">{formatarReal(ins.total)}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
                 </React.Fragment>
               );
             })
@@ -395,6 +349,154 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
     );
   };
 
+  const getSubEtapas = (parentId: string) =>
+    etapas.filter(e => e.parent_id === parentId).sort((a, b) => a.ordem - b.ordem);
+
+  const getDescendantIds = (id: string): string[] =>
+    getSubEtapas(id).flatMap(s => [s.id, ...getDescendantIds(s.id)]);
+
+  const totalItem = (curr: OrcamentoItem) => {
+    const taxa = curr.bdi_aplicado !== null && curr.bdi_aplicado !== undefined ? curr.bdi_aplicado : bdiOrcamento;
+    return modoPreco === "VENDA"
+      ? (curr.preco_total_bdi ?? ((curr.preco_total || 0) * (1 + taxa / 100)))
+      : (curr.preco_total || 0);
+  };
+
+  // Total acumulado (itens diretos + itens de todas as sub-etapas) por etapa
+  const totaisPorEtapa: Record<string, number> = {};
+  etapas.forEach(e => {
+    const ids = new Set([e.id, ...getDescendantIds(e.id)]);
+    totaisPorEtapa[e.id] = itens.filter(i => i.etapa_id && ids.has(i.etapa_id)).reduce((acc, i) => acc + totalItem(i), 0);
+  });
+
+  const scrollToEtapa = (id: string) => {
+    document.getElementById(`etapa-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const renderEtapa = (etapa: Etapa, prefix: string, nivel: number): React.ReactNode => {
+    const subEtapas = getSubEtapas(etapa.id);
+    const itensDaEtapa = itens.filter(i => i.etapa_id === etapa.id);
+    const isRaiz = nivel === 1;
+    const labelNivel = isRaiz ? "ETAPA" : "SUB-ETAPA";
+
+    return (
+      <div
+        key={etapa.id}
+        id={`etapa-${etapa.id}`}
+        className={`relative scroll-mt-4 ${
+          isRaiz
+            ? "p-6 bg-white border border-border rounded-lg shadow-sm"
+            : "p-4 rounded-lg border border-slate-100 bg-slate-50/50"
+        }`}
+      >
+        <button
+          onClick={() => handleRemoveEtapa(etapa.id)}
+          className={`absolute text-status-danger hover:text-red-700 transition-colors border-none bg-transparent cursor-pointer ${isRaiz ? "top-6 right-6" : "top-4 right-4"}`}
+          title={isRaiz ? "Excluir Etapa Completa" : "Excluir Sub-etapa"}
+        >
+          <Trash size={isRaiz ? 20 : 16} />
+        </button>
+
+        <div className={`font-bold text-text-muted uppercase tracking-wide ${isRaiz ? "text-[10px] mb-2" : "text-[9px] mb-1"}`}>
+          {labelNivel} {isRaiz ? prefix.padStart(2, "0") : prefix}
+        </div>
+        <div className={`flex items-center gap-1.5 max-w-[80%] ${isRaiz ? "mb-4" : "mb-3"}`}>
+          <input
+            ref={(el) => { inputRefs.current[etapa.id] = el; }}
+            type="text"
+            defaultValue={etapa.nome}
+            readOnly={editingEtapaId !== etapa.id}
+            onMouseDown={(e) => {
+              if (editingEtapaId !== etapa.id) e.preventDefault();
+            }}
+            style={{
+              width: `${Math.max((etapa.nome || "").length + 1, 10)}ch`,
+              fieldSizing: "content"
+            } as React.CSSProperties}
+            onInput={(e) => {
+              const val = e.currentTarget.value;
+              e.currentTarget.style.width = `${Math.max(val.length + 1, 10)}ch`;
+            }}
+            onBlur={(e) => {
+              handleUpdateEtapaNome(etapa.id, e.target.value);
+              setEditingEtapaId(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+            }}
+            className={`font-bold text-text-main outline-none max-w-full transition-colors ${isRaiz ? "text-lg pb-2" : "text-sm pb-1"} ${
+              editingEtapaId === etapa.id
+                ? 'border-b-2 border-brand-primary bg-white px-2 py-0.5 rounded shadow-2xs cursor-text'
+                : 'border-none cursor-default bg-transparent'
+            }`}
+            placeholder="Nome da etapa..."
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (editingEtapaId === etapa.id) {
+                const el = inputRefs.current[etapa.id];
+                if (el) el.blur();
+                setEditingEtapaId(null);
+              } else {
+                setEditingEtapaId(etapa.id);
+                setTimeout(() => {
+                  const el = inputRefs.current[etapa.id];
+                  if (el) {
+                    el.focus();
+                    el.select();
+                  }
+                }, 50);
+              }
+            }}
+            className={`text-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center shrink-0 ${isRaiz ? "p-1.5 mb-2" : "p-1 mb-1"}`}
+            title={editingEtapaId === etapa.id ? "Salvar Nome" : "Alterar Nome"}
+          >
+            {editingEtapaId === etapa.id ? <Check size={isRaiz ? 18 : 16} className="text-emerald-600 font-bold" /> : <PencilSimple size={isRaiz ? 18 : 16} />}
+          </button>
+        </div>
+
+        {/* Itens diretos desta etapa */}
+        {(itensDaEtapa.length > 0 || subEtapas.length === 0) && (
+          <div className="mb-4">
+            {subEtapas.length > 0 && (
+              <h5 className="text-[11px] font-bold text-text-muted uppercase tracking-wider mb-2">Itens Diretos da Etapa</h5>
+            )}
+            {renderItemTable(itensDaEtapa, etapa.id)}
+          </div>
+        )}
+
+        {/* Sub-etapas aninhadas (recursivo, até 3 níveis) */}
+        {subEtapas.length > 0 && (
+          <div className="pl-6 border-l-2 border-slate-100 ml-2 space-y-6 my-4">
+            {subEtapas.map((sub, sIdx) => renderEtapa(sub, `${prefix}.${sIdx + 1}`, nivel + 1))}
+          </div>
+        )}
+
+        <div className="flex justify-between items-center border-t border-[#f1f5f9] pt-4 mt-6">
+          <div className="flex gap-3">
+            {nivel < MAX_NIVEL_ETAPAS && (
+              <button
+                onClick={() => handleAddSubEtapa(etapa.id)}
+                className="px-4 py-2 bg-white border border-[#CBD5E1] border-solid rounded text-[12px] font-bold text-[#0f172a] hover:bg-[#f8fafc] transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+              >
+                <Plus size={14} /> ADICIONAR SUB-ETAPA
+              </button>
+            )}
+            <button
+              onClick={() => openModalToCreate(etapa.id)}
+              className="px-4 py-2 bg-slate-900 text-white rounded text-[12px] font-bold hover:bg-slate-800 transition-colors flex items-center gap-2 cursor-pointer shadow-sm border-none"
+            >
+              <Plus size={14} /> ADICIONAR ITEM À ETAPA
+            </button>
+          </div>
+          <div className="font-bold text-text-main text-sm">
+            Total da Etapa: <span className="ml-2 text-base text-brand-primary">{formatarReal(totaisPorEtapa[etapa.id] || 0)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
   if (loading && etapas.length === 0) {
     return <div className="text-center p-10 text-text-muted">Carregando estrutura da planilha...</div>;
   }
@@ -402,10 +504,19 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
   // Identifica itens sem etapa e separa etapas em raiz e filhas
   const itensSemEtapa = itens.filter(i => !i.etapa_id);
   const etapasPrincipais = etapas.filter(e => !e.parent_id);
-  const getSubEtapas = (parentId: string) => etapas.filter(e => e.parent_id === parentId);
 
   return (
     <div className="flex flex-col">
+      <EtapasEstrutura
+        etapas={etapas}
+        totais={totaisPorEtapa}
+        formatarValor={formatarReal}
+        onAdd={(parentId) => (parentId ? handleAddSubEtapa(parentId) : handleAddEtapa())}
+        onRename={handleUpdateEtapaNome}
+        onRemove={handleRemoveEtapa}
+        onSelect={scrollToEtapa}
+        onMove={handleMoveEtapa}
+      />
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <div>
           <h3 className="text-lg font-bold text-text-main mb-1">Composição Dinâmica de Custos</h3>
@@ -454,203 +565,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
         </div>
       ) : (
         <div className="space-y-8">
-          {etapasPrincipais.map((etapa, index) => {
-            const subEtapas = getSubEtapas(etapa.id);
-            const itensDaEtapa = itens.filter(i => i.etapa_id === etapa.id);
-            
-            // Subtotal total da etapa pai (itens diretos + itens de sub-etapas)
-            const idsEtapas = [etapa.id, ...subEtapas.map(s => s.id)];
-            const totalEtapaAcumulado = itens
-              .filter(i => i.etapa_id && idsEtapas.includes(i.etapa_id))
-              .reduce((acc, curr) => {
-                const taxa = curr.bdi_aplicado !== null && curr.bdi_aplicado !== undefined ? curr.bdi_aplicado : bdiOrcamento;
-                const tot = modoPreco === "VENDA" 
-                  ? (curr.preco_total_bdi ?? ((curr.preco_total || 0) * (1 + taxa / 100))) 
-                  : (curr.preco_total || 0);
-                return acc + tot;
-              }, 0);
-
-            return (
-              <div key={etapa.id} className="relative p-6 bg-white border border-border rounded-lg shadow-sm">
-                <button 
-                  onClick={() => handleRemoveEtapa(etapa.id)} 
-                  className="absolute top-6 right-6 text-status-danger hover:text-red-700 transition-colors border-none bg-transparent cursor-pointer"
-                  title="Excluir Etapa Completa"
-                >
-                  <Trash size={20} />
-                </button>
-                
-                <div className="text-[10px] font-bold text-text-muted uppercase tracking-wide mb-2">
-                  ETAPA {(index + 1).toString().padStart(2, '0')}
-                </div>
-                <div className="flex items-center gap-1.5 mb-4 max-w-[80%] group/etapa-name">
-                  <input 
-                    ref={(el) => { inputRefs.current[etapa.id] = el; }}
-                    type="text" 
-                    defaultValue={etapa.nome}
-                    readOnly={editingEtapaId !== etapa.id}
-                    onMouseDown={(e) => {
-                      if (editingEtapaId !== etapa.id) e.preventDefault();
-                    }}
-                    style={{ 
-                      width: `${Math.max((etapa.nome || "").length + 1, 10)}ch`, 
-                      fieldSizing: "content" 
-                    } as React.CSSProperties}
-                    onInput={(e) => {
-                      const val = e.currentTarget.value;
-                      e.currentTarget.style.width = `${Math.max(val.length + 1, 10)}ch`;
-                    }}
-                    onBlur={(e) => {
-                      handleUpdateEtapaNome(etapa.id, e.target.value);
-                      setEditingEtapaId(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') e.currentTarget.blur();
-                    }}
-                    className={`text-lg font-bold text-text-main outline-none max-w-full pb-2 transition-colors ${
-                      editingEtapaId === etapa.id 
-                        ? 'border-b-2 border-brand-primary bg-white px-2 py-0.5 rounded shadow-2xs cursor-text' 
-                        : 'border-none cursor-default bg-transparent'
-                    }`} 
-                    placeholder="Nome da etapa..."
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (editingEtapaId === etapa.id) {
-                        const el = inputRefs.current[etapa.id];
-                        if (el) el.blur();
-                        setEditingEtapaId(null);
-                      } else {
-                        setEditingEtapaId(etapa.id);
-                        setTimeout(() => {
-                          const el = inputRefs.current[etapa.id];
-                          if (el) {
-                            el.focus();
-                            el.select();
-                          }
-                        }, 50);
-                      }
-                    }}
-                    className="p-1.5 text-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center shrink-0 mb-2"
-                    title={editingEtapaId === etapa.id ? "Salvar Nome" : "Alterar Nome da Etapa"}
-                  >
-                    {editingEtapaId === etapa.id ? <Check size={18} className="text-emerald-600 font-bold" /> : <PencilSimple size={18} />}
-                  </button>
-                </div>
-
-                {/* Itens Diretos da Etapa Principal */}
-                {itensDaEtapa.length > 0 && (
-                  <div className="mb-4">
-                    <h5 className="text-[11px] font-bold text-text-muted uppercase tracking-wider mb-2">Itens Diretos da Etapa</h5>
-                    {renderItemTable(itensDaEtapa, etapa.id)}
-                  </div>
-                )}
-
-                {/* Renderização de Sub-etapas aninhadas */}
-                {subEtapas.length > 0 && (
-                  <div className="pl-6 border-l-2 border-slate-100 ml-2 space-y-6 my-4">
-                    {subEtapas.map((sub, sIdx) => {
-                      const itensDaSubEtapa = itens.filter(i => i.etapa_id === sub.id);
-                      return (
-                        <div key={sub.id} className="relative bg-slate-50/50 p-4 rounded-lg border border-slate-100">
-                          <button 
-                            onClick={() => handleRemoveEtapa(sub.id)} 
-                            className="absolute top-4 right-4 text-status-danger hover:text-red-700 transition-colors border-none bg-transparent cursor-pointer"
-                            title="Excluir Sub-etapa"
-                          >
-                            <Trash size={16} />
-                          </button>
-
-                          <div className="text-[9px] font-bold text-text-muted uppercase tracking-wide mb-1">
-                            SUB-ETAPA {(index + 1)}.{sIdx + 1}
-                          </div>
-                          <div className="flex items-center gap-1.5 mb-3 max-w-[80%] group/subetapa-name">
-                            <input 
-                              ref={(el) => { inputRefs.current[sub.id] = el; }}
-                              type="text" 
-                              defaultValue={sub.nome}
-                              readOnly={editingEtapaId !== sub.id}
-                              onMouseDown={(e) => {
-                                if (editingEtapaId !== sub.id) e.preventDefault();
-                              }}
-                              style={{ 
-                                width: `${Math.max((sub.nome || "").length + 1, 10)}ch`, 
-                                fieldSizing: "content" 
-                              } as React.CSSProperties}
-                              onInput={(e) => {
-                                const val = e.currentTarget.value;
-                                e.currentTarget.style.width = `${Math.max(val.length + 1, 10)}ch`;
-                              }}
-                              onBlur={(e) => {
-                                handleUpdateEtapaNome(sub.id, e.target.value);
-                                setEditingEtapaId(null);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') e.currentTarget.blur();
-                              }}
-                              className={`text-sm font-bold text-text-main outline-none max-w-full pb-1 transition-colors ${
-                                editingEtapaId === sub.id 
-                                  ? 'border-b-2 border-brand-primary bg-white px-2 py-0.5 rounded shadow-2xs cursor-text' 
-                                  : 'border-none cursor-default bg-transparent'
-                              }`} 
-                              placeholder="Nome da sub-etapa..."
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (editingEtapaId === sub.id) {
-                                  const el = inputRefs.current[sub.id];
-                                  if (el) el.blur();
-                                  setEditingEtapaId(null);
-                                } else {
-                                  setEditingEtapaId(sub.id);
-                                  setTimeout(() => {
-                                    const el = inputRefs.current[sub.id];
-                                    if (el) {
-                                      el.focus();
-                                      el.select();
-                                    }
-                                  }, 50);
-                                }
-                              }}
-                              className="p-1 text-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center shrink-0 mb-1"
-                              title={editingEtapaId === sub.id ? "Salvar Nome" : "Alterar Nome da Sub-etapa"}
-                            >
-                              {editingEtapaId === sub.id ? <Check size={16} className="text-emerald-600 font-bold" /> : <PencilSimple size={16} />}
-                            </button>
-                          </div>
-
-                          {renderItemTable(itensDaSubEtapa, sub.id)}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Controles de Ação do Card da Etapa Principal */}
-                <div className="flex justify-between items-center border-t border-[#f1f5f9] pt-4 mt-6">
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => handleAddSubEtapa(etapa.id)} 
-                      className="px-4 py-2 bg-white border border-[#CBD5E1] border-solid rounded text-[12px] font-bold text-[#0f172a] hover:bg-[#f8fafc] transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
-                    >
-                      <Plus size={14} /> ADICIONAR SUB-ETAPA
-                    </button>
-                    <button 
-                      onClick={() => openModalToCreate(etapa.nome)} 
-                      className="px-4 py-2 bg-slate-900 text-white rounded text-[12px] font-bold hover:bg-slate-800 transition-colors flex items-center gap-2 cursor-pointer shadow-sm border-none"
-                    >
-                      <Plus size={14} /> ADICIONAR ITEM À ETAPA
-                    </button>
-                  </div>
-                  <div className="font-bold text-text-main text-sm">
-                    Total da Etapa: <span className="ml-2 text-base text-brand-primary">{formatarReal(totalEtapaAcumulado)}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {etapasPrincipais.map((etapa, index) => renderEtapa(etapa, String(index + 1), 1))}
 
           {/* Itens sem etapa */}
           {itensSemEtapa.length > 0 && (
@@ -690,6 +605,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
               estadoOrcamento={estadoOrcamento}
               fonteOrcamento={fonteOrcamento}
               itemToEdit={editingItem || undefined}
+              initialEtapaId={activeEtapaId}
               onItemAdded={handleSuccessForm}
               onCancel={() => { setIsModalOpen(false); setEditingItem(null); }}
             />
