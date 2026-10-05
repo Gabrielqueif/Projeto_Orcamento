@@ -24,7 +24,7 @@ export function FormulaEditor({
   defaultFormulaString,
 }: FormulaEditorProps) {
   const insertText = (text: string) => {
-    onChangeFormula(formula ? `${formula} * ${text}` : text);
+    onChangeFormula(formula ? `${formula} ${text}` : text);
   };
 
   const insertOperator = (op: string) => {

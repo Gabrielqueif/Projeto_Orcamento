@@ -56,7 +56,7 @@ export function OrcamentoItemForm({
   const [showFormulaModal, setShowFormulaModal] = React.useState(false);
   const [formula, setFormula] = React.useState("");
   const [variableConfigs, setVariableConfigs] = React.useState<VariableConfig[]>(
-    DEFAULT_VARIABLE_CONFIGS.PRESET_3
+    DEFAULT_VARIABLE_CONFIGS.PRESET_1
   );
   const [elementos, setElementos] = React.useState<MemoriaCalculoElemento[]>([]);
 
@@ -130,7 +130,7 @@ export function OrcamentoItemForm({
       setEtapaId(initialEtapaId);
       setComposicaoSelecionada(null);
       setFormula("");
-      setVariableConfigs(DEFAULT_VARIABLE_CONFIGS.PRESET_3);
+      setVariableConfigs(DEFAULT_VARIABLE_CONFIGS.PRESET_1);
       setElementos([]);
     }
   }, [itemToEdit, fonteOrcamento, initialEtapaId, orcamento?.variaveis_globais]);
@@ -229,7 +229,7 @@ export function OrcamentoItemForm({
         setComposicaoSelecionada(null);
         setQuantidade("1");
         setFormula("");
-        setVariableConfigs(DEFAULT_VARIABLE_CONFIGS.PRESET_3);
+        setVariableConfigs(DEFAULT_VARIABLE_CONFIGS.PRESET_1);
         setElementos([]);
       }
 

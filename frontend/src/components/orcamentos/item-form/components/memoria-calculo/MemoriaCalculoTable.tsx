@@ -34,11 +34,11 @@ export function MemoriaCalculoTable({
         <table className="w-full text-left border-collapse">
           <thead className="sticky top-0 z-10 bg-[#f1f4f6] shadow-sm">
             <tr className="bg-[#f1f4f6] text-[#44474e] font-bold text-xs uppercase border-b border-[#c4c6cf]">
-              <th className="px-4 py-4 w-1/3">ELEMENTO / DESCRIÇÃO</th>
+              <th className="px-4 py-4 w-1/3">ELEMENTO / LOCAL</th>
               {variableConfigs.map((cfg) => (
                 <th key={cfg.id} className="px-4 py-4 text-center whitespace-nowrap">
                   <div className="flex items-center justify-center gap-1">
-                    <input
+                    <input  
                       type="text"
                       value={cfg.label}
                       onChange={(e) => onUpdateColumnLabel(cfg.key, e.target.value)}

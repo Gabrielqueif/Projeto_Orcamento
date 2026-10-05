@@ -319,13 +319,13 @@ export function MemoriaCalculoModal({
                 type="button"
                 onClick={() => handleSelectPresetMode("PRESET_1")}
                 className={`text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                  variableConfigs.length === 1 && variableConfigs[0].key === "quantidade"
+                  variableConfigs.length === 1 && variableConfigs[0].key === "Dim1"
                     ? "bg-[#001b3d] text-white shadow"
                     : "text-slate-600 hover:bg-slate-100"
                 }`}
-                title="1 Variável: Subtotal = Quantidade"
+                title="1 Variável: Subtotal = Dimensão 1"
               >
-                1 Var (Qtd)
+                1 Var (Dim1)
               </button>
               <button
                 type="button"
@@ -339,7 +339,7 @@ export function MemoriaCalculoModal({
                 }`}
                 title="2 Variáveis: Subtotal = Qtd × Dimensão 1"
               >
-                2 Vars (Qtd × Dim1)
+                2 Vars (Dim1 × Dim2)
               </button>
               <button
                 type="button"
@@ -354,7 +354,7 @@ export function MemoriaCalculoModal({
                 }`}
                 title="3 Variáveis: Subtotal = Qtd × Dim1 × Dim2"
               >
-                3 Vars (Qtd × Dim1 × Dim2)
+                3 Vars (Dim1 × Dim2 × Dim3)
               </button>
             </div>
           </div>
