@@ -199,6 +199,46 @@ class ItemRepository:
             logger.error(f"[buscar_preco] Exceção: {e}")
             return None
 
+    def buscar_precos_lote(
+        self, codigos: List[str], estado: str, mes_referencia: str, tipo_composicao: str, fonte: str = "SINAPI"
+    ) -> Dict[str, float]:
+        """Preço por código para o estado. Usa o mês pedido; na falta dele, o mais recente (mesmo critério de buscar_preco)."""
+        if not codigos or not estado:
+            return {}
+
+        try:
+            query = (
+                self.supabase.table(TABELA_COMPOSICOES_ESTADOS)
+                .select("*")
+                .in_("codigo_composicao", codigos)
+                .eq("fonte", fonte)
+            )
+            if tipo_composicao:
+                query = query.ilike("tipo_composicao", tipo_composicao)
+            linhas = query.execute().data or []
+        except Exception as e:
+            logger.error(f"[buscar_precos_lote] Exceção: {e}")
+            return {}
+
+        meses = [m.strip() for m in (mes_referencia or "").split(",") if m.strip()]
+
+        def recencia(linha: Dict[str, Any]):
+            partes = (linha.get("mes_referencia") or "00/0000").split("/")
+            return (partes[1], partes[0]) if len(partes) == 2 else ("0000", "00")
+
+        por_codigo: Dict[str, List[Dict[str, Any]]] = {}
+        for linha in linhas:
+            if linha.get(estado.lower()) is not None:
+                por_codigo.setdefault(linha["codigo_composicao"], []).append(linha)
+
+        precos: Dict[str, float] = {}
+        for codigo, opcoes in por_codigo.items():
+            escolhida = next((o for m in meses for o in opcoes if o.get("mes_referencia") == m), None)
+            if escolhida is None:
+                escolhida = max(opcoes, key=recencia)
+            precos[codigo] = float(escolhida[estado.lower()])
+        return precos
+
     def upsert_batch_composicao_itens(self, dados: List[Dict[str, Any]]) -> int:
         if not dados:
             return 0

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { buscarComposicoes as apiBuscarComposicoes } from "@/lib/api/composicoes";
+import { buscarComposicoes as apiBuscarComposicoes, type ContextoPreco } from "@/lib/api/composicoes";
 import type { ItemComposicao } from "../types";
 
 interface ComposicaoSearchSelectProps {
@@ -11,7 +11,12 @@ interface ComposicaoSearchSelectProps {
   baseBusca: string;
   onBaseBuscaChange: (base: string) => void;
   isEditing?: boolean;
+  /** Estado, mês e tipo do orçamento, usados para exibir o preço nos resultados */
+  contextoPreco?: ContextoPreco;
 }
+
+const formatarPreco = (valor?: number | null) =>
+  valor == null ? "Sem preço" : valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function ComposicaoSearchSelect({
   composicaoSelecionada,
@@ -20,7 +25,11 @@ export function ComposicaoSearchSelect({
   baseBusca,
   onBaseBuscaChange,
   isEditing = false,
+  contextoPreco,
 }: ComposicaoSearchSelectProps) {
+  const estadoPreco = contextoPreco?.estado;
+  const mesPreco = contextoPreco?.mes_referencia;
+  const tipoPreco = contextoPreco?.tipo_composicao;
   const [termo, setTermo] = React.useState("");
   const [resultados, setResultados] = React.useState<ItemComposicao[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -36,7 +45,11 @@ export function ComposicaoSearchSelect({
       setLoading(true);
       setError(null);
       try {
-        const data = await apiBuscarComposicoes(termo, baseBusca);
+        const data = await apiBuscarComposicoes(termo, baseBusca, {
+          estado: estadoPreco,
+          mes_referencia: mesPreco,
+          tipo_composicao: tipoPreco,
+        });
         setResultados(data || []);
       } catch (err) {
         console.error(err);
@@ -47,7 +60,7 @@ export function ComposicaoSearchSelect({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [termo, baseBusca]);
+  }, [termo, baseBusca, estadoPreco, mesPreco, tipoPreco]);
 
   const handleSelect = (item: ItemComposicao) => {
     onSelectComposicao(item);
@@ -109,6 +122,11 @@ export function ComposicaoSearchSelect({
               </p>
               <p className="text-sm text-slate-600">
                 Unidade: {composicaoSelecionada.unidade}
+                {composicaoSelecionada.preco != null && (
+                  <span className="ml-3 font-bold text-emerald-700">
+                    {formatarPreco(composicaoSelecionada.preco)}
+                  </span>
+                )}
               </p>
             </div>
             {!isEditing ? (
@@ -164,8 +182,11 @@ export function ComposicaoSearchSelect({
                     </span>
                     {item.codigo_composicao} - {item.descricao}
                   </p>
-                  <p className="text-sm text-slate-600">
-                    Unidade: {item.unidade}
+                  <p className="text-sm text-slate-600 flex items-center justify-between gap-3">
+                    <span>Unidade: {item.unidade}</span>
+                    {estadoPreco && (
+                      <span className="font-bold text-emerald-700">{formatarPreco(item.preco)}</span>
+                    )}
                   </p>
                 </div>
               ))}
