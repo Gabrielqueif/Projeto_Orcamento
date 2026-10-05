@@ -42,6 +42,9 @@ export interface Orcamento {
   bdi: number;
   tipo_bdi?: TipoBDI;
   bdi_config?: BDIConfig | null;
+  responsavel_tecnico?: string | null;
+  numero_conselho?: string | null;
+  margem_valor?: number | null;
   valor_total: number | null;
   status: string;
   variaveis_globais?: any[] | null;
@@ -61,6 +64,9 @@ export interface OrcamentoCreate {
   bdi?: number;
   tipo_bdi?: TipoBDI;
   bdi_config?: BDIConfig;
+  responsavel_tecnico?: string;
+  numero_conselho?: string;
+  margem_valor?: number;
   valor_total?: number;
   status?: string;
   variaveis_globais?: any[] | null;
@@ -78,6 +84,9 @@ export interface OrcamentoUpdate {
   bdi?: number;
   tipo_bdi?: TipoBDI;
   bdi_config?: BDIConfig;
+  responsavel_tecnico?: string;
+  numero_conselho?: string;
+  margem_valor?: number;
   status?: string;
   valor_total?: number;
   variaveis_globais?: any[] | null;

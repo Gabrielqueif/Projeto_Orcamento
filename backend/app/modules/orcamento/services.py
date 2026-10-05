@@ -46,6 +46,9 @@ class OrcamentoService:
             "bdi": bdi_calculado,
             "tipo_bdi": tipo_bdi,
             "bdi_config": bdi_config.model_dump(),
+            "responsavel_tecnico": orcamento.responsavel_tecnico,
+            "numero_conselho": orcamento.numero_conselho,
+            "margem_valor": orcamento.margem_valor or 0.0,
             "status": orcamento.status or "em_elaboracao",
             "valor_total": 0.0,
             "variaveis_globais": orcamento.variaveis_globais or [],
@@ -108,6 +111,12 @@ class OrcamentoService:
         if orcamento_update.bdi is not None:
             dados_atualizacao["bdi"] = orcamento_update.bdi
             bdi_alterado = True
+        if orcamento_update.responsavel_tecnico is not None:
+            dados_atualizacao["responsavel_tecnico"] = orcamento_update.responsavel_tecnico
+        if orcamento_update.numero_conselho is not None:
+            dados_atualizacao["numero_conselho"] = orcamento_update.numero_conselho
+        if orcamento_update.margem_valor is not None:
+            dados_atualizacao["margem_valor"] = orcamento_update.margem_valor
         if orcamento_update.status is not None:
             dados_atualizacao["status"] = orcamento_update.status
         if orcamento_update.valor_total is not None:
