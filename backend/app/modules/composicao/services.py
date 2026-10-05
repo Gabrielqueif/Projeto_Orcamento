@@ -43,11 +43,26 @@ class ItemService:
     def listar_composicoes(self, fonte: str = "SINAPI"):
         return self.repository.listar(limit=100)
 
-    def buscar_composicao(self, termo: str, fonte: str = "SINAPI"):
+    def buscar_composicao(
+        self,
+        termo: str,
+        fonte: str = "SINAPI",
+        estado: str = "",
+        mes_referencia: str = "",
+        tipo_composicao: str = "",
+    ):
         if "%" in termo or termo.isdigit():
-            return self.repository.buscar_por_codigo(termo, fonte=fonte)
+            resultados = self.repository.buscar_por_codigo(termo, fonte=fonte)
         else:
-            return self.repository.buscar_por_descricao(termo, fonte=fonte)
+            resultados = self.repository.buscar_por_descricao(termo, fonte=fonte)
+
+        if estado and resultados:
+            precos = self.repository.buscar_precos_lote(
+                [r["codigo_composicao"] for r in resultados], estado, mes_referencia, tipo_composicao, fonte=fonte
+            )
+            for r in resultados:
+                r["preco"] = precos.get(r["codigo_composicao"])
+        return resultados
 
     def listar_estados_composicao(self, codigo_composicao: str, mes_referencia: str, fonte: str = "SINAPI"):
         return self.repository.listar_estados_por_item(codigo_composicao, mes_referencia, fonte=fonte)

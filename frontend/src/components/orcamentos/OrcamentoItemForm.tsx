@@ -271,6 +271,11 @@ export function OrcamentoItemForm({
           baseBusca={baseBusca}
           onBaseBuscaChange={setBaseBusca}
           isEditing={Boolean(itemToEdit)}
+          contextoPreco={{
+            estado: estadoOrcamento,
+            mes_referencia: orcamento?.base_referencia,
+            tipo_composicao: orcamento?.tipo_composicao,
+          }}
         />
 
         {/* Estado do Orçamento (Informativo) */}
