@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
@@ -8,12 +8,11 @@ import {
   FileText, 
   Database, 
   User, 
-  Coins, 
-  Info,
+  Coins,
   CircleNotch,
   ArrowRight
 } from "@phosphor-icons/react";
-import { createOrcamento } from "@/lib/api/orcamentos";
+import { createOrcamento, getSinapiBases, SinapiBase } from "@/lib/api/orcamentos";
 
 const ESTADOS = [
   { value: "ac", label: "AC - Acre" },
@@ -62,29 +61,48 @@ export default function NovoOrcamentoPage() {
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
-  const [bdi, setBdi] = useState<number>(25.0);
-  const [margem, setMargem] = useState<number>(10.0);
-  const [prazo, setPrazo] = useState<number>(90);
-  const [status, setStatus] = useState("em_elaboracao");
+  const [responsavelTecnico, setResponsavelTecnico] = useState("");
+  const [numeroConselho, setNumeroConselho] = useState("");
+  const [bdi, setBdi] = useState<number>(0);
+  const [margem, setMargem] = useState<number>(0);
 
-  // Calculated Values for Summary Card
-  const [custoBase, setCustoBase] = useState(0);
-  const [incidenciaBdi, setIncidenciaBdi] = useState(0);
-  const [impostosTaxas, setImpostosTaxas] = useState(0);
-  const [valorEstimado, setValorEstimado] = useState(0);
+  // Meses de referência disponíveis na base de dados
+  const [bases, setBases] = useState<SinapiBase[]>([]);
+  const [mesesEscolhidos, setMesesEscolhidos] = useState<Record<string, string[]>>({});
+  const [loadingBases, setLoadingBases] = useState(true);
+  const [erroBases, setErroBases] = useState(false);
 
   useEffect(() => {
-    // Simulação de estimativa de custo de construção (Ex: R$ 2.000,00 por M²)
-    const base = areaTotal * 2000.00;
-    const bdiVal = base * (bdi / 100.0);
-    const impostos = base * (margem / 100.0);
-    const total = base + bdiVal + impostos;
+    getSinapiBases()
+      .then(setBases)
+      .catch((err) => {
+        console.error(err);
+        setErroBases(true);
+      })
+      .finally(() => setLoadingBases(false));
+  }, []);
 
-    setCustoBase(base);
-    setIncidenciaBdi(bdiVal);
-    setImpostosTaxas(impostos);
-    setValorEstimado(total);
-  }, [areaTotal, bdi, margem]);
+  const mesesDisponiveis = useMemo(() => {
+    const meses = bases
+      .filter((b) => b.fonte === baseReferencia)
+      .map((b) => b.mes_referencia);
+    // mes_referencia vem como MM/AAAA: ordena por ano e mês, do mais recente ao mais antigo
+    const chave = (m: string) => m.split("/").reverse().join("");
+    return Array.from(new Set(meses)).sort((a, b) => chave(b).localeCompare(chave(a)));
+  }, [bases, baseReferencia]);
+
+  // Sem escolha explícita para a fonte, pré-marca o mês mais recente
+  const mesesSelecionados = mesesEscolhidos[baseReferencia] ?? mesesDisponiveis.slice(0, 1);
+
+  const toggleMes = (mes: string) => {
+    setMesesEscolhidos((prev) => {
+      const atual = prev[baseReferencia] ?? mesesDisponiveis.slice(0, 1);
+      return {
+        ...prev,
+        [baseReferencia]: atual.includes(mes) ? atual.filter((m) => m !== mes) : [...atual, mes],
+      };
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent, statusOverride?: string) => {
     e.preventDefault();
@@ -97,21 +115,30 @@ export default function NovoOrcamentoPage() {
       return;
     }
 
+    if (mesesDisponiveis.length > 0 && mesesSelecionados.length === 0) {
+      setError("Selecione ao menos um mês de referência.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const activeStatus = statusOverride || status;
+      const activeStatus = statusOverride || "em_elaboracao";
 
       const orcamentoData = {
         nome,
         cliente,
         data: new Date().toISOString().split("T")[0],
-        base_referencia: baseReferencia,
+        base_referencia: mesesSelecionados.join(",") || baseReferencia,
         tipo_composicao: tipoComposicao,
         estado: estado.toUpperCase(),
         fonte: baseReferencia,
+        tipo_bdi: "SINTETICO" as const,
         bdi: Number(bdi),
+        margem_valor: Number(margem),
+        responsavel_tecnico: responsavelTecnico || undefined,
+        numero_conselho: numeroConselho || undefined,
         status: activeStatus,
         variaveis_globais: [],
         locais: []
@@ -127,13 +154,6 @@ export default function NovoOrcamentoPage() {
     }
   };
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL"
-    }).format(val);
-  };
-
   return (
     <div className="flex flex-col gap-6 max-w-[1200px] mx-auto pb-16">
       {/* Breadcrumb & Navigation */}
@@ -146,19 +166,11 @@ export default function NovoOrcamentoPage() {
           <span className="text-black">Novo Orçamento</span>
         </div>
 
-        <div className="flex items-end justify-between mt-2">
           <div className="flex flex-col gap-1">
             <h1 className="font-['Inter'] font-bold text-3xl text-black tracking-tight">
               Novo Orçamento
             </h1>
-            <p className="text-[#44474e] text-sm mt-1">
-              Preencha os dados abaixo para gerar uma estimativa técnica preliminar.
-            </p>
           </div>
-          <div className="bg-[rgba(185,246,29,0.1)] border border-[rgba(185,246,29,0.2)] px-4 py-1.5 rounded-full text-xs font-bold text-[#4b6700] tracking-wide">
-            Modo: Completo
-          </div>
-        </div>
       </div>
 
       {error && (
@@ -302,6 +314,47 @@ export default function NovoOrcamentoPage() {
                   <option value="Com Desoneração">Desonerado (Com Desoneração)</option>
                 </select>
               </div>
+
+              <div className="col-span-12 flex flex-col gap-2">
+                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
+                  Meses de Referência
+                </label>
+                {loadingBases ? (
+                  <p className="text-sm text-[#44474e]">Carregando meses disponíveis...</p>
+                ) : erroBases ? (
+                  <p className="text-sm text-red-600">
+                    Não foi possível carregar os meses de referência. Verifique se o servidor da API está ativo e configurado.
+                  </p>
+                ) : mesesDisponiveis.length === 0 ? (
+                  <p className="text-sm text-[#44474e]">
+                    Nenhum mês importado para a base {baseReferencia}.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {mesesDisponiveis.map((mes) => {
+                      const checked = mesesSelecionados.includes(mes);
+                      return (
+                        <label
+                          key={mes}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-[8px] border text-sm cursor-pointer transition-all ${
+                            checked
+                              ? "border-[#b9f61d] bg-[#b9f61d]/10 text-black"
+                              : "border-[#c4c6cf]/40 bg-[#f1f4f6] text-[#44474e]"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleMes(mes)}
+                            className="accent-[#4b6700] cursor-pointer"
+                          />
+                          {mes}
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -329,6 +382,32 @@ export default function NovoOrcamentoPage() {
                   placeholder="Ex: João da Silva Construções LTDA"
                   className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
                   required
+                />
+              </div>
+
+              <div className="col-span-12 sm:col-span-8 flex flex-col gap-1.5">
+                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
+                  Responsável Técnico
+                </label>
+                <input
+                  type="text"
+                  value={responsavelTecnico}
+                  onChange={(e) => setResponsavelTecnico(e.target.value)}
+                  placeholder="Nome do engenheiro / arquiteto responsável"
+                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
+                />
+              </div>
+
+              <div className="col-span-12 sm:col-span-4 flex flex-col gap-1.5">
+                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
+                  Nº do Conselho (CREA/CAU)
+                </label>
+                <input
+                  type="text"
+                  value={numeroConselho}
+                  onChange={(e) => setNumeroConselho(e.target.value)}
+                  placeholder="Ex: 123456/D"
+                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
                 />
               </div>
 
@@ -395,100 +474,32 @@ export default function NovoOrcamentoPage() {
                   step="any"
                   value={bdi}
                   onChange={(e) => setBdi(Number(e.target.value))}
-                  placeholder="25.00"
+                  placeholder="0.00"
                   className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
                 />
               </div>
 
               <div className="col-span-6 sm:col-span-3 flex flex-col gap-1.5">
                 <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Margem (%)
+                  Margem (R$)
                 </label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   step="any"
+                  min="0"
                   value={margem}
                   onChange={(e) => setMargem(Number(e.target.value))}
-                  placeholder="10.0"
+                  placeholder="0,00"
                   className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
                 />
-              </div>
-
-              <div className="col-span-6 sm:col-span-3 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Prazo (Dias)
-                </label>
-                <input 
-                  type="number" 
-                  value={prazo}
-                  onChange={(e) => setPrazo(Number(e.target.value))}
-                  placeholder="90"
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
-                />
-              </div>
-
-              <div className="col-span-6 sm:col-span-3 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Status Inicial
-                </label>
-                <select 
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all cursor-pointer"
-                >
-                  <option value="em_elaboracao">Em Elaboração</option>
-                  <option value="pendente">Pendente</option>
-                  <option value="aprovado">Aprovado</option>
-                </select>
               </div>
             </div>
           </div>
         </form>
 
-        {/* Right Side: Summary Card */}
+        {/* Right Side: Ações */}
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
-          <div className="bg-white border border-[#c4c6cf]/30 rounded-[12px] p-6 shadow-md relative overflow-hidden flex flex-col gap-6">
-            <div className="absolute bg-[#b9f61d]/10 blur-[32px] right-[-64px] top-[-64px] rounded-full w-32 h-32" />
-            
-            <div className="border-b border-[#c4c6cf]/20 pb-4">
-              <h3 className="font-['Hanken_Grotesk'] font-bold text-xs text-[#6f84ac] tracking-wider uppercase">
-                Resumo do Orçamento
-              </h3>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-[#001b3d]/70">Custo Base (Previsto)</span>
-                <span className="font-bold text-[#001b3d]">{formatCurrency(custoBase)}</span>
-              </div>
-
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-[#001b3d]/70">Incidência de BDI</span>
-                <span className="font-bold text-[#001b3d]">{formatCurrency(incidenciaBdi)}</span>
-              </div>
-
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-[#001b3d]/70">Impostos & Taxas</span>
-                <span className="font-bold text-[#001b3d]">{formatCurrency(impostosTaxas)}</span>
-              </div>
-
-              <div className="border-t border-[#c4c6cf]/20 pt-4 flex flex-col gap-1">
-                <span className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#b9f61d] tracking-wider uppercase">
-                  Valor Estimado Inicial
-                </span>
-                <div className="font-['Inter'] font-black text-3xl text-[#4b6700] tracking-tight transition-all">
-                  {formatCurrency(valorEstimado)}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#f1f4f6] p-4 rounded-lg flex gap-3 text-[#6f84ac] text-xs leading-relaxed">
-              <Info size={16} className="shrink-0 text-[#001b3d]/60 mt-0.5" />
-              <p>
-                Este valor é uma estimativa baseada nos parâmetros globais e pode variar após o detalhamento da planilha de insumos.
-              </p>
-            </div>
-
+          <div className="bg-white border border-[#c4c6cf]/30 rounded-[12px] p-6 shadow-md flex flex-col gap-3">
             <div className="flex flex-col gap-3">
               <button 
                 type="button"

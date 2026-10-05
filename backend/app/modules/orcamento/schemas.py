@@ -30,6 +30,9 @@ class OrcamentoCreate(BaseModel):
     bdi: Optional[float] = 0.0
     tipo_bdi: Optional[TipoBDI] = "ANALITICO"
     bdi_config: Optional[BDIConfig] = None
+    responsavel_tecnico: Optional[str] = None
+    numero_conselho: Optional[str] = None
+    margem_valor: Optional[float] = 0.0
     valor_total: Optional[float] = 0.0
     status: Optional[str] = "em_elaboracao"
     variaveis_globais: Optional[List[Any]] = []
@@ -49,6 +52,9 @@ class OrcamentoUpdate(BaseModel):
     bdi: Optional[float] = None
     tipo_bdi: Optional[TipoBDI] = None
     bdi_config: Optional[BDIConfig] = None
+    responsavel_tecnico: Optional[str] = None
+    numero_conselho: Optional[str] = None
+    margem_valor: Optional[float] = None
     status: Optional[str] = None
     valor_total: Optional[float] = None
     variaveis_globais: Optional[List[Any]] = None
@@ -69,6 +75,9 @@ class OrcamentoResponse(BaseModel):
     bdi: float
     tipo_bdi: Optional[str] = "ANALITICO"
     bdi_config: Optional[Dict[str, Any]] = None
+    responsavel_tecnico: Optional[str] = None
+    numero_conselho: Optional[str] = None
+    margem_valor: Optional[float] = 0.0
     valor_total: Optional[float]
     status: str
     variaveis_globais: Optional[List[Any]] = []
