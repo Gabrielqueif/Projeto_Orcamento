@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { buscarComposicoes as apiBuscarComposicoes } from "@/lib/api/composicoes";
+import { buscarComposicoes as apiBuscarComposicoes, type ContextoPreco } from "@/lib/api/composicoes";
 import type { ItemComposicao } from "../types";
 
 interface ComposicaoSearchSelectProps {
@@ -11,16 +11,12 @@ interface ComposicaoSearchSelectProps {
   baseBusca: string;
   onBaseBuscaChange: (base: string) => void;
   isEditing?: boolean;
-  uf?: string;
-  tipoComposicao?: string;
+  /** Estado, mês e tipo do orçamento, usados para exibir o preço nos resultados */
+  contextoPreco?: ContextoPreco;
 }
 
-const formatarMoeda = (valor?: number | string | null) => {
-  if (valor === null || valor === undefined) return "-";
-  const numero = Number(valor);
-  if (isNaN(numero)) return "-";
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(numero);
-};
+const formatarPreco = (valor?: number | null) =>
+  valor == null ? "Sem preço" : valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function ComposicaoSearchSelect({
   composicaoSelecionada,
@@ -29,9 +25,11 @@ export function ComposicaoSearchSelect({
   baseBusca,
   onBaseBuscaChange,
   isEditing = false,
-  uf,
-  tipoComposicao,
+  contextoPreco,
 }: ComposicaoSearchSelectProps) {
+  const estadoPreco = contextoPreco?.estado;
+  const mesPreco = contextoPreco?.mes_referencia;
+  const tipoPreco = contextoPreco?.tipo_composicao;
   const [termo, setTermo] = React.useState("");
   const [resultados, setResultados] = React.useState<ItemComposicao[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -120,6 +118,11 @@ export function ComposicaoSearchSelect({
               </p>
               <p className="text-sm text-slate-600">
                 Unidade: {composicaoSelecionada.unidade}
+                {composicaoSelecionada.preco != null && (
+                  <span className="ml-3 font-bold text-emerald-700">
+                    {formatarPreco(composicaoSelecionada.preco)}
+                  </span>
+                )}
               </p>
             </div>
             {!isEditing ? (

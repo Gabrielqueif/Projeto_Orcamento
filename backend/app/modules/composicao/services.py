@@ -44,18 +44,25 @@ class ItemService:
         return self.repository.listar(limit=100)
 
     def buscar_composicao(
-        self, termo: str, fonte: str = "SINAPI", uf: str | None = None, tipo: str = "Sem Desoneração"
+        self,
+        termo: str,
+        fonte: str = "SINAPI",
+        estado: str = "",
+        mes_referencia: str = "",
+        tipo_composicao: str = "",
     ):
         if "%" in termo or termo.isdigit():
-            itens = self.repository.buscar_por_codigo(termo, fonte=fonte)
+            resultados = self.repository.buscar_por_codigo(termo, fonte=fonte)
         else:
-            itens = self.repository.buscar_por_descricao(termo, fonte=fonte)
-        if uf:
-            itens = self.repository.anexar_precos(itens, uf, tipo, fonte=fonte)
-        return itens
+            resultados = self.repository.buscar_por_descricao(termo, fonte=fonte)
 
-    def buscar_insumo(self, termo: str, fonte: str = "SINAPI", tipo: str = "Sem Desoneração"):
-        return self.repository.buscar_insumos(termo, fonte=fonte, tipo=tipo)
+        if estado and resultados:
+            precos = self.repository.buscar_precos_lote(
+                [r["codigo_composicao"] for r in resultados], estado, mes_referencia, tipo_composicao, fonte=fonte
+            )
+            for r in resultados:
+                r["preco"] = precos.get(r["codigo_composicao"])
+        return resultados
 
     def listar_estados_composicao(self, codigo_composicao: str, mes_referencia: str, fonte: str = "SINAPI"):
         return self.repository.listar_estados_por_item(codigo_composicao, mes_referencia, fonte=fonte)

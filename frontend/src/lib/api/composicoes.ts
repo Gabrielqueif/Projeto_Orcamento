@@ -14,12 +14,22 @@ export interface PrecosEstado {
     [key: string]: number | string | null;
 }
 
-export async function buscarComposicoes(termo: string, fonte: string, uf?: string, tipo?: string): Promise<ItemComposicao[]> {
+export interface ContextoPreco {
+    estado?: string;
+    mes_referencia?: string;
+    tipo_composicao?: string;
+}
+
+export async function buscarComposicoes(termo: string, fonte: string, contexto?: ContextoPreco): Promise<ItemComposicao[]> {
     if (!termo) return [];
 
-    let url = `/composicoes/buscar/${encodeURIComponent(termo)}?fonte=${encodeURIComponent(fonte)}`;
-    if (uf) url += `&uf=${encodeURIComponent(uf)}`;
-    if (tipo) url += `&tipo=${encodeURIComponent(tipo)}`;
+    const params = new URLSearchParams({ fonte });
+    if (contexto?.estado) {
+        params.set('estado', contexto.estado);
+        if (contexto.mes_referencia) params.set('mes_referencia', contexto.mes_referencia);
+        if (contexto.tipo_composicao) params.set('tipo_composicao', contexto.tipo_composicao);
+    }
+    const url = `/composicoes/buscar/${encodeURIComponent(termo)}?${params.toString()}`;
     const response = await fetchWithAuth(url);
 
     if (!response.ok) {

@@ -274,6 +274,11 @@ export function OrcamentoItemForm({
           uf={estadoOrcamento}
           tipoComposicao={tipoComposicaoOrcamento}
           isEditing={Boolean(itemToEdit)}
+          contextoPreco={{
+            estado: estadoOrcamento,
+            mes_referencia: orcamento?.base_referencia,
+            tipo_composicao: orcamento?.tipo_composicao,
+          }}
         />
 
         {/* Estado do Orçamento (Informativo) */}
