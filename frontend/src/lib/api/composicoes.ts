@@ -14,14 +14,38 @@ export interface PrecosEstado {
     [key: string]: number | string | null;
 }
 
-export async function buscarComposicoes(termo: string, fonte: string): Promise<ItemComposicao[]> {
+export async function buscarComposicoes(termo: string, fonte: string, uf?: string, tipo?: string): Promise<ItemComposicao[]> {
     if (!termo) return [];
 
-    const url = `/composicoes/buscar/${encodeURIComponent(termo)}?fonte=${encodeURIComponent(fonte)}`;
+    let url = `/composicoes/buscar/${encodeURIComponent(termo)}?fonte=${encodeURIComponent(fonte)}`;
+    if (uf) url += `&uf=${encodeURIComponent(uf)}`;
+    if (tipo) url += `&tipo=${encodeURIComponent(tipo)}`;
     const response = await fetchWithAuth(url);
 
     if (!response.ok) {
         throw new Error('Erro ao buscar composições');
+    }
+
+    return response.json();
+}
+
+export interface ItemInsumo {
+    codigo_insumo: string;
+    descricao: string;
+    unidade: string;
+    mes_referencia: string;
+    fonte: string;
+    precos?: Record<string, number>;
+    mes_preco?: string;
+}
+
+export async function buscarInsumos(termo: string, fonte: string, tipo = 'Sem Desoneração'): Promise<ItemInsumo[]> {
+    if (!termo) return [];
+
+    const response = await fetchWithAuth(`/composicoes/insumos/buscar/${encodeURIComponent(termo)}?fonte=${encodeURIComponent(fonte)}&tipo=${encodeURIComponent(tipo)}`);
+
+    if (!response.ok) {
+        throw new Error('Erro ao buscar insumos');
     }
 
     return response.json();

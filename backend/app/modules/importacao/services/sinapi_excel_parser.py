@@ -74,6 +74,9 @@ _MAPA_TIPOS = {
     "EMPREITADA": "Empreitada",
     "CSD": "Sem Desoneração",
     "SEM DESONERACAO": "Sem Desoneração",
+    "ICD": "Com Desoneração",
+    "ISE": "Empreitada",
+    "ISD": "Sem Desoneração",
 }
 
 
@@ -149,6 +152,46 @@ class SinapiExcelParser(BaseExcelParser):
                 if normalizar_nome_aba(a) == termo:
                     return a
         return None
+
+    def identificar_abas_precos_insumos(self) -> List[str]:
+        """Identifica todas as abas de preços de insumos (ISD/ICD/ISE)."""
+        return [a for a in self._xl.sheet_names if normalizar_nome_aba(a) in _TERMOS_INSUMOS]
+
+    def extrair_precos_insumos(self, nome_aba: str, mes_referencia: str, fonte: str = "SINAPI") -> List[dict]:
+        """Extrai os preços por UF de uma aba de insumos (ISD/ICD/ISE)."""
+        df = self.ler_aba(nome_aba, header=None)
+        header = self.encontrar_header(df)
+        if header is None:
+            logger.warning("Header não encontrado na aba de insumos '%s', pulando.", nome_aba)
+            return []
+
+        tipo = self.classificar_tipo_composicao(nome_aba)
+        registros: Dict[str, dict] = {}
+        for _, row in df.iloc[header.linha + 1 :].iterrows():
+            cod_raw = row.iloc[header.col_codigo]
+            if pd.isna(cod_raw):
+                continue
+            cod = str(cod_raw).replace(".0", "").strip()
+            if not cod.isdigit():
+                continue
+
+            reg = {
+                "codigo_insumo": cod,
+                "mes_referencia": mes_referencia,
+                "tipo_composicao": tipo,
+                "fonte": fonte,
+            }
+            if header.col_grupo != -1 and not pd.isna(row.iloc[header.col_grupo]):
+                reg["classificacao"] = str(row.iloc[header.col_grupo]).strip()
+            tem_valor = False
+            for c_idx, sigla in header.mapa_estados.items():
+                val = limpar_valor_moeda(row.iloc[c_idx])
+                reg[sigla] = val
+                if val is not None:
+                    tem_valor = True
+            if tem_valor:
+                registros[cod] = reg
+        return list(registros.values())
 
     def identificar_abas_precos(self) -> List[str]:
         """Identifica quais abas contêm dados de preços."""

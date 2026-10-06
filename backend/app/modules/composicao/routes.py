@@ -25,12 +25,32 @@ async def listar_composicoes(fonte: str = "SINAPI", service: ItemService = Depen
 
 
 @router.get("/buscar/{termo}")
-async def buscar_composicao(termo: str, fonte: str = "SINAPI", service: ItemService = Depends(get_item_service)):
+async def buscar_composicao(
+    termo: str,
+    fonte: str = "SINAPI",
+    uf: str | None = None,
+    tipo: str = "Sem Desoneração",
+    service: ItemService = Depends(get_item_service),
+):
     try:
-        return service.buscar_composicao(termo, fonte=fonte)
+        return service.buscar_composicao(termo, fonte=fonte, uf=uf, tipo=tipo)
     except Exception:
         logger.error("Erro ao buscar composição", exc_info=True)
         raise HTTPException(status_code=500, detail="Erro ao buscar composição")
+
+
+@router.get("/insumos/buscar/{termo}")
+async def buscar_insumo(
+    termo: str,
+    fonte: str = "SINAPI",
+    tipo: str = "Sem Desoneração",
+    service: ItemService = Depends(get_item_service),
+):
+    try:
+        return service.buscar_insumo(termo, fonte=fonte, tipo=tipo)
+    except Exception:
+        logger.error("Erro ao buscar insumo", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao buscar insumo")
 
 
 @router.get("/{codigo_composicao}/estados")

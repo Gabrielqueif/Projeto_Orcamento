@@ -6,6 +6,12 @@ logger = logging.getLogger(__name__)
 TABELA_COMPOSICOES = "composicao"
 TABELA_COMPOSICOES_ESTADOS = "composicao_estados"
 TABELA_COMPOSICAO_ITENS = "composicao_itens"
+VIEW_INSUMOS = "insumo_busca"
+TABELA_INSUMO_PRECOS = "insumo_precos"
+UFS = [
+    "ac", "al", "ap", "am", "ba", "ce", "df", "es", "go", "ma", "mt", "ms", "mg", "pa",
+    "pb", "pr", "pe", "pi", "rj", "rn", "rs", "ro", "rr", "sc", "sp", "se", "to",
+]  # fmt: skip
 
 
 class ItemRepository:
@@ -81,6 +87,98 @@ class ItemRepository:
             .execute()
             .data
         )
+
+    def upsert_batch_precos_insumos(self, dados: List[Dict[str, Any]]) -> int:
+        if not dados:
+            return 0
+        total = 0
+        for i in range(0, len(dados), 500):
+            try:
+                r = (
+                    self.supabase.table(TABELA_INSUMO_PRECOS)
+                    .upsert(dados[i : i + 500], on_conflict="codigo_insumo,mes_referencia,tipo_composicao,fonte")
+                    .execute()
+                )
+                if r.data:
+                    total += len(r.data)
+            except Exception as e:
+                logger.error(f"Erro lote {TABELA_INSUMO_PRECOS}: {e}")
+        return total
+
+    def anexar_precos(
+        self, itens: List[Dict[str, Any]], uf: str, tipo: str, fonte: str = "SINAPI"
+    ) -> List[Dict[str, Any]]:
+        """Preenche `preco` de cada composição com o valor da UF/tipo informados."""
+        uf = uf.lower()
+        if not itens or uf not in UFS:
+            return itens
+
+        linhas = (
+            self.supabase.table(TABELA_COMPOSICOES_ESTADOS)
+            .select(f"codigo_composicao,mes_referencia,{uf}")
+            .eq("fonte", fonte)
+            .eq("tipo_composicao", tipo)
+            .in_("codigo_composicao", [i["codigo_composicao"] for i in itens])
+            .execute()
+            .data
+            or []
+        )
+        precos = {(l["codigo_composicao"], l["mes_referencia"]): l.get(uf) for l in linhas}
+        for item in itens:
+            item["preco"] = precos.get((item["codigo_composicao"], item.get("mes_referencia")))
+        return itens
+
+    def buscar_insumos(
+        self, termo: str, fonte: str = "SINAPI", tipo: str = "Sem Desoneração", limit: int = 200
+    ) -> List[Dict[str, Any]]:
+        termo_limpo = termo.strip()
+        if not termo_limpo:
+            return []
+
+        query = self.supabase.table(VIEW_INSUMOS).select("*").eq("fonte", fonte)
+        if termo_limpo.isdigit():
+            query = query.eq("codigo_insumo", termo_limpo)
+        else:
+            for palavra in termo_limpo.split():
+                query = query.ilike("descricao", f"%{palavra}%")
+        rows = query.order("descricao").limit(limit * 2).execute().data or []
+
+        # Mesmo insumo em vários meses de referência: mantém só o mês mais recente.
+        def chave_mes(r):
+            mes, _, ano = (r.get("mes_referencia") or "").partition("/")
+            return (ano, mes)
+
+        unicos: Dict[str, Dict[str, Any]] = {}
+        for r in rows:
+            atual = unicos.get(r["codigo_insumo"])
+            if atual is None or chave_mes(r) > chave_mes(atual):
+                unicos[r["codigo_insumo"]] = r
+        resultado = list(unicos.values())[:limit]
+        if not resultado:
+            return []
+
+        precos = (
+            self.supabase.table(TABELA_INSUMO_PRECOS)
+            .select("*")
+            .eq("fonte", fonte)
+            .eq("tipo_composicao", tipo)
+            .in_("codigo_insumo", [r["codigo_insumo"] for r in resultado])
+            .execute()
+            .data
+            or []
+        )
+        por_codigo: Dict[str, Dict[str, Any]] = {}
+        for p in precos:
+            atual = por_codigo.get(p["codigo_insumo"])
+            if atual is None or chave_mes(p) > chave_mes(atual):
+                por_codigo[p["codigo_insumo"]] = p
+
+        for r in resultado:
+            p = por_codigo.get(r["codigo_insumo"])
+            r["precos"] = {uf: p.get(uf) for uf in UFS if p.get(uf) is not None} if p else {}
+            if p:
+                r["mes_preco"] = p["mes_referencia"]
+        return resultado
 
     def listar_estados_por_item(
         self, codigo_composicao: str, mes_referencia: str, fonte: str = "SINAPI"

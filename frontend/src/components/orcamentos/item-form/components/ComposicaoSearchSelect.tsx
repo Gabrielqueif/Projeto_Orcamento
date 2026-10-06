@@ -11,7 +11,16 @@ interface ComposicaoSearchSelectProps {
   baseBusca: string;
   onBaseBuscaChange: (base: string) => void;
   isEditing?: boolean;
+  uf?: string;
+  tipoComposicao?: string;
 }
+
+const formatarMoeda = (valor?: number | string | null) => {
+  if (valor === null || valor === undefined) return "-";
+  const numero = Number(valor);
+  if (isNaN(numero)) return "-";
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(numero);
+};
 
 export function ComposicaoSearchSelect({
   composicaoSelecionada,
@@ -20,6 +29,8 @@ export function ComposicaoSearchSelect({
   baseBusca,
   onBaseBuscaChange,
   isEditing = false,
+  uf,
+  tipoComposicao,
 }: ComposicaoSearchSelectProps) {
   const [termo, setTermo] = React.useState("");
   const [resultados, setResultados] = React.useState<ItemComposicao[]>([]);
@@ -36,7 +47,7 @@ export function ComposicaoSearchSelect({
       setLoading(true);
       setError(null);
       try {
-        const data = await apiBuscarComposicoes(termo, baseBusca);
+        const data = await apiBuscarComposicoes(termo, baseBusca, uf, tipoComposicao);
         setResultados(data || []);
       } catch (err) {
         console.error(err);
@@ -47,7 +58,7 @@ export function ComposicaoSearchSelect({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [termo, baseBusca]);
+  }, [termo, baseBusca, uf, tipoComposicao]);
 
   const handleSelect = (item: ItemComposicao) => {
     onSelectComposicao(item);
@@ -164,9 +175,12 @@ export function ComposicaoSearchSelect({
                     </span>
                     {item.codigo_composicao} - {item.descricao}
                   </p>
-                  <p className="text-sm text-slate-600">
-                    Unidade: {item.unidade}
-                  </p>
+                  <div className="flex justify-between items-center text-sm text-slate-600">
+                    <span>Unidade: {item.unidade}</span>
+                    {uf && (
+                      <span className="font-bold text-green-700">{formatarMoeda(item.preco)}</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

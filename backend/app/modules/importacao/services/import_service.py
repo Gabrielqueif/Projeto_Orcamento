@@ -86,11 +86,20 @@ def process_import_file(file_content: bytes, repository: ItemRepository, source_
                 q_analitico = repository.upsert_batch_composicao_itens(relacoes)
                 logger.info("%d relacionamentos analíticos importados.", q_analitico)
 
+        q_insumos = 0
+        if source_type == "SINAPI" and hasattr(parser, "identificar_abas_precos_insumos"):
+            precos_insumos: List[dict] = []
+            for aba in parser.identificar_abas_precos_insumos():
+                precos_insumos.extend(parser.extrair_precos_insumos(aba, metadata.mes_referencia, fonte=source_type))
+            q_insumos = repository.upsert_batch_precos_insumos(precos_insumos)
+            logger.info("%d preços de insumos importados.", q_insumos)
+
         return {
             "status": "sucesso",
             "imported_items": q_comp,
             "imported_prices": q_est,
             "imported_analitico": q_analitico,
+            "imported_insumo_prices": q_insumos,
             "metadata": metadata.model_dump(),  # Pydantic v2 usa model_dump()
         }
 
