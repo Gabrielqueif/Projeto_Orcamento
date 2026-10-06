@@ -105,29 +105,6 @@ class ItemRepository:
                 logger.error(f"Erro lote {TABELA_INSUMO_PRECOS}: {e}")
         return total
 
-    def anexar_precos(
-        self, itens: List[Dict[str, Any]], uf: str, tipo: str, fonte: str = "SINAPI"
-    ) -> List[Dict[str, Any]]:
-        """Preenche `preco` de cada composição com o valor da UF/tipo informados."""
-        uf = uf.lower()
-        if not itens or uf not in UFS:
-            return itens
-
-        linhas = (
-            self.supabase.table(TABELA_COMPOSICOES_ESTADOS)
-            .select(f"codigo_composicao,mes_referencia,{uf}")
-            .eq("fonte", fonte)
-            .eq("tipo_composicao", tipo)
-            .in_("codigo_composicao", [i["codigo_composicao"] for i in itens])
-            .execute()
-            .data
-            or []
-        )
-        precos = {(l["codigo_composicao"], l["mes_referencia"]): l.get(uf) for l in linhas}
-        for item in itens:
-            item["preco"] = precos.get((item["codigo_composicao"], item.get("mes_referencia")))
-        return itens
-
     def buscar_insumos(
         self, termo: str, fonte: str = "SINAPI", tipo: str = "Sem Desoneração", limit: int = 200
     ) -> List[Dict[str, Any]]:
