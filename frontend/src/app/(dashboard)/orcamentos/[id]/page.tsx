@@ -16,8 +16,9 @@ import {
   Trash, 
   X, 
   HardHat, 
-  CaretDown, 
-  Calculator
+  CaretDown,
+  Calculator,
+  CalendarBlank
 } from "@phosphor-icons/react";
 import { getOrcamento, downloadOrcamentoPDF, updateOrcamento, type Orcamento } from "@/lib/api/orcamentos";
 import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus } from "@/lib/orcamentoStatus";
@@ -249,6 +250,13 @@ export default function OrcamentoDetalhePage() {
               <PencilSimple size={16} weight="bold" className="text-[#00a3b1]" />
               Editar
             </button>
+            <Link
+              href={`/prazo/${orcamento.id}`}
+              className="flex items-center gap-2 bg-white border border-[#f1f5f9] text-[#001b3d] font-['Manrope'] font-bold text-[14px] px-4 py-2.5 rounded-[8px] transition-all hover:bg-[#f8fafc] shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-pointer no-underline"
+            >
+              <CalendarBlank size={16} weight="bold" className="text-[#00a3b1]" />
+              Cronograma
+            </Link>
             <button className="flex items-center gap-2 bg-white border border-[#f1f5f9] text-[#001b3d] font-['Manrope'] font-bold text-[14px] px-4 py-2.5 rounded-[8px] transition-all hover:bg-[#f8fafc] shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-pointer">
               <Copy size={16} weight="bold" className="text-[#00a3b1]" />
               Duplicar

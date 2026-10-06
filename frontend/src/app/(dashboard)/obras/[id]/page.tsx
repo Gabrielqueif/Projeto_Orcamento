@@ -275,7 +275,7 @@ export default function ObraDetalhePage() {
             </span>
           </Link>
           <Link
-            href={`/obras/${id}/prazo`}
+            href={`/prazo/${id}`}
             className="flex items-center gap-3 bg-white border border-[#cbd5e1] px-6 py-[13px] rounded-[8px] font-['Manrope'] font-bold text-[14px] text-[#001b3d] no-underline hover:bg-[#f8fafc] transition-colors"
           >
             <CalendarPlus size={15} />
