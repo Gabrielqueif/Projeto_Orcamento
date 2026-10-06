@@ -39,6 +39,28 @@ export async function buscarComposicoes(termo: string, fonte: string, contexto?:
     return response.json();
 }
 
+export interface ItemInsumo {
+    codigo_insumo: string;
+    descricao: string;
+    unidade: string;
+    mes_referencia: string;
+    fonte: string;
+    precos?: Record<string, number>;
+    mes_preco?: string;
+}
+
+export async function buscarInsumos(termo: string, fonte: string, tipo = 'Sem Desoneração'): Promise<ItemInsumo[]> {
+    if (!termo) return [];
+
+    const response = await fetchWithAuth(`/composicoes/insumos/buscar/${encodeURIComponent(termo)}?fonte=${encodeURIComponent(fonte)}&tipo=${encodeURIComponent(tipo)}`);
+
+    if (!response.ok) {
+        throw new Error('Erro ao buscar insumos');
+    }
+
+    return response.json();
+}
+
 export async function getEstadosComposicao(codigo: string, mes_referencia: string, fonte: string): Promise<PrecosEstado[]> {
     if (!codigo || !mes_referencia) return [];
 

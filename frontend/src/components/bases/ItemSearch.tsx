@@ -1,12 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { buscarComposicoes, getEstadosComposicao, type ItemComposicao, type PrecosEstado } from '@/lib/api/composicoes';
+import { buscarComposicoes, buscarInsumos, getEstadosComposicao, type ItemComposicao, type ItemInsumo, type PrecosEstado } from '@/lib/api/composicoes';
+
+const UFS = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA',
+  'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+];
 
 export function ItemSearch() {
   const [termo, setTermo] = useState('');
   const [fonte, setFonte] = useState('SINAPI');
+  const [aba, setAba] = useState<'composicoes' | 'insumos'>('composicoes');
   const [resultados, setResultados] = useState<ItemComposicao[]>([]);
+  const [insumos, setInsumos] = useState<ItemInsumo[]>([]);
+  const [uf, setUf] = useState('CE');
+  const [tipo, setTipo] = useState('Sem Desoneração');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,13 +35,17 @@ export function ItemSearch() {
 
     setLoading(true);
     setResultados([]);
+    setInsumos([]);
     setError(null);
     try {
-      const data = await buscarComposicoes(termo, fonte);
-      setResultados(data || []);
+      if (aba === 'insumos') {
+        setInsumos((await buscarInsumos(termo, fonte, tipo)) || []);
+      } else {
+        setResultados((await buscarComposicoes(termo, fonte)) || []);
+      }
     } catch (err) {
       console.error(err);
-      setError("Erro ao buscar composições");
+      setError(aba === 'insumos' ? "Erro ao buscar insumos" : "Erro ao buscar composições");
     } finally {
       setLoading(false);
     }
@@ -65,6 +78,49 @@ export function ItemSearch() {
     <div className="w-full">
       {/* --- BUSCA --- */}
       <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
+        <div className="flex gap-2 mb-3">
+          {(['composicoes', 'insumos'] as const).map((a) => (
+            <button
+              key={a}
+              type="button"
+              onClick={() => {
+                setAba(a);
+                setResultados([]);
+                setInsumos([]);
+                setError(null);
+              }}
+              className={`text-xs px-3 py-1 rounded-full font-bold transition ${
+                aba === a ? 'bg-brand-primary text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'
+              }`}
+            >
+              {a === 'composicoes' ? 'Composições' : 'Insumos'}
+            </button>
+          ))}
+          {aba === 'insumos' && (
+            <>
+              <select
+                className="ml-auto px-2 py-1 rounded border border-slate-300 bg-white text-xs"
+                value={uf}
+                onChange={(e) => setUf(e.target.value)}
+                aria-label="Estado"
+              >
+                {UFS.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+              <select
+                className="px-2 py-1 rounded border border-slate-300 bg-white text-xs"
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value)}
+                aria-label="Tipo de preço"
+              >
+                <option value="Sem Desoneração">Sem desoneração</option>
+                <option value="Com Desoneração">Com desoneração</option>
+                <option value="Empreitada">Empreitada</option>
+              </select>
+            </>
+          )}
+        </div>
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
           <select
             className="px-4 py-2 rounded border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white text-sm"
@@ -94,9 +150,24 @@ export function ItemSearch() {
 
       {/* --- RESULTADOS --- */}
       <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-        {resultados.length === 0 && !loading && termo && !error && (
+        {resultados.length === 0 && insumos.length === 0 && !loading && termo && !error && (
           <p className="text-center text-slate-400 py-4">Nenhum resultado encontrado.</p>
         )}
+
+        {insumos.map((item) => (
+          <div key={`${item.fonte}-${item.mes_referencia}-${item.codigo_insumo}`} className="bg-white border rounded-md p-3">
+            <div className="flex items-center gap-2 text-xs mb-1">
+              <span className="font-bold text-brand-primary uppercase">CÓD: {item.codigo_insumo}</span>
+              <span className="bg-gray-100 text-gray-500 px-1 rounded uppercase">{item.unidade}</span>
+            </div>
+            <div className="flex justify-between items-start gap-3">
+              <h4 className="text-sm font-medium text-slate-700">{item.descricao}</h4>
+              <span className="text-sm font-semibold text-green-700 whitespace-nowrap">
+                {formatarMoeda(item.precos?.[uf.toLowerCase()] ?? null)}
+              </span>
+            </div>
+          </div>
+        ))}
 
         {resultados.map((item) => {
           const isOpen = precosAbertos[item.codigo_composicao] !== undefined;

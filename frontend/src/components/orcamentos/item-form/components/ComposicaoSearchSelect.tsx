@@ -45,11 +45,7 @@ export function ComposicaoSearchSelect({
       setLoading(true);
       setError(null);
       try {
-        const data = await apiBuscarComposicoes(termo, baseBusca, {
-          estado: estadoPreco,
-          mes_referencia: mesPreco,
-          tipo_composicao: tipoPreco,
-        });
+        const data = await apiBuscarComposicoes(termo, baseBusca, uf, tipoComposicao);
         setResultados(data || []);
       } catch (err) {
         console.error(err);
@@ -60,7 +56,7 @@ export function ComposicaoSearchSelect({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [termo, baseBusca, estadoPreco, mesPreco, tipoPreco]);
+  }, [termo, baseBusca, uf, tipoComposicao]);
 
   const handleSelect = (item: ItemComposicao) => {
     onSelectComposicao(item);
@@ -182,12 +178,12 @@ export function ComposicaoSearchSelect({
                     </span>
                     {item.codigo_composicao} - {item.descricao}
                   </p>
-                  <p className="text-sm text-slate-600 flex items-center justify-between gap-3">
+                  <div className="flex justify-between items-center text-sm text-slate-600">
                     <span>Unidade: {item.unidade}</span>
-                    {estadoPreco && (
-                      <span className="font-bold text-emerald-700">{formatarPreco(item.preco)}</span>
+                    {uf && (
+                      <span className="font-bold text-green-700">{formatarMoeda(item.preco)}</span>
                     )}
-                  </p>
+                  </div>
                 </div>
               ))}
             </div>

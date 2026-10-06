@@ -42,6 +42,20 @@ async def buscar_composicao(
         raise HTTPException(status_code=500, detail="Erro ao buscar composição")
 
 
+@router.get("/insumos/buscar/{termo}")
+async def buscar_insumo(
+    termo: str,
+    fonte: str = "SINAPI",
+    tipo: str = "Sem Desoneração",
+    service: ItemService = Depends(get_item_service),
+):
+    try:
+        return service.buscar_insumo(termo, fonte=fonte, tipo=tipo)
+    except Exception:
+        logger.error("Erro ao buscar insumo", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao buscar insumo")
+
+
 @router.get("/{codigo_composicao}/estados")
 async def listar_estados_composicao(
     codigo_composicao: str,
