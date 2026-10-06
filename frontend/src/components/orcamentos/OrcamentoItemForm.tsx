@@ -31,7 +31,6 @@ import { MemoriaCalculoModal } from "./item-form/components/memoria-calculo/Memo
 export function OrcamentoItemForm({
   orcamentoId,
   estadoOrcamento,
-  tipoComposicaoOrcamento,
   fonteOrcamento = "SINAPI",
   refreshTrigger,
   onItemAdded,
@@ -271,8 +270,6 @@ export function OrcamentoItemForm({
           onClearComposicao={() => setComposicaoSelecionada(null)}
           baseBusca={baseBusca}
           onBaseBuscaChange={setBaseBusca}
-          uf={estadoOrcamento}
-          tipoComposicao={tipoComposicaoOrcamento}
           isEditing={Boolean(itemToEdit)}
           contextoPreco={{
             estado: estadoOrcamento,

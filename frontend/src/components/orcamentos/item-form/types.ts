@@ -32,7 +32,6 @@ export interface ParsedMemoria {
 export interface OrcamentoItemFormProps {
   orcamentoId: string;
   estadoOrcamento?: string;
-  tipoComposicaoOrcamento?: string;
   fonteOrcamento?: string;
   refreshTrigger?: number;
   onItemAdded?: () => void;

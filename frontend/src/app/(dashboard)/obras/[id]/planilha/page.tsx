@@ -103,7 +103,6 @@ export default function PlanilhaOrcamentariaPage() {
       <PlanilhaView 
         orcamentoId={id} 
         estadoOrcamento={orcamento.estado}
-        tipoComposicaoOrcamento={orcamento.tipo_composicao}
         fonteOrcamento={orcamento.fonte}
         onTotalChanged={fetchOrcamento}
       />

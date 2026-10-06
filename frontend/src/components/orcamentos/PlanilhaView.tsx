@@ -21,13 +21,12 @@ import { EtapasEstrutura, MAX_NIVEL_ETAPAS, type DropPos } from "./EtapasEstrutu
 interface PlanilhaViewProps {
   orcamentoId: string;
   estadoOrcamento?: string;
-  tipoComposicaoOrcamento?: string;
   fonteOrcamento?: string;
   bdiOrcamento?: number;
   onTotalChanged?: () => void;
 }
 
-export function PlanilhaView({ orcamentoId, estadoOrcamento, tipoComposicaoOrcamento, fonteOrcamento = "SINAPI", bdiOrcamento = 0, onTotalChanged }: PlanilhaViewProps) {
+export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "SINAPI", bdiOrcamento = 0, onTotalChanged }: PlanilhaViewProps) {
   const [etapas, setEtapas] = React.useState<Etapa[]>([]);
   const [itens, setItens] = React.useState<OrcamentoItem[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -604,7 +603,6 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, tipoComposicaoOrcam
             <OrcamentoItemForm
               orcamentoId={orcamentoId}
               estadoOrcamento={estadoOrcamento}
-              tipoComposicaoOrcamento={tipoComposicaoOrcamento}
               fonteOrcamento={fonteOrcamento}
               itemToEdit={editingItem || undefined}
               initialEtapaId={activeEtapaId}

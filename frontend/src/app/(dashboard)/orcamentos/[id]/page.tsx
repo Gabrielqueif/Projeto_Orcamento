@@ -373,7 +373,6 @@ export default function OrcamentoDetalhePage() {
           <PlanilhaView 
             orcamentoId={orcamento.id} 
             estadoOrcamento={orcamento.estado}
-            tipoComposicaoOrcamento={orcamento.tipo_composicao}
             fonteOrcamento={orcamento.fonte}
             bdiOrcamento={orcamento.bdi || 0}
             onTotalChanged={recarregarOrcamento}
