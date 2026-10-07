@@ -20,7 +20,7 @@ import {
   Calculator,
   CalendarBlank
 } from "@phosphor-icons/react";
-import { getOrcamento, downloadOrcamentoPDF, updateOrcamento, type Orcamento } from "@/lib/api/orcamentos";
+import { getOrcamento, getEtapas, downloadOrcamentoPDF, updateOrcamento, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
 import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus } from "@/lib/orcamentoStatus";
 import { PlanilhaView } from "@/components/orcamentos/PlanilhaView";
 import { CurvaAbcView } from "@/components/orcamentos/CurvaAbcView";
@@ -31,6 +31,15 @@ import { TransitionDrawer } from "@/components/orcamentos/TransitionDrawer";
 
 type TabType = "planilha" | "abc" | "cronograma" | "anexos";
 
+// Prazo total = do início da primeira etapa ao fim da última (inclusive), conforme o cronograma
+const calcularDiasExecucao = (etapas: Etapa[]): number | null => {
+  const inicios = etapas.filter((e) => e.data_inicio).map((e) => new Date(e.data_inicio as string).getTime());
+  const fins = etapas.filter((e) => e.data_fim).map((e) => new Date(e.data_fim as string).getTime());
+  if (inicios.length === 0 || fins.length === 0) return null;
+  const dias = Math.round((Math.max(...fins) - Math.min(...inicios)) / 86400000) + 1;
+  return dias > 0 ? dias : null;
+};
+
 export default function OrcamentoDetalhePage() {
   const params = useParams();
   const router = useRouter();
@@ -38,6 +47,7 @@ export default function OrcamentoDetalhePage() {
 
   const [orcamento, setOrcamento] = useState<Orcamento | null>(null);
   const [loading, setLoading] = useState(true);
+  const [diasExecucao, setDiasExecucao] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("planilha");
 
   // BDI Modal State
@@ -113,8 +123,12 @@ export default function OrcamentoDetalhePage() {
   const recarregarOrcamento = async () => {
     if (!id) return;
     try {
-      const data = await getOrcamento(id);
+      const [data, etapas] = await Promise.all([
+        getOrcamento(id),
+        getEtapas(id).catch(() => [] as Etapa[]),
+      ]);
       setOrcamento(data);
+      setDiasExecucao(calcularDiasExecucao(etapas));
     } catch (err) {
       console.error("Erro ao carregar detalhes do orçamento:", err);
     }
@@ -341,7 +355,7 @@ export default function OrcamentoDetalhePage() {
             DIAS DE EXECUÇÃO
           </span>
           <h2 className="font-['Manrope'] font-extrabold text-[28px] text-[#001b3d] mt-2">
-            180 Dias
+            {diasExecucao !== null ? `${diasExecucao} ${diasExecucao === 1 ? "Dia" : "Dias"}` : "Não definido"}
           </h2>
           <div className="bg-[#f1f5f9] h-[4px] rounded-full w-full overflow-hidden mt-3">
             <div className="bg-[#00a3b1] h-full rounded-full" style={{ width: "100%" }} />
