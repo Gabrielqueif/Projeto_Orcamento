@@ -325,7 +325,7 @@ export function MemoriaCalculoModal({
                 }`}
                 title="1 Variável: Subtotal = Dimensão 1"
               >
-                1 Var (Dim1)
+                QUANT (1 var)
               </button>
               <button
                 type="button"
@@ -339,7 +339,7 @@ export function MemoriaCalculoModal({
                 }`}
                 title="2 Variáveis: Subtotal = Qtd × Dimensão 1"
               >
-                2 Vars (Dim1 × Dim2)
+                ÁREA (2 vars)
               </button>
               <button
                 type="button"
@@ -354,7 +354,7 @@ export function MemoriaCalculoModal({
                 }`}
                 title="3 Variáveis: Subtotal = Qtd × Dim1 × Dim2"
               >
-                3 Vars (Dim1 × Dim2 × Dim3)
+                VOL (3 vars)
               </button>
             </div>
           </div>

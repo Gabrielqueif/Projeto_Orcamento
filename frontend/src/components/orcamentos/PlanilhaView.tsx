@@ -595,7 +595,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
       <Modal
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); setEditingItem(null); }}
-        title={editingItem ? "Editar Insumo" : "Buscar e Adicionar Insumo"}
+        title={editingItem ? "Editar Insumo" : "Adicionar Atividade / Serviço"}
         maxWidth="max-w-2xl"
       >
         <div className="max-h-[80vh] overflow-y-auto">
