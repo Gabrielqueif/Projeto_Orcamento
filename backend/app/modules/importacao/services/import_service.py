@@ -78,7 +78,7 @@ def process_import_file(file_content: bytes, repository: ItemRepository, source_
         q_est = repository.upsert_batch_estados(todos_precos)
 
         q_analitico = 0
-        if source_type == "SINAPI" and hasattr(parser, "identificar_aba_analitico"):
+        if hasattr(parser, "identificar_aba_analitico"):
             aba_analitico = parser.identificar_aba_analitico()
             if aba_analitico:
                 logger.info("Extraindo aba Analítico: '%s'", aba_analitico)
@@ -87,7 +87,7 @@ def process_import_file(file_content: bytes, repository: ItemRepository, source_
                 logger.info("%d relacionamentos analíticos importados.", q_analitico)
 
         q_insumos = 0
-        if source_type == "SINAPI" and hasattr(parser, "identificar_abas_precos_insumos"):
+        if hasattr(parser, "identificar_abas_precos_insumos"):
             precos_insumos: List[dict] = []
             for aba in parser.identificar_abas_precos_insumos():
                 precos_insumos.extend(parser.extrair_precos_insumos(aba, metadata.mes_referencia, fonte=source_type))

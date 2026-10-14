@@ -8,10 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export function ImportUpload() {
-    const [fileCSD, setFileCSD] = useState<File | null>(null);
-    const [fileCCD, setFileCCD] = useState<File | null>(null);
-    const [fileCSE, setFileCSE] = useState<File | null>(null);
-    // Removed fileCCD and fileCSE states as per instruction
+    const [files, setFiles] = useState<File[]>([]);
 
     const [importing, setImporting] = useState(false);
     const [source, setSource] = useState('SINAPI');
@@ -19,8 +16,8 @@ export function ImportUpload() {
     const [importResult, setImportResult] = useState<any>(null);
 
     const handleImport = async () => {
-        if (!fileCSD) { // Reusing fileCSD state as main file
-            setError('Selecione o arquivo SINAPI para importar.');
+        if (files.length === 0) {
+            setError(`Selecione o(s) arquivo(s) ${source} para importar.`);
             return;
         }
 
@@ -29,8 +26,7 @@ export function ImportUpload() {
         setImportResult(null);
 
         try {
-            // New signature expects array, we send just one consolidated file
-            const result = await importWorksheet([fileCSD], source);
+            const result = await importWorksheet(files, source);
             setImportResult(result);
         } catch (err: unknown) {
             console.error(err);
@@ -58,7 +54,7 @@ export function ImportUpload() {
                     <select 
                       id="source"
                       value={source} 
-                      onChange={(e) => setSource(e.target.value)}
+                      onChange={(e) => { setSource(e.target.value); setFiles([]); const el = document.getElementById('file_complete') as HTMLInputElement | null; if (el) el.value = ''; }}
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <option value="SINAPI">SINAPI (Nacional)</option>
@@ -67,18 +63,19 @@ export function ImportUpload() {
                 </div>
 
                 <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="file_complete" className="text-gray-700 font-medium">Arquivo Excel (.xlsx)</Label>
+                    <Label htmlFor="file_complete" className="text-gray-700 font-medium">{source === 'SEINFRA' ? 'Arquivos Excel (.xls) — Insumos e Composições' : 'Arquivo Excel (.xlsx)'}</Label>
                     <Input
                         id="file_complete"
                         type="file"
                         accept=".xls,.xlsx"
-                        onChange={(e) => setFileCSD(e.target.files?.[0] || null)} // Use one state
+                        multiple={source === 'SEINFRA'}
+                        onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
                         disabled={importing}
                     />
                     <p className="text-xs text-muted-foreground">
                         {source === 'SINAPI' 
                             ? 'O sistema buscará automaticamente as abas CSD, CCD e CSE neste arquivo.'
-                            : 'O sistema processará o arquivo no formato padrão da SEINFRA (CE).'}
+                            : 'Selecione juntos o arquivo de Insumos e o de Composições da mesma tabela (mesmos encargos sociais).'}
                     </p>
                 </div>
 
@@ -92,7 +89,7 @@ export function ImportUpload() {
                     <Button
                         className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                         onClick={handleImport}
-                        disabled={importing || !fileCSD}
+                        disabled={importing || files.length === 0}
                     >
                         {importing ? 'Processando (Isso pode demorar)...' : 'Importar Tabela Completa'}
                     </Button>
@@ -115,11 +112,13 @@ export function ImportUpload() {
                         </p>
                         <ul className="list-disc list-inside text-sm text-blue-700 mt-2">
                             <li><strong>{importResult.imported_items}</strong> Composições cadastradas/atualizadas</li>
-                            <li><strong>{importResult.imported_prices}</strong> Preços atualizados (CSD, CCD, CSE)</li>
+                            <li><strong>{importResult.imported_prices}</strong> Preços de composições atualizados</li>
+                            <li><strong>{importResult.imported_analitico ?? 0}</strong> Itens analíticos (composição → insumo)</li>
+                            <li><strong>{importResult.imported_insumo_prices ?? 0}</strong> Preços de insumos atualizados</li>
                         </ul>
                         <div className="mt-4 flex justify-end">
                             <Button variant="outline" onClick={() => {
-                                setFileCSD(null);
+                                setFiles([]);
                                 setImportResult(null);
                                 const el = document.getElementById('file_complete') as HTMLInputElement;
                                 if (el) el.value = '';

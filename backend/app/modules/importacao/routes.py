@@ -84,6 +84,8 @@ async def import_worksheet_data(
 
     total_items = 0
     total_prices = 0
+    total_analitico = 0
+    total_insumo_prices = 0
     results_metadata = []
     falhas = []
 
@@ -109,6 +111,8 @@ async def import_worksheet_data(
 
         total_items += result.get("imported_items", 0)
         total_prices += result.get("imported_prices", 0)
+        total_analitico += result.get("imported_analitico", 0)
+        total_insumo_prices += result.get("imported_insumo_prices", 0)
         results_metadata.append(result.get("metadata"))
 
     if not results_metadata:
@@ -119,6 +123,8 @@ async def import_worksheet_data(
         "status": "parcial" if falhas else "sucesso",
         "imported_items": total_items,
         "imported_prices": total_prices,
+        "imported_analitico": total_analitico,
+        "imported_insumo_prices": total_insumo_prices,
         "metadata_list": results_metadata,
         "falhas": falhas,
     }
