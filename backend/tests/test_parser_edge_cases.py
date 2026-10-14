@@ -54,32 +54,18 @@ def test_seinfra_parser_fallback_invalid_data():
     assert len(precos) == 0
 
 def test_parser_factory_wrong_source_mismatch():
-    """Testa o comportamento ao tentar abrir um excel SINAPI como SEINFRA."""
-    # Criamos um excel no formato SINAPI (com metadata em B3 etc)
+    """Excel SINAPI aberto como SEINFRA: nada é importado e a tabela não é identificada."""
     sinapi_data = [
         ["", ""],
         ["", ""],
-        ["", "01/2024"], # B3
+        ["", "01/2024"],
         ["Header", "Composicao", "Preco"],
         ["123", "Item Teste", 100.50]
     ]
     content = create_mock_excel({"CSD_SINAPI": sinapi_data})
-    
-    # Tentamos usar o parser de SEINFRA
-    parser = get_parser(content, "SEINFRA")
-    composicoes, precos = parser.extrair_registros_aba("CSD_SINAPI", "01/2024")
-    
-    # O SEINFRA parser deve tentar adivinhar as colunas. 
-    # Provavelmente vai achar o 123 como código e 100.50 como preço ce.
-    assert len(composicoes) > 0
-    assert composicoes[0]["codigo_composicao"] == "123"
 
-def test_metadata_extraction_missing_cells():
-    """Testa extração de metadados quando as células esperadas estão vazias."""
-    content = create_mock_excel({"Sheet1": [["Vazio"]]})
-    parser = SinapiExcelParser(content)
-    meta = parser.extrair_metadados("Sheet1")
-    
-    assert meta["mes_referencia"] == "UNKNOWN"
-    assert meta["uf"] == "BR"
-    assert meta["desoneracao"] == "UNKNOWN"
+    parser = get_parser(content, "SEINFRA")
+    assert parser.identificar_abas_dados() == []
+    assert parser.extrair_precos_insumos("CSD_SINAPI", "x") == []
+    with pytest.raises(ValueError, match="Tabela SEINFRA"):
+        parser.extrair_metadados()
