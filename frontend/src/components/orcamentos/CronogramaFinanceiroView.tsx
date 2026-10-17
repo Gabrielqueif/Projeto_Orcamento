@@ -59,7 +59,7 @@ export function CronogramaFinanceiroView({ orcamentoId }: CronogramaFinanceiroVi
   // SVG Chart Dimensions
   const width = 800;
   const height = 280;
-  const paddingLeft = 60;
+  const paddingLeft = 90;
   const paddingRight = 60;
   const paddingTop = 30;
   const paddingBottom = 40;
@@ -68,11 +68,10 @@ export function CronogramaFinanceiroView({ orcamentoId }: CronogramaFinanceiroVi
   const chartInnerHeight = height - paddingTop - paddingBottom;
 
   // X coordinate calculation
-  const getX = (index: number) => {
-    if (mensalData.length <= 1) return paddingLeft + chartInnerWidth / 2;
-    const step = chartInnerWidth / (mensalData.length - 1);
-    return paddingLeft + index * step;
-  };
+  // Cada mês ocupa uma faixa; barra/ponto ficam centralizados nela (nunca sobre os eixos)
+  const slotWidth = chartInnerWidth / mensalData.length;
+  const barWidth = Math.min(36, slotWidth * 0.5);
+  const getX = (index: number) => paddingLeft + (index + 0.5) * slotWidth;
 
   // Y coordinate for monthly disbursement bars
   const maxVal = Math.max(...mensalData.map((item) => item.valor), 1);
@@ -177,7 +176,6 @@ export function CronogramaFinanceiroView({ orcamentoId }: CronogramaFinanceiroVi
               {/* Monthly Disbursement Bars */}
               {mensalData.map((item, idx) => {
                 const x = getX(idx);
-                const barWidth = 36;
                 const y = getBarY(item.valor);
                 const barH = getBarHeight(item.valor);
                 const isPico = idx === picoIndex;

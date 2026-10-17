@@ -16,13 +16,16 @@ import {
   Question,
   SignOut,
   Coins,
+  UploadSimple,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { logout } from "@/app/auth/actions";
 import Image from "next/image";
+import { useUserRole } from "@/hooks/use-user-role";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { role } = useUserRole();
 
   const links = [
     { href: "/", icon: SquaresFour, label: "Dashboard" },
@@ -32,6 +35,9 @@ export function Sidebar() {
     { href: "/equipe", icon: Users, label: "Equipe" },
     { href: "/docs", icon: FileText, label: "Docs" },
     { href: "/diario", icon: BookOpen, label: "Diário de Obra" },
+    ...(role === "admin"
+      ? [{ href: "/admin/sinapi", icon: UploadSimple, label: "Importação" }]
+      : []),
   ];
   return (
     <aside className="w-[256px] bg-[#001b3d] text-white flex flex-col fixed h-screen left-0 top-0 z-50">
