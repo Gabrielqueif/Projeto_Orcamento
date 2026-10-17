@@ -10,9 +10,10 @@ import {
   DownloadSimple,
   MagnifyingGlass,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Trash
 } from "@phosphor-icons/react";
-import { getOrcamentos, getOrcamentoStats, type Orcamento, type OrcamentoStats } from "@/lib/api/orcamentos";
+import { getOrcamentos, getOrcamentoStats, deleteOrcamento, type Orcamento, type OrcamentoStats } from "@/lib/api/orcamentos";
 
 import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus, type OrcamentoStatus } from "@/lib/orcamentoStatus";
 
@@ -64,6 +65,29 @@ export default function OrcamentosPage() {
     if (activeFilter === "todos") return true;
     return normalizeStatus(o.status) === activeFilter;
   });
+
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (o: Orcamento) => {
+    if (
+      !window.confirm(
+        `Tem certeza que deseja excluir o orçamento "${o.nome}"? Esta ação não pode ser desfeita e remove também seus itens.`
+      )
+    ) {
+      return;
+    }
+    try {
+      setDeletingId(o.id);
+      await deleteOrcamento(o.id);
+      setOrcamentos((prev) => prev.filter((x) => x.id !== o.id));
+      carregarStats();
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : "Erro ao excluir o orçamento.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleRowClick = (id: string) => {
     router.push(`/orcamentos/${id}`);
@@ -323,7 +347,17 @@ export default function OrcamentosPage() {
                     </td>
 
                     {/* Action */}
-                    <td className="px-6 py-4 align-middle text-right" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-6 py-4 align-middle text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        title="Excluir orçamento"
+                        aria-label={`Excluir orçamento ${o.nome}`}
+                        onClick={() => handleDelete(o)}
+                        disabled={deletingId === o.id}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] text-[#94a3b8] hover:text-[#dc2626] hover:bg-[#fef2f2] transition-colors border-none bg-transparent cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Trash size={16} weight="bold" />
+                      </button>
                       <Link
                         href={`/orcamentos/${o.id}`}
                         className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] text-[#94a3b8] hover:text-[#001b3d] hover:bg-[#f1f5f9] transition-colors no-underline"

@@ -45,7 +45,10 @@ def composicoes():
 
 
 def test_metadados_identificam_tabela_e_encargos(composicoes):
-    assert composicoes.extrair_metadados()["mes_referencia"] == TABELA
+    mes = composicoes.extrair_metadados()["mes_referencia"]
+    assert mes == "T028.1-84.44%"
+    assert "," not in mes  # base_referencia do orçamento separa meses por vírgula
+    assert len(mes) <= 15  # limite da coluna mes_referencia (varchar(15))
 
 
 def test_composicoes_e_precos_atravessam_abas(composicoes):
@@ -83,7 +86,7 @@ def test_insumos_viram_precos_ce():
             }
         )
     )
-    assert parser.extrair_metadados()["mes_referencia"] == TABELA
+    assert parser.extrair_metadados()["mes_referencia"] == "T028.1-84.44%"
     assert parser.identificar_abas_dados() == []
     assert parser.identificar_aba_analitico() is None
     [aba] = parser.identificar_abas_precos_insumos()
