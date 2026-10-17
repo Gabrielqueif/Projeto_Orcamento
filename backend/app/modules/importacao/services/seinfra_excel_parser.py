@@ -25,7 +25,7 @@ class SeinfraExcelParser(BaseExcelParser):
       O relatório pode continuar em outras abas (limite de linhas do .xls).
 
     Não há mês de referência nos arquivos: a tabela (ex.: "Tabela 028.1 - ENC. SOCIAIS 84,44%")
-    é usada como `mes_referencia`, o que também separa as versões de encargos sociais.
+    é usada, de forma abreviada (ex.: "T028.1-84.44%"), como `mes_referencia`, o que também separa as versões de encargos sociais.
     """
 
     def __init__(self, file_content: bytes):
@@ -93,7 +93,9 @@ class SeinfraExcelParser(BaseExcelParser):
             for celula in linha:
                 m = _RE_TABELA.search(celula or "")
                 if m:
-                    mes = f"Tabela {m.group(1)} - ENC. SOCIAIS {m.group(2)}%"
+                    # mes_referencia é varchar(15) no banco: formato curto, ex.: "T028.1-84,44%"
+                    # sem vírgula: base_referencia do orçamento guarda vários meses separados por ","
+                    mes = f"T{m.group(1)}-{m.group(2).replace(',', '.')}%"
                     break
             if mes != "UNKNOWN":
                 break

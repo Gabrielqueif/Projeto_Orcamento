@@ -44,6 +44,8 @@ const ESTADOS = [
   { value: "to", label: "TO - Tocantins" },
 ];
 
+const FONTES = ["SINAPI", "SEINFRA"];
+
 export default function NovoOrcamentoPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -82,24 +84,49 @@ export default function NovoOrcamentoPage() {
       .finally(() => setLoadingBases(false));
   }, []);
 
-  const mesesDisponiveis = useMemo(() => {
-    const meses = bases
-      .filter((b) => b.fonte === baseReferencia)
-      .map((b) => b.mes_referencia);
-    // mes_referencia vem como MM/AAAA: ordena por ano e mês, do mais recente ao mais antigo
+  // A SEINFRA só tem preços do Ceará: a base fica disponível apenas quando o estado é CE
+  const seinfraHabilitada = estado === "ce";
+
+  const handleEstadoChange = (novoEstado: string) => {
+    setEstado(novoEstado);
+    if (novoEstado !== "ce") {
+      if (baseReferencia === "SEINFRA") setBaseReferencia("SINAPI");
+      setMesesEscolhidos((prev) => ({ ...prev, SEINFRA: [] }));
+    }
+  };
+
+  // Todas as tabelas importadas, agrupadas por fonte (a fonte do orçamento vem primeiro)
+  const gruposMeses = useMemo(() => {
+    // SINAPI usa MM/AAAA: ordena por ano e mês, do mais recente ao mais antigo
     const chave = (m: string) => m.split("/").reverse().join("");
-    return Array.from(new Set(meses)).sort((a, b) => chave(b).localeCompare(chave(a)));
-  }, [bases, baseReferencia]);
+    const fontes = [
+      baseReferencia,
+      ...FONTES.filter((f) => f !== baseReferencia && (f !== "SEINFRA" || seinfraHabilitada)),
+    ];
+    return fontes.map((fonte) => {
+      const meses = bases.filter((b) => b.fonte === fonte).map((b) => b.mes_referencia);
+      return {
+        fonte,
+        meses: Array.from(new Set(meses)).sort((a, b) => chave(b).localeCompare(chave(a))),
+      };
+    });
+  }, [bases, baseReferencia, seinfraHabilitada]);
 
-  // Sem escolha explícita para a fonte, pré-marca o mês mais recente
-  const mesesSelecionados = mesesEscolhidos[baseReferencia] ?? mesesDisponiveis.slice(0, 1);
+  const mesesDisponiveis = gruposMeses[0].meses;
 
-  const toggleMes = (mes: string) => {
+  // Sem escolha explícita, pré-marca só o mês mais recente da fonte do orçamento
+  const selecionadosDe = (fonte: string, meses: string[]) =>
+    mesesEscolhidos[fonte] ?? (fonte === baseReferencia ? meses.slice(0, 1) : []);
+
+  const mesesSelecionados = gruposMeses.flatMap((g) => selecionadosDe(g.fonte, g.meses));
+
+  const toggleMes = (fonte: string, mes: string) => {
+    const grupo = gruposMeses.find((g) => g.fonte === fonte);
     setMesesEscolhidos((prev) => {
-      const atual = prev[baseReferencia] ?? mesesDisponiveis.slice(0, 1);
+      const atual = prev[fonte] ?? selecionadosDe(fonte, grupo?.meses ?? []);
       return {
         ...prev,
-        [baseReferencia]: atual.includes(mes) ? atual.filter((m) => m !== mes) : [...atual, mes],
+        [fonte]: atual.includes(mes) ? atual.filter((m) => m !== mes) : [...atual, mes],
       };
     });
   };
@@ -247,7 +274,7 @@ export default function NovoOrcamentoPage() {
                 </label>
                 <select 
                   value={estado}
-                  onChange={(e) => setEstado(e.target.value)}
+                  onChange={(e) => handleEstadoChange(e.target.value)}
                   className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all cursor-pointer"
                 >
                   {ESTADOS.map((est) => (
@@ -297,7 +324,9 @@ export default function NovoOrcamentoPage() {
                   className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all cursor-pointer"
                 >
                   <option value="SINAPI">SINAPI</option>
-                  <option value="SEINFRA">SEINFRA</option>
+                  <option value="SEINFRA" disabled={!seinfraHabilitada}>
+                    {seinfraHabilitada ? "SEINFRA" : "SEINFRA (disponível apenas para CE)"}
+                  </option>
                 </select>
               </div>
 
@@ -325,31 +354,48 @@ export default function NovoOrcamentoPage() {
                   <p className="text-sm text-red-600">
                     Não foi possível carregar os meses de referência. Verifique se o servidor da API está ativo e configurado.
                   </p>
-                ) : mesesDisponiveis.length === 0 ? (
-                  <p className="text-sm text-[#44474e]">
-                    Nenhum mês importado para a base {baseReferencia}.
-                  </p>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {mesesDisponiveis.map((mes) => {
-                      const checked = mesesSelecionados.includes(mes);
+                  <div className="flex flex-col gap-8">
+                    {gruposMeses.map(({ fonte, meses }) => {
+                      const selecionados = selecionadosDe(fonte, meses);
                       return (
-                        <label
-                          key={mes}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-[8px] border text-sm cursor-pointer transition-all ${
-                            checked
-                              ? "border-[#b9f61d] bg-[#b9f61d]/10 text-black"
-                              : "border-[#c4c6cf]/40 bg-[#f1f4f6] text-[#44474e]"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleMes(mes)}
-                            className="accent-[#4b6700] cursor-pointer"
-                          />
-                          {mes}
-                        </label>
+                        <div key={fonte} className="flex flex-col gap-3">
+                          <h3 className="font-['Hanken_Grotesk'] font-bold text-[12px] text-black tracking-wider uppercase">
+                            {fonte}
+                            {fonte === baseReferencia && (
+                              <span className="ml-2 font-medium normal-case text-[11px] text-[#44474e]">
+                                (base do orçamento)
+                              </span>
+                            )}
+                          </h3>
+                          {meses.length === 0 ? (
+                            <p className="text-sm text-[#44474e]">Nenhuma tabela importada para a base {fonte}.</p>
+                          ) : (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                              {meses.map((mes) => {
+                                const checked = selecionados.includes(mes);
+                                return (
+                                  <label
+                                    key={mes}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-[8px] border text-sm cursor-pointer transition-all ${
+                                      checked
+                                        ? "border-[#b9f61d] bg-[#b9f61d]/10 text-black"
+                                        : "border-[#c4c6cf]/40 bg-[#f1f4f6] text-[#44474e]"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() => toggleMes(fonte, mes)}
+                                      className="accent-[#4b6700] cursor-pointer"
+                                    />
+                                    {mes}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>

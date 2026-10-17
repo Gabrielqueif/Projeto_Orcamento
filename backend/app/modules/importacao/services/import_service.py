@@ -77,12 +77,14 @@ def process_import_file(file_content: bytes, repository: ItemRepository, source_
         q_comp = repository.upsert_batch_composicoes(todas_composicoes)
         q_est = repository.upsert_batch_estados(todos_precos)
 
+        extraidos = len(todas_composicoes) + len(todos_precos)
         q_analitico = 0
         if hasattr(parser, "identificar_aba_analitico"):
             aba_analitico = parser.identificar_aba_analitico()
             if aba_analitico:
                 logger.info("Extraindo aba Analítico: '%s'", aba_analitico)
                 relacoes = parser.extrair_analitico(aba_analitico, metadata.mes_referencia, fonte=source_type)
+                extraidos += len(relacoes)
                 q_analitico = repository.upsert_batch_composicao_itens(relacoes)
                 logger.info("%d relacionamentos analíticos importados.", q_analitico)
 
@@ -91,8 +93,14 @@ def process_import_file(file_content: bytes, repository: ItemRepository, source_
             precos_insumos: List[dict] = []
             for aba in parser.identificar_abas_precos_insumos():
                 precos_insumos.extend(parser.extrair_precos_insumos(aba, metadata.mes_referencia, fonte=source_type))
+            extraidos += len(precos_insumos)
             q_insumos = repository.upsert_batch_precos_insumos(precos_insumos)
             logger.info("%d preços de insumos importados.", q_insumos)
+
+        if extraidos and not (q_comp or q_est or q_analitico or q_insumos):
+            raise ValueError(
+                f"{extraidos} registros lidos da planilha, mas nenhum foi gravado no banco. Veja os logs do servidor."
+            )
 
         return {
             "status": "sucesso",
