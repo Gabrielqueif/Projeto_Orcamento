@@ -6,6 +6,8 @@ export interface ItemComposicao {
   unidade: string;
   preco?: number;
   fonte: string;
+  base_propria_id?: string;
+  base_propria_nome?: string;
 }
 
 export interface VariableConfig {
