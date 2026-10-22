@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Calendar, CaretDown, MagnifyingGlass, ArrowRight } from "@phosphor-icons/react";
+import { Plus, Calendar, CaretDown, MagnifyingGlass, ArrowRight, Trash } from "@phosphor-icons/react";
 import { getOrcamentos, getEtapas, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
-import { getObras, type Obra } from "@/lib/api/obras";
+import { excluirObra, getObras, type Obra } from "@/lib/api/obras";
+import { useToast } from "@/components/common/toast";
 
 interface ObraItemData {
   orcamento: Orcamento;
@@ -42,6 +43,8 @@ export default function ObrasPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("todos");
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const carregarDados = async (nome?: string) => {
     try {
@@ -120,6 +123,27 @@ export default function ObrasPage() {
     }, 500);
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
+
+  const excluirObraDaLista = async (item: ObraItemData) => {
+    if (!item.obra) return;
+    const confirmado = window.confirm(
+      `Excluir a obra "${item.orcamento.nome}"?\n\n` +
+        "Serão apagados o diário, as medições, o estoque, as locações e os lançamentos financeiros dela. " +
+        "O orçamento é mantido.\n\nEssa ação não pode ser desfeita."
+    );
+    if (!confirmado) return;
+
+    try {
+      setExcluindoId(item.obra.id);
+      await excluirObra(item.obra.id);
+      showToast("Obra excluída", `"${item.orcamento.nome}" foi removida. O orçamento continua disponível.`, "success");
+      await carregarDados(searchTerm);
+    } catch (err) {
+      showToast("Não foi possível excluir a obra", err instanceof Error ? err.message : undefined, "error");
+    } finally {
+      setExcluindoId(null);
+    }
+  };
 
   const filteredItems = obrasItems.filter((item) => {
     if (activeFilter === "todos") return true;
@@ -314,12 +338,26 @@ export default function ObrasPage() {
 
                   {/* Action */}
                   <td className="px-6 py-4 align-middle text-right">
-                    <Link
-                      href={`/obras/${item.orcamento.id}`}
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] text-[#94a3b8] hover:text-[#001b3d] hover:bg-[#f1f5f9] transition-colors no-underline"
-                    >
-                      <ArrowRight size={16} weight="bold" />
-                    </Link>
+                    <div className="flex items-center justify-end gap-1">
+                      {item.obra && (
+                        <button
+                          type="button"
+                          onClick={() => excluirObraDaLista(item)}
+                          disabled={excluindoId === item.obra.id}
+                          aria-label={`Excluir obra ${item.orcamento.nome}`}
+                          title="Excluir obra"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] text-[#94a3b8] hover:text-[#dc2626] hover:bg-[#fef2f2] transition-colors cursor-pointer border-none bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Trash size={16} />
+                        </button>
+                      )}
+                      <Link
+                        href={`/obras/${item.orcamento.id}`}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] text-[#94a3b8] hover:text-[#001b3d] hover:bg-[#f1f5f9] transition-colors no-underline"
+                      >
+                        <ArrowRight size={16} weight="bold" />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))

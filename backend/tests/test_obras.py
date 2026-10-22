@@ -517,3 +517,112 @@ def test_repo_atualizar_status_sucesso():
     res = repo.atualizar_obra_status("1", "CONCLUIDA")
     assert res == dados
 
+
+# ---------------------------------------------------------------------------
+# Exclusão de obra
+# ---------------------------------------------------------------------------
+
+def _service_exclusao(monkeypatch, real="obra-real"):
+    from app.modules.obra import services as obra_services
+
+    monkeypatch.setattr(obra_services, "resolver_obra_id", lambda supabase, obra_id: real)
+    repo = MagicMock()
+    repo.listar_caminhos_fotos_diario.return_value = ["obra-real/d1/a.jpg"]
+    repo.deletar_obra.return_value = True
+    return ObraService(repo, MagicMock(), MagicMock(), MagicMock(), MagicMock()), repo
+
+
+def test_excluir_obra_apaga_a_obra_e_depois_as_fotos(monkeypatch):
+    service, repo = _service_exclusao(monkeypatch)
+    service.excluir_obra("id-do-orcamento")
+
+    repo.deletar_obra.assert_called_once_with("obra-real")
+    repo.remover_arquivos_diario.assert_called_once_with(["obra-real/d1/a.jpg"])
+
+
+def test_excluir_obra_inexistente(monkeypatch):
+    from app.modules.obra import services as obra_services
+    from core.exceptions import NaoEncontradoError
+
+    monkeypatch.setattr(obra_services, "resolver_obra_id", lambda supabase, obra_id: None)
+    repo = MagicMock()
+    service = ObraService(repo, MagicMock(), MagicMock(), MagicMock(), MagicMock())
+
+    with pytest.raises(NaoEncontradoError):
+        service.excluir_obra("x")
+    repo.deletar_obra.assert_not_called()
+
+
+def test_excluir_obra_nao_apaga_arquivos_se_a_exclusao_falhar(monkeypatch):
+    from core.exceptions import NaoEncontradoError
+
+    service, repo = _service_exclusao(monkeypatch)
+    repo.deletar_obra.return_value = False
+
+    with pytest.raises(NaoEncontradoError):
+        service.excluir_obra("x")
+    repo.remover_arquivos_diario.assert_not_called()
+
+
+def test_repo_listar_caminhos_fotos_diario():
+    from app.modules.obra.repositories import ObraRepository
+
+    sb = MagicMock()
+    sb.table.return_value.select.return_value.eq.return_value.execute.return_value.data = [{"id": "d1"}, {"id": "d2"}]
+    sb.table.return_value.select.return_value.in_.return_value.execute.return_value.data = [
+        {"caminho": "o/d1/a.jpg"},
+        {"caminho": "o/d2/b.png"},
+    ]
+    assert ObraRepository(sb).listar_caminhos_fotos_diario("o") == ["o/d1/a.jpg", "o/d2/b.png"]
+
+
+def test_repo_listar_caminhos_sem_diarios_nao_consulta_fotos():
+    from app.modules.obra.repositories import ObraRepository
+
+    sb = MagicMock()
+    sb.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []
+    assert ObraRepository(sb).listar_caminhos_fotos_diario("o") == []
+    sb.table.return_value.select.return_value.in_.assert_not_called()
+
+
+def test_repo_remover_arquivos_engole_falha_do_storage():
+    from app.modules.obra.repositories import ObraRepository
+
+    sb = MagicMock()
+    sb.storage.from_.return_value.remove.side_effect = RuntimeError("storage fora")
+    ObraRepository(sb).remover_arquivos_diario(["a.jpg"])  # não levanta
+    ObraRepository(sb).remover_arquivos_diario([])  # nada a remover
+
+
+def test_repo_deletar_obra():
+    from app.modules.obra.repositories import ObraRepository
+
+    sb = MagicMock()
+    sb.table.return_value.delete.return_value.eq.return_value.execute.return_value.data = [{"id": "o1"}]
+    assert ObraRepository(sb).deletar_obra("o1") is True
+    sb.table.return_value.delete.return_value.eq.return_value.execute.return_value.data = []
+    assert ObraRepository(sb).deletar_obra("o1") is False
+
+
+def test_rota_excluir_obra(client, monkeypatch):
+    from app.main import app
+    from app.modules.obra.routes import get_obra_service
+
+    service, repo = _service_exclusao(monkeypatch)
+    app.dependency_overrides[get_obra_service] = lambda: service
+
+    resposta = client.delete("/obras/obra-real")
+    assert resposta.status_code == 200
+    assert resposta.json() == {"message": "Obra excluída com sucesso"}
+    repo.deletar_obra.assert_called_once_with("obra-real")
+
+
+def test_rota_excluir_obra_inexistente_responde_404(client, monkeypatch):
+    from app.main import app
+    from app.modules.obra.routes import get_obra_service
+
+    service, repo = _service_exclusao(monkeypatch)
+    repo.deletar_obra.return_value = False
+    app.dependency_overrides[get_obra_service] = lambda: service
+
+    assert client.delete("/obras/x").status_code == 404

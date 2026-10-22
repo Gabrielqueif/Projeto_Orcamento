@@ -136,3 +136,13 @@ export async function atualizarStatusObra(
 
   return response.json();
 }
+
+// Exclui a obra e o acompanhamento dela (diário, medições, estoque, locações e despesas); o orçamento é mantido.
+export async function excluirObra(obraId: string): Promise<void> {
+  const response = await fetchWithAuth(`/obras/${obraId}`, { method: "DELETE" });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || "Erro ao excluir obra");
+  }
+}

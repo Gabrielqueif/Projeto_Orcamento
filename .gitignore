@@ -10,3 +10,4 @@ olhar depois/
 coverage.xml
 htmlcov/
 .venv/
+.claude/

@@ -1,6 +1,8 @@
 import logging
 from typing import Any, Dict, List, Optional
 
+from app.modules.diario.repositories import BUCKET_FOTOS
+
 logger = logging.getLogger("projeto_orcamento")
 
 TABELA_OBRAS = "obras"
@@ -107,3 +109,30 @@ class ObraRepository:
         except Exception as e:
             logger.error(f"Erro no ObraRepository.atualizar_obra_status: {e}")
             raise e
+
+    def listar_caminhos_fotos_diario(self, obra_id: str) -> List[str]:
+        """Arquivos do Storage que pertencem aos diários da obra (o banco não os apaga em cascata)."""
+        diarios = self.supabase.table("diarios_obra").select("id").eq("obra_id", obra_id).execute().data or []
+        diario_ids = [d["id"] for d in diarios]
+        if not diario_ids:
+            return []
+        fotos = self.supabase.table("diario_fotos").select("caminho").in_("diario_id", diario_ids).execute().data or []
+        return [f["caminho"] for f in fotos]
+
+    def deletar_obra(self, obra_id: str) -> bool:
+        """Apaga a obra; estoque, locações, despesas, limites, diários e medições saem em cascata."""
+        try:
+            resultado = self.supabase.table(TABELA_OBRAS).delete().eq("id", obra_id).execute()
+            return bool(resultado.data)
+        except Exception as e:
+            logger.error(f"Erro ao deletar obra {obra_id}: {e}")
+            raise e
+
+    def remover_arquivos_diario(self, caminhos: List[str]) -> None:
+        if not caminhos:
+            return
+        try:
+            self.supabase.storage.from_(BUCKET_FOTOS).remove(caminhos)
+        except Exception as e:
+            # A obra já foi apagada; arquivo órfão não deve desfazer nem falhar a exclusão.
+            logger.error(f"Falha ao remover fotos do diário da obra excluída: {e}")
