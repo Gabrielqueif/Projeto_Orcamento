@@ -1,17 +1,21 @@
 import logging
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from app.dependencies import get_supabase
+from app.modules.base_propria.repositories import BasePropriaRepository
+from app.modules.base_propria.services import BasePropriaService
 from app.modules.composicao.repositories import ItemRepository
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.importacao.services.pdf_service import PdfService
 from app.modules.orcamento.bdi import FAIXAS_REFERENCIA_TCU, calcular_bdi_tcu
 from app.modules.orcamento.repositories import InsumoRepository, OrcamentoItemRepository, OrcamentoRepository
 from app.modules.orcamento.schemas import (
+    AtualizarPrecosPropriaResponse,
     BDICalculateRequest,
     BDICalculateResponse,
+    ComposicaoPropriaBuscaResponse,
     CronogramaResponse,
     CurvaABCResponse,
     OrcamentoCreate,
@@ -23,7 +27,7 @@ from app.modules.orcamento.schemas import (
     OrcamentoStatsResponse,
     OrcamentoUpdate,
 )
-from app.modules.orcamento.services import OrcamentoItemService, OrcamentoService
+from app.modules.orcamento.services import OrcamentoItemService, OrcamentoService, anexar_nome_base_propria
 from core.ownership import enforce_ownership
 from core.security import get_current_user
 
@@ -46,7 +50,12 @@ def get_orcamento_item_service(supabase=Depends(get_supabase)) -> OrcamentoItemS
     orcamento_repo = OrcamentoRepository(supabase)
     orcamento_item_repo = OrcamentoItemRepository(supabase)
     insumo_repo = InsumoRepository(supabase)
-    return OrcamentoItemService(orcamento_item_repo, orcamento_repo, item_repo, insumo_repo)
+    base_propria = BasePropriaService(BasePropriaRepository(supabase), item_repo)
+    return OrcamentoItemService(orcamento_item_repo, orcamento_repo, item_repo, insumo_repo, base_propria)
+
+
+def get_base_propria_service(supabase=Depends(get_supabase)) -> BasePropriaService:
+    return BasePropriaService(BasePropriaRepository(supabase), ItemRepository(supabase))
 
 
 # --- Rotas de Orçamentos ---
@@ -144,18 +153,21 @@ async def deletar_orcamento(orcamento_id: str, service: OrcamentoService = Depen
 
 @router.get("/{orcamento_id}/pdf", tags=["Orçamentos"])
 async def download_pdf_orcamento(
-    orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service), supabase=Depends(get_supabase)
+    orcamento_id: str,
+    service: OrcamentoService = Depends(get_orcamento_service),
+    base_propria: BasePropriaService = Depends(get_base_propria_service),
 ):
     """Gera e retorna um relatório em PDF do orçamento"""
     try:
         orcamento = service.buscar_orcamento(orcamento_id)
         itens = service.item_repository.listar_por_orcamento(orcamento_id)
+        anexar_nome_base_propria(itens, base_propria, orcamento.get("user_id"))
 
         pdf_service = PdfService()
         pdf_bytes = pdf_service.gerar_pdf(orcamento, itens)
 
         return Response(
-            content=pdf_bytes,
+            content=bytes(pdf_bytes),
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento_id}.pdf"},
         )
@@ -167,13 +179,18 @@ async def download_pdf_orcamento(
 
 
 @router.get("/{orcamento_id}/excel", tags=["Orçamentos"])
-async def download_excel_orcamento(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
+async def download_excel_orcamento(
+    orcamento_id: str,
+    service: OrcamentoService = Depends(get_orcamento_service),
+    base_propria: BasePropriaService = Depends(get_base_propria_service),
+):
     """Gera e retorna a planilha orçamentária em formato Excel (.xlsx)"""
     try:
         from app.modules.orcamento.export import gerar_planilha_orcamento_excel
 
         orcamento = service.buscar_orcamento(orcamento_id)
         itens = service.item_repository.listar_por_orcamento(orcamento_id)
+        anexar_nome_base_propria(itens, base_propria, orcamento.get("user_id"))
 
         excel_bytes = gerar_planilha_orcamento_excel(
             orcamento.model_dump() if hasattr(orcamento, "model_dump") else dict(orcamento),
@@ -254,6 +271,37 @@ async def listar_itens(orcamento_id: str, service: OrcamentoItemService = Depend
         return service.listar_itens(orcamento_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post(
+    "/{orcamento_id}/itens/atualizar-precos-propria",
+    response_model=AtualizarPrecosPropriaResponse,
+    summary="Prévia ou aplicação da atualização de preços dos itens da base própria",
+    tags=["Itens do Orçamento"],
+)
+async def atualizar_precos_propria(
+    orcamento_id: str,
+    aplicar: bool = Query(False, description="false devolve só a prévia; true grava os novos preços"),
+    service: OrcamentoItemService = Depends(get_orcamento_item_service),
+):
+    """Reprecifica os itens PROPRIA com o preço atual da base; sem `aplicar` nada é gravado."""
+    return service.atualizar_precos_propria(orcamento_id, aplicar)
+
+
+@router.get(
+    "/{orcamento_id}/buscar-composicoes-proprias",
+    response_model=List[ComposicaoPropriaBuscaResponse],
+    summary="Buscar composições nas bases próprias do dono do orçamento",
+    tags=["Itens do Orçamento"],
+)
+async def buscar_composicoes_proprias(
+    orcamento_id: str,
+    termo: str = Query("", description="Trecho do código ou da descrição"),
+    limite: int = Query(20, ge=1, le=100),
+    service: OrcamentoItemService = Depends(get_orcamento_item_service),
+):
+    """Autocomplete: composições próprias já precificadas com UF, mês e tipo do orçamento."""
+    return service.buscar_composicoes_proprias(orcamento_id, termo, limite)
 
 
 @router.put(

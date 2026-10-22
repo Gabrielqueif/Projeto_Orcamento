@@ -401,7 +401,27 @@ class BasePropriaService:
         uf = uf.upper()
         tipo = tipo or TIPO_PADRAO
         calculo = _CalculoPreco(self, base_id, uf, mes, tipo)
+        return self._detalhar_preco(calculo, composicao, uf, mes, tipo)
 
+    def calcular_precos_por_codigo(
+        self, base_id: str, codigos: List[str], uf: str, mes: str, tipo: Optional[str] = None
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Mesmo cálculo de `calcular_preco` para várias composições (por código) carregando a base uma só vez.
+        Códigos que não existem mais na base ficam de fora do resultado.
+        """
+        uf = uf.upper()
+        tipo = tipo or TIPO_PADRAO
+        calculo = _CalculoPreco(self, base_id, uf, mes, tipo)
+        resultado: Dict[str, Dict[str, Any]] = {}
+        for codigo in dict.fromkeys(codigos):
+            composicao = calculo.composicoes.get(codigo)
+            if composicao is not None:
+                resultado[codigo] = self._detalhar_preco(calculo, composicao, uf, mes, tipo)
+        return resultado
+
+    @staticmethod
+    def _detalhar_preco(calculo: "_CalculoPreco", composicao: Dict[str, Any], uf: str, mes: str, tipo: str):
         itens = []
         total = Decimal(0)
         for item in calculo.itens_por_composicao.get(composicao["id"], []):
@@ -416,6 +436,7 @@ class BasePropriaService:
                     "ref_codigo": item["ref_codigo"],
                     "descricao": registro["descricao"] if registro else None,
                     "unidade": registro["unidade"] if registro else None,
+                    "tipo_insumo": registro.get("tipo") if registro else None,
                     "coeficiente": float(coeficiente),
                     "preco_unitario": float(preco.quantize(QUATRO_CASAS)) if preco is not None else None,
                     "subtotal": float(subtotal.quantize(QUATRO_CASAS)),

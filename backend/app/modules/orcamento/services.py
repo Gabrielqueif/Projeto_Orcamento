@@ -2,6 +2,7 @@ import logging
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, Optional
 
+from app.modules.base_propria.services import BasePropriaService
 from app.modules.composicao.repositories import ItemRepository
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.orcamento.bdi import BDIConfig, calcular_bdi_tcu, determinar_tipo_bdi_item
@@ -10,6 +11,24 @@ from app.modules.orcamento.schemas import OrcamentoCreate, OrcamentoItemCreate, 
 from core.exceptions import NaoEncontradoError
 
 logger = logging.getLogger("projeto_orcamento")
+
+FONTE_PROPRIA = "PROPRIA"
+TIPOS_INSUMO_PROPRIO = {"MATERIAL", "MAO_DE_OBRA", "EQUIPAMENTO", "SERVICO"}
+
+
+def anexar_nome_base_propria(itens: list, base_propria_service: Optional[BasePropriaService], user_id: Optional[str]):
+    """Preenche `base_propria_nome` nos itens PROPRIA (exibição, PDF e Excel). Não altera itens de outras fontes."""
+    propria = [i for i in itens if isinstance(i, dict) and i.get("fonte") == FONTE_PROPRIA]
+    if not propria:
+        return itens
+    nomes: Dict[str, Optional[str]] = {}
+    for item in propria:
+        base_id = item.get("base_propria_id")
+        if base_id and base_id not in nomes:
+            base = base_propria_service.repo.buscar_base(base_id, user_id) if base_propria_service else None
+            nomes[base_id] = base["nome"] if base else None
+        item["base_propria_nome"] = nomes.get(base_id) or "Base própria"
+    return itens
 
 
 class OrcamentoService:
@@ -427,11 +446,13 @@ class OrcamentoItemService:
         orcamento_repository: OrcamentoRepository,
         item_repository: ItemRepository,
         insumo_repository: Optional[InsumoRepository] = None,
+        base_propria_service: Optional[BasePropriaService] = None,
     ):
         self.repository = repository
         self.orcamento_repository = orcamento_repository
         self.item_repository = item_repository
         self.insumo_repository = insumo_repository
+        self.base_propria_service = base_propria_service
 
     def _buscar_preco_composicao(
         self, codigo_composicao: str, estado: str, mes_referencia: str, tipo_composicao: str, fonte: str = "SINAPI"
@@ -493,14 +514,20 @@ class OrcamentoItemService:
 
         fonte = item.fonte or orcamento.get("fonte", "SINAPI")
         composicao = {"descricao": item.descricao, "unidade": item.unidade}
+        calculo_propria = None
 
-        if item.codigo_composicao != "MANUAL":
+        if fonte == FONTE_PROPRIA:
+            composicao, calculo_propria = self._resolver_composicao_propria(orcamento, item, estado_para_buscar)
+        elif item.codigo_composicao != "MANUAL":
             comps = self.item_repository.buscar_por_codigo(item.codigo_composicao, fonte=fonte)
             if not comps:
                 raise NaoEncontradoError(f"Composição {item.codigo_composicao} não encontrada na base {fonte}")
             composicao = comps[0]
 
         preco_unitario = item.preco_unitario
+
+        if preco_unitario is None and calculo_propria is not None:
+            preco_unitario = calculo_propria["preco_total"]
 
         if preco_unitario is None:
             preco_unitario = self._buscar_preco_composicao(
@@ -559,6 +586,9 @@ class OrcamentoItemService:
             "variaveis": item.variaveis,
             "created_at": datetime.now().isoformat(),
         }
+        if calculo_propria is not None:
+            # A coluna só existe depois da migration da Fase 5; itens de outras fontes não a enviam.
+            dados_item["base_propria_id"] = item.base_propria_id
 
         novo_item = self.repository.criar(dados_item)
         if not novo_item:
@@ -567,7 +597,10 @@ class OrcamentoItemService:
         self._atualizar_valor_total_orcamento(orcamento_id)
 
         if self.insumo_repository and isinstance(novo_item, dict):
-            self._explodir_insumos(novo_item, orcamento, fonte, estado_para_buscar)
+            if calculo_propria is not None:
+                self._gravar_insumos_propria(novo_item, calculo_propria, item.quantidade)
+            else:
+                self._explodir_insumos(novo_item, orcamento, fonte, estado_para_buscar)
 
         return novo_item
 
@@ -576,19 +609,25 @@ class OrcamentoItemService:
         if not orcamento:
             raise NaoEncontradoError("Orçamento não encontrado")
 
-        return self.repository.listar_por_orcamento(orcamento_id)
+        itens = self.repository.listar_por_orcamento(orcamento_id)
+        return anexar_nome_base_propria(itens, self.base_propria_service, orcamento.get("user_id"))
 
     def atualizar_item(self, orcamento_id: str, item_id: str, item_update: OrcamentoItemUpdate):
         item_atual = self.repository.buscar_por_id(item_id, orcamento_id)
         if not item_atual:
             raise NaoEncontradoError("Item não encontrado")
 
+        self._validar_atualizacao_item_propria(item_atual, item_update)
+
         dados_atualizacao = {}
         codigo_composicao = item_update.codigo_composicao or item_atual.get("codigo_composicao")
         estado = item_update.estado or item_atual.get("estado")
         quantidade = item_update.quantidade if item_update.quantidade is not None else item_atual.get("quantidade", 1.0)
 
-        if item_update.codigo_composicao is not None or item_update.estado is not None or item_update.fonte is not None:
+        muda_referencia = (
+            item_update.codigo_composicao is not None or item_update.estado is not None or item_update.fonte is not None
+        )
+        if muda_referencia and item_atual.get("fonte") != FONTE_PROPRIA:
             orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
             fonte = item_update.fonte or item_atual.get("fonte") or orcamento.get("fonte", "SINAPI")
             preco_unitario = self._buscar_preco_composicao(
@@ -664,6 +703,218 @@ class OrcamentoItemService:
         self._atualizar_valor_total_orcamento(orcamento_id)
 
         return item_atualizado
+
+    # --- Base própria (fonte = PROPRIA) --------------------------------------
+
+    def _exigir_base_propria_service(self) -> BasePropriaService:
+        if not self.base_propria_service:
+            raise ValueError("Base própria não disponível neste contexto")
+        return self.base_propria_service
+
+    @staticmethod
+    def _parametros_preco(orcamento: dict, estado: Optional[str]) -> Dict[str, Any]:
+        return {
+            "uf": (estado or orcamento.get("estado") or "").upper(),
+            "mes": orcamento.get("base_referencia") or "",
+            "tipo": orcamento.get("tipo_composicao") or None,
+        }
+
+    @staticmethod
+    def _exigir_precos_completos(calculo: Dict[str, Any], codigo: str) -> None:
+        ausentes = [f"{i['ref_fonte']}/{i['ref_codigo']}" for i in calculo["itens"] if not i["encontrado"]]
+        if ausentes:
+            raise ValueError(
+                f"A composição própria {codigo} tem itens sem preço para este orçamento: {', '.join(ausentes)}"
+            )
+
+    def _resolver_composicao_propria(self, orcamento: dict, item: OrcamentoItemCreate, estado: str):
+        """Valida a base (dona = dono do orçamento) e calcula a composição própria com UF/mês/tipo do orçamento."""
+        if item.codigo_composicao == "MANUAL" or not item.base_propria_id:
+            raise ValueError("Item de base própria exige base_propria_id e o código da composição")
+        servico = self._exigir_base_propria_service()
+        base = servico.repo.buscar_base(item.base_propria_id, orcamento.get("user_id"))
+        if not base:
+            raise NaoEncontradoError("Base própria não encontrada")
+        composicao = servico.repo.buscar_composicao_por_codigo(base["id"], item.codigo_composicao)
+        if not composicao:
+            raise NaoEncontradoError(f"Composição {item.codigo_composicao} não encontrada na base própria")
+        calculo = servico.calcular_preco(base["id"], composicao["id"], **self._parametros_preco(orcamento, estado))
+        if item.preco_unitario is None:
+            self._exigir_precos_completos(calculo, composicao["codigo"])
+        return composicao, calculo
+
+    def _validar_atualizacao_item_propria(self, item_atual: dict, item_update: OrcamentoItemUpdate) -> None:
+        if item_atual.get("fonte") != FONTE_PROPRIA:
+            if item_update.fonte == FONTE_PROPRIA:
+                raise ValueError("Para usar a base própria, adicione um novo item informando a base")
+            return
+        for campo in ("codigo_composicao", "estado", "fonte"):
+            novo = getattr(item_update, campo)
+            if novo is not None and str(novo).lower() != str(item_atual.get(campo) or "").lower():
+                raise ValueError(
+                    "Item de base própria não muda de composição, estado ou fonte; "
+                    "remova e adicione de novo ou use a atualização de preços da base própria"
+                )
+
+    @staticmethod
+    def _linhas_insumo_propria(item_id: str, calculo: Dict[str, Any], quantidade_pai: float) -> list:
+        linhas = []
+        for linha in calculo["itens"]:
+            coef = float(linha["coeficiente"] or 0)
+            if coef <= 0:
+                continue
+            preco = linha["preco_unitario"]
+            qtd_total = round(coef * quantidade_pai, 6)
+            tipo = linha.get("tipo_insumo")
+            if tipo not in TIPOS_INSUMO_PROPRIO:
+                tipo = "SERVICO" if linha["ref_tipo"] == "COMPOSICAO" else "MATERIAL"
+            linhas.append(
+                {
+                    "orcamento_item_id": item_id,
+                    "codigo_insumo": linha["ref_codigo"],
+                    "descricao": linha["descricao"] or f"{linha['ref_fonte']} {linha['ref_codigo']}",
+                    "unidade": linha["unidade"] or "-",
+                    "quantidade_unitaria": qtd_total,
+                    "preco_unitario_base": preco,
+                    "total": round(qtd_total * preco, 2) if preco else None,
+                    "tipo_item": tipo,
+                }
+            )
+        return linhas
+
+    def _gravar_insumos_propria(self, item: dict, calculo: Dict[str, Any], quantidade_pai: float) -> None:
+        """Analítico do item próprio: mesma forma da explosão SINAPI, para Curva ABC, cronograma e exportações."""
+        try:
+            item_id = item.get("id")
+            self.insumo_repository.deletar_por_item(item_id)
+            batch = self._linhas_insumo_propria(item_id, calculo, quantidade_pai)
+            if batch:
+                self.insumo_repository.criar_batch(batch)
+        except Exception as e:
+            logger.warning(f"Falha ao gravar insumos da composição própria: {e}")
+
+    def atualizar_precos_propria(self, orcamento_id: str, aplicar: bool = False) -> Dict[str, Any]:
+        """
+        Compara o preço congelado dos itens PROPRIA com o preço atual da base. Com `aplicar`, grava os novos
+        preços e recalcula BDI/total do orçamento. Itens com preço incompleto ou insumos editados à mão
+        ficam de fora para não sobrescrever nem subestimar o custo.
+        """
+        orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
+        if not orcamento:
+            raise NaoEncontradoError("Orçamento não encontrado")
+        servico = self._exigir_base_propria_service()
+        dono = orcamento.get("user_id")
+
+        itens = [i for i in self.repository.listar_por_orcamento(orcamento_id) if i.get("fonte") == FONTE_PROPRIA]
+        por_base: Dict[str, list] = {}
+        resultado: Dict[str, Any] = {"itens": [], "ignorados": []}
+        for item in itens:
+            if item.get("base_propria_id"):
+                por_base.setdefault(item["base_propria_id"], []).append(item)
+            else:
+                self._ignorar(resultado, item, "Item sem vínculo com a base (base removida)")
+
+        for base_id, itens_base in por_base.items():
+            if not servico.repo.buscar_base(base_id, dono):
+                for item in itens_base:
+                    self._ignorar(resultado, item, "Base própria não encontrada")
+                continue
+            estados = dict.fromkeys((i.get("estado") or orcamento.get("estado")) for i in itens_base)
+            for estado in estados:
+                grupo = [i for i in itens_base if (i.get("estado") or orcamento.get("estado")) == estado]
+                calculos = servico.calcular_precos_por_codigo(
+                    base_id, [i["codigo_composicao"] for i in grupo], **self._parametros_preco(orcamento, estado)
+                )
+                for item in grupo:
+                    self._avaliar_item_propria(resultado, item, calculos.get(item["codigo_composicao"]), aplicar)
+
+        alterados = [i for i in resultado["itens"] if i["alterado"]]
+        if aplicar and alterados:
+            self._atualizar_valor_total_orcamento(orcamento_id)
+        return {
+            "aplicado": bool(aplicar),
+            "total_itens": len(itens),
+            "itens_alterados": len(alterados),
+            "diferenca_custo_direto": round(sum(i["diferenca_total"] for i in alterados), 2),
+            "itens": [{k: v for k, v in i.items() if k != "diferenca_total"} for i in resultado["itens"]],
+            "ignorados": resultado["ignorados"],
+        }
+
+    @staticmethod
+    def _ignorar(resultado: Dict[str, Any], item: dict, motivo: str) -> None:
+        resultado["ignorados"].append(
+            {"item_id": str(item["id"]), "codigo_composicao": item.get("codigo_composicao", ""), "motivo": motivo}
+        )
+
+    def _avaliar_item_propria(self, resultado: Dict[str, Any], item: dict, calculo: Optional[dict], aplicar: bool):
+        if calculo is None:
+            return self._ignorar(resultado, item, "Composição não existe mais na base própria")
+        if any(not linha["encontrado"] for linha in calculo["itens"]):
+            return self._ignorar(resultado, item, "Composição com itens sem preço para este orçamento")
+        if self.insumo_repository and any(
+            i.get("preco_unitario_custom") is not None for i in self.insumo_repository.listar_por_item(item["id"])
+        ):
+            return self._ignorar(resultado, item, "Item com insumos editados manualmente")
+
+        preco_atual = float(item.get("preco_unitario") or 0.0)
+        preco_novo = calculo["preco_total"]
+        diferenca = round(preco_novo - preco_atual, 2)
+        alterado = diferenca != 0
+        quantidade = float(item.get("quantidade") or 0.0)
+
+        if aplicar and alterado:
+            self.repository.atualizar(
+                item["id"], {"preco_unitario": preco_novo, "preco_total": round(quantidade * preco_novo, 2)}
+            )
+            if self.insumo_repository:
+                self._gravar_insumos_propria(item, calculo, quantidade)
+
+        resultado["itens"].append(
+            {
+                "item_id": str(item["id"]),
+                "codigo_composicao": item["codigo_composicao"],
+                "descricao": item.get("descricao") or "",
+                "base_propria_id": str(item["base_propria_id"]),
+                "preco_atual": preco_atual,
+                "preco_novo": preco_novo,
+                "diferenca": diferenca,
+                "variacao_percentual": round(diferenca / preco_atual * 100, 2) if preco_atual else None,
+                "alterado": alterado,
+                "aplicado": bool(aplicar and alterado),
+                "diferenca_total": diferenca * quantidade,
+            }
+        )
+
+    def buscar_composicoes_proprias(self, orcamento_id: str, termo: str, limite: int = 20) -> list:
+        """Autocomplete: composições das bases do dono do orçamento, já precificadas com UF/mês/tipo do orçamento."""
+        orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
+        if not orcamento:
+            raise NaoEncontradoError("Orçamento não encontrado")
+        servico = self._exigir_base_propria_service()
+        resultados: list = []
+        for base in servico.listar_bases(orcamento.get("user_id")):
+            if len(resultados) >= limite:
+                break
+            composicoes = servico.listar_composicoes(base["id"], termo, limite - len(resultados), 0)
+            if not composicoes:
+                continue
+            precos = servico.calcular_precos_por_codigo(
+                base["id"], [c["codigo"] for c in composicoes], **self._parametros_preco(orcamento, None)
+            )
+            for comp in composicoes:
+                calculo = precos.get(comp["codigo"])
+                resultados.append(
+                    {
+                        "base_propria_id": base["id"],
+                        "base_propria_nome": base["nome"],
+                        "codigo": comp["codigo"],
+                        "descricao": comp["descricao"],
+                        "unidade": comp["unidade"],
+                        "grupo": comp.get("grupo"),
+                        "preco_unitario": calculo["preco_total"] if calculo else None,
+                    }
+                )
+        return resultados
 
     def listar_insumos(self, orcamento_id: str, item_id: str):
         item = self.repository.buscar_por_id(item_id, orcamento_id)

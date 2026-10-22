@@ -6,6 +6,13 @@ import openpyxl
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
 
+def _rotulo_fonte(item: Dict[str, Any]) -> str:
+    fonte = item.get("fonte") or ""
+    if fonte == "PROPRIA":
+        return f"Própria: {item.get('base_propria_nome') or 'Base própria'}"
+    return fonte
+
+
 def gerar_planilha_orcamento_excel(orcamento: Dict[str, Any], itens: List[Dict[str, Any]]) -> bytes:
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -33,7 +40,16 @@ def gerar_planilha_orcamento_excel(orcamento: Dict[str, Any], itens: List[Dict[s
     ws["A2"].font = Font(name="Calibri", size=11, italic=True, color="64748B")
 
     # Linhas da Tabela
-    headers = ["Item", "Código", "Descrição da Composição", "Unid.", "Qtd.", "Preço Unit. (R$)", "Preço Total (R$)"]
+    headers = [
+        "Item",
+        "Código",
+        "Descrição da Composição",
+        "Unid.",
+        "Qtd.",
+        "Preço Unit. (R$)",
+        "Preço Total (R$)",
+        "Fonte",
+    ]
     for col_num, header in enumerate(headers, 1):
         cell = ws.cell(row=4, column=col_num)
         cell.value = header
@@ -67,7 +83,9 @@ def gerar_planilha_orcamento_excel(orcamento: Dict[str, Any], itens: List[Dict[s
         cell_pt.number_format = "R$ #,##0.00"
         cell_pt.alignment = align_right
 
-        for c in range(1, 8):
+        ws.cell(row=row_num, column=8, value=_rotulo_fonte(item)).alignment = align_center
+
+        for c in range(1, 9):
             ws.cell(row=row_num, column=c).border = border_thin
 
         row_num += 1
@@ -88,6 +106,7 @@ def gerar_planilha_orcamento_excel(orcamento: Dict[str, Any], itens: List[Dict[s
     ws.column_dimensions["E"].width = 12
     ws.column_dimensions["F"].width = 18
     ws.column_dimensions["G"].width = 20
+    ws.column_dimensions["H"].width = 28
 
     output = io.BytesIO()
     wb.save(output)
