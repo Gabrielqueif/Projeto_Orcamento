@@ -36,6 +36,7 @@ ALTER TABLE public.diario_fotos ENABLE ROW LEVEL SECURITY;
 
 GRANT ALL PRIVILEGES ON TABLE public.diarios_obra, public.diario_fotos TO postgres, service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.diarios_obra, public.diario_fotos TO authenticated;
+REVOKE ALL ON TABLE public.diarios_obra, public.diario_fotos FROM anon;
 
 CREATE POLICY "diarios_obra_dono_da_obra" ON public.diarios_obra
     FOR ALL TO authenticated

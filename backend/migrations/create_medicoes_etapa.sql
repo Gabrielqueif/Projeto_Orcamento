@@ -24,6 +24,7 @@ ALTER TABLE public.medicoes_etapa ENABLE ROW LEVEL SECURITY;
 
 GRANT ALL PRIVILEGES ON TABLE public.medicoes_etapa TO postgres, service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.medicoes_etapa TO authenticated;
+REVOKE ALL ON TABLE public.medicoes_etapa FROM anon;
 
 CREATE POLICY "medicoes_etapa_dono_da_obra" ON public.medicoes_etapa
     FOR ALL TO authenticated
