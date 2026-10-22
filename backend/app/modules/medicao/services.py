@@ -47,6 +47,7 @@ def calcular_curva(
     pesos: Dict[str, float],
     medicoes: Iterable[Dict[str, Any]],
     data_hoje: date,
+    data_legado: Optional[date] = None,
 ) -> Dict[str, Any]:
     """
     Curva S planejado x realizado, ponderada pelo custo orçado de cada etapa.
@@ -55,6 +56,10 @@ def calcular_curva(
     sem itens próprios são só agrupadores e dobrariam a contagem das filhas. Sem custo
     em nenhuma delas, as etapas valem o mesmo. Etapas sem datas ficam de fora e são
     contadas em `etapas_sem_cronograma`.
+
+    `data_hoje` é o dia avaliado. `data_legado` é o dia em que o progresso anterior às
+    medições passa a valer (padrão: `data_hoje`); ao calcular datas passadas, informe o
+    dia real de hoje para esse progresso não aparecer retroativamente.
     """
     pais = {e["parent_id"] for e in etapas if e.get("parent_id")}
     agendadas: List[Dict[str, Any]] = []
@@ -90,7 +95,7 @@ def calcular_curva(
     # etapa vale como uma medição de hoje, para não zerar o realizado.
     for etapa in agendadas:
         if etapa["id"] not in por_etapa and (etapa.get("progresso") or 0) > 0:
-            por_etapa[etapa["id"]] = [(data_hoje, int(etapa["progresso"]))]
+            por_etapa[etapa["id"]] = [(data_legado or data_hoje, int(etapa["progresso"]))]
 
     pesos_efetivos = {e["id"]: pesos.get(e["id"], 0.0) for e in agendadas}
     if sum(pesos_efetivos.values()) <= 0:

@@ -10,38 +10,39 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import type { SerieSemanal } from '@/lib/api/dashboard';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const lineData = {
-  labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
-  datasets: [
-    {
-      label: 'Horizon Tower',
-      data: [65, 59, 80, 81],
-      backgroundColor: '#081225',
-      borderRadius: 4,
-    },
-    {
-      label: 'Riverside Hub',
-      data: [28, 48, 40, 19],
-      backgroundColor: '#06B6D4',
-      borderRadius: 4,
-    },
-  ],
+/** Cores das séries; a legenda do painel usa a mesma lista. */
+export const CORES_SERIES = ['#081225', '#06B6D4', '#AEE112', '#F59E0B'];
+
+type WeeklyProgressChartProps = {
+  semanas: string[];
+  series: SerieSemanal[];
 };
 
-const lineOptions = {
+const options = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { display: false } },
-  scales: { y: { beginAtZero: true } },
+  scales: { y: { beginAtZero: true, max: 100, ticks: { callback: (v: string | number) => `${v}%` } } },
 };
 
-export default function WeeklyProgressChart() {
+export default function WeeklyProgressChart({ semanas, series }: WeeklyProgressChartProps) {
+  const data = {
+    labels: semanas,
+    datasets: series.map((serie, i) => ({
+      label: serie.nome,
+      data: serie.valores,
+      backgroundColor: CORES_SERIES[i % CORES_SERIES.length],
+      borderRadius: 4,
+    })),
+  };
+
   return (
-    <div className="h-[250px] relative w-full">
-      <Bar data={lineData} options={lineOptions} />
+    <div className="h-[250px] relative w-full" role="img" aria-label="Avanço realizado por semana, por obra">
+      <Bar data={data} options={options} />
     </div>
   );
 }

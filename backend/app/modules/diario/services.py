@@ -320,19 +320,25 @@ class DiarioService:
     def _situacao(
         registros: List[Dict[str, Any]], inicio: Optional[date], data_hoje: date
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
-        """
-        ENVIADO: há diário de hoje já enviado; RASCUNHO: há de hoje, mas não enviado;
-        PENDENTE: ainda dentro do prazo normal de preenchimento; ALERTA: 2+ dias sem registro.
-        """
-        ultimo = registros[0] if registros else None
-        if ultimo and _como_data(ultimo["data"]) == data_hoje:
-            return ("RASCUNHO" if ultimo["status"] == "RASCUNHO" else "ENVIADO"), ultimo
-        if inicio and inicio > data_hoje:
-            return "PENDENTE", ultimo
-        referencia = _como_data(ultimo["data"]) if ultimo else inicio
-        if referencia is None or (data_hoje - referencia).days >= 2:
-            return "ALERTA", ultimo
+        return situacao_do_diario(registros, inicio, data_hoje)
+
+
+def situacao_do_diario(
+    registros: List[Dict[str, Any]], inicio: Optional[date], data_hoje: date
+) -> Tuple[str, Optional[Dict[str, Any]]]:
+    """
+    ENVIADO: há diário de hoje já enviado; RASCUNHO: há de hoje, mas não enviado;
+    PENDENTE: ainda dentro do prazo normal de preenchimento; ALERTA: 2+ dias sem registro.
+    """
+    ultimo = registros[0] if registros else None
+    if ultimo and _como_data(ultimo["data"]) == data_hoje:
+        return ("RASCUNHO" if ultimo["status"] == "RASCUNHO" else "ENVIADO"), ultimo
+    if inicio and inicio > data_hoje:
         return "PENDENTE", ultimo
+    referencia = _como_data(ultimo["data"]) if ultimo else inicio
+    if referencia is None or (data_hoje - referencia).days >= 2:
+        return "ALERTA", ultimo
+    return "PENDENTE", ultimo
 
 
 def _como_data(valor: Any) -> Optional[date]:
