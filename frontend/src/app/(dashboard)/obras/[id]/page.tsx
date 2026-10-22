@@ -27,6 +27,7 @@ import {
 } from "@/lib/api/orcamentos";
 import { getEstoqueInsumos, type InsumoAlmoxarifado } from "@/lib/api/almoxarifado";
 import { atualizarStatusObra } from "@/lib/api/obras";
+import { CurvaSCard } from "@/components/obras/CurvaSCard";
 
 export default function ObraDetalhePage() {
   const params = useParams();
@@ -567,6 +568,9 @@ export default function ObraDetalhePage() {
           )}
         </div>
       </div>
+
+      {/* Curva S: planejado x realizado */}
+      <CurvaSCard obraId={id} />
 
       {/* Bottom Grid: Curva A + Recursos */}
       <div className="grid grid-cols-3 gap-6">

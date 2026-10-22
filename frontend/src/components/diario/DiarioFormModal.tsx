@@ -11,6 +11,7 @@ import {
   removerFotoDiario,
   type Clima,
   type Diario,
+  type EtapaResumo,
   type FotoDiario,
 } from "@/lib/api/diario";
 
@@ -37,6 +38,7 @@ interface Props {
   obraId: string;
   registro: Diario | null;
   responsavelPadrao?: string | null;
+  etapas: EtapaResumo[];
   onSaved: () => void;
 }
 
@@ -44,7 +46,7 @@ const campo =
   "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-[14px] text-[#001b3c] bg-white focus:outline-none focus:border-[#4c6700]";
 const rotulo = "block text-[11px] font-bold text-[#747a62] uppercase tracking-[1px] mb-1.5";
 
-export function DiarioFormModal({ isOpen, onClose, obraId, registro, responsavelPadrao, onSaved }: Props) {
+export function DiarioFormModal({ isOpen, onClose, obraId, registro, responsavelPadrao, etapas, onSaved }: Props) {
   // O Modal desmonta o conteúdo ao fechar; a chave refaz o estado ao trocar de registro.
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={registro ? "Editar registro" : "Novo registro"} maxWidth="max-w-2xl">
@@ -54,13 +56,14 @@ export function DiarioFormModal({ isOpen, onClose, obraId, registro, responsavel
         obraId={obraId}
         registro={registro}
         responsavelPadrao={responsavelPadrao}
+        etapas={etapas}
         onSaved={onSaved}
       />
     </Modal>
   );
 }
 
-function FormularioDiario({ onClose, obraId, registro, responsavelPadrao, onSaved }: Omit<Props, "isOpen">) {
+function FormularioDiario({ onClose, obraId, registro, responsavelPadrao, etapas, onSaved }: Omit<Props, "isOpen">) {
   const { showToast } = useToast();
   const [data, setData] = useState(registro?.data ?? hojeLocal());
   const [titulo, setTitulo] = useState(registro?.titulo ?? "");
@@ -74,6 +77,9 @@ function FormularioDiario({ onClose, obraId, registro, responsavelPadrao, onSave
   const [fotosAtuais, setFotosAtuais] = useState<FotoDiario[]>(registro?.fotos ?? []);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [avancos, setAvancos] = useState<Record<string, string>>(() =>
+    Object.fromEntries((registro?.avancos ?? []).map((a) => [a.etapa_id, String(a.progresso)]))
+  );
 
   const escolherArquivos = (lista: FileList | null) => {
     if (!lista) return;
@@ -110,6 +116,14 @@ function FormularioDiario({ onClose, obraId, registro, responsavelPadrao, onSave
   const salvar = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
+    const avancosInformados = etapas
+      .filter((etapa) => (avancos[etapa.id] ?? "").trim() !== "")
+      .map((etapa) => ({ etapa_id: etapa.id, nome: etapa.nome, progresso: Number(avancos[etapa.id]) }));
+    const invalido = avancosInformados.find((a) => !Number.isInteger(a.progresso) || a.progresso < 0 || a.progresso > 100);
+    if (invalido) {
+      setErro(`O avanço de "${invalido.nome}" deve ser um número inteiro de 0 a 100.`);
+      return;
+    }
     setSalvando(true);
     try {
       const dados = {
@@ -121,6 +135,7 @@ function FormularioDiario({ onClose, obraId, registro, responsavelPadrao, onSave
         temperatura: temperatura.trim() === "" ? null : Number(temperatura.replace(",", ".")),
         equipe_presente: Number(equipe) || 0,
         responsavel: responsavel.trim() || null,
+        avancos: avancosInformados.map(({ etapa_id, progresso }) => ({ etapa_id, progresso })),
       };
       const salvo = registro
         ? await atualizarDiario(obraId, registro.id, dados)
@@ -210,6 +225,37 @@ function FormularioDiario({ onClose, obraId, registro, responsavelPadrao, onSave
             onChange={(e) => setOcorrencias(e.target.value)}
             placeholder="Paralisações, acidentes, falta de material…" className={campo} />
         </div>
+
+        {etapas.length > 0 && (
+          <div>
+            <span className={rotulo}>Avanço das etapas (% acumulado, opcional)</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {etapas.map((etapa) => (
+                <label
+                  key={etapa.id}
+                  className="flex items-center justify-between gap-3 border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-[13px] text-[#001b3c]"
+                >
+                  <span className="truncate">{etapa.nome}</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={1}
+                    inputMode="numeric"
+                    aria-label={`Avanço de ${etapa.nome}`}
+                    value={avancos[etapa.id] ?? ""}
+                    placeholder={String(etapa.progresso)}
+                    onChange={(e) => setAvancos((atual) => ({ ...atual, [etapa.id]: e.target.value }))}
+                    className="w-20 border border-[#e2e8f0] rounded-[6px] px-2 py-1 text-right text-[13px]"
+                  />
+                </label>
+              ))}
+            </div>
+            <p className="text-[11px] text-[#94a3b8] mt-1.5">
+              Informe o percentual acumulado só das etapas que avançaram; o valor cinza é o atual.
+            </p>
+          </div>
+        )}
 
         <div>
           <span className={rotulo}>Fotos ({fotosAtuais.length + arquivos.length}/{MAX_FOTOS})</span>

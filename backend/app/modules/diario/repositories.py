@@ -157,11 +157,35 @@ class DiarioRepository:
         resultado = self.supabase.table("membros_equipe").select("id, nome").in_("id", membro_ids).execute()
         return {r["id"]: r["nome"] for r in (resultado.data or []) if r.get("nome")}
 
-    def progressos_das_etapas(self, orcamento_id: str) -> List[int]:
+    def etapas_do_orcamento(self, orcamento_id: str) -> List[Dict[str, Any]]:
         resultado = (
-            self.supabase.table("orcamento_etapas").select("progresso").eq("orcamento_id", orcamento_id).execute()
+            self.supabase.table("orcamento_etapas")
+            .select("id, nome, parent_id, progresso")
+            .eq("orcamento_id", orcamento_id)
+            .order("ordem")
+            .execute()
         )
-        return [int(r.get("progresso") or 0) for r in (resultado.data or [])]
+        return resultado.data or []
+
+    def avancos_dos_diarios(self, diario_ids: List[str]) -> List[Dict[str, Any]]:
+        """Medições nascidas dos diários, com o nome da etapa."""
+        if not diario_ids:
+            return []
+        resultado = (
+            self.supabase.table("medicoes_etapa")
+            .select("diario_id, etapa_id, progresso, orcamento_etapas(nome)")
+            .in_("diario_id", diario_ids)
+            .execute()
+        )
+        return [
+            {
+                "diario_id": r["diario_id"],
+                "etapa_id": r["etapa_id"],
+                "etapa_nome": (r.get("orcamento_etapas") or {}).get("nome"),
+                "progresso": r["progresso"],
+            }
+            for r in (resultado.data or [])
+        ]
 
     def diarios_recentes(self, obra_ids: List[str], desde: date) -> List[Dict[str, Any]]:
         if not obra_ids:
