@@ -1,203 +1,184 @@
 "use client";
 
-import React from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Sun, 
-  Cloud, 
-  CloudRain, 
-  User, 
-  Plus, 
-  Funnel,
-  CheckCircle,
-  Clock,
-  Warning
-} from "@phosphor-icons/react";
+import { useParams } from "next/navigation";
+import { ArrowLeft, Cloud, CloudRain, MapPin, Plus, Sun, User, Warning } from "@phosphor-icons/react";
+import { DiarioFormModal } from "@/components/diario/DiarioFormModal";
+import { useToast } from "@/components/common/toast";
+import {
+  alterarStatusDiario,
+  excluirDiario,
+  getDiarios,
+  type Clima,
+  type Diario,
+  type DiarioListagem,
+  type StatusDiario,
+} from "@/lib/api/diario";
 
-interface TimelineEntry {
-  date: string;
-  weekday: string;
-  title: string;
-  description: string;
-  status: "APROVADO" | "PENDENTE" | "ALERTA";
-  clima: string;
-  weatherIcon: React.ElementType;
-  responsible: string;
-  images: string[];
-}
-
-interface ProjectData {
-  name: string;
-  duration: string;
-  location: string;
-  progress: number;
-  lastUpdate: string;
-  timeline: TimelineEntry[];
-}
-
-const projectsData: Record<string, ProjectData> = {
-  aurora: {
-    name: "Residencial Aurora",
-    duration: "142 Dias",
-    location: "Curitiba, PR",
-    progress: 32,
-    lastUpdate: "hoje às 08:45",
-    timeline: [
-      {
-        date: "24 JAN, 2024",
-        weekday: "Terça-feira",
-        title: "Concretagem da Laje L2",
-        description: "Execução do bombeamento de concreto fck 30MPa conforme projeto estrutural.",
-        status: "APROVADO",
-        clima: "Sol / 28°C",
-        weatherIcon: Sun,
-        responsible: "Eng. Ricardo S.",
-        images: [
-          "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=300&auto=format&fit=crop",
-          "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=300&auto=format&fit=crop"
-        ]
-      },
-      {
-        date: "23 JAN, 2024",
-        weekday: "Segunda-feira",
-        title: "Montagem de Armação",
-        description: "Finalização do posicionamento de ferragens e conferência de espaçadores.",
-        status: "APROVADO",
-        clima: "Nublado / 22°C",
-        weatherIcon: Cloud,
-        responsible: "Mestre Antônio",
-        images: []
-      },
-      {
-        date: "22 JAN, 2024",
-        weekday: "Domingo",
-        title: "Instalações Elétricas e Hidráulicas",
-        description: "Passagem de conduítes e tubulações de esgoto secundário embutidos em laje.",
-        status: "APROVADO",
-        clima: "Sol / 26°C",
-        weatherIcon: Sun,
-        responsible: "Eng. Ricardo S.",
-        images: []
-      }
-    ]
-  },
-  logx: {
-    name: "Complexo Logístico LogX",
-    duration: "210 Dias",
-    location: "Distrito Industrial, SC",
-    progress: 68,
-    lastUpdate: "ontem às 17:00",
-    timeline: [
-      {
-        date: "24 JAN, 2024",
-        weekday: "Terça-feira",
-        title: "Montagem da Estrutura Metálica",
-        description: "Instalação das vigas principais do galpão A com suporte de guindastes.",
-        status: "PENDENTE",
-        clima: "Nublado / 21°C",
-        weatherIcon: Cloud,
-        responsible: "Engª Ana Paula",
-        images: []
-      }
-    ]
-  },
-  global: {
-    name: "Centro Executivo Global",
-    duration: "365 Dias",
-    location: "Av. Paulista, 1200 - SP",
-    progress: 15,
-    lastUpdate: "há 2 dias às 16:30",
-    timeline: [
-      {
-        date: "23 JAN, 2024",
-        weekday: "Segunda-feira",
-        title: "Escavação de Fundações",
-        description: "Início da escavação mecânica para sapatas do bloco central.",
-        status: "ALERTA",
-        clima: "Chuva / 18°C",
-        weatherIcon: CloudRain,
-        responsible: "Eng. Roberto Costa",
-        images: []
-      }
-    ]
-  }
+const CLIMAS: Record<Clima, { rotulo: string; Icone: typeof Sun }> = {
+  SOL: { rotulo: "Sol", Icone: Sun },
+  NUBLADO: { rotulo: "Nublado", Icone: Cloud },
+  CHUVA: { rotulo: "Chuva", Icone: CloudRain },
 };
 
-export default function DiarioDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const id = (params?.id as string) || "aurora";
+const STATUS_ESTILO: Record<StatusDiario, { rotulo: string; classe: string }> = {
+  RASCUNHO: { rotulo: "RASCUNHO", classe: "bg-[#f1f5f9] text-[#475569]" },
+  ENVIADO: { rotulo: "ENVIADO", classe: "bg-[rgba(161,196,255,0.3)] text-[#2a5085]" },
+  APROVADO: { rotulo: "APROVADO", classe: "bg-[rgba(159,211,0,0.2)] text-[#405700]" },
+};
 
-  const project = projectsData[id] || projectsData.aurora;
+type FiltroStatus = "TODOS" | StatusDiario;
+
+function parseData(iso: string): Date {
+  const [ano, mes, dia] = iso.split("-").map(Number);
+  return new Date(ano, mes - 1, dia);
+}
+
+function formatarData(iso: string): string {
+  return parseData(iso)
+    .toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })
+    .replace(".", "")
+    .toUpperCase();
+}
+
+function diaDaSemana(iso: string): string {
+  return parseData(iso).toLocaleDateString("pt-BR", { weekday: "long" });
+}
+
+function formatarAtualizacao(iso?: string | null): string {
+  if (!iso) return "sem registros";
+  return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+export default function DiarioObraPage() {
+  const params = useParams();
+  const obraId = params.id as string;
+  const { showToast } = useToast();
+
+  const [dados, setDados] = useState<DiarioListagem | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+  const [filtro, setFiltro] = useState<FiltroStatus>("TODOS");
+  const [modalAberto, setModalAberto] = useState(false);
+  const [emEdicao, setEmEdicao] = useState<Diario | null>(null);
+
+  const carregar = useCallback(async () => {
+    try {
+      setErro(null);
+      setDados(await getDiarios(obraId));
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Erro ao carregar o diário");
+    } finally {
+      setCarregando(false);
+    }
+  }, [obraId]);
+
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
+  const mudarStatus = async (registro: Diario, status: StatusDiario) => {
+    try {
+      await alterarStatusDiario(obraId, registro.id, status);
+      await carregar();
+    } catch (e) {
+      showToast("Não foi possível alterar o status", e instanceof Error ? e.message : undefined, "error");
+    }
+  };
+
+  const excluir = async (registro: Diario) => {
+    if (!window.confirm(`Excluir o diário de ${formatarData(registro.data)}? As fotos também serão apagadas.`)) return;
+    try {
+      await excluirDiario(obraId, registro.id);
+      showToast("Diário excluído", undefined, "success");
+      await carregar();
+    } catch (e) {
+      showToast("Não foi possível excluir", e instanceof Error ? e.message : undefined, "error");
+    }
+  };
+
+  const abrirNovo = () => {
+    setEmEdicao(null);
+    setModalAberto(true);
+  };
+
+  const abrirEdicao = (registro: Diario) => {
+    setEmEdicao(registro);
+    setModalAberto(true);
+  };
+
+  if (carregando) {
+    return <p className="p-12 text-center text-[14px] text-[#94a3b8] font-manrope">Carregando diário da obra…</p>;
+  }
+
+  if (erro || !dados) {
+    return (
+      <div className="p-12 text-center font-manrope">
+        <p className="text-[14px] text-[#93000a]">{erro ?? "Obra não encontrada."}</p>
+        <Link href="/diario" className="inline-block mt-4 text-[13px] font-bold text-[#4c6700] hover:underline">
+          Voltar ao diário
+        </Link>
+      </div>
+    );
+  }
+
+  const { obra, registros } = dados;
+  const visiveis = filtro === "TODOS" ? registros : registros.filter((r) => r.status === filtro);
 
   return (
     <div className="flex flex-col h-full font-manrope">
-      {/* Back link & Title */}
-      <div className="mb-8">
-        <Link 
-          href="/diario" 
-          className="inline-flex items-center gap-2 text-sm text-[#64748b] hover:text-[#001b3c] font-bold transition-colors mb-4 group cursor-pointer"
+      <div className="flex items-center gap-4 mb-8">
+        <Link
+          href="/diario"
+          aria-label="Voltar"
+          className="w-10 h-10 rounded-full bg-white border border-[#e2e8f0] flex items-center justify-center text-[#001b3c] hover:bg-slate-50"
         >
-          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-          Voltar para Visão Geral
+          <ArrowLeft size={18} weight="bold" />
         </Link>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-[28px] font-extrabold text-[#001b3c] tracking-tight">Diário de Obra</h1>
-            <p className="text-sm text-[#64748b] mt-1">{project.name}</p>
-          </div>
+        <div>
+          <h1 className="text-[24px] font-extrabold text-[#001b3c] tracking-tight">Diário de Obra</h1>
+          <p className="text-sm text-[#64748b] mt-1">{obra.nome}</p>
         </div>
       </div>
 
-      {/* Bento Grid Header */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-        {/* Project Card Info (8 columns) */}
-        <div className="lg:col-span-8 bg-white border border-[#e2e8f0] rounded-[12px] p-8 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] relative overflow-hidden flex flex-col justify-between min-h-[220px]">
-          {/* Subtle Glow */}
-          <div 
-            className="absolute bg-[rgba(159,211,0,0.08)] blur-[24px] right-[-32px] rounded-full w-[140px] h-[140px] top-[-32px] pointer-events-none" 
-          />
-
+        <div className="lg:col-span-8 bg-white border border-[#e2e8f0] rounded-[12px] p-8 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] flex flex-col justify-between min-h-[220px]">
           <div>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[1px] bg-[#9fd300]/25 text-[#4c6700]">
-              Em Execução
-            </span>
-            <h2 className="text-[32px] font-extrabold text-[#001b3c] tracking-tight mt-3">
-              {project.name}
-            </h2>
+            <h2 className="text-[32px] font-extrabold text-[#001b3c] tracking-tight">{obra.nome}</h2>
             <p className="text-[15px] text-[#434935] mt-2 max-w-[500px] leading-[22px]">
-              Monitoramento detalhado de progresso e ocorrências diárias do canteiro de obras.
+              Registros diários de atividades, clima, equipe e ocorrências do canteiro.
             </p>
           </div>
-
-          <div className="flex gap-12 mt-6 border-t border-[#e2e8f0] pt-4">
-            <div>
-              <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-[1px]">Duração Total</span>
-              <div className="text-[20px] font-extrabold text-[#001b3c] mt-0.5 flex items-baseline gap-1">
-                {project.duration.split(" ")[0]} <span className="text-sm font-semibold text-[#94a3b8]">Dias</span>
+          <div className="flex flex-wrap gap-x-12 gap-y-4 mt-6 border-t border-[#e2e8f0] pt-4">
+            {obra.prazo_dias != null && (
+              <div>
+                <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-[1px]">Prazo</span>
+                <div className="text-[20px] font-extrabold text-[#001b3c] mt-0.5">
+                  {obra.prazo_dias} <span className="text-sm font-semibold text-[#94a3b8]">dias</span>
+                </div>
               </div>
-            </div>
-            <div>
-              <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-[1px]">Localização</span>
-              <div className="text-[15px] font-bold text-[#001b3c] mt-1 flex items-center gap-1.5">
-                <MapPin size={16} className="text-[#64748b]" weight="bold" />
-                {project.location}
+            )}
+            {obra.local && (
+              <div>
+                <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-[1px]">Localização</span>
+                <div className="text-[15px] font-bold text-[#001b3c] mt-1 flex items-center gap-1.5">
+                  <MapPin size={16} className="text-[#64748b]" weight="bold" />
+                  {obra.local}
+                </div>
               </div>
-            </div>
+            )}
+            {obra.responsavel && (
+              <div>
+                <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-[1px]">Responsável</span>
+                <div className="text-[15px] font-bold text-[#001b3c] mt-1">{obra.responsavel}</div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Progress Card (4 columns) */}
         <div className="lg:col-span-4 bg-[#003061] text-white rounded-[12px] p-8 flex flex-col items-center justify-between shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] min-h-[220px]">
-          <div className="w-full text-center">
-            <span className="text-[12px] font-bold text-slate-300 uppercase tracking-[1px]">
-              Progresso da Obra
-            </span>
-          </div>
-
+          <span className="text-[12px] font-bold text-slate-300 uppercase tracking-[1px]">Progresso da Obra</span>
           <div className="relative w-28 h-28 flex items-center justify-center my-3">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
               <path
@@ -210,7 +191,7 @@ export default function DiarioDetailPage() {
               <path
                 className="text-[#9fd300]"
                 strokeWidth="3"
-                strokeDasharray={`${project.progress}, 100`}
+                strokeDasharray={`${obra.progresso}, 100`}
                 strokeLinecap="round"
                 stroke="currentColor"
                 fill="none"
@@ -218,127 +199,185 @@ export default function DiarioDetailPage() {
               />
             </svg>
             <div className="absolute flex flex-col items-center leading-none">
-              <span className="text-[26px] font-extrabold text-white">{project.progress}%</span>
+              <span className="text-[26px] font-extrabold">{obra.progresso}%</span>
               <span className="text-[8px] font-bold text-slate-300 uppercase tracking-[0.8px] mt-0.5">Completo</span>
             </div>
           </div>
-
-          <div className="w-full text-center">
-            <span className="text-[10px] text-slate-300">
-              Atualizado {project.lastUpdate}
-            </span>
-          </div>
+          <span className="text-[10px] text-slate-300">Último registro alterado em {formatarAtualizacao(obra.ultima_atualizacao)}</span>
         </div>
       </div>
 
-      {/* Timeline Section */}
       <div className="mt-4">
-        {/* Timeline Header */}
-        <div className="flex justify-between items-center mb-8 px-1">
+        <div className="flex flex-wrap justify-between items-center gap-3 mb-8 px-1">
           <div className="flex items-center gap-3">
             <div className="w-[8px] h-[32px] rounded-full bg-gradient-to-b from-[#4c6700] to-[#9fd300]" />
             <h3 className="text-[20px] font-extrabold text-[#001b3c] tracking-tight">Linha do Tempo</h3>
           </div>
           <div className="flex gap-2">
-            <button className="bg-[#f0f3ff] hover:bg-slate-200 text-[#434935] text-[12px] font-bold px-4 py-2.5 rounded-[12px] transition-colors cursor-pointer flex items-center gap-1.5">
-              <Funnel size={14} weight="bold" /> Filtrar
-            </button>
-            <button className="bg-gradient-to-r from-[#4c6700] to-[#9fd300] hover:opacity-95 text-white text-[12px] font-bold px-4 py-2.5 rounded-[12px] transition-all shadow-[0px_10px_15px_-3px_rgba(76,103,0,0.2)] cursor-pointer flex items-center gap-1.5">
+            <select
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value as FiltroStatus)}
+              aria-label="Filtrar por status"
+              className="bg-[#f0f3ff] text-[#434935] text-[12px] font-bold px-4 py-2.5 rounded-[12px] cursor-pointer"
+            >
+              <option value="TODOS">Todos os status</option>
+              <option value="RASCUNHO">Rascunhos</option>
+              <option value="ENVIADO">Enviados</option>
+              <option value="APROVADO">Aprovados</option>
+            </select>
+            <button
+              onClick={abrirNovo}
+              className="bg-gradient-to-r from-[#4c6700] to-[#9fd300] hover:opacity-95 text-white text-[12px] font-bold px-4 py-2.5 rounded-[12px] shadow-[0px_10px_15px_-3px_rgba(76,103,0,0.2)] cursor-pointer flex items-center gap-1.5"
+            >
               <Plus size={14} weight="bold" /> Novo Registro
             </button>
           </div>
         </div>
 
-        {/* Timeline Entries */}
-        <div className="relative border-l-2 border-[#e2e8f0] ml-6 pl-8 flex flex-col gap-10">
-          {project.timeline.map((entry, index) => {
-            const WeatherIcon = entry.weatherIcon;
-
-            return (
-              <div key={index} className="relative">
-                {/* Node marker */}
-                <div 
-                  className={`absolute left-[-41px] top-1.5 w-[20px] h-[20px] rounded-full border-4 border-[#f8fafc] flex items-center justify-center ${
-                    index === 0 ? "bg-[#9fd300]" : "bg-[#94a3b8]"
-                  }`} 
-                />
-
-                <div className="flex flex-col lg:flex-row gap-6 items-start">
-                  {/* Left Side: Date */}
-                  <div className="w-[128px] shrink-0 pt-1">
-                    <span className="block text-[12px] font-bold text-[#434935]">{entry.date}</span>
-                    <span className="block text-[10px] font-bold text-[#94a3b8] uppercase tracking-[-0.5px] mt-0.5">
-                      {entry.weekday}
-                    </span>
-                  </div>
-
-                  {/* Right Side: Content Card */}
-                  <div className="flex-1 bg-white border border-[#e2e8f0] rounded-[12px] p-6 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] w-full">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h4 className="text-[18px] font-bold text-[#001b3c] tracking-tight">
-                          {entry.title}
-                        </h4>
-                        <p className="text-[14px] text-[#64748b] mt-1.5 leading-[20px]">
-                          {entry.description}
-                        </p>
-                      </div>
-
-                      {/* Status Badge */}
-                      <span 
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.5px] uppercase ${
-                          entry.status === "APROVADO"
-                            ? "bg-[rgba(159,211,0,0.2)] text-[#405700]"
-                            : entry.status === "PENDENTE"
-                            ? "bg-[rgba(161,196,255,0.3)] text-[#2a5085]"
-                            : "bg-[rgba(255,218,214,0.4)] text-[#93000a]"
-                        }`}
-                      >
-                        {entry.status}
+        {visiveis.length === 0 ? (
+          <div className="bg-white rounded-[12px] border border-[#e2e8f0] p-12 text-center">
+            <p className="text-[15px] text-[#434935]">
+              {registros.length === 0 ? "Nenhum registro ainda. Comece pelo diário de hoje." : "Nenhum registro com esse status."}
+            </p>
+          </div>
+        ) : (
+          <div className="relative border-l-2 border-[#e2e8f0] ml-6 pl-8 flex flex-col gap-10">
+            {visiveis.map((registro, index) => {
+              const { rotulo, Icone } = CLIMAS[registro.clima];
+              const status = STATUS_ESTILO[registro.status];
+              const editavel = registro.status !== "APROVADO";
+              return (
+                <div key={registro.id} className="relative">
+                  <div
+                    className={`absolute left-[-41px] top-1.5 w-[20px] h-[20px] rounded-full border-4 border-[#f8fafc] ${
+                      index === 0 ? "bg-[#9fd300]" : "bg-[#94a3b8]"
+                    }`}
+                  />
+                  <div className="flex flex-col lg:flex-row gap-6 items-start">
+                    <div className="w-[128px] shrink-0 pt-1">
+                      <span className="block text-[12px] font-bold text-[#434935]">{formatarData(registro.data)}</span>
+                      <span className="block text-[10px] font-bold text-[#94a3b8] uppercase mt-0.5">
+                        {diaDaSemana(registro.data)}
                       </span>
                     </div>
 
-                    {/* Image Attachment Grid */}
-                    {entry.images.length > 0 && (
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-                        {entry.images.map((src, imgIdx) => (
-                          <div 
-                            key={imgIdx} 
-                            className="aspect-video w-full rounded-[8px] overflow-hidden border border-[#e2e8f0] shadow-sm relative group cursor-pointer"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img 
-                              src={src} 
-                              alt={`Anexo ${imgIdx + 1}`}
-                              className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-200"
-                            />
-                          </div>
-                        ))}
+                    <div className="flex-1 bg-white border border-[#e2e8f0] rounded-[12px] p-6 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] w-full">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <h4 className="text-[18px] font-bold text-[#001b3c] tracking-tight">{registro.titulo}</h4>
+                          <p className="text-[14px] text-[#64748b] mt-1.5 leading-[20px] whitespace-pre-line">
+                            {registro.atividades}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.5px] ${status.classe}`}>
+                            {status.rotulo}
+                          </span>
+                          {registro.tem_ocorrencia && (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-[rgba(255,218,214,0.4)] text-[#93000a]">
+                              <Warning size={12} weight="fill" /> OCORRÊNCIA
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    )}
 
-                    {/* Card Footer: Metadata */}
-                    <div className="border-t border-[#f1f5f9] mt-6 pt-4 flex gap-6 items-center">
-                      <div className="flex items-center gap-1.5 text-[#94a3b8]">
-                        <WeatherIcon size={16} weight="bold" />
-                        <span className="text-[10px] font-bold uppercase tracking-[1px] text-[#94a3b8]">
-                          {entry.clima}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[#94a3b8]">
-                        <User size={16} weight="bold" />
-                        <span className="text-[10px] font-bold uppercase tracking-[1px] text-[#94a3b8]">
-                          {entry.responsible}
-                        </span>
+                      {registro.tem_ocorrencia && (
+                        <p className="mt-4 text-[13px] text-[#93000a] bg-[rgba(255,218,214,0.25)] rounded-[8px] px-3 py-2 whitespace-pre-line">
+                          {registro.ocorrencias}
+                        </p>
+                      )}
+
+                      {registro.fotos.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+                          {registro.fotos.map((foto, i) =>
+                            foto.url ? (
+                              <a
+                                key={foto.id}
+                                href={foto.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="aspect-video w-full rounded-[8px] overflow-hidden border border-[#e2e8f0] shadow-sm group"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={foto.url}
+                                  alt={foto.legenda ?? `Foto ${i + 1} de ${registro.titulo}`}
+                                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-200"
+                                />
+                              </a>
+                            ) : (
+                              <div
+                                key={foto.id}
+                                className="aspect-video w-full rounded-[8px] bg-[#f1f5f9] flex items-center justify-center text-[11px] text-[#94a3b8]"
+                              >
+                                Foto indisponível
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      <div className="border-t border-[#f1f5f9] mt-6 pt-4 flex flex-wrap gap-x-6 gap-y-3 items-center justify-between">
+                        <div className="flex flex-wrap gap-6 items-center text-[#94a3b8]">
+                          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[1px]">
+                            <Icone size={16} weight="bold" /> {rotulo}
+                            {registro.temperatura != null && ` / ${registro.temperatura}°C`}
+                          </span>
+                          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[1px]">
+                            <User size={16} weight="bold" /> {registro.responsavel || "Sem responsável"} · {registro.equipe_presente} na equipe
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 text-[12px] font-bold">
+                          {registro.status === "RASCUNHO" && (
+                            <button onClick={() => mudarStatus(registro, "ENVIADO")} className="px-3 py-1.5 rounded-[8px] bg-[#001b3c] text-white">
+                              Enviar
+                            </button>
+                          )}
+                          {registro.status === "ENVIADO" && (
+                            <>
+                              <button onClick={() => mudarStatus(registro, "APROVADO")} className="px-3 py-1.5 rounded-[8px] bg-[#4c6700] text-white">
+                                Aprovar
+                              </button>
+                              <button onClick={() => mudarStatus(registro, "RASCUNHO")} className="px-3 py-1.5 rounded-[8px] bg-[#f0f3ff] text-[#434935]">
+                                Devolver
+                              </button>
+                            </>
+                          )}
+                          {registro.status === "APROVADO" && (
+                            <button onClick={() => mudarStatus(registro, "ENVIADO")} className="px-3 py-1.5 rounded-[8px] bg-[#f0f3ff] text-[#434935]">
+                              Reabrir
+                            </button>
+                          )}
+                          {editavel && (
+                            <>
+                              <button onClick={() => abrirEdicao(registro)} className="px-3 py-1.5 rounded-[8px] bg-[#f0f3ff] text-[#434935]">
+                                Editar
+                              </button>
+                              <button onClick={() => excluir(registro)} className="px-3 py-1.5 rounded-[8px] text-[#93000a] hover:bg-[#ffdad6]">
+                                Excluir
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
+
+      <DiarioFormModal
+        isOpen={modalAberto}
+        onClose={() => setModalAberto(false)}
+        obraId={obraId}
+        registro={emEdicao}
+        responsavelPadrao={obra.responsavel}
+        onSaved={carregar}
+      />
     </div>
   );
 }
