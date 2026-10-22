@@ -83,22 +83,66 @@ def test_buscar_composicao_por_termo(client: TestClient, mock_supabase):
     assert isinstance(result, list)
 
 
+def _mock_paginas(mock_supabase, paginas):
+    chain = mock_supabase.table.return_value.select.return_value
+    chain.order.return_value = chain
+    chain.range.return_value = chain
+    resultados = []
+    for pagina in paginas:
+        r = MagicMock()
+        r.data = pagina
+        resultados.append(r)
+    chain.execute.side_effect = resultados
+    return chain
+
+
 @pytest.mark.integration
-def test_listar_bases_disponiveis(client: TestClient, mock_supabase):
-    """GET /importacao/bases → retorna lista de bases disponíveis."""
-    # Arrange
-    dados = [
-        {"mes_referencia": "12/2025", "fonte": "SINAPI"},
-        {"mes_referencia": "11/2025", "fonte": "SINAPI"},
+def test_listar_bases_disponiveis_agrupa_e_conta(client: TestClient, mock_supabase):
+    """GET /importacao/bases → agrupa por fonte/mês/tipo reais e conta composições."""
+    linhas = [
+        {"fonte": "SINAPI", "mes_referencia": "12/2025", "tipo_composicao": "Com Desoneração"},
+        {"fonte": "SINAPI", "mes_referencia": "12/2025", "tipo_composicao": "Com Desoneração"},
+        {"fonte": "SINAPI", "mes_referencia": "11/2025", "tipo_composicao": "Sem Desoneração"},
+        {"fonte": "SEINFRA", "mes_referencia": "01/2026", "tipo_composicao": "Sem Desoneração"},
+        {"fonte": "SINAPI", "mes_referencia": None, "tipo_composicao": "Sem Desoneração"},
     ]
-    mock_supabase.table.return_value.select.return_value.execute.return_value.data = dados
+    _mock_paginas(mock_supabase, [linhas])
 
     with patch("app.modules.importacao.routes.get_supabase_client", return_value=mock_supabase):
-        # Act
         response = client.get("/importacao/bases")
 
-    # Assert
     assert response.status_code == 200
-    result = response.json()
-    assert isinstance(result, list)
+    assert response.json() == [
+        {"fonte": "SEINFRA", "mes_referencia": "01/2026", "tipo_composicao": "Sem Desoneração", "total_composicoes": 1},
+        {"fonte": "SINAPI", "mes_referencia": "12/2025", "tipo_composicao": "Com Desoneração", "total_composicoes": 2},
+        {"fonte": "SINAPI", "mes_referencia": "11/2025", "tipo_composicao": "Sem Desoneração", "total_composicoes": 1},
+    ]
 
+
+@pytest.mark.integration
+def test_listar_bases_disponiveis_pagina_alem_de_mil_linhas(client: TestClient, mock_supabase):
+    """Mais de 1000 linhas: continua lendo páginas até a última, sem perder grupos."""
+    pagina1 = [{"fonte": "SINAPI", "mes_referencia": "12/2025", "tipo_composicao": "Sem Desoneração"}] * 1000
+    pagina2 = [{"fonte": "SEINFRA", "mes_referencia": "10/2025", "tipo_composicao": "Sem Desoneração"}] * 5
+    chain = _mock_paginas(mock_supabase, [pagina1, pagina2])
+
+    with patch("app.modules.importacao.routes.get_supabase_client", return_value=mock_supabase):
+        response = client.get("/importacao/bases")
+
+    assert response.status_code == 200
+    totais = {(b["fonte"], b["mes_referencia"]): b["total_composicoes"] for b in response.json()}
+    assert totais == {("SINAPI", "12/2025"): 1000, ("SEINFRA", "10/2025"): 5}
+    assert chain.range.call_args_list[0].args == (0, 999)
+    assert chain.range.call_args_list[1].args == (1000, 1999)
+
+
+@pytest.mark.integration
+def test_listar_bases_exige_autenticacao(mock_supabase):
+    """Sem usuário autenticado o endpoint responde 401."""
+    from fastapi.testclient import TestClient as TC
+
+    from app.main import app
+
+    app.dependency_overrides.clear()
+    response = TC(app).get("/importacao/bases")
+    assert response.status_code in (401, 403)

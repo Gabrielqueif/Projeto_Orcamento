@@ -454,6 +454,7 @@ export interface SinapiBase {
   mes_referencia: string;
   tipo_composicao: string;
   fonte: string;
+  total_composicoes?: number;
 }
 
 export async function getSinapiBases(): Promise<SinapiBase[]> {
