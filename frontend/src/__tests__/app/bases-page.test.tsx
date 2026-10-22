@@ -8,6 +8,11 @@ jest.mock("@/lib/api/orcamentos", () => ({
   getSinapiBases: jest.fn(),
 }));
 
+jest.mock("@/lib/api/basesProprias", () => ({
+  listarBases: jest.fn().mockResolvedValue([]),
+  criarBase: jest.fn(),
+}));
+
 const mockRole = { role: "admin" as string | null };
 jest.mock("@/hooks/use-user-role", () => ({
   useUserRole: () => mockRole,

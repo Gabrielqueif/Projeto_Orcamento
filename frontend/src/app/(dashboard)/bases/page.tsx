@@ -5,6 +5,7 @@ import Link from 'next/link';
 import DatabaseCard from '@/components/bases/databaseCard';
 import { agruparPorFonte, FONTES } from '@/lib/bases';
 import { getSinapiBases, type SinapiBase } from '@/lib/api/orcamentos';
+import { MinhasBases } from '@/components/bases-proprias/MinhasBases';
 import { useUserRole } from '@/hooks/use-user-role';
 
 export default function BasesPage() {
@@ -58,6 +59,8 @@ export default function BasesPage() {
           ))}
         </div>
       </div>
+
+      <MinhasBases />
     </div>
   );
 }
