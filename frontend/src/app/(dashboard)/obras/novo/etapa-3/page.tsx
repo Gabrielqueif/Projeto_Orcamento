@@ -11,7 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useWizard } from "@/contexts/WizardContext";
-import { createOrcamento } from "@/lib/api/orcamentos";
+import { criarObra } from "@/lib/api/obras";
 import { alocarMembrosAoOrcamento } from "@/lib/api/membros_equipe";
 import { useRouter } from "next/navigation";
 
@@ -43,28 +43,35 @@ export default function NovaObraEtapa3Page() {
 
     setIsSubmitting(true);
     try {
-      // Parse do valor total estimado preenchido pelo usuário no Wizard (Etapa 3)
-      const valorTotalNum = parseFloat(
-        custoEstimado.replace(/[^\d.,]/g, "").replace(",", ".")
-      ) || 0;
+      const dataInicio = data.dataInicio || new Date().toISOString().split("T")[0];
+      const msPorDia = 24 * 60 * 60 * 1000;
+      const prazoDias = data.dataTermino
+        ? Math.max(
+            0,
+            Math.round(
+              (new Date(data.dataTermino).getTime() - new Date(dataInicio).getTime()) / msPorDia
+            )
+          )
+        : 0;
 
-      // 1. Criar o orçamento (obra) no backend persistindo o valor_total
-      const newOrcamento = await createOrcamento({
+      // 1. Criar a obra; o backend gera junto um orçamento em branco vinculado a ela
+      const novaObra = await criarObra({
         nome: data.nome,
         cliente: data.cliente,
-        data: data.dataInicio || new Date().toISOString().split("T")[0],
-        base_referencia: data.baseReferencia || "SINAPI",
-        tipo_composicao: data.tipoComposicao || "Sem Desoneração",
+        endereco: data.endereco ? { logradouro: data.endereco } : undefined,
+        escopo: data.nome,
         estado: data.estado || "SP",
         fonte: "SINAPI",
+        base_referencia: data.baseReferencia || "SINAPI",
+        tipo_composicao: data.tipoComposicao || "Sem Desoneração",
         bdi: data.bdi || 0,
-        valor_total: valorTotalNum,
-        status: data.status || "em_elaboracao",
+        data_inicio_real: dataInicio,
+        prazo_estimado_dias: prazoDias,
       });
 
-      // 2. Alocar membros do contexto se houver
-      if (data.membros && data.membros.length > 0 && newOrcamento?.id) {
-        await alocarMembrosAoOrcamento(data.membros, newOrcamento.id).catch(() => {});
+      // 2. Alocar membros do contexto ao orçamento da obra, se houver
+      if (data.membros && data.membros.length > 0 && novaObra?.orcamento_id) {
+        await alocarMembrosAoOrcamento(data.membros, novaObra.orcamento_id).catch(() => {});
       }
 
       alert("Obra e Orçamento criados com sucesso!");

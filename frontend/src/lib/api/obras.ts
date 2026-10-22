@@ -57,6 +57,36 @@ export async function gerarObra(
   return response.json();
 }
 
+export interface ObraCreate {
+  nome?: string;
+  cliente: string;
+  endereco?: any;
+  escopo?: string;
+  estado?: string;
+  fonte?: string;
+  base_referencia?: string;
+  tipo_composicao?: string;
+  bdi?: number;
+  data_inicio_real: string;
+  prazo_estimado_dias: number;
+  engenheiro_responsavel_id?: string | null;
+}
+
+// Cria a obra e, no backend, um orçamento em branco vinculado a ela
+export async function criarObra(data: ObraCreate): Promise<Obra> {
+  const response = await fetchWithAuth("/obras", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || "Erro ao criar obra");
+  }
+
+  return response.json();
+}
+
 export async function getObras(): Promise<Obra[]> {
   const response = await fetchWithAuth("/obras");
 
