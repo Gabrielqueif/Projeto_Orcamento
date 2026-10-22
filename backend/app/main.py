@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from app.modules.almoxarifado import router as almoxarifado_router
 from app.modules.composicao import router as item_router
+from app.modules.dashboard import router as dashboard_router
 from app.modules.diario import router as diario_router
 from app.modules.diario import router_resumo as diario_resumo_router
 from app.modules.equipe import router_equipes, router_membros
@@ -82,6 +83,7 @@ app.include_router(financeiro_portfolio_router)
 app.include_router(diario_router)
 app.include_router(diario_resumo_router)
 app.include_router(medicao_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/health")
