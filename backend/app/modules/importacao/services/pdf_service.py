@@ -36,6 +36,13 @@ class PdfService(FPDF):
         except (ValueError, TypeError):
             return "R$ 0,00"
 
+    @staticmethod
+    def _descricao_item(item: Dict[str, Any]) -> str:
+        descricao = item.get("descricao", "Sem descrição")
+        if item.get("fonte") == "PROPRIA":
+            return f"{descricao} (Fonte: {item.get('base_propria_nome') or 'Base própria'})"
+        return descricao
+
     def _render_row(
         self,
         indent: str,
@@ -174,7 +181,7 @@ class PdfService(FPDF):
             self.set_font("helvetica", "", 9)
             indent = "  " * depth
             for item_idx, item in enumerate(itens_by_etapa.get(node["id"], [])):
-                descricao = item.get("descricao", "Sem descrição")
+                descricao = self._descricao_item(item)
                 quantidade = float(item.get("quantidade", 0))
                 preco_unitario = float(item.get("preco_unitario", 0))
                 total_item = quantidade * preco_unitario
@@ -207,7 +214,7 @@ class PdfService(FPDF):
 
             self.set_font("helvetica", "", 9)
             for item_idx, item in enumerate(itens_sem_etapa):
-                descricao = item.get("descricao", "Sem descrição")
+                descricao = self._descricao_item(item)
                 quantidade = float(item.get("quantidade", 0))
                 preco_unitario = float(item.get("preco_unitario", 0))
                 total_item = quantidade * preco_unitario
@@ -272,7 +279,7 @@ class PdfService(FPDF):
         total_geral = 0.0
 
         for idx, item in enumerate(itens):
-            descricao = item.get("descricao", "Sem descrição")
+            descricao = self._descricao_item(item)
             quantidade = float(item.get("quantidade", 0))
             preco_unitario = float(item.get("preco_unitario", 0))
             total_item = quantidade * preco_unitario

@@ -172,6 +172,7 @@ class OrcamentoItemCreate(BaseModel):
     unidade: str
     estado: Optional[str] = None
     fonte: Optional[str] = None
+    base_propria_id: Optional[str] = None
     etapa_id: Optional[str] = None
     preco_unitario: Optional[float] = None
     memoria_calculo: Optional[str] = None
@@ -214,6 +215,8 @@ class OrcamentoItemResponse(BaseModel):
     preco_total_bdi: Optional[float] = 0.0
     estado: str
     fonte: str
+    base_propria_id: Optional[str] = None
+    base_propria_nome: Optional[str] = None
     memoria_calculo: Optional[str] = None
     variaveis: Optional[Any] = None
     created_at: Optional[datetime] = None
@@ -229,3 +232,44 @@ class OrcamentoItemInsumoUpdate(BaseModel):
     preco_unitario_custom: Optional[float] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- Schemas de atualização de preços da base própria ---
+
+
+class PrecoPropriaItemResponse(BaseModel):
+    item_id: str
+    codigo_composicao: str
+    descricao: str
+    base_propria_id: str
+    preco_atual: float
+    preco_novo: float
+    diferenca: float
+    variacao_percentual: Optional[float] = None
+    alterado: bool
+    aplicado: bool = False
+
+
+class PrecoPropriaIgnoradoResponse(BaseModel):
+    item_id: str
+    codigo_composicao: str
+    motivo: str
+
+
+class AtualizarPrecosPropriaResponse(BaseModel):
+    aplicado: bool
+    total_itens: int
+    itens_alterados: int
+    diferenca_custo_direto: float
+    itens: List[PrecoPropriaItemResponse]
+    ignorados: List[PrecoPropriaIgnoradoResponse]
+
+
+class ComposicaoPropriaBuscaResponse(BaseModel):
+    base_propria_id: str
+    base_propria_nome: str
+    codigo: str
+    descricao: str
+    unidade: str
+    grupo: Optional[str] = None
+    preco_unitario: Optional[float] = None
