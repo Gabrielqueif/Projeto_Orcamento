@@ -12,7 +12,6 @@ import {
   FileText,
   BookOpen,
   Plus,
-  Gear,
   Question,
   SignOut,
   Coins,
@@ -101,13 +100,6 @@ export function Sidebar() {
 
       {/* Bottom */}
       <div className="p-4 border-t border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]">
-        <Link
-          href="/configuracoes"
-          className="flex items-center gap-3 py-[10px] px-4 text-[#64748b] no-underline rounded-[8px] font-['Manrope'] text-[13px] transition-all duration-150 hover:text-white hover:bg-[rgba(255,255,255,0.06)]"
-        >
-          <Gear size={16} />
-          Configurações
-        </Link>
         <a
           href="mailto:suporte@gpobras.com.br"
           className="flex items-center gap-3 py-[10px] px-4 text-[#64748b] no-underline rounded-[8px] font-['Manrope'] text-[13px] transition-all duration-150 hover:text-white hover:bg-[rgba(255,255,255,0.06)]"

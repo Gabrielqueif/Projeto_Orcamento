@@ -11,7 +11,6 @@ import {
   Square,
   CheckSquareOffset,
   Funnel,
-  ShoppingCart,
   Cube,
   User,
   Coins,
@@ -253,7 +252,7 @@ export default function ObraDetalhePage() {
             </span>
           </Link>
           <Link
-            href={`/financeiro/controle?obra_id=${id}`}
+            href={`/financeiro/${id}`}
             className="flex items-center gap-3 bg-white border border-[#cbd5e1] px-6 py-[13px] rounded-[8px] font-['Manrope'] font-bold text-[14px] text-[#001b3d] no-underline hover:bg-[#f8fafc] transition-colors"
           >
             <Coins size={15} />
@@ -672,13 +671,6 @@ export default function ObraDetalhePage() {
             >
               <Warehouse size={18} />
               Acessar Almoxarifado & Inventário
-            </Link>
-            <Link
-              href="/suprimentos/solicitar"
-              className="w-full flex items-center justify-center gap-2 py-3 bg-white/10 text-white rounded-[8px] font-['Manrope'] font-bold text-[13px] no-underline transition-all hover:bg-white/20"
-            >
-              <ShoppingCart size={18} />
-              Solicitar Suprimentos
             </Link>
           </div>
         </div>

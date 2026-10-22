@@ -40,6 +40,7 @@ export interface PortfolioConsolidado {
     obra_nome: string;
     excesso_pct: number;
     obra_id: string;
+    href: string;
   } | null;
 }
 

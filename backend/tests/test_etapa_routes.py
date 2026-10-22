@@ -65,8 +65,8 @@ def test_atualizar_etapa_sucesso(client, mock_supabase):
     etapa_id = "etapa-1"
     payload = {"data_inicio": "2026-07-21", "data_fim": "2026-08-15"}
     
-    # Simulate update success return
-    mock_supabase.table.return_value.update.return_value.eq.return_value.execute.return_value.data = [
+    # Simulate update success return (filtrado por id e orcamento_id)
+    mock_supabase.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value.data = [
         {
             "id": etapa_id, 
             "orcamento_id": orcamento_id, 

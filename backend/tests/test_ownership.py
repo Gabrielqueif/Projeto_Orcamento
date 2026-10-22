@@ -88,3 +88,37 @@ def test_criar_orcamento_grava_user_id():
         user_id=DONO,
     )
     assert repo.criar.call_args.args[0]["user_id"] == DONO
+
+
+def _supabase_obra_pelo_orcamento(dono):
+    """Supabase mockado em que o id do path não é obras.id, mas obras.orcamento_id."""
+    sb = MagicMock()
+
+    def eq(coluna, valor):
+        consulta = MagicMock()
+        consulta.execute.return_value.data = [{"user_id": dono}] if coluna == "orcamento_id" else []
+        return consulta
+
+    sb.table.return_value.select.return_value.eq.side_effect = eq
+    return sb
+
+
+def test_dono_passa_com_id_do_orcamento_no_path_de_obra():
+    from core.ownership import enforce_ownership
+
+    request = MagicMock()
+    request.path_params = {"obra_id": "o1"}
+    usuario = {"id": DONO}
+    assert enforce_ownership(request, usuario, _supabase_obra_pelo_orcamento(DONO)) == usuario
+
+
+def test_intruso_com_id_do_orcamento_no_path_de_obra_recebe_404():
+    from fastapi import HTTPException
+
+    from core.ownership import enforce_ownership
+
+    request = MagicMock()
+    request.path_params = {"obra_id": "o1"}
+    with pytest.raises(HTTPException) as exc:
+        enforce_ownership(request, {"id": INTRUSO}, _supabase_obra_pelo_orcamento(DONO))
+    assert exc.value.status_code == 404

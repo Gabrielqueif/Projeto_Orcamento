@@ -73,11 +73,11 @@ def test_atualizar_etapa_sucesso(etapa_service, repository_mock):
     repository_mock.atualizar.return_value = retorno_esperado
 
     # Act
-    resultado = etapa_service.atualizar_etapa("1", {"nome": "Fundação Revisada", "ordem": 2})
+    resultado = etapa_service.atualizar_etapa("orc1", "1", {"nome": "Fundação Revisada", "ordem": 2})
 
     # Assert
     assert resultado == retorno_esperado
-    repository_mock.atualizar.assert_called_once_with("1", {"nome": "Fundação Revisada", "ordem": 2})
+    repository_mock.atualizar.assert_called_once_with("1", {"nome": "Fundação Revisada", "ordem": 2}, "orc1")
 
 
 @pytest.mark.unit
@@ -88,5 +88,5 @@ def test_atualizar_etapa_falha_repositorio_retorna_none(etapa_service, repositor
 
     # Act + Assert
     with pytest.raises(Exception, match="Erro ao atualizar etapa"):
-        etapa_service.atualizar_etapa("1", {"nome": "X"})
+        etapa_service.atualizar_etapa("orc1", "1", {"nome": "X"})
 

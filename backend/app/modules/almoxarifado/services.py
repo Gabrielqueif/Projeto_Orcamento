@@ -38,8 +38,8 @@ class AlmoxarifadoService:
         )
         return insumo
 
-    def registrar_movimentacao(self, insumo_id: str, schema: MovimentacaoCreate) -> Dict[str, Any]:
-        insumo = self.repository.buscar_insumo_por_id(insumo_id)
+    def registrar_movimentacao(self, obra_id: str, insumo_id: str, schema: MovimentacaoCreate) -> Dict[str, Any]:
+        insumo = self.repository.buscar_insumo_por_id(insumo_id, obra_id)
         if not insumo:
             raise NaoEncontradoError("Insumo não encontrado no almoxarifado")
 
@@ -120,11 +120,14 @@ class AlmoxarifadoService:
 
         return locacao
 
-    def atualizar_status_locacao(self, locacao_id: str, status: str) -> Dict[str, Any]:
-        return self.repository.atualizar_status_locacao(locacao_id, status)
+    def atualizar_status_locacao(self, obra_id: str, locacao_id: str, status: str) -> Dict[str, Any]:
+        locacao = self.repository.atualizar_status_locacao(locacao_id, obra_id, status)
+        if not locacao:
+            raise NaoEncontradoError("Locação não encontrada")
+        return locacao
 
-    def deletar_insumo(self, insumo_id: str) -> bool:
-        return self.repository.deletar_insumo(insumo_id)
+    def deletar_insumo(self, obra_id: str, insumo_id: str) -> bool:
+        return self.repository.deletar_insumo(insumo_id, obra_id)
 
-    def deletar_locacao(self, locacao_id: str) -> bool:
-        return self.repository.deletar_locacao(locacao_id)
+    def deletar_locacao(self, obra_id: str, locacao_id: str) -> bool:
+        return self.repository.deletar_locacao(locacao_id, obra_id)

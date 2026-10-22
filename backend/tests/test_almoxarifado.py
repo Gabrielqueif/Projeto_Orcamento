@@ -103,9 +103,10 @@ def test_registrar_movimentacao_entrada_sucesso(client, mock_supabase):
         "quantidade_atual": 450.00
     }
     
-    # 1. Mock buscar insumo
+    # 1. Mock buscar insumo (filtrado por id e obra_id)
     (mock_supabase.table.return_value
         .select.return_value
+        .eq.return_value
         .eq.return_value
         .execute.return_value.data) = [mock_insumo]
 
@@ -163,6 +164,7 @@ def test_registrar_movimentacao_saida_saldo_insuficiente(client, mock_supabase):
     
     (mock_supabase.table.return_value
         .select.return_value
+        .eq.return_value
         .eq.return_value
         .execute.return_value.data) = [mock_insumo]
 
@@ -232,7 +234,7 @@ def test_deletar_locacao_sucesso(client, mock_supabase):
     obra_id = "e9b50e2ddc9943efb387052637738f61"
     locacao_id = "00000000-0000-0000-0000-000000000030"
 
-    mock_supabase.table.return_value.delete.return_value.eq.return_value.execute.return_value.data = [
+    mock_supabase.table.return_value.delete.return_value.eq.return_value.eq.return_value.execute.return_value.data = [
         {"id": locacao_id}
     ]
 

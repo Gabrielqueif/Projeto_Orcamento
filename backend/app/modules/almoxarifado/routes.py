@@ -13,6 +13,7 @@ from app.modules.almoxarifado.schemas import (
     MovimentacaoResponse,
 )
 from app.modules.almoxarifado.services import AlmoxarifadoService
+from core.exceptions import NaoEncontradoError
 from core.ownership import enforce_ownership
 
 router = APIRouter(
@@ -51,7 +52,9 @@ async def registrar_movimentacao_endpoint(
     service: AlmoxarifadoService = Depends(get_almoxarifado_service),
 ):
     try:
-        return service.registrar_movimentacao(insumo_id, dados)
+        return service.registrar_movimentacao(obra_id, insumo_id, dados)
+    except NaoEncontradoError:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -78,14 +81,14 @@ async def atualizar_locacao_status_endpoint(
 ):
     if novo_status not in ["EM_USO", "AGUARDANDO_RETIRADA", "FINALIZADO"]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Status de locação inválido")
-    return service.atualizar_status_locacao(locacao_id, novo_status)
+    return service.atualizar_status_locacao(obra_id, locacao_id, novo_status)
 
 
 @router.delete("/insumos/{insumo_id}", status_code=status.HTTP_200_OK, summary="Deletar insumo do estoque")
 async def deletar_insumo_endpoint(
     obra_id: str, insumo_id: str, service: AlmoxarifadoService = Depends(get_almoxarifado_service)
 ):
-    sucesso = service.deletar_insumo(insumo_id)
+    sucesso = service.deletar_insumo(obra_id, insumo_id)
     if not sucesso:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Insumo não encontrado no estoque ou falha ao deletar"
@@ -97,7 +100,7 @@ async def deletar_insumo_endpoint(
 async def deletar_locacao_endpoint(
     obra_id: str, locacao_id: str, service: AlmoxarifadoService = Depends(get_almoxarifado_service)
 ):
-    sucesso = service.deletar_locacao(locacao_id)
+    sucesso = service.deletar_locacao(obra_id, locacao_id)
     if not sucesso:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Locação não encontrada ou falha ao deletar")
     return {"message": "Locação deletada com sucesso"}

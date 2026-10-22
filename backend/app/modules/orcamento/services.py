@@ -677,8 +677,12 @@ class OrcamentoItemService:
         if not self.insumo_repository:
             raise ValueError("Repositório de insumos não disponível")
 
+        item_pai = self.repository.buscar_por_id(item_id, orcamento_id)
+        if not item_pai:
+            raise NaoEncontradoError("Item não encontrado")
+
         insumo_atual = self.insumo_repository.buscar_por_id(insumo_id)
-        if not insumo_atual:
+        if not insumo_atual or str(insumo_atual.get("orcamento_item_id")) != str(item_id):
             raise NaoEncontradoError("Insumo não encontrado")
 
         qtd = dados.get("quantidade_unitaria", insumo_atual.get("quantidade_unitaria", 0))
@@ -695,7 +699,6 @@ class OrcamentoItemService:
         insumos = self.insumo_repository.listar_por_item(item_id)
         soma_totais = sum(float(i.get("total") or 0) for i in insumos)
 
-        item_pai = self.repository.buscar_por_id(item_id, orcamento_id)
         qtd_pai = float(item_pai.get("quantidade") or 1)
 
         novo_preco_total_pai = round(soma_totais, 2)

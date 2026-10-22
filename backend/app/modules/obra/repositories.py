@@ -34,7 +34,9 @@ class ObraRepository:
 
     def buscar_obra_por_orcamento(self, orcamento_id: str) -> Optional[Dict[str, Any]]:
         try:
-            resultado = self.supabase.table(TABELA_OBRAS).select("*").eq("orcamento_id", orcamento_id).limit(1).execute()
+            resultado = (
+                self.supabase.table(TABELA_OBRAS).select("*").eq("orcamento_id", orcamento_id).limit(1).execute()
+            )
             return resultado.data[0] if resultado.data else None
         except Exception as e:
             logger.error(f"Erro ao buscar obra do orçamento {orcamento_id}: {e}")

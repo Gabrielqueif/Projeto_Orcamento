@@ -72,17 +72,14 @@ async def atualizar_despesa_status_endpoint(
 ):
     if novo_status not in ["EM_ANALISE", "APROVADO", "PAGO", "RECUSADO"]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Status de despesa inválido")
-    despesa = service.repository.buscar_despesa_por_id(despesa_id)
-    if not despesa:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Despesa não encontrada")
-    return service.atualizar_status_despesa(despesa_id, novo_status)
+    return service.atualizar_status_despesa(obra_id, despesa_id, novo_status)
 
 
 @router.delete("/despesas/{despesa_id}", summary="Excluir despesa financeira")
 async def deletar_despesa_endpoint(
     obra_id: str, despesa_id: str, service: FinanceiroService = Depends(get_financeiro_service)
 ):
-    sucesso = service.deletar_despesa(despesa_id)
+    sucesso = service.deletar_despesa(obra_id, despesa_id)
     if not sucesso:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Despesa não encontrada ou falha ao excluir")
     return {"message": "Despesa excluída com sucesso"}

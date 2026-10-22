@@ -25,8 +25,8 @@ class EtapaService:
     def listar_etapas(self, orcamento_id: str) -> List[dict]:
         return self.repository.listar_por_orcamento(orcamento_id)
 
-    def atualizar_etapa(self, etapa_id: str, etapa_update: dict) -> dict:
-        resultado = self.repository.atualizar(etapa_id, etapa_update)
+    def atualizar_etapa(self, orcamento_id: str, etapa_id: str, etapa_update: dict) -> dict:
+        resultado = self.repository.atualizar(etapa_id, etapa_update, orcamento_id)
         if not resultado:
             raise Exception("Erro ao atualizar etapa")
         return resultado
