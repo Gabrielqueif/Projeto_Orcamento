@@ -1,9 +1,12 @@
-import pytest
-import pandas as pd
 from io import BytesIO
-from app.modules.importacao.services.sinapi_excel_parser import SinapiExcelParser
-from app.modules.importacao.services.seinfra_excel_parser import SeinfraExcelParser
+
+import pandas as pd
+import pytest
+
 from app.modules.importacao.services.parser_factory import get_parser
+from app.modules.importacao.services.seinfra_excel_parser import SeinfraExcelParser
+from app.modules.importacao.services.sinapi_excel_parser import SinapiExcelParser
+
 
 def create_mock_excel(data_dict: dict) -> bytes:
     """Helper to create a mock excel file in memory."""

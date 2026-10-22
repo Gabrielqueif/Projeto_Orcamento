@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock
 
+
 def test_criar_etapa_sucesso(client, mock_supabase):
     # Setup Mock
     orcamento_id = "orc-123"

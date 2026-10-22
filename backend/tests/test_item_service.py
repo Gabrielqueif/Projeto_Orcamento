@@ -4,9 +4,8 @@ listar_estados_composicao.
 
 Todos os repositórios são mockados via fixtures do conftest.py.
 """
-import pytest
-from unittest.mock import MagicMock
 
+import pytest
 
 # ---------------------------------------------------------------------------
 # buscar_composicao

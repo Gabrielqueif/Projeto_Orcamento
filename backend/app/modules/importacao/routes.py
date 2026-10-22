@@ -6,7 +6,7 @@ from app.modules.composicao.repositories import ItemRepository
 from app.modules.composicao.schemas import SinapiMetadata
 from app.modules.importacao.services.import_service import extract_metadata, process_import_file
 from core.config import settings
-from core.security import require_admin
+from core.security import get_current_user, require_admin
 from core.supabase_client import get_supabase_client
 
 logger = logging.getLogger("projeto_orcamento")
@@ -130,22 +130,16 @@ async def import_worksheet_data(
     }
 
 
+def _chave_ordenacao_base(base: dict) -> tuple:
+    """Mais recente primeiro: "MM/AAAA" vira (AAAA, MM) para ordenar cronologicamente."""
+    mes = str(base["mes_referencia"])
+    partes = mes.split("/")
+    cronologico = (partes[1], partes[0]) if len(partes) == 2 else (mes, "")
+    return (*cronologico, base["fonte"], base["tipo_composicao"])
+
+
 @router.get("/bases")
-async def listar_bases_disponiveis():
-    """Retorna a lista de meses e tipos de desoneração disponíveis para escolha."""
-    repo = get_item_repository()
-
-    bases = repo.listar_bases_disponiveis()
-    unique_bases = []
-    seen = set()
-    for b in bases:
-        mes = b.get("mes_referencia")
-        tipo = b.get("tipo_composicao", "Sem Desoneração")
-        fonte = b.get("fonte", "SINAPI")
-
-        key = (mes, tipo, fonte)
-        if key not in seen and mes:
-            seen.add(key)
-            unique_bases.append({"mes_referencia": mes, "tipo_composicao": tipo, "fonte": fonte})
-
-    return sorted(unique_bases, key=lambda x: (x["mes_referencia"], x["fonte"]), reverse=True)
+async def listar_bases_disponiveis(current_user=Depends(get_current_user)):
+    """Bases disponíveis (fonte, mês e desoneração) com a contagem de composições."""
+    bases = get_item_repository().listar_bases_disponiveis()
+    return sorted(bases, key=_chave_ordenacao_base, reverse=True)

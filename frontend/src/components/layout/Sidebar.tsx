@@ -6,10 +6,9 @@ import {
   Buildings,
   SquaresFour,
   HardHat,
-  Money,
+  Database,
   Users,
   UserPlus,
-  FileText,
   BookOpen,
   Plus,
   Question,
@@ -30,9 +29,8 @@ export function Sidebar() {
     { href: "/", icon: SquaresFour, label: "Dashboard" },
     { href: "/orcamentos", icon: Coins, label: "Orçamentos" },
     { href: "/obras", icon: HardHat, label: "Obras" },
-    { href: "/financeiro", icon: Money, label: "Custos" },
+    { href: "/bases", icon: Database, label: "Bases de Dados" },
     { href: "/equipe", icon: Users, label: "Equipe" },
-    { href: "/docs", icon: FileText, label: "Docs" },
     { href: "/diario", icon: BookOpen, label: "Diário de Obra" },
     ...(role === "admin"
       ? [{ href: "/admin/sinapi", icon: UploadSimple, label: "Importação" }]

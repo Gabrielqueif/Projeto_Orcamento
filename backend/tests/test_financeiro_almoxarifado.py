@@ -1,7 +1,9 @@
-import pytest
-from decimal import Decimal
 from unittest.mock import MagicMock
+
+import pytest
+
 from app.modules.almoxarifado.services import AlmoxarifadoService
+
 
 def test_status_insumo_critico():
     mock_repo = MagicMock()

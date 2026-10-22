@@ -1,6 +1,8 @@
 
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
+
 
 def analyze_seinfra(file_path, report_file):
     with open(report_file, "a", encoding="utf-8") as f_out:
@@ -26,11 +28,12 @@ def analyze_seinfra(file_path, report_file):
             f_out.write("\nExemplos de itens de Infraestrutura (Não-Construção):\n")
             infra_terms = keywords["RODOVIAS / PAVIMENTAÇÃO"] + keywords["SANEAMENTO / HIDRÁULICA"] + keywords["ELÉTRICA / ILUMINAÇÃO"]
             found_infra = []
-            for idx, row in df.iterrows():
+            for _, row in df.iterrows():
                 row_str = " ".join([str(v) for v in row.values if pd.notna(v)]).upper()
                 if any(term in row_str for term in infra_terms):
                     found_infra.append(row_str[:120])
-                    if len(found_infra) >= 15: break
+                    if len(found_infra) >= 15:
+                        break
             
             for item in found_infra:
                 f_out.write(f"  > {item}\n")

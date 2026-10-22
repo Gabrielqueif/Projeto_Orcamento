@@ -1,10 +1,7 @@
 import pytest
-from app.modules.orcamento.bdi import (
-    BDIConfig,
-    calcular_bdi_tcu,
-    determinar_tipo_bdi_item,
-    FAIXAS_REFERENCIA_TCU
-)
+
+from app.modules.orcamento.bdi import FAIXAS_REFERENCIA_TCU, BDIConfig, calcular_bdi_tcu, determinar_tipo_bdi_item
+
 
 def test_calcular_bdi_tcu_padrao():
     config = BDIConfig(

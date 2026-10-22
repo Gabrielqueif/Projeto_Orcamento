@@ -53,6 +53,8 @@ export default function AlmoxarifadoPage() {
   const [insumos, setInsumos] = useState<InsumoAlmoxarifado[]>([]);
   const [locacoes, setLocacoes] = useState<Locacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [importando, setImportando] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("TODOS");
 
@@ -97,104 +99,8 @@ export default function AlmoxarifadoPage() {
       setOrcamento(orcData);
       setItens(itensData);
 
-      // Se o banco de dados do estoque de insumos estiver vazio para esta obra,
-      // inicializamos automaticamente a partir dos itens de orçamento ou fallbacks!
-      if (dbInsumos.length === 0) {
-        const insumosParaCriar =
-          itensData.length > 0
-            ? itensData.map((item) => {
-                const desc = item.descricao.toLowerCase();
-                let categoria = "ESTRUTURA";
-                if (desc.includes("cimento") || desc.includes("concreto") || desc.includes("argamassa")) {
-                  categoria = "ESTRUTURA";
-                } else if (desc.includes("aço") || desc.includes("ferro")) {
-                  categoria = "ESTRUTURA";
-                } else if (desc.includes("capacete") || desc.includes("luva") || desc.includes("epi")) {
-                  categoria = "EPI";
-                } else if (desc.includes("pá") || desc.includes("martelo") || desc.includes("enxada")) {
-                  categoria = "FERRAMENTAS";
-                }
-
-                return {
-                  codigo_insumo: item.codigo_composicao,
-                  descricao: item.descricao,
-                  categoria,
-                  quantidade_atual: Math.round(item.quantidade * 0.85),
-                  quantidade_minima: Math.max(1, Math.round(item.quantidade * 0.2)),
-                  unidade: item.unidade,
-                  preco_unitario: item.preco_unitario || 0.0,
-                };
-              })
-            : [
-                {
-                  codigo_insumo: "SINAPI-1245",
-                  descricao: "Cimento CP-II",
-                  categoria: "ESTRUTURA",
-                  quantidade_atual: 450,
-                  quantidade_minima: 100,
-                  unidade: "sacos",
-                  preco_unitario: 32.5,
-                },
-                {
-                  codigo_insumo: "PR-8821",
-                  descricao: "Aço CA-50 10mm",
-                  categoria: "ESTRUTURA",
-                  quantidade_atual: 12,
-                  quantidade_minima: 15,
-                  unidade: "toneladas",
-                  preco_unitario: 5200.0,
-                },
-                {
-                  codigo_insumo: "EPI-500",
-                  descricao: "Capacete de Proteção EPI",
-                  categoria: "EPI",
-                  quantidade_atual: 25,
-                  quantidade_minima: 10,
-                  unidade: "unid",
-                  preco_unitario: 18.9,
-                },
-              ];
-
-        const criados = await Promise.all(
-          insumosParaCriar.map((insumo) => criarInsumo(id, insumo))
-        );
-        setInsumos(criados);
-      } else {
-        setInsumos(dbInsumos);
-      }
-
-      // Se o banco de dados de locações de equipamentos estiver vazio,
-      // inicializamos com as locações mockadas padrão do canteiro.
-      if (dbLocacoes.length === 0) {
-        const locacoesParaCriar = [
-          {
-            nome_equipamento: "Betoneira 400L",
-            locadora: "Rental Tech",
-            status: "EM_USO" as const,
-            devolucao_prevista: "2024-05-28",
-            responsavel: "Mestre Antônio",
-          },
-          {
-            nome_equipamento: "Martelete Elétrico 15kg",
-            locadora: "Tools Express",
-            status: "AGUARDANDO_RETIRADA" as const,
-            devolucao_prevista: "2024-05-25",
-          },
-          {
-            nome_equipamento: "Gerador 10kVA",
-            locadora: "Rental Tech",
-            status: "FINALIZADO" as const,
-            devolucao_prevista: "2024-05-20",
-          },
-        ];
-
-        const criadas = await Promise.all(
-          locacoesParaCriar.map((loc) => registrarLocacao(id, loc))
-        );
-        setLocacoes(criadas);
-      } else {
-        setLocacoes(dbLocacoes);
-      }
+      setInsumos(dbInsumos);
+      setLocacoes(dbLocacoes);
     } catch (err) {
       console.error("Erro ao carregar dados do almoxarifado:", err);
     } finally {
@@ -205,6 +111,39 @@ export default function AlmoxarifadoPage() {
   useEffect(() => {
     carregarDados();
   }, [id]);
+
+  const categoriaPorDescricao = (descricao: string) => {
+    const desc = descricao.toLowerCase();
+    if (desc.includes("capacete") || desc.includes("luva") || desc.includes("epi")) return "EPI";
+    if (desc.includes("martelo") || desc.includes("enxada") || /pá/.test(desc)) return "FERRAMENTAS";
+    return "ESTRUTURA";
+  };
+
+  // Cria os insumos do orçamento com estoque zerado: o usuário informa o saldo real depois.
+  const handleImportarInsumosDoOrcamento = async () => {
+    setImportando(true);
+    setImportError(null);
+    try {
+      const criados = await Promise.all(
+        itens.map((item) =>
+          criarInsumo(id, {
+            codigo_insumo: item.codigo_composicao,
+            descricao: item.descricao,
+            categoria: categoriaPorDescricao(item.descricao),
+            quantidade_atual: 0,
+            quantidade_minima: 0,
+            unidade: item.unidade,
+            preco_unitario: item.preco_unitario || 0,
+          })
+        )
+      );
+      setInsumos(criados);
+    } catch (err: any) {
+      setImportError(err.message || "Erro ao importar insumos do orçamento.");
+    } finally {
+      setImportando(false);
+    }
+  };
 
   const handleDeleteInsumo = async (insumoId: string) => {
     if (!window.confirm("Tem certeza que deseja remover este material do estoque físico? Isso também apagará o histórico de movimentações associado.")) {
@@ -623,7 +562,24 @@ export default function AlmoxarifadoPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
-              {insumosFiltrados.length === 0 ? (
+              {insumos.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-text-muted font-manrope text-[14px]">
+                    <p>O estoque desta obra está vazio.</p>
+                    {itens.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleImportarInsumosDoOrcamento}
+                        disabled={importando}
+                        className="mt-3 bg-brand-primary text-white px-4 py-2 rounded-[6px] font-bold text-[13px] hover:bg-brand-navy transition disabled:opacity-60"
+                      >
+                        {importando ? "Importando..." : "Importar insumos do orçamento"}
+                      </button>
+                    )}
+                    {importError && <p className="mt-2 text-status-danger text-[12px]">{importError}</p>}
+                  </td>
+                </tr>
+              ) : insumosFiltrados.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-text-muted font-manrope text-[14px]">
                     Nenhum material encontrado com os filtros selecionados.

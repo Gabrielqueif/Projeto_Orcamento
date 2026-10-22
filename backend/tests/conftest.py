@@ -1,11 +1,11 @@
-import pytest
 import sys
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import MagicMock
-from fastapi.testclient import TestClient
 
 import pandas as pd
+import pytest
+from fastapi.testclient import TestClient
 
 # ---------------------------------------------------------------------------
 # Path Setup — add backend root so `app`, `core`, `schemas` are importable
@@ -18,11 +18,10 @@ sys.path.insert(0, str(BASE_DIR))
 mock_supabase_module = MagicMock()
 sys.modules["supabase"] = mock_supabase_module
 
-from app.main import app  # noqa: E402  (import after sys.path setup)
 from app.dependencies import get_supabase  # noqa: E402
-from core.security import get_current_user  # noqa: E402
+from app.main import app  # noqa: E402  (import after sys.path setup)
 from core.ownership import enforce_ownership  # noqa: E402
-
+from core.security import get_current_user  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Shared infrastructure fixtures

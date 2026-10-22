@@ -172,7 +172,45 @@ class ItemRepository:
         )
 
     def listar_bases_disponiveis(self) -> List[Dict[str, Any]]:
-        return self.supabase.table(TABELA_COMPOSICOES).select("mes_referencia,fonte").execute().data or []
+        """Agrupa as composições por (fonte, mês, tipo) paginando a leitura.
+
+        O Supabase limita cada resposta a 1000 linhas; sem paginar, meses e fontes
+        inteiros somem da lista. Devolve a contagem de composições de cada grupo.
+        """
+        tamanho_pagina = 1000
+        contagem: Dict[tuple, int] = {}
+        inicio = 0
+        while True:
+            linhas = (
+                self.supabase.table(TABELA_COMPOSICOES)
+                .select("fonte,mes_referencia,tipo_composicao,codigo_composicao")
+                .order("fonte")
+                .order("mes_referencia")
+                .order("tipo_composicao")
+                .order("codigo_composicao")
+                .range(inicio, inicio + tamanho_pagina - 1)
+                .execute()
+                .data
+                or []
+            )
+            for linha in linhas:
+                mes = linha.get("mes_referencia")
+                if not mes:
+                    continue
+                chave = (
+                    linha.get("fonte") or "SINAPI",
+                    mes,
+                    linha.get("tipo_composicao") or "Sem Desoneração",
+                )
+                contagem[chave] = contagem.get(chave, 0) + 1
+            if len(linhas) < tamanho_pagina:
+                break
+            inicio += tamanho_pagina
+
+        return [
+            {"fonte": fonte, "mes_referencia": mes, "tipo_composicao": tipo, "total_composicoes": total}
+            for (fonte, mes, tipo), total in contagem.items()
+        ]
 
     def buscar_preco(
         self, codigo_composicao: str, estado: str, mes_referencia: str, tipo_composicao: str, fonte: str = "SINAPI"

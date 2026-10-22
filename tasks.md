@@ -8,7 +8,7 @@ Documento elaborado pela liderança técnica (**Software Architect / Tech Lead**
 
 O **Projeto Orçamento** é composto por:
 1. **Backend (FastAPI + Supabase):** Monólito modular estruturado em `app/modules/` (`orcamento`, `obra`, `etapa`, `item`, `almoxarifado`, `financeiro`, `equipe`, `importacao`).
-2. **Frontend (Next.js 14 App Router + Tailwind CSS):** Organizado em rotas `(dashboard)` com componentes clientes interativos e clientes de API desacoplados em `src/lib/api/`.
+2. **Frontend (Next.js 15 App Router + Tailwind CSS):** Organizado em rotas `(dashboard)` com componentes clientes interativos e clientes de API desacoplados em `src/lib/api/`.
 
 ---
 
@@ -17,7 +17,7 @@ O **Projeto Orçamento** é composto por:
 ### 🔴 Alta Prioridade (Foco Imediato)
 
 #### 1. Módulo Financeiro & Custos Reais
-- [ ] **[Backend] Conciliação Automática Almoxarifado x Financeiro:** Integrar a criação de saídas/entradas de insumos no canteiro para gerar lançamentos automáticos em `custos_despesas` com origem `ALMOXARIFADO`.
+- [x] **[Backend] Conciliação Automática Almoxarifado x Financeiro:** *(entregue: lançamentos com `origem: "ALMOXARIFADO"` em `almoxarifado/services.py`)* Integrar a criação de saídas/entradas de insumos no canteiro para gerar lançamentos automáticos em `custos_despesas` com origem `ALMOXARIFADO`.
 - [ ] **[Frontend] Filtros Avançados e Busca em `/financeiro/controle`:** Adicionar busca por palavra-chave na descrição e filtro por período/competência na tabela de lançamentos.
 - [ ] **[Backend] Relatório PDF/CSV de Consolidação Financeira:** Endpoint para geração de relatório analítico de desvio orçamentário e Curva S financeira.
 
@@ -27,14 +27,14 @@ O **Projeto Orçamento** é composto por:
 
 #### 3. Orçamento e Composições SINAPI
 - [ ] **[Frontend/Backend] Atualização em Lote de Preços BDI:** Permitir recálculo dinâmico do orçamento total ao alterar alíquotas ou variáveis globais de BDI.
-- [ ] **[Frontend] Exportação da Planilha de Orçamento em Excel (.xlsx):** Permitir o download da planilha analítica e sintética formatada para o cliente.
+- [x] **[Frontend] Exportação da Planilha de Orçamento em Excel (.xlsx):** *(entregue: `GET /orcamentos/{id}/excel`)* Permitir o download da planilha analítica e sintética formatada para o cliente.
 
 ---
 
 ### 🟡 Média Prioridade (Melhoria Contínua & Escalabilidade)
 
 #### 4. Equipe & Gestão de Alocação
-- [ ] **[Backend/Frontend] Apontamento de Horas e Produtividade:** Módulo de controle de diário de obra com registro de presença da equipe por etapa.
+- [x] **[Backend/Frontend] Diário de Obra:** *(entregue em `/diario`)* Módulo de controle de diário de obra com registro de presença da equipe por etapa.
 - [ ] **[Backend] Métricas de Desempenho:** Cálculo de produtividade média por trabalhador/função comparando o planejado no orçamento x executado.
 
 #### 5. Experiência do Usuário & Acessibilidade
@@ -53,4 +53,4 @@ O **Projeto Orçamento** é composto por:
 
 ## 🎯 Próximo Passo Sugerido
 
-Recomendamos iniciar pela tarefa **1. Conciliação Automática Almoxarifado x Financeiro** para fechar o ciclo completo entre a gestão do canteiro de obras e o impacto no financeiro real da obra.
+O roadmap vigente está em `PLANO_IMPLEMENTACAO.md` (bases próprias, UX e qualidade). Do backlog acima seguem em aberto os alertas de estoque mínimo, a baixa de estoque por etapa, o recálculo em lote de BDI e o relatório financeiro.
