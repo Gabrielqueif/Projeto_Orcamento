@@ -38,8 +38,8 @@ O **Projeto Orçamento** é composto por:
 - [ ] **[Backend] Métricas de Desempenho:** Cálculo de produtividade média por trabalhador/função comparando o planejado no orçamento x executado.
 
 #### 5. Experiência do Usuário & Acessibilidade
-- [ ] **[Frontend] Tratamento Global de Erros (Error Boundaries):** Adicionar telas amigáveis de fallback para erros de rede ou exceções 500 em todas as rotas do dashboard.
-- [ ] **[Frontend] Notificações Toast Persistentes:** Implementar sistema unificado de feedback de sucesso/erro para ações de salvamento e exclusão.
+- [x] **[Frontend] Tratamento Global de Erros (Error Boundaries):** Adicionar telas amigáveis de fallback para erros de rede ou exceções 500 em todas as rotas do dashboard.
+- [x] **[Frontend] Notificações Toast Persistentes:** Implementar sistema unificado de feedback de sucesso/erro para ações de salvamento e exclusão.
 
 ---
 

@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { Buildings } from '@phosphor-icons/react/dist/ssr'
 import Image from 'next/image'
 import logo from '@/../public/logo.png'
 

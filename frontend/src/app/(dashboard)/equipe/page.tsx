@@ -19,8 +19,10 @@ import {
 } from "@phosphor-icons/react";
 import { getMembrosEquipe, deleteMembroEquipe, type MembroEquipe } from "@/lib/api/membros_equipe";
 import { getOrcamentos, type Orcamento } from "@/lib/api/orcamentos";
+import { useToast } from "@/components/common/toast";
 
 export default function EquipePage() {
+  const { showToast } = useToast();
   const [members, setMembers] = useState<MembroEquipe[]>([]);
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ export default function EquipePage() {
         loadData();
       } catch (err) {
         console.error("Erro ao deletar colaborador:", err);
-        alert("Ocorreu um erro ao remover o colaborador da equipe.");
+        showToast("Ocorreu um erro ao remover o colaborador da equipe.", undefined, "error");
       }
     }
   };

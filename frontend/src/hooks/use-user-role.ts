@@ -41,7 +41,7 @@ export function useUserRole() {
             if (profile) {
               userRole = profile.role;
             }
-          } catch (e) {
+          } catch {
             // silently ignore
           }
         }
@@ -50,7 +50,7 @@ export function useUserRole() {
         lastUserRef.current = currentUser.id;
         lastRoleRef.current = finalRole;
         return finalRole;
-      } catch (err) {
+      } catch {
         return 'user'; // Fail safe
       }
     };

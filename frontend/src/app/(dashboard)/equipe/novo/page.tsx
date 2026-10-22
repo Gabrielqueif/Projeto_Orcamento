@@ -14,6 +14,7 @@ import {
 } from "@phosphor-icons/react";
 import { createMembroEquipe } from "@/lib/api/membros_equipe";
 import { getOrcamentos, type Orcamento } from "@/lib/api/orcamentos";
+import { useToast } from "@/components/common/toast";
 
 interface FileAttachment {
   name: string;
@@ -21,6 +22,7 @@ interface FileAttachment {
 }
 
 export default function NovoMembroPage() {
+  const { showToast } = useToast();
   const router = useRouter();
 
   // Form states
@@ -116,7 +118,7 @@ export default function NovoMembroPage() {
     e.preventDefault();
 
     if (!nome || !cpf || !cargo || !dataInicio || !remuneracao) {
-      alert("Por favor, preencha todos os campos obrigatórios.");
+      showToast("Por favor, preencha todos os campos obrigatórios.", undefined, "warning");
       return;
     }
 
@@ -137,7 +139,7 @@ export default function NovoMembroPage() {
       router.push("/equipe");
     } catch (err) {
       console.error("Erro ao salvar colaborador:", err);
-      alert("Ocorreu um erro ao salvar o colaborador na equipe.");
+      showToast("Ocorreu um erro ao salvar o colaborador na equipe.", undefined, "error");
     }
   };
 

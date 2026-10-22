@@ -15,7 +15,6 @@ import {
   ShieldCheck,
   Clock,
   ArrowLeft,
-  DownloadSimple
 } from "@phosphor-icons/react";
 
 interface DocumentFile {

@@ -7,7 +7,6 @@ import {
   ArrowRight,
   MapTrifold,
   X,
-  Check,
   Calendar,
   Building,
   CaretDown,

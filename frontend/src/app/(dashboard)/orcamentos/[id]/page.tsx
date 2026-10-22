@@ -4,21 +4,17 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft,
   DownloadSimple,
   PencilSimple,
   Copy,
   FileText,
-  CaretRight,
-  DotsThreeVertical,
   UploadSimple,
-  Plus, 
-  Trash, 
-  X, 
-  HardHat, 
+  Plus,
+  Trash,
+  HardHat,
   CaretDown,
   Calculator,
-  CalendarBlank
+  CalendarBlank,
 } from "@phosphor-icons/react";
 import { getObras } from "@/lib/api/obras";
 import { getOrcamento, getEtapas, downloadOrcamentoPDF, updateOrcamento, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
@@ -29,6 +25,7 @@ import { CronogramaFinanceiroView } from "@/components/orcamentos/CronogramaFina
 import { BdiConfigModal } from "@/components/orcamentos/BdiConfigModal";
 import { Modal } from "@/components/ui/Modal";
 import { TransitionDrawer } from "@/components/orcamentos/TransitionDrawer";
+import { useToast } from "@/components/common/toast";
 
 type TabType = "planilha" | "abc" | "cronograma" | "anexos";
 
@@ -42,6 +39,7 @@ const calcularDiasExecucao = (etapas: Etapa[]): number | null => {
 };
 
 export default function OrcamentoDetalhePage() {
+  const { showToast } = useToast();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -81,7 +79,7 @@ export default function OrcamentoDetalhePage() {
       await recarregarOrcamento();
     } catch (err) {
       console.error("Erro ao atualizar status:", err);
-      alert("Erro ao atualizar o status do orçamento.");
+      showToast("Erro ao atualizar o status do orçamento.", undefined, "error");
     } finally {
       setLoading(false);
     }
@@ -111,7 +109,7 @@ export default function OrcamentoDetalhePage() {
       recarregarOrcamento();
     } catch (err) {
       console.error(err);
-      alert("Erro ao salvar configurações do orçamento.");
+      showToast("Erro ao salvar configurações do orçamento.", undefined, "error");
     } finally {
       setSaving(false);
     }
@@ -166,7 +164,7 @@ export default function OrcamentoDetalhePage() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert("Erro ao exportar PDF.");
+      showToast("Erro ao exportar PDF.", undefined, "error");
       console.error(err);
     }
   };

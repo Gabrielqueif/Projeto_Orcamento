@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Buildings,
   SquaresFour,
   HardHat,
   Database,

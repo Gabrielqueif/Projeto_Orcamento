@@ -6,7 +6,6 @@ import {
   Wallet,
   SlidersHorizontal,
   ArrowLeft,
-  Check,
   Rocket,
 } from "@phosphor-icons/react";
 import { useState } from "react";
@@ -16,8 +15,10 @@ import { alocarMembrosAoOrcamento } from "@/lib/api/membros_equipe";
 import { useRouter } from "next/navigation";
 
 import { ObraWizardStepper } from "@/components/obras/ObraWizardStepper";
+import { useToast } from "@/components/common/toast";
 
 export default function NovaObraEtapa3Page() {
+  const { showToast } = useToast();
   const { data, updateData } = useWizard();
   const [custoEstimado, setCustoEstimado] = useState<string>("");
   const [margemLucro, setMargemLucro] = useState<number>(15);
@@ -36,7 +37,7 @@ export default function NovaObraEtapa3Page() {
 
   const handleFinish = async () => {
     if (!data.nome || !data.cliente) {
-      alert("Por favor, preencha os dados básicos na Etapa 1.");
+      showToast("Por favor, preencha os dados básicos na Etapa 1.", undefined, "warning");
       router.push("/obras/novo");
       return;
     }
@@ -74,11 +75,11 @@ export default function NovaObraEtapa3Page() {
         await alocarMembrosAoOrcamento(data.membros, novaObra.orcamento_id).catch(() => {});
       }
 
-      alert("Obra e Orçamento criados com sucesso!");
+      showToast("Obra e Orçamento criados com sucesso!", undefined, "success");
       router.push("/obras");
     } catch (error) {
       console.error("Erro ao finalizar projeto:", error);
-      alert("Ocorreu um erro ao salvar o projeto.");
+      showToast("Ocorreu um erro ao salvar o projeto.", undefined, "error");
     } finally {
       setIsSubmitting(false);
     }

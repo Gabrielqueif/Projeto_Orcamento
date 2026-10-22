@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Calendar, CaretDown, MagnifyingGlass, ArrowRight, Trash } from "@phosphor-icons/react";
+import {
+  Plus,
+  MagnifyingGlass,
+  ArrowRight,
+  Trash,
+} from "@phosphor-icons/react";
 import { getOrcamentos, getEtapas, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
 import { excluirObra, getObras, type Obra } from "@/lib/api/obras";
 import { useToast } from "@/components/common/toast";

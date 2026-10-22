@@ -33,8 +33,10 @@ import {
   Despesa,
   DespesaCreate,
 } from "@/lib/api/financeiro";
+import { useToast } from "@/components/common/toast";
 
 export default function GestaoCustosObraPage() {
+  const { showToast } = useToast();
   const params = useParams();
   const obraId = params?.id as string;
 
@@ -104,7 +106,7 @@ export default function GestaoCustosObraPage() {
       });
       await carregarDados();
     } catch (err: any) {
-      alert(err.message || "Erro ao registrar despesa");
+      showToast(err.message || "Erro ao registrar despesa", undefined, "error");
     } finally {
       setSalvando(false);
     }
@@ -118,7 +120,7 @@ export default function GestaoCustosObraPage() {
       await atualizarStatusDespesa(obraId, despesaId, novoStatus);
       await carregarDados();
     } catch (err: any) {
-      alert(err.message || "Erro ao atualizar status");
+      showToast(err.message || "Erro ao atualizar status", undefined, "error");
     }
   };
 
@@ -128,7 +130,7 @@ export default function GestaoCustosObraPage() {
       setDespesaParaExcluir(null);
       await carregarDados();
     } catch (err: any) {
-      alert(err.message || "Erro ao excluir despesa");
+      showToast(err.message || "Erro ao excluir despesa", undefined, "error");
     }
   };
 
