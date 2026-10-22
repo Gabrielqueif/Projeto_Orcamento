@@ -98,6 +98,8 @@ export function OrcamentoItemForm({
         unidade: itemToEdit.unidade,
         preco: itemToEdit.preco_unitario || undefined,
         fonte: itemToEdit.fonte || fonteOrcamento,
+        base_propria_id: itemToEdit.base_propria_id ?? undefined,
+        base_propria_nome: itemToEdit.base_propria_nome ?? undefined,
       });
 
       const parsed = parseSavedMemoria(itemToEdit.variaveis);
@@ -209,6 +211,7 @@ export function OrcamentoItemForm({
           memoria_calculo: formula || undefined,
           variaveis: variaveisPayload,
           fonte: composicaoSelecionada.fonte,
+          base_propria_id: composicaoSelecionada.base_propria_id,
         };
         await updateItem(orcamentoId, itemToEdit.id, itemUpdate);
       } else {
@@ -221,6 +224,7 @@ export function OrcamentoItemForm({
           memoria_calculo: formula || undefined,
           variaveis: variaveisPayload,
           fonte: composicaoSelecionada.fonte,
+          base_propria_id: composicaoSelecionada.base_propria_id,
           preco_unitario: composicaoSelecionada.preco,
         };
         await addItem(orcamentoId, itemData);
@@ -271,6 +275,7 @@ export function OrcamentoItemForm({
           baseBusca={baseBusca}
           onBaseBuscaChange={setBaseBusca}
           isEditing={Boolean(itemToEdit)}
+          orcamentoId={orcamentoId}
           contextoPreco={{
             estado: estadoOrcamento,
             mes_referencia: orcamento?.base_referencia,
