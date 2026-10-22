@@ -5,7 +5,13 @@ from fastapi import APIRouter, Depends
 from app.dependencies import get_supabase
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.obra.repositories import ObraRepository
-from app.modules.obra.schemas import LimiteRequisicaoResponse, ObraResponse, ObraStatusUpdate, ObraTransitionCreate
+from app.modules.obra.schemas import (
+    LimiteRequisicaoResponse,
+    ObraCreate,
+    ObraResponse,
+    ObraStatusUpdate,
+    ObraTransitionCreate,
+)
 from app.modules.obra.services import ObraService
 from app.modules.orcamento.repositories import OrcamentoItemRepository, OrcamentoRepository
 from core.ownership import enforce_ownership
@@ -31,6 +37,13 @@ async def gerar_obra_endpoint(
     orcamento_id: str, dados_transicao: ObraTransitionCreate, service: ObraService = Depends(get_obra_service)
 ):
     return service.gerar_obra(orcamento_id, dados_transicao)
+
+
+@router.post("/", response_model=ObraResponse, status_code=201, summary="Criar obra com orçamento em branco")
+async def criar_obra_endpoint(
+    dados: ObraCreate, service: ObraService = Depends(get_obra_service), user: dict = Depends(get_current_user)
+):
+    return service.criar_obra(dados, user_id=user["id"])
 
 
 @router.get("/", response_model=List[ObraResponse], summary="Listar todas as obras")

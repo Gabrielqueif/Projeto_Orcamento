@@ -13,6 +13,7 @@ from app.modules.obra.services import ObraService
 def test_gerar_obra_sucesso():
     # Setup mocks
     obra_repo = MagicMock()
+    obra_repo.buscar_obra_por_orcamento.return_value = None
     orcamento_repo = MagicMock()
     etapa_repo = MagicMock()
     item_repo = MagicMock()
@@ -83,6 +84,20 @@ def test_gerar_obra_sucesso():
     obra_repo.criar_limites_requisicao_batch.assert_called_once()
 
 
+def test_gerar_obra_orcamento_ja_vinculado():
+    obra_repo = MagicMock()
+    obra_repo.buscar_obra_por_orcamento.return_value = {"id": "obra-1"}
+    orcamento_repo = MagicMock()
+    orcamento_repo.buscar_por_id.return_value = {"id": "orc-1", "status": "aprovado"}
+    service = ObraService(obra_repo, orcamento_repo, MagicMock(), MagicMock(), MagicMock())
+
+    dados = ObraTransitionCreate(data_inicio_real=date(2026, 7, 20), prazo_estimado_dias=120)
+
+    with pytest.raises(ValueError, match="já está vinculado a uma obra"):
+        service.gerar_obra("orc-1", dados)
+    obra_repo.criar_obra.assert_not_called()
+
+
 def test_gerar_obra_status_invalido():
     obra_repo = MagicMock()
     orcamento_repo = MagicMock()
@@ -121,6 +136,7 @@ def test_gerar_obra_status_invalido():
 
 def test_gerar_obra_sem_bloqueio_e_sem_abc():
     obra_repo = MagicMock()
+    obra_repo.buscar_obra_por_orcamento.return_value = None
     orcamento_repo = MagicMock()
     etapa_repo = MagicMock()
     item_repo = MagicMock()
@@ -160,6 +176,44 @@ def test_gerar_obra_sem_bloqueio_e_sem_abc():
     assert result == obra_mock
     orcamento_repo.atualizar.assert_not_called()
     obra_repo.criar_limites_requisicao_batch.assert_not_called()
+
+def test_criar_obra_gera_orcamento_em_branco():
+    from datetime import date
+
+    from app.modules.obra.schemas import ObraCreate
+
+    obra_repo = MagicMock()
+    orcamento_repo = MagicMock()
+    orcamento_repo.criar.return_value = {"id": "orc-1"}
+    obra_repo.criar_obra.return_value = {"id": "obra-1", "orcamento_id": "orc-1"}
+    service = ObraService(obra_repo, orcamento_repo, MagicMock(), MagicMock(), MagicMock())
+
+    dados = ObraCreate(nome="Casa", cliente="Ana", data_inicio_real=date(2026, 1, 5), prazo_estimado_dias=30)
+    res = service.criar_obra(dados, user_id="u1")
+
+    orcamento = orcamento_repo.criar.call_args[0][0]
+    assert orcamento["valor_total"] == 0.0
+    assert orcamento["status"] == "em_elaboracao"
+    assert orcamento["user_id"] == "u1"
+    assert obra_repo.criar_obra.call_args[0][0]["orcamento_id"] == "orc-1"
+    assert res["id"] == "obra-1"
+
+
+def test_criar_obra_com_orcamento_existente_nao_cria_outro():
+    from datetime import date
+
+    from app.modules.obra.schemas import ObraCreate
+
+    obra_repo = MagicMock()
+    orcamento_repo = MagicMock()
+    obra_repo.criar_obra.return_value = {"id": "obra-1"}
+    service = ObraService(obra_repo, orcamento_repo, MagicMock(), MagicMock(), MagicMock())
+
+    dados = ObraCreate(orcamento_id="orc-9", cliente="Ana", data_inicio_real=date(2026, 1, 5), prazo_estimado_dias=0)
+    service.criar_obra(dados, user_id="u1")
+
+    orcamento_repo.criar.assert_not_called()
+
 
 def test_service_buscar_obra():
     obra_repo = MagicMock()

@@ -16,7 +16,13 @@ class ObraTransitionCreate(BaseModel):
 
 class ObraCreate(BaseModel):
     orcamento_id: Optional[str] = None
+    nome: Optional[str] = None
     cliente: str
+    estado: Optional[str] = "SP"
+    fonte: Optional[str] = "SINAPI"
+    base_referencia: Optional[str] = None
+    tipo_composicao: Optional[str] = "Sem Desoneração"
+    bdi: Optional[float] = 0.0
     endereco: Optional[Any] = None
     escopo: Optional[str] = None
     data_inicio_real: date

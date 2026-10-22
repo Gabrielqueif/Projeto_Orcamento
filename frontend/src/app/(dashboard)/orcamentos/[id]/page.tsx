@@ -20,6 +20,7 @@ import {
   Calculator,
   CalendarBlank
 } from "@phosphor-icons/react";
+import { getObras } from "@/lib/api/obras";
 import { getOrcamento, getEtapas, downloadOrcamentoPDF, updateOrcamento, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
 import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus } from "@/lib/orcamentoStatus";
 import { PlanilhaView } from "@/components/orcamentos/PlanilhaView";
@@ -62,6 +63,14 @@ export default function OrcamentoDetalhePage() {
   const [saving, setSaving] = useState(false);
   const [isTransitionDrawerOpen, setIsTransitionDrawerOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const [jaTemObra, setJaTemObra] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    getObras()
+      .then((obras) => setJaTemObra(obras.some((o) => o.orcamento_id === id)))
+      .catch(() => setJaTemObra(false));
+  }, [id]);
 
   const handleUpdateStatus = async (newStatus: string) => {
     setIsStatusDropdownOpen(false);
@@ -278,10 +287,12 @@ export default function OrcamentoDetalhePage() {
             {isAprovado ? (
               <button
                 onClick={() => setIsTransitionDrawerOpen(true)}
-                className="flex items-center gap-2 bg-[#001b3d] text-white font-['Manrope'] font-bold text-[14px] px-5 py-2.5 rounded-[8px] transition-all hover:bg-[#00102a] shadow-[0_10px_15px_-3px_rgba(0,27,61,0.1),0_4px_6px_-4px_rgba(0,27,61,0.1)] border-none cursor-pointer"
+                disabled={jaTemObra}
+                title={jaTemObra ? "Este orçamento já está vinculado a uma obra" : undefined}
+                className="flex items-center gap-2 bg-[#001b3d] text-white font-['Manrope'] font-bold text-[14px] px-5 py-2.5 rounded-[8px] transition-all hover:bg-[#00102a] shadow-[0_10px_15px_-3px_rgba(0,27,61,0.1),0_4px_6px_-4px_rgba(0,27,61,0.1)] border-none cursor-pointer disabled:bg-[#f1f5f9] disabled:text-[#94a3b8] disabled:shadow-none disabled:cursor-not-allowed"
               >
                 <HardHat size={16} weight="bold" />
-                Gerar Obra
+                {jaTemObra ? "Obra já gerada" : "Gerar Obra"}
               </button>
             ) : (
               <button className="flex items-center gap-2 bg-[#f1f5f9] text-[#94a3b8] font-['Manrope'] font-bold text-[14px] px-5 py-2.5 rounded-[8px] cursor-not-allowed border-none" disabled>

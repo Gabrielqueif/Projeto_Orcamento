@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.obra.repositories import ObraRepository
-from app.modules.obra.schemas import ObraTransitionCreate
+from app.modules.obra.schemas import ObraCreate, ObraTransitionCreate
 from app.modules.orcamento.repositories import OrcamentoItemRepository, OrcamentoRepository
 from core.exceptions import NaoEncontradoError
 
@@ -32,6 +32,9 @@ class ObraService:
         status_orcamento = orcamento.get("status", "").upper()
         if "APROVADO" not in status_orcamento and "CONCLUIDO" not in status_orcamento:
             raise ValueError("Apenas orçamentos com status APROVADO podem ser iniciados como obra.")
+
+        if self.obra_repository.buscar_obra_por_orcamento(orcamento_id):
+            raise ValueError("Este orçamento já está vinculado a uma obra.")
 
         # 2. Criar obra
         dados_obra = {
@@ -117,6 +120,53 @@ class ObraService:
             self.obra_repository.criar_limites_requisicao_batch(limites)
 
         return obra_criada
+
+    def criar_obra(self, dados: ObraCreate, user_id: Optional[str] = None) -> Dict[str, Any]:
+        """Cria a obra junto com um orçamento em branco vinculado a ela."""
+        orcamento_id = dados.orcamento_id
+        if not orcamento_id:
+            agora = datetime.now()
+            orcamento = self.orcamento_repository.criar(
+                {
+                    "nome": dados.nome or dados.escopo or dados.cliente,
+                    "cliente": dados.cliente,
+                    "data": dados.data_inicio_real.isoformat(),
+                    "base_referencia": dados.base_referencia or dados.fonte or "SINAPI",
+                    "tipo_composicao": dados.tipo_composicao or "Sem Desoneração",
+                    "estado": (dados.estado or "SP").lower(),
+                    "fonte": dados.fonte or "SINAPI",
+                    "bdi": dados.bdi or 0.0,
+                    "tipo_bdi": "SINTETICO",
+                    "bdi_config": {},
+                    "margem_valor": 0.0,
+                    "status": "em_elaboracao",
+                    "valor_total": 0.0,
+                    "variaveis_globais": [],
+                    "locais": [],
+                    "user_id": user_id,
+                    "created_at": agora.isoformat(),
+                    "updated_at": agora.isoformat(),
+                }
+            )
+            orcamento_id = orcamento["id"]
+
+        return self.obra_repository.criar_obra(
+            {
+                "orcamento_id": orcamento_id,
+                "user_id": user_id,
+                "cliente": dados.cliente,
+                "endereco": dados.endereco or {},
+                "escopo": dados.escopo or dados.nome,
+                "data_inicio_real": dados.data_inicio_real.isoformat(),
+                "prazo_estimado_dias": dados.prazo_estimado_dias,
+                "engenheiro_responsavel_id": dados.engenheiro_responsavel_id,
+                "enviar_curva_abc_almoxarifado": dados.enviar_curva_abc_almoxarifado,
+                "bloquear_planilha_base": dados.bloquear_planilha_base,
+                "status": dados.status or "EM_ANDAMENTO",
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+            }
+        )
 
     def buscar_obra(self, obra_id: str) -> Optional[Dict[str, Any]]:
         obra = self.obra_repository.buscar_obra_por_id(obra_id)
