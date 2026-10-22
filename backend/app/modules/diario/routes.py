@@ -14,6 +14,8 @@ from app.modules.diario.schemas import (
     ResumoDiarioResponse,
 )
 from app.modules.diario.services import DiarioService
+from app.modules.medicao.repositories import MedicaoRepository
+from app.modules.medicao.services import MedicaoService
 from core.ownership import enforce_ownership
 from core.security import get_current_user
 
@@ -32,7 +34,7 @@ router_resumo = APIRouter(
 
 
 def get_diario_service(supabase=Depends(get_supabase)) -> DiarioService:
-    return DiarioService(DiarioRepository(supabase))
+    return DiarioService(DiarioRepository(supabase), MedicaoService(MedicaoRepository(supabase)))
 
 
 @router_resumo.get("/resumo", response_model=ResumoDiarioResponse, summary="Visão geral do diário das obras ativas")

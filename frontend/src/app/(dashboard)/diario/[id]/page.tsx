@@ -287,6 +287,19 @@ export default function DiarioObraPage() {
                         </p>
                       )}
 
+                      {registro.avancos.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          {registro.avancos.map((avanco) => (
+                            <span
+                              key={avanco.etapa_id}
+                              className="px-3 py-1 rounded-full bg-[#f0f3ff] text-[12px] font-bold text-[#001b3c]"
+                            >
+                              {avanco.etapa_nome ?? "Etapa"}: {avanco.progresso}%
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       {registro.fotos.length > 0 && (
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
                           {registro.fotos.map((foto, i) =>
@@ -376,6 +389,7 @@ export default function DiarioObraPage() {
         obraId={obraId}
         registro={emEdicao}
         responsavelPadrao={obra.responsavel}
+        etapas={obra.etapas}
         onSaved={carregar}
       />
     </div>

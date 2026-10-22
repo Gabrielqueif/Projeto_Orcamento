@@ -4,6 +4,8 @@ from typing import Annotated, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from app.modules.medicao.schemas import AvancoEtapa
+
 Clima = Literal["SOL", "NUBLADO", "CHUVA"]
 StatusDiario = Literal["RASCUNHO", "ENVIADO", "APROVADO"]
 SituacaoDiario = Literal["ENVIADO", "RASCUNHO", "PENDENTE", "ALERTA"]
@@ -22,6 +24,7 @@ class DiarioCreate(BaseModel):
     temperatura: Optional[Decimal] = Field(default=None, ge=-10, le=60)
     equipe_presente: int = Field(default=0, ge=0, le=10000)
     responsavel: Optional[Responsavel] = None
+    avancos: List[AvancoEtapa] = []
 
 
 class DiarioUpdate(BaseModel):
@@ -33,6 +36,8 @@ class DiarioUpdate(BaseModel):
     temperatura: Optional[Decimal] = Field(default=None, ge=-10, le=60)
     equipe_presente: Optional[int] = Field(default=None, ge=0, le=10000)
     responsavel: Optional[Responsavel] = None
+    # None mantém as medições do diário; lista (mesmo vazia) substitui.
+    avancos: Optional[List[AvancoEtapa]] = None
 
 
 class DiarioStatusUpdate(BaseModel):
@@ -45,6 +50,18 @@ class FotoResponse(BaseModel):
     legenda: Optional[str] = None
     url: Optional[str] = None
     created_at: Optional[datetime] = None
+
+
+class AvancoDiario(BaseModel):
+    etapa_id: str
+    etapa_nome: Optional[str] = None
+    progresso: int
+
+
+class EtapaResumo(BaseModel):
+    id: str
+    nome: str
+    progresso: int = 0
 
 
 class DiarioResponse(BaseModel):
@@ -61,6 +78,7 @@ class DiarioResponse(BaseModel):
     responsavel: Optional[str] = None
     status: StatusDiario
     fotos: List[FotoResponse] = []
+    avancos: List[AvancoDiario] = []
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -75,6 +93,7 @@ class ObraDiarioInfo(BaseModel):
     data_inicio: Optional[date] = None
     prazo_dias: Optional[int] = None
     progresso: int = 0
+    etapas: List[EtapaResumo] = []
     ultima_atualizacao: Optional[datetime] = None
 
 

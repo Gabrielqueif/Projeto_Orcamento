@@ -6,13 +6,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.modules.diario.repositories import DiarioRepository
 from app.modules.diario.schemas import DiarioCreate, DiarioUpdate
+from app.modules.medicao.services import MedicaoService
 from core.exceptions import NaoEncontradoError
+from core.tempo import hoje
 
 logger = logging.getLogger("projeto_orcamento")
-
-# O Brasil não tem horário de verão desde 2019, então um deslocamento fixo basta
-# para decidir o que é "hoje" sem depender do banco de fusos do sistema.
-FUSO_BRASIL = timezone(timedelta(hours=-3))
 
 MAX_FOTOS_POR_DIARIO = 10
 JANELA_RESUMO_DIAS = 60
@@ -25,10 +23,6 @@ TRANSICOES_STATUS = {
     "ENVIADO": {"APROVADO", "RASCUNHO"},
     "APROVADO": {"ENVIADO"},
 }
-
-
-def hoje() -> date:
-    return datetime.now(FUSO_BRASIL).date()
 
 
 def detectar_imagem(conteudo: bytes) -> Optional[Tuple[str, str]]:
@@ -69,8 +63,9 @@ def _serializar(dados: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class DiarioService:
-    def __init__(self, repository: DiarioRepository):
+    def __init__(self, repository: DiarioRepository, medicoes: Optional[MedicaoService] = None):
         self.repository = repository
+        self.medicoes = medicoes
 
     # --- Helpers -------------------------------------------------------------
 
@@ -110,8 +105,18 @@ class DiarioService:
                     "created_at": f.get("created_at"),
                 }
             )
+        avancos: Dict[str, List[Dict[str, Any]]] = {}
+        for a in self.repository.avancos_dos_diarios([d["id"] for d in diarios]):
+            avancos.setdefault(a["diario_id"], []).append(
+                {"etapa_id": a["etapa_id"], "etapa_nome": a["etapa_nome"], "progresso": a["progresso"]}
+            )
         return [
-            {**d, "tem_ocorrencia": bool((d.get("ocorrencias") or "").strip()), "fotos": por_diario.get(d["id"], [])}
+            {
+                **d,
+                "tem_ocorrencia": bool((d.get("ocorrencias") or "").strip()),
+                "fotos": por_diario.get(d["id"], []),
+                "avancos": avancos.get(d["id"], []),
+            }
             for d in diarios
         ]
 
@@ -120,7 +125,11 @@ class DiarioService:
         nomes = self.repository.nomes_de_orcamentos([orcamento_id] if orcamento_id else [])
         membro_id = obra.get("engenheiro_responsavel_id")
         membros = self.repository.nomes_de_membros([membro_id] if membro_id else [])
-        progressos = self.repository.progressos_das_etapas(orcamento_id) if orcamento_id else []
+        etapas = self.repository.etapas_do_orcamento(orcamento_id) if orcamento_id else []
+        pais = {e["parent_id"] for e in etapas if e.get("parent_id")}
+        # Só etapas-folha recebem avanço; as demais são agrupadores.
+        folhas = [e for e in etapas if e["id"] not in pais]
+        progressos = [int(e.get("progresso") or 0) for e in etapas]
         return {
             "obra_id": obra["id"],
             "nome": nomes.get(orcamento_id) or obra.get("escopo") or obra.get("cliente") or "Obra",
@@ -129,6 +138,7 @@ class DiarioService:
             "data_inicio": obra.get("data_inicio_real"),
             "prazo_dias": obra.get("prazo_estimado_dias"),
             "progresso": round(sum(progressos) / len(progressos)) if progressos else 0,
+            "etapas": [{"id": e["id"], "nome": e["nome"], "progresso": int(e.get("progresso") or 0)} for e in folhas],
             "ultima_atualizacao": ultima_atualizacao,
         }
 
@@ -150,7 +160,14 @@ class DiarioService:
         self._validar_data(schema.data)
         if self.repository.buscar_por_data(real, schema.data.isoformat()):
             raise ValueError("Já existe um diário para essa data nesta obra")
-        criado = self.repository.criar(real, _serializar(schema.model_dump()))
+        criado = self.repository.criar(real, _serializar(schema.model_dump(exclude={"avancos"})))
+        if schema.avancos and self.medicoes:
+            try:
+                self.medicoes.substituir_do_diario(real, criado["id"], schema.data, schema.avancos)
+            except Exception:
+                # Sem as medições o registro ficaria incompleto: desfaz a criação.
+                self.repository.deletar(criado["id"], real)
+                raise
         return self._com_fotos([criado])[0]
 
     def atualizar(self, obra_id: str, diario_id: str, schema: DiarioUpdate) -> Dict[str, Any]:
@@ -158,11 +175,11 @@ class DiarioService:
         atual = self._diario(real, diario_id)
         self._exigir_editavel(atual)
 
-        dados = schema.model_dump(exclude_unset=True)
+        dados = schema.model_dump(exclude_unset=True, exclude={"avancos"})
         for campo in CAMPOS_OBRIGATORIOS:
             if campo in dados and dados[campo] is None:
                 raise ValueError(f"O campo '{campo}' não pode ser vazio")
-        if not dados:
+        if not dados and schema.avancos is None:
             return self._com_fotos([atual])[0]
 
         nova_data = dados.get("data")
@@ -176,6 +193,8 @@ class DiarioService:
         atualizado = self.repository.atualizar(diario_id, real, _serializar(dados))
         if not atualizado:
             raise NaoEncontradoError("Diário não encontrado")
+        if schema.avancos is not None and self.medicoes:
+            self.medicoes.substituir_do_diario(real, diario_id, _como_data(atualizado["data"]), schema.avancos)
         return self._com_fotos([atualizado])[0]
 
     def alterar_status(self, obra_id: str, diario_id: str, novo_status: str) -> Dict[str, Any]:
@@ -195,6 +214,9 @@ class DiarioService:
         atual = self._diario(real, diario_id)
         self._exigir_editavel(atual)
         caminhos = [f["caminho"] for f in self.repository.listar_fotos([diario_id])]
+        if self.medicoes:
+            # As medições citam o diário; sem ele perderiam a origem, então saem junto.
+            self.medicoes.substituir_do_diario(real, diario_id, _como_data(atual["data"]), [])
         if not self.repository.deletar(diario_id, real):
             raise NaoEncontradoError("Diário não encontrado")
         self.repository.remover_arquivos(caminhos)
@@ -298,19 +320,25 @@ class DiarioService:
     def _situacao(
         registros: List[Dict[str, Any]], inicio: Optional[date], data_hoje: date
     ) -> Tuple[str, Optional[Dict[str, Any]]]:
-        """
-        ENVIADO: há diário de hoje já enviado; RASCUNHO: há de hoje, mas não enviado;
-        PENDENTE: ainda dentro do prazo normal de preenchimento; ALERTA: 2+ dias sem registro.
-        """
-        ultimo = registros[0] if registros else None
-        if ultimo and _como_data(ultimo["data"]) == data_hoje:
-            return ("RASCUNHO" if ultimo["status"] == "RASCUNHO" else "ENVIADO"), ultimo
-        if inicio and inicio > data_hoje:
-            return "PENDENTE", ultimo
-        referencia = _como_data(ultimo["data"]) if ultimo else inicio
-        if referencia is None or (data_hoje - referencia).days >= 2:
-            return "ALERTA", ultimo
+        return situacao_do_diario(registros, inicio, data_hoje)
+
+
+def situacao_do_diario(
+    registros: List[Dict[str, Any]], inicio: Optional[date], data_hoje: date
+) -> Tuple[str, Optional[Dict[str, Any]]]:
+    """
+    ENVIADO: há diário de hoje já enviado; RASCUNHO: há de hoje, mas não enviado;
+    PENDENTE: ainda dentro do prazo normal de preenchimento; ALERTA: 2+ dias sem registro.
+    """
+    ultimo = registros[0] if registros else None
+    if ultimo and _como_data(ultimo["data"]) == data_hoje:
+        return ("RASCUNHO" if ultimo["status"] == "RASCUNHO" else "ENVIADO"), ultimo
+    if inicio and inicio > data_hoje:
         return "PENDENTE", ultimo
+    referencia = _como_data(ultimo["data"]) if ultimo else inicio
+    if referencia is None or (data_hoje - referencia).days >= 2:
+        return "ALERTA", ultimo
+    return "PENDENTE", ultimo
 
 
 def _como_data(valor: Any) -> Optional[date]:
