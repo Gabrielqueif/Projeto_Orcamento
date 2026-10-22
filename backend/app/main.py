@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.modules.almoxarifado import router as almoxarifado_router
+from app.modules.base_propria import router as base_propria_router
 from app.modules.composicao import router as item_router
 from app.modules.dashboard import router as dashboard_router
 from app.modules.diario import router as diario_router
@@ -18,7 +19,7 @@ from app.modules.medicao import router as medicao_router
 from app.modules.obra import router as obra_router
 from app.modules.orcamento import router as orcamento_router
 from core.config import settings
-from core.exceptions import NaoEncontradoError
+from core.exceptions import ConflitoError, NaoEncontradoError
 
 # Configurar logging
 logging.basicConfig(
@@ -38,6 +39,11 @@ app = FastAPI(
 @app.exception_handler(NaoEncontradoError)
 async def nao_encontrado_handler(request: Request, exc: NaoEncontradoError):
     return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+
+@app.exception_handler(ConflitoError)
+async def conflito_handler(request: Request, exc: ConflitoError):
+    return JSONResponse(status_code=409, content={"detail": str(exc)})
 
 
 @app.exception_handler(ValueError)
@@ -84,6 +90,7 @@ app.include_router(diario_router)
 app.include_router(diario_resumo_router)
 app.include_router(medicao_router)
 app.include_router(dashboard_router)
+app.include_router(base_propria_router)
 
 
 @app.get("/health")

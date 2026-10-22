@@ -16,6 +16,7 @@ logger = logging.getLogger("projeto_orcamento")
 _RAIZES = (
     ("orcamento_id", "orcamentos", ("id",), "Orçamento não encontrado"),
     ("obra_id", "obras", ("id", "orcamento_id"), "Obra não encontrada"),
+    ("base_id", "bases_proprias", ("id",), "Base não encontrada"),
 )
 
 
