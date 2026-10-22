@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock
-import pytest
+
 
 def test_criar_despesa_sucesso(client, mock_supabase):
     obra_id = "e9b50e2ddc9943efb387052637738f61"
@@ -112,7 +112,7 @@ def test_obter_consolidado_financeiro(client, mock_supabase):
     # Para o select encadeado do repositório:
     # self.supabase.table("orcamento_item_insumo").select("tipo_item, total, orcamento_item_id, orcamento_itens(quantidade)").eq("orcamento_itens.orcamento_id", orcamento_id).execute()
     
-    mock_insumos_data = [
+    _mock_insumos_data = [
         {
             "tipo_item": "MATERIAL",
             "total": 100000.0,

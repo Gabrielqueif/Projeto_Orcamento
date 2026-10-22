@@ -1,9 +1,11 @@
-import sys
 import os
+import sys
+
 sys.path.insert(0, r'd:\repositorios\Projeto_Orcamento\backend')
 
-from app.services.sinapi_excel_parser import SinapiExcelParser
 from app.repositories.item_repository import ItemRepository
+from app.services.sinapi_excel_parser import SinapiExcelParser
+
 from core.supabase_client import get_supabase_client
 
 XLSX_FILES = [

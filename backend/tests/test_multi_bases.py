@@ -4,14 +4,15 @@ Tests for multi-base support: parser factory and SINAPI/SEINFRA parsers.
 The `sinapi_excel_content` fixture (conftest.py) provides an in-memory Excel
 file so tests run in any environment without physical spreadsheet files.
 """
-import pytest
 import unittest.mock as mock
-from app.modules.importacao.services.parser_factory import get_parser
-from app.modules.importacao.services.sinapi_excel_parser import SinapiExcelParser
-from app.modules.importacao.services.seinfra_excel_parser import SeinfraExcelParser
+
+import pytest
+
 from app.modules.importacao.services.base_excel_parser import BaseExcelParser
 from app.modules.importacao.services.import_service import extract_metadata
-
+from app.modules.importacao.services.parser_factory import get_parser
+from app.modules.importacao.services.seinfra_excel_parser import SeinfraExcelParser
+from app.modules.importacao.services.sinapi_excel_parser import SinapiExcelParser
 
 # ---------------------------------------------------------------------------
 # Parser factory

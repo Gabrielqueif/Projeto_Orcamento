@@ -3,10 +3,11 @@ Unit tests for ItemRepository.
 Supabase client é mockado via MagicMock.
 Destaque especial para buscar_preco — 3 tentativas de fallback.
 """
-import pytest
-from unittest.mock import MagicMock, call
-from app.modules.composicao.repositories import ItemRepository
+from unittest.mock import MagicMock
 
+import pytest
+
+from app.modules.composicao.repositories import ItemRepository
 
 # ---------------------------------------------------------------------------
 # Fixture

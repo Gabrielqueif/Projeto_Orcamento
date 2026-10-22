@@ -1,5 +1,3 @@
-from unittest.mock import MagicMock
-import pytest
 
 def test_criar_insumo_sucesso(client, mock_supabase):
     obra_id = "e9b50e2ddc9943efb387052637738f61"

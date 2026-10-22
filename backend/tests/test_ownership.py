@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
 from app.dependencies import get_supabase
+from app.main import app
 from core.security import get_current_user
 
 DONO = "user-a"
@@ -75,9 +75,10 @@ def test_listagem_de_orcamentos_filtra_por_usuario(make_client):
 
 
 def test_criar_orcamento_grava_user_id():
-    from app.modules.orcamento.services import OrcamentoService
-    from app.modules.orcamento.schemas import OrcamentoCreate
     from datetime import date
+
+    from app.modules.orcamento.schemas import OrcamentoCreate
+    from app.modules.orcamento.services import OrcamentoService
 
     repo = MagicMock()
     repo.criar.return_value = {"id": "o1"}

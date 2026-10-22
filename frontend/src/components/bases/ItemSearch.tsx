@@ -8,9 +8,9 @@ const UFS = [
   'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ];
 
-export function ItemSearch() {
+export function ItemSearch({ fonte: fonteInicial = 'SINAPI' }: { fonte?: string }) {
   const [termo, setTermo] = useState('');
-  const [fonte, setFonte] = useState('SINAPI');
+  const [fonte, setFonte] = useState(fonteInicial);
   const [aba, setAba] = useState<'composicoes' | 'insumos'>('composicoes');
   const [resultados, setResultados] = useState<ItemComposicao[]>([]);
   const [insumos, setInsumos] = useState<ItemInsumo[]>([]);

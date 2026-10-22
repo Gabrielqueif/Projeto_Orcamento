@@ -1,6 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
-from datetime import date
+
+import pytest
 
 
 @pytest.mark.integration

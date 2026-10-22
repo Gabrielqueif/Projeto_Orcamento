@@ -1,5 +1,5 @@
-import pytest
 from app.modules.importacao.services.pdf_service import PdfService
+
 
 def test_pdf_service_plano():
     """Testa a geração de PDF plano (retrocompatível)"""

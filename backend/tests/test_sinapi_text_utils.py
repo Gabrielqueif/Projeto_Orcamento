@@ -14,7 +14,6 @@ from app.modules.importacao.services.sinapi_text_utils import (
     remover_acentos,
 )
 
-
 # ---------------------------------------------------------------------------
 # remover_acentos
 # ---------------------------------------------------------------------------
