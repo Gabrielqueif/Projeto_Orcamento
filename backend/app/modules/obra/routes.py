@@ -72,3 +72,9 @@ async def atualizar_status_obra_endpoint(
     obra_id: str, payload: ObraStatusUpdate, service: ObraService = Depends(get_obra_service)
 ):
     return service.atualizar_status(obra_id, payload.status)
+
+
+@router.delete("/{obra_id}", summary="Excluir obra e os dados de acompanhamento dela")
+async def excluir_obra_endpoint(obra_id: str, service: ObraService = Depends(get_obra_service)):
+    service.excluir_obra(obra_id)
+    return {"message": "Obra excluída com sucesso"}
