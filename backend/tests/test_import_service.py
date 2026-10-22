@@ -5,8 +5,10 @@ Uses the `sinapi_excel_content` fixture from conftest.py to generate
 a valid SINAPI-like Excel file in memory, removing any dependency on
 physical spreadsheet files in the repository.
 """
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
+
 from app.modules.importacao.services.import_service import extract_metadata, process_import_file
 
 

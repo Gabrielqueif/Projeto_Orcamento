@@ -2,10 +2,11 @@
 Unit tests for OrcamentoRepository.
 Supabase client é mockado via encadeamento MagicMock.
 """
-import pytest
 from unittest.mock import MagicMock
-from app.modules.orcamento.repositories import OrcamentoRepository
 
+import pytest
+
+from app.modules.orcamento.repositories import OrcamentoRepository
 
 # ---------------------------------------------------------------------------
 # Fixture
@@ -48,7 +49,7 @@ def test_criar_falha_data_vazio_levanta_excecao(repo, supabase):
     supabase.table.return_value.insert.return_value.execute.return_value.data = []
 
     # Act + Assert
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="Falha ao inserir"):
         repo.criar({"nome": "Obra Teste"})
 
 

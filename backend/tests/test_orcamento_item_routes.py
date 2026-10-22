@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock
-import pytest
+
 
 def configure_mock_table_side_effect(mock_supabase, table_mocks):
     """

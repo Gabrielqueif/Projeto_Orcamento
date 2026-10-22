@@ -5,6 +5,7 @@ Fixtures (mock_supabase, orcamento_repo_mock, item_repo_mock,
 orcamento_item_repo_mock, orcamento_item_service) are provided by conftest.py.
 """
 import pytest
+
 from app.modules.orcamento.schemas import OrcamentoItemCreate, OrcamentoItemUpdate
 
 

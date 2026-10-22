@@ -2,11 +2,13 @@
 Unit tests for OrcamentoService.
 All external dependencies (repository) are mocked.
 """
-import pytest
-from unittest.mock import MagicMock
 from datetime import datetime
-from app.modules.orcamento.services import OrcamentoService
+from unittest.mock import MagicMock
+
+import pytest
+
 from app.modules.orcamento.schemas import OrcamentoCreate, OrcamentoUpdate
+from app.modules.orcamento.services import OrcamentoService
 
 
 @pytest.fixture
@@ -134,7 +136,7 @@ def test_criar_orcamento_fonte_seinfra(orcamento_service, repository_mock):
     repository_mock.criar.return_value = {"id": "42", "fonte": "SEINFRA"}
 
     # Act
-    resultado = orcamento_service.criar_orcamento(dados_entrada)
+    orcamento_service.criar_orcamento(dados_entrada)
 
     # Assert
     args, _ = repository_mock.criar.call_args
@@ -151,7 +153,7 @@ def test_atualizar_orcamento_estado_normalizado(orcamento_service, repository_mo
     update_data = OrcamentoUpdate(estado="RJ")
 
     # Act
-    resultado = orcamento_service.atualizar_orcamento("1", update_data)
+    orcamento_service.atualizar_orcamento("1", update_data)
 
     # Assert
     args, _ = repository_mock.atualizar.call_args

@@ -2,10 +2,12 @@
 Unit tests for EtapaService.
 All external dependencies (repository) are mocked.
 """
-import pytest
 from unittest.mock import MagicMock
-from app.modules.etapa.services import EtapaService
+
+import pytest
+
 from app.modules.etapa.schemas import EtapaCreate
+from app.modules.etapa.services import EtapaService
 
 
 @pytest.fixture
