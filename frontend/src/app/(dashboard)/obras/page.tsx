@@ -51,8 +51,13 @@ export default function ObrasPage() {
         getObras().catch(() => []),
       ]);
 
+      // Orçamento sem obra gerada ainda não é uma obra: só aparece em /orcamentos.
+      const orcamentosComObra = orcamentosData.filter((orc) =>
+        obrasData.some((o) => o.orcamento_id === orc.id)
+      );
+
       const itemsCompletos: ObraItemData[] = await Promise.all(
-        orcamentosData.map(async (orc) => {
+        orcamentosComObra.map(async (orc) => {
           const obraRelacionada = obrasData.find((o) => o.orcamento_id === orc.id);
           const etapas = await getEtapas(orc.id).catch(() => []);
 
