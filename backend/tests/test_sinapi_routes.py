@@ -7,6 +7,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
+from app.modules.composicao.repositories import ItemRepository
+
 
 def test_upload_sinapi_worksheet(client: TestClient):
     """
@@ -97,6 +99,13 @@ def _mock_paginas(mock_supabase, paginas):
     return chain
 
 
+@pytest.fixture(autouse=True)
+def _limpa_cache_bases():
+    ItemRepository.invalidar_cache_bases()
+    yield
+    ItemRepository.invalidar_cache_bases()
+
+
 @pytest.mark.integration
 def test_listar_bases_disponiveis_agrupa_e_conta(client: TestClient, mock_supabase):
     """GET /importacao/bases → agrupa por fonte/mês/tipo reais e conta composições."""
@@ -113,6 +122,7 @@ def test_listar_bases_disponiveis_agrupa_e_conta(client: TestClient, mock_supaba
         response = client.get("/importacao/bases")
 
     assert response.status_code == 200
+    mock_supabase.table.assert_called_with("composicao_estados")
     assert response.json() == [
         {"fonte": "SEINFRA", "mes_referencia": "01/2026", "tipo_composicao": "Sem Desoneração", "total_composicoes": 1},
         {"fonte": "SINAPI", "mes_referencia": "12/2025", "tipo_composicao": "Com Desoneração", "total_composicoes": 2},
@@ -135,6 +145,25 @@ def test_listar_bases_disponiveis_pagina_alem_de_mil_linhas(client: TestClient, 
     assert totais == {("SINAPI", "12/2025"): 1000, ("SEINFRA", "10/2025"): 5}
     assert chain.range.call_args_list[0].args == (0, 999)
     assert chain.range.call_args_list[1].args == (1000, 1999)
+
+
+@pytest.mark.integration
+def test_listar_bases_usa_cache_e_invalida(client: TestClient, mock_supabase):
+    """A segunda chamada não relê o banco; invalidar o cache força nova leitura."""
+    linha = {"fonte": "SINAPI", "mes_referencia": "01/2026", "tipo_composicao": "Com Desoneração"}
+    chain = _mock_paginas(mock_supabase, [[linha], [linha, linha]])
+
+    with patch("app.modules.importacao.routes.get_supabase_client", return_value=mock_supabase):
+        primeira = client.get("/importacao/bases").json()
+        segunda = client.get("/importacao/bases").json()
+        assert chain.execute.call_count == 1
+        assert primeira == segunda
+
+        ItemRepository.invalidar_cache_bases()
+        terceira = client.get("/importacao/bases").json()
+
+    assert chain.execute.call_count == 2
+    assert terceira[0]["total_composicoes"] == 2
 
 
 @pytest.mark.integration

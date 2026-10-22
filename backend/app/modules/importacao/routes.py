@@ -119,6 +119,8 @@ async def import_worksheet_data(
         motivos = "; ".join(f"{f['arquivo']}: {f['motivo']}" for f in falhas)
         raise HTTPException(status_code=400, detail=f"Nenhum arquivo foi importado. {motivos}".strip())
 
+    ItemRepository.invalidar_cache_bases()
+
     return {
         "status": "parcial" if falhas else "sucesso",
         "imported_items": total_items,

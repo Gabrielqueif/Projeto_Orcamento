@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -12,6 +13,10 @@ UFS = [
     "ac", "al", "ap", "am", "ba", "ce", "df", "es", "go", "ma", "mt", "ms", "mg", "pa",
     "pb", "pr", "pe", "pi", "rj", "rn", "rs", "ro", "rr", "sc", "sp", "se", "to",
 ]  # fmt: skip
+
+
+_CACHE_BASES_TTL_SEGUNDOS = 300
+_CACHE_BASES: Dict[str, Any] = {"dados": None, "expira_em": 0.0}
 
 
 class ItemRepository:
@@ -172,22 +177,24 @@ class ItemRepository:
         )
 
     def listar_bases_disponiveis(self) -> List[Dict[str, Any]]:
-        """Agrupa as composições por (fonte, mês, tipo) paginando a leitura.
+        """Agrupa por (fonte, mês, tipo) lendo `composicao_estados`, que é onde o tipo existe.
 
-        O Supabase limita cada resposta a 1000 linhas; sem paginar, meses e fontes
-        inteiros somem da lista. Devolve a contagem de composições de cada grupo.
+        A tabela `composicao` não tem `tipo_composicao`. A leitura é paginada porque o
+        Supabase limita cada resposta a 1000 linhas, e o resultado fica em cache por alguns
+        minutos: percorrer a tabela toda leva vários segundos.
         """
+        agora = time.monotonic()
+        if _CACHE_BASES["dados"] is not None and agora < _CACHE_BASES["expira_em"]:
+            return [dict(b) for b in _CACHE_BASES["dados"]]
+
         tamanho_pagina = 1000
         contagem: Dict[tuple, int] = {}
         inicio = 0
         while True:
             linhas = (
-                self.supabase.table(TABELA_COMPOSICOES)
-                .select("fonte,mes_referencia,tipo_composicao,codigo_composicao")
-                .order("fonte")
-                .order("mes_referencia")
-                .order("tipo_composicao")
-                .order("codigo_composicao")
+                self.supabase.table(TABELA_COMPOSICOES_ESTADOS)
+                .select("fonte,mes_referencia,tipo_composicao")
+                .order("id")
                 .range(inicio, inicio + tamanho_pagina - 1)
                 .execute()
                 .data
@@ -207,10 +214,17 @@ class ItemRepository:
                 break
             inicio += tamanho_pagina
 
-        return [
+        bases = [
             {"fonte": fonte, "mes_referencia": mes, "tipo_composicao": tipo, "total_composicoes": total}
             for (fonte, mes, tipo), total in contagem.items()
         ]
+        _CACHE_BASES["dados"] = bases
+        _CACHE_BASES["expira_em"] = agora + _CACHE_BASES_TTL_SEGUNDOS
+        return [dict(b) for b in bases]
+
+    @staticmethod
+    def invalidar_cache_bases() -> None:
+        _CACHE_BASES["dados"] = None
 
     def buscar_preco(
         self, codigo_composicao: str, estado: str, mes_referencia: str, tipo_composicao: str, fonte: str = "SINAPI"
