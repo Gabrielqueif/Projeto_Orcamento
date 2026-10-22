@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   Check,
   MagnifyingGlass,
-  User,
   Lock,
   ListChecks,
   Camera,
@@ -19,8 +18,10 @@ import { getMembrosEquipe, alocarMembrosAoOrcamento, type MembroEquipe } from "@
 import { getEquipes, type Equipe } from "@/lib/api/equipes";
 import { useRouter } from "next/navigation";
 import { ObraWizardStepper } from "@/components/obras/ObraWizardStepper";
+import { useToast } from "@/components/common/toast";
 
 export default function NovaObraEtapa2Page() {
+  const { showToast } = useToast();
   const { data } = useWizard();
   const [professionals, setProfessionals] = useState<MembroEquipe[]>([]);
   const [equipes, setEquipes] = useState<Equipe[]>([]);
@@ -46,7 +47,7 @@ export default function NovaObraEtapa2Page() {
 
   const handleFinish = async () => {
     if (!data.nome || !data.cliente) {
-      alert("Por favor, preencha os dados básicos na Etapa 1.");
+      showToast("Por favor, preencha os dados básicos na Etapa 1.", undefined, "warning");
       router.push("/obras/novo");
       return;
     }
@@ -71,11 +72,11 @@ export default function NovaObraEtapa2Page() {
         await alocarMembrosAoOrcamento(selectedMemberIds, newOrcamento.id);
       }
 
-      alert("Projeto criado com sucesso!");
+      showToast("Projeto criado com sucesso!", undefined, "success");
       router.push("/obras");
     } catch (error) {
       console.error("Erro ao salvar projeto:", error);
-      alert("Ocorreu um erro ao salvar o projeto.");
+      showToast("Ocorreu um erro ao salvar o projeto.", undefined, "error");
     } finally {
       setIsSubmitting(false);
     }

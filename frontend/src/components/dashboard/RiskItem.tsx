@@ -1,6 +1,5 @@
 // src/components/dashboard/RiskItem.tsx
 import React from 'react';
-import { WarningCircle, Money, Clock } from '@phosphor-icons/react';
 
 export type RiskItemProps = {
   icon?: React.ReactNode; // default icon

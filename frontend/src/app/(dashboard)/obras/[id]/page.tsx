@@ -8,7 +8,6 @@ import {
   CalendarPlus,
   Export,
   CheckSquare,
-  Square,
   CheckSquareOffset,
   Funnel,
   Cube,
@@ -26,10 +25,12 @@ import {
   type OrcamentoItem,
 } from "@/lib/api/orcamentos";
 import { getEstoqueInsumos, type InsumoAlmoxarifado } from "@/lib/api/almoxarifado";
-import { atualizarStatusObra } from "@/lib/api/obras";
+
 import { CurvaSCard } from "@/components/obras/CurvaSCard";
+import { useToast } from "@/components/common/toast";
 
 export default function ObraDetalhePage() {
+  const { showToast } = useToast();
   const params = useParams();
   const id = params.id as string;
 
@@ -550,7 +551,7 @@ export default function ObraDetalhePage() {
               id="btn-marcar-concluido"
               onClick={() => {
                 if (etapas.length === 0) {
-                  alert("Nenhuma etapa cadastrada nesta obra.");
+                  showToast("Nenhuma etapa cadastrada nesta obra.", undefined, "warning");
                   return;
                 }
                 // pré-preenche com a primeira etapa
@@ -808,7 +809,7 @@ export default function ObraDetalhePage() {
                     setModalAberto(false);
                   } catch (err) {
                     console.error("Erro ao salvar progresso:", err);
-                    alert("Não foi possível salvar. Tente novamente.");
+                    showToast("Não foi possível salvar. Tente novamente.", undefined, "error");
                   } finally {
                     setSalvandoProgresso(false);
                   }

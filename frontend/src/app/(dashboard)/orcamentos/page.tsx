@@ -16,12 +16,14 @@ import {
 import { getOrcamentos, getOrcamentoStats, deleteOrcamento, type Orcamento, type OrcamentoStats } from "@/lib/api/orcamentos";
 
 import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus, type OrcamentoStatus } from "@/lib/orcamentoStatus";
+import { useToast } from "@/components/common/toast";
 
 type FilterStatus = "todos" | OrcamentoStatus;
 
 const FILTERS: FilterStatus[] = ["todos", ...STATUS_ORDER];
 
 export default function OrcamentosPage() {
+  const { showToast } = useToast();
   const router = useRouter();
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ export default function OrcamentosPage() {
       carregarStats();
     } catch (err) {
       console.error(err);
-      alert(err instanceof Error ? err.message : "Erro ao excluir o orçamento.");
+      showToast(err instanceof Error ? err.message : "Erro ao excluir o orçamento.", undefined, "error");
     } finally {
       setDeletingId(null);
     }

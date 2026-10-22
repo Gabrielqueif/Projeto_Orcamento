@@ -5,8 +5,10 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Info, Coins } from "@phosphor-icons/react";
 import { getOrcamento, getEtapas, updateEtapa, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
+import { useToast } from "@/components/common/toast";
 
 export default function PrazosPage() {
+  const { showToast } = useToast();
   const params = useParams();
   const id = params.id as string;
 
@@ -42,7 +44,7 @@ export default function PrazosPage() {
       await updateEtapa(id, etapaId, { [field]: value || null });
     } catch (err) {
       console.error("Erro ao salvar data", err);
-      alert("Erro ao salvar data.");
+      showToast("Erro ao salvar data.", undefined, "error");
       fetchData(); // revert
     }
   };

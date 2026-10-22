@@ -12,7 +12,6 @@ import {
   Cube,
   Warning,
   ArrowsHorizontal,
-  DotsThreeVertical,
   Warehouse,
   Plus,
   Minus,
@@ -42,8 +41,10 @@ import {
   type InsumoAlmoxarifado,
   type Locacao,
 } from "@/lib/api/almoxarifado";
+import { useToast } from "@/components/common/toast";
 
 export default function AlmoxarifadoPage() {
+  const { showToast } = useToast();
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
@@ -153,7 +154,7 @@ export default function AlmoxarifadoPage() {
       await deletarInsumo(id, insumoId);
       setInsumos(insumos.filter(i => i.id !== insumoId));
     } catch (err: any) {
-      alert(err.message || "Erro ao deletar material.");
+      showToast(err.message || "Erro ao deletar material.", undefined, "error");
     }
   };
 
@@ -165,7 +166,7 @@ export default function AlmoxarifadoPage() {
       await deletarLocacao(id, locacaoId);
       setLocacoes(locacoes.filter((l) => l.id !== locacaoId));
     } catch (err: any) {
-      alert(err.message || "Erro ao deletar locação.");
+      showToast(err.message || "Erro ao deletar locação.", undefined, "error");
     }
   };
 

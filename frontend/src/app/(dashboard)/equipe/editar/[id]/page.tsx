@@ -14,6 +14,7 @@ import {
 } from "@phosphor-icons/react";
 import { getMembroEquipe, updateMembroEquipe } from "@/lib/api/membros_equipe";
 import { getOrcamentos, type Orcamento } from "@/lib/api/orcamentos";
+import { useToast } from "@/components/common/toast";
 
 interface FileAttachment {
   name: string;
@@ -21,6 +22,7 @@ interface FileAttachment {
 }
 
 export default function EditarMembroPage() {
+  const { showToast } = useToast();
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
@@ -72,7 +74,7 @@ export default function EditarMembroPage() {
         }
       } catch (err) {
         console.error("Erro ao carregar dados do colaborador:", err);
-        alert("Erro ao carregar os dados do colaborador.");
+        showToast("Erro ao carregar os dados do colaborador.", undefined, "error");
       } finally {
         setLoading(false);
       }
@@ -154,7 +156,7 @@ export default function EditarMembroPage() {
     e.preventDefault();
 
     if (!nome || !cpf || !cargo || !dataInicio || !remuneracao) {
-      alert("Por favor, preencha todos os campos obrigatórios.");
+      showToast("Por favor, preencha todos os campos obrigatórios.", undefined, "warning");
       return;
     }
 
@@ -175,7 +177,7 @@ export default function EditarMembroPage() {
       router.push("/equipe");
     } catch (err) {
       console.error("Erro ao salvar colaborador:", err);
-      alert("Ocorreu um erro ao salvar as alterações do colaborador.");
+      showToast("Ocorreu um erro ao salvar as alterações do colaborador.", undefined, "error");
     }
   };
 
