@@ -88,6 +88,7 @@ def test_atualizar_insumo_sucesso(
     # Arrange
     insumo_atual = {
         "id": "ins-1",
+        "orcamento_item_id": "item-1",
         "quantidade_unitaria": 2.0,
         "preco_unitario_base": 10.0,
         "preco_unitario_custom": None,

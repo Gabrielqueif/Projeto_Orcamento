@@ -31,4 +31,4 @@ def test_movimentacao_estoque_insuficiente():
     schema_saida.quantidade = 10.0
     
     with pytest.raises(ValueError, match="insuficiente"):
-        service.registrar_movimentacao("ins-1", schema_saida)
+        service.registrar_movimentacao("obra-123", "ins-1", schema_saida)

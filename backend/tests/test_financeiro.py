@@ -84,7 +84,12 @@ def test_deletar_despesa_sucesso(client, mock_supabase):
     obra_id = "e9b50e2ddc9943efb387052637738f61"
     despesa_id = "despesa-1"
 
-    mock_supabase.table.return_value.delete.return_value.eq.return_value.execute.return_value.data = [
+    # resolver_obra_uuid: select("id").eq("id", obra_id)
+    (mock_supabase.table.return_value
+        .select.return_value
+        .eq.return_value
+        .execute.return_value.data) = [{"id": obra_id}]
+    mock_supabase.table.return_value.delete.return_value.eq.return_value.in_.return_value.execute.return_value.data = [
         {"id": despesa_id}
     ]
 

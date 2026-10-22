@@ -56,9 +56,14 @@ class FinanceiroRepository:
 
         return obra_id
 
-    def buscar_despesa_por_id(self, despesa_id: str) -> Optional[Dict[str, Any]]:
+    def buscar_despesa_por_id(self, despesa_id: str, obra_id: str) -> Optional[Dict[str, Any]]:
         try:
-            resultado = self.supabase.table(TABELA_CUSTOS).select("*").eq("id", despesa_id).execute()
+            target_ids = self._ids_da_obra(obra_id)
+            if not target_ids:
+                return None
+            resultado = (
+                self.supabase.table(TABELA_CUSTOS).select("*").eq("id", despesa_id).in_("obra_id", target_ids).execute()
+            )
             if resultado.data:
                 return resultado.data[0]
             return None
@@ -78,12 +83,13 @@ class FinanceiroRepository:
             logger.error(f"Erro ao criar despesa: {e}")
             raise e
 
-    def atualizar_status_despesa(self, despesa_id: str, status: str) -> Dict[str, Any]:
+    def atualizar_status_despesa(self, despesa_id: str, obra_id: str, status: str) -> Dict[str, Any]:
         try:
             resultado = (
                 self.supabase.table(TABELA_CUSTOS)
                 .update({"status": status, "updated_at": "now()"})
                 .eq("id", despesa_id)
+                .in_("obra_id", self._ids_da_obra(obra_id))
                 .execute()
             )
             if not resultado.data:
@@ -93,9 +99,14 @@ class FinanceiroRepository:
             logger.error(f"Erro ao atualizar status da despesa {despesa_id}: {e}")
             raise e
 
-    def deletar_despesa(self, despesa_id: str) -> bool:
+    def deletar_despesa(self, despesa_id: str, obra_id: str) -> bool:
         try:
-            resultado = self.supabase.table(TABELA_CUSTOS).delete().eq("id", despesa_id).execute()
+            target_ids = self._ids_da_obra(obra_id)
+            if not target_ids:
+                return False
+            resultado = (
+                self.supabase.table(TABELA_CUSTOS).delete().eq("id", despesa_id).in_("obra_id", target_ids).execute()
+            )
             return len(resultado.data) > 0 if resultado.data else False
         except Exception as e:
             logger.error(f"Erro ao deletar despesa {despesa_id}: {e}")
@@ -200,26 +211,33 @@ class FinanceiroRepository:
             logger.error(f"Erro ao obter planejado por categoria do orcamento {orcamento_id}: {e}")
             return valores
 
+    def _ids_da_obra(self, obra_id: str) -> List[str]:
+        """
+        Ids sob os quais as despesas de uma obra podem estar gravadas: o da obra e,
+        por legado, o do orçamento de origem.
+        """
+        target_obra_id = self.resolver_obra_uuid(obra_id)
+        target_ids = [target_obra_id]
+
+        if _is_valid_uuid(target_obra_id):
+            res_obra = (
+                self.supabase.table(TABELA_OBRAS)
+                .select("id, orcamento_id")
+                .or_(f"id.eq.{target_obra_id},orcamento_id.eq.{target_obra_id}")
+                .execute()
+            )
+            if res_obra.data:
+                for row in res_obra.data:
+                    if row.get("id"):
+                        target_ids.append(row["id"])
+                    if row.get("orcamento_id"):
+                        target_ids.append(row["orcamento_id"])
+
+        return list(set([t for t in target_ids if _is_valid_uuid(t)]))
+
     def listar_despesas(self, obra_id: str, categoria: Optional[str] = None) -> List[Dict[str, Any]]:
         try:
-            target_obra_id = self.resolver_obra_uuid(obra_id)
-            target_ids = [target_obra_id]
-
-            if _is_valid_uuid(target_obra_id):
-                res_obra = (
-                    self.supabase.table(TABELA_OBRAS)
-                    .select("id, orcamento_id")
-                    .or_(f"id.eq.{target_obra_id},orcamento_id.eq.{target_obra_id}")
-                    .execute()
-                )
-                if res_obra.data:
-                    for row in res_obra.data:
-                        if row.get("id"):
-                            target_ids.append(row["id"])
-                        if row.get("orcamento_id"):
-                            target_ids.append(row["orcamento_id"])
-
-            target_ids = list(set([t for t in target_ids if _is_valid_uuid(t)]))
+            target_ids = self._ids_da_obra(obra_id)
             if not target_ids:
                 return []
 

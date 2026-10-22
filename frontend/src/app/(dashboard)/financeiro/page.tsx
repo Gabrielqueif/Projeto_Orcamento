@@ -347,7 +347,7 @@ export default function FinanceiroVisaoPage() {
                 o orçado em <strong className="text-color-danger">{alerta_critico.excesso_pct}%</strong>. Recomenda-se revisão imediata.
               </p>
               <Link
-                href={`/obras/${alerta_critico.obra_id}`}
+                href={alerta_critico.href}
                 className="relative z-10 inline-flex items-center gap-2 border border-white/20 text-white text-[11px] font-bold uppercase tracking-wide rounded-lg py-2 px-4 hover:bg-white/10 transition-colors no-underline"
               >
                 Analisar Detalhes <ArrowUpRight size={14} />

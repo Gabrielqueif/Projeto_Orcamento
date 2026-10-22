@@ -19,8 +19,14 @@ class EtapaRepository:
         )
         return resultado.data or []
 
-    def atualizar(self, etapa_id: str, dados: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        resultado = self.supabase.table(TABELA_ETAPAS).update(dados).eq("id", etapa_id).execute()
+    def atualizar(self, etapa_id: str, dados: Dict[str, Any], orcamento_id: str) -> Optional[Dict[str, Any]]:
+        resultado = (
+            self.supabase.table(TABELA_ETAPAS)
+            .update(dados)
+            .eq("id", etapa_id)
+            .eq("orcamento_id", orcamento_id)
+            .execute()
+        )
         if resultado.data:
             return resultado.data[0]
         return None

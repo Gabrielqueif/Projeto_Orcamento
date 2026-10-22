@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from app.modules.financeiro.repositories import FinanceiroRepository
 from app.modules.financeiro.schemas import DespesaCreate
+from core.exceptions import NaoEncontradoError
 
 
 class FinanceiroService:
@@ -18,11 +19,13 @@ class FinanceiroService:
         dados["data_competencia"] = str(dados["data_competencia"])
         return self.repository.criar_despesa(obra_id, dados)
 
-    def atualizar_status_despesa(self, despesa_id: str, status: str) -> Dict[str, Any]:
-        return self.repository.atualizar_status_despesa(despesa_id, status)
+    def atualizar_status_despesa(self, obra_id: str, despesa_id: str, status: str) -> Dict[str, Any]:
+        if not self.repository.buscar_despesa_por_id(despesa_id, obra_id):
+            raise NaoEncontradoError("Despesa não encontrada")
+        return self.repository.atualizar_status_despesa(despesa_id, obra_id, status)
 
-    def deletar_despesa(self, despesa_id: str) -> bool:
-        return self.repository.deletar_despesa(despesa_id)
+    def deletar_despesa(self, obra_id: str, despesa_id: str) -> bool:
+        return self.repository.deletar_despesa(despesa_id, obra_id)
 
     def obter_consolidado_financeiro(self, obra_id: str) -> Dict[str, Any]:
         orcamento_id = self.repository.obter_orcamento_id_da_obra(obra_id)
@@ -117,6 +120,8 @@ class FinanceiroService:
             obra_id = obra.get("id")
             nome_obra = obra.get("escopo") or f"Obra {obra.get('cliente', '')}"
             gestor = obra.get("engenheiro_responsavel_id") or "Engenharia"
+            # A tela de detalhe da obra (/obras/[id]) é endereçada pelo orçamento de origem.
+            href_obra = f"/obras/{obra.get('orcamento_id') or obra_id}"
 
             consolidado = self.obter_consolidado_financeiro(obra_id)
             orcado = Decimal(str(consolidado["total_orcado"]))
@@ -155,7 +160,7 @@ class FinanceiroService:
                     "status": status,
                     "statusClass": statusClass,
                     "barColor": barColor,
-                    "href": f"/obras/{obra_id}",
+                    "href": href_obra,
                 }
             )
 
@@ -166,6 +171,7 @@ class FinanceiroService:
                     "obra_nome": nome_obra,
                     "excesso_pct": round(consolidado["desvio_percentual"], 1),
                     "obra_id": obra_id,
+                    "href": href_obra,
                 }
 
             # Somar categorias para gráfico global

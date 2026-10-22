@@ -48,7 +48,7 @@ class AlmoxarifadoRepository:
             logger.error(f"Erro ao listar insumos da obra {obra_id}: {e}")
             return []
 
-    def buscar_insumo_por_id(self, insumo_id: str) -> Optional[Dict[str, Any]]:
+    def buscar_insumo_por_id(self, insumo_id: str, obra_id: str) -> Optional[Dict[str, Any]]:
         try:
             resultado = (
                 self.supabase.table(TABELA_ESTOQUE)
@@ -56,6 +56,7 @@ class AlmoxarifadoRepository:
                     "id, obra_id, codigo_insumo, descricao, categoria, quantidade_atual, quantidade_minima, unidade, preco_unitario"
                 )
                 .eq("id", insumo_id)
+                .eq("obra_id", self._resolver_obra_id(obra_id))
                 .execute()
             )
             if resultado.data:
@@ -151,27 +152,43 @@ class AlmoxarifadoRepository:
             logger.error(f"Erro ao registrar locação: {e}")
             raise e
 
-    def atualizar_status_locacao(self, locacao_id: str, status: str) -> Dict[str, Any]:
+    def atualizar_status_locacao(self, locacao_id: str, obra_id: str, status: str) -> Optional[Dict[str, Any]]:
         try:
-            resultado = self.supabase.table(TABELA_LOCACOES).update({"status": status}).eq("id", locacao_id).execute()
-            if not resultado.data:
-                raise Exception("Falha ao atualizar status da locação")
-            return resultado.data[0]
+            resultado = (
+                self.supabase.table(TABELA_LOCACOES)
+                .update({"status": status})
+                .eq("id", locacao_id)
+                .eq("obra_id", self._resolver_obra_id(obra_id))
+                .execute()
+            )
+            return resultado.data[0] if resultado.data else None
         except Exception as e:
             logger.error(f"Erro ao atualizar status da locação {locacao_id}: {e}")
             raise e
 
-    def deletar_insumo(self, insumo_id: str) -> bool:
+    def deletar_insumo(self, insumo_id: str, obra_id: str) -> bool:
         try:
-            resultado = self.supabase.table(TABELA_ESTOQUE).delete().eq("id", insumo_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_ESTOQUE)
+                .delete()
+                .eq("id", insumo_id)
+                .eq("obra_id", self._resolver_obra_id(obra_id))
+                .execute()
+            )
             return len(resultado.data) > 0 if resultado.data else False
         except Exception as e:
             logger.error(f"Erro ao deletar insumo {insumo_id}: {e}")
             raise e
 
-    def deletar_locacao(self, locacao_id: str) -> bool:
+    def deletar_locacao(self, locacao_id: str, obra_id: str) -> bool:
         try:
-            resultado = self.supabase.table(TABELA_LOCACOES).delete().eq("id", locacao_id).execute()
+            resultado = (
+                self.supabase.table(TABELA_LOCACOES)
+                .delete()
+                .eq("id", locacao_id)
+                .eq("obra_id", self._resolver_obra_id(obra_id))
+                .execute()
+            )
             return len(resultado.data) > 0 if resultado.data else False
         except Exception as e:
             logger.error(f"Erro ao deletar locacao {locacao_id}: {e}")
