@@ -7,6 +7,8 @@ from app.dependencies import get_supabase
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.etapa.schemas import EtapaCreate, EtapaResponse, EtapaUpdate
 from app.modules.etapa.services import EtapaService
+from app.modules.medicao.repositories import MedicaoRepository
+from app.modules.medicao.services import MedicaoService
 from core.ownership import enforce_ownership
 
 logger = logging.getLogger("projeto_orcamento")
@@ -76,7 +78,11 @@ async def deletar_etapa(orcamento_id: str, etapa_id: str, service: EtapaService 
     summary="Atualizar progresso de uma etapa",
 )
 async def atualizar_progresso_etapa(
-    orcamento_id: str, etapa_id: str, payload: dict, service: EtapaService = Depends(get_etapa_service)
+    orcamento_id: str,
+    etapa_id: str,
+    payload: dict,
+    service: EtapaService = Depends(get_etapa_service),
+    supabase=Depends(get_supabase),
 ):
     """Atualiza apenas o campo progresso (0-100) de uma etapa"""
     progresso = payload.get("progresso")
@@ -86,6 +92,8 @@ async def atualizar_progresso_etapa(
         resultado = service.atualizar_etapa(orcamento_id, etapa_id, {"progresso": progresso})
         if not resultado:
             raise HTTPException(status_code=404, detail="Etapa não encontrada")
+        # Mantém o histórico da Curva S coerente com a atualização rápida (se já for obra).
+        MedicaoService(MedicaoRepository(supabase)).registrar_por_orcamento(orcamento_id, etapa_id, progresso)
         return resultado
     except HTTPException:
         raise

@@ -12,6 +12,23 @@ export interface FotoDiario {
   created_at?: string | null;
 }
 
+export interface AvancoDiario {
+  etapa_id: string;
+  etapa_nome?: string | null;
+  progresso: number;
+}
+
+export interface EtapaResumo {
+  id: string;
+  nome: string;
+  progresso: number;
+}
+
+export interface AvancoEtapaInput {
+  etapa_id: string;
+  progresso: number;
+}
+
 export interface Diario {
   id: string;
   obra_id: string;
@@ -26,6 +43,7 @@ export interface Diario {
   responsavel?: string | null;
   status: StatusDiario;
   fotos: FotoDiario[];
+  avancos: AvancoDiario[];
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -39,6 +57,7 @@ export interface DiarioCreate {
   temperatura?: number | null;
   equipe_presente: number;
   responsavel?: string | null;
+  avancos?: AvancoEtapaInput[];
 }
 
 export type DiarioUpdate = Partial<DiarioCreate>;
@@ -51,6 +70,7 @@ export interface ObraDiarioInfo {
   data_inicio?: string | null;
   prazo_dias?: number | null;
   progresso: number;
+  etapas: EtapaResumo[];
   ultima_atualizacao?: string | null;
 }
 
