@@ -18,6 +18,9 @@ import {
   createOrcamento,
   updateOrcamento,
   deleteOrcamento,
+  buscarComposicoesProprias,
+  atualizarPrecosPropria,
+  addItem,
 } from "@/lib/api/orcamentos";
 
 const mockFetch = fetchWithAuth as jest.MockedFunction<typeof fetchWithAuth>;
@@ -195,5 +198,85 @@ describe("deleteOrcamento", () => {
       "/orcamentos/orc-1",
       expect.objectContaining({ method: "DELETE" }),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Bases próprias
+// ---------------------------------------------------------------------------
+describe("buscarComposicoesProprias", () => {
+  afterEach(() => jest.clearAllMocks());
+
+  it("busca com termo e limite na query string", async () => {
+    const lista = [
+      { base_propria_id: "b1", base_propria_nome: "Minha Base", codigo: "C1", descricao: "Reboco", unidade: "M2", grupo: null, preco_unitario: 12.5 },
+    ];
+    mockFetch.mockResolvedValueOnce(makeResponse(lista));
+
+    const result = await buscarComposicoesProprias("orc-1", "rebo co", 20);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/orcamentos/orc-1/buscar-composicoes-proprias?termo=rebo+co&limite=20",
+    );
+    expect(result).toEqual(lista);
+  });
+
+  it("lança o detalhe do erro quando a resposta falha", async () => {
+    mockFetch.mockResolvedValueOnce(makeResponse({ detail: "Sem acesso" }, 403));
+    await expect(buscarComposicoesProprias("orc-1", "x")).rejects.toThrow("Sem acesso");
+  });
+});
+
+describe("atualizarPrecosPropria", () => {
+  afterEach(() => jest.clearAllMocks());
+
+  it("chama POST com aplicar=false para a prévia", async () => {
+    const previa = { aplicado: false, total_itens: 1, itens_alterados: 0, diferenca_custo_direto: 0, itens: [], ignorados: [] };
+    mockFetch.mockResolvedValueOnce(makeResponse(previa));
+
+    const result = await atualizarPrecosPropria("orc-1", false);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/orcamentos/orc-1/itens/atualizar-precos-propria?aplicar=false",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(result.aplicado).toBe(false);
+  });
+
+  it("chama POST com aplicar=true para confirmar", async () => {
+    mockFetch.mockResolvedValueOnce(makeResponse({ aplicado: true, total_itens: 1, itens_alterados: 1, diferenca_custo_direto: 5, itens: [], ignorados: [] }));
+    const result = await atualizarPrecosPropria("orc-1", true);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/orcamentos/orc-1/itens/atualizar-precos-propria?aplicar=true",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(result.itens_alterados).toBe(1);
+  });
+
+  it("lança erro padrão quando a resposta falha sem corpo", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500, json: () => Promise.reject(new Error("x")) } as unknown as Response);
+    await expect(atualizarPrecosPropria("orc-1", false)).rejects.toThrow("Erro ao atualizar preços da base própria");
+  });
+});
+
+describe("addItem com fonte PROPRIA", () => {
+  afterEach(() => jest.clearAllMocks());
+
+  it("envia fonte e base_propria_id no corpo", async () => {
+    mockFetch.mockResolvedValueOnce(makeResponse({ id: "i1" }));
+
+    await addItem("orc-1", {
+      codigo_composicao: "C1",
+      descricao: "Reboco",
+      quantidade: 2,
+      unidade: "M2",
+      fonte: "PROPRIA",
+      base_propria_id: "b1",
+    });
+
+    const [url, init] = mockFetch.mock.calls[0];
+    expect(url).toBe("/orcamentos/orc-1/itens");
+    const corpo = JSON.parse((init as RequestInit).body as string);
+    expect(corpo).toMatchObject({ fonte: "PROPRIA", base_propria_id: "b1", codigo_composicao: "C1" });
   });
 });

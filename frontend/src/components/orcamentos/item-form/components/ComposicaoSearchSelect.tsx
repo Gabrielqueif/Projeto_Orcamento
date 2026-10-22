@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { buscarComposicoes as apiBuscarComposicoes, type ContextoPreco } from "@/lib/api/composicoes";
+import { buscarComposicoesProprias } from "@/lib/api/orcamentos";
 import type { ItemComposicao } from "../types";
 
 interface ComposicaoSearchSelectProps {
@@ -13,6 +14,26 @@ interface ComposicaoSearchSelectProps {
   isEditing?: boolean;
   /** Estado, mês e tipo do orçamento, usados para exibir o preço nos resultados */
   contextoPreco?: ContextoPreco;
+  /** Quando informado, a busca inclui composições das bases próprias do usuário */
+  orcamentoId?: string;
+}
+
+function BadgeFonte({ item }: { item: ItemComposicao }) {
+  const classe =
+    item.fonte === "PROPRIA"
+      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+      : item.fonte === "SEINFRA"
+        ? "bg-orange-100 text-orange-700 border border-orange-200"
+        : "bg-blue-100 text-blue-700 border border-blue-200";
+  const rotulo =
+    item.fonte === "PROPRIA"
+      ? `Própria${item.base_propria_nome ? `: ${item.base_propria_nome}` : ""}`
+      : item.fonte;
+  return (
+    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${classe}`}>
+      {rotulo}
+    </span>
+  );
 }
 
 const formatarPreco = (valor?: number | null) =>
@@ -26,6 +47,7 @@ export function ComposicaoSearchSelect({
   onBaseBuscaChange,
   isEditing = false,
   contextoPreco,
+  orcamentoId,
 }: ComposicaoSearchSelectProps) {
   const estadoPreco = contextoPreco?.estado;
   const mesPreco = contextoPreco?.mes_referencia;
@@ -45,12 +67,29 @@ export function ComposicaoSearchSelect({
       setLoading(true);
       setError(null);
       try {
-        const data = await apiBuscarComposicoes(termo, baseBusca, {
-          estado: estadoPreco,
-          mes_referencia: mesPreco,
-          tipo_composicao: tipoPreco,
-        });
-        setResultados(data || []);
+        const [data, proprias] = await Promise.all([
+          apiBuscarComposicoes(termo, baseBusca, {
+            estado: estadoPreco,
+            mes_referencia: mesPreco,
+            tipo_composicao: tipoPreco,
+          }),
+          orcamentoId
+            ? buscarComposicoesProprias(orcamentoId, termo, 20).catch((err) => {
+                console.error("Erro ao buscar bases próprias:", err);
+                return [];
+              })
+            : Promise.resolve([]),
+        ]);
+        const comoItem: ItemComposicao[] = proprias.map((p) => ({
+          codigo_composicao: p.codigo,
+          descricao: p.descricao,
+          unidade: p.unidade,
+          preco: p.preco_unitario ?? undefined,
+          fonte: "PROPRIA",
+          base_propria_id: p.base_propria_id,
+          base_propria_nome: p.base_propria_nome,
+        }));
+        setResultados([...comoItem, ...(data || [])]);
       } catch (err) {
         console.error(err);
         setError("Erro ao buscar composições.");
@@ -60,7 +99,7 @@ export function ComposicaoSearchSelect({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [termo, baseBusca, estadoPreco, mesPreco, tipoPreco]);
+  }, [termo, baseBusca, estadoPreco, mesPreco, tipoPreco, orcamentoId]);
 
   const handleSelect = (item: ItemComposicao) => {
     onSelectComposicao(item);
@@ -109,15 +148,7 @@ export function ComposicaoSearchSelect({
           <div className="flex justify-between items-center">
             <div>
               <p className="font-semibold text-slate-800 flex items-center gap-2">
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                    composicaoSelecionada.fonte === "SEINFRA"
-                      ? "bg-orange-100 text-orange-700 border border-orange-200"
-                      : "bg-blue-100 text-blue-700 border border-blue-200"
-                  }`}
-                >
-                  {composicaoSelecionada.fonte}
-                </span>
+                <BadgeFonte item={composicaoSelecionada} />
                 {composicaoSelecionada.codigo_composicao} - {composicaoSelecionada.descricao}
               </p>
               <p className="text-sm text-slate-600">
@@ -166,25 +197,17 @@ export function ComposicaoSearchSelect({
             <div className="mt-2 border border-gray-200 rounded-md max-h-48 overflow-y-auto bg-white shadow-sm">
               {resultados.map((item) => (
                 <div
-                  key={`${item.fonte}-${item.codigo_composicao}`}
+                  key={`${item.fonte}-${item.base_propria_id ?? ""}-${item.codigo_composicao}`}
                   onClick={() => handleSelect(item)}
                   className="p-3 hover:bg-slate-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                 >
                   <p className="font-semibold text-slate-800 flex items-center gap-2">
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                        item.fonte === "SEINFRA"
-                          ? "bg-orange-100 text-orange-700 border border-orange-200"
-                          : "bg-blue-100 text-blue-700 border border-blue-200"
-                      }`}
-                    >
-                      {item.fonte}
-                    </span>
+                    <BadgeFonte item={item} />
                     {item.codigo_composicao} - {item.descricao}
                   </p>
                   <p className="text-sm text-slate-600 flex items-center justify-between gap-3">
                     <span>Unidade: {item.unidade}</span>
-                    {estadoPreco && (
+                    {(estadoPreco || item.fonte === "PROPRIA") && (
                       <span className="font-bold text-emerald-700">{formatarPreco(item.preco)}</span>
                     )}
                   </p>

@@ -8,14 +8,18 @@ import {
   deleteEtapa, 
   createEtapa, 
   deleteItem, 
+  atualizarPrecosPropria,
+  type AtualizacaoPrecosPropriaResponse,
   type Etapa, 
   type OrcamentoItem
 } from "@/lib/api/orcamentos";
-import { Plus, Trash, PencilSimple, Database, Check } from "@phosphor-icons/react";
+import { Plus, Trash, PencilSimple, Database, Check, ArrowsClockwise } from "@phosphor-icons/react";
 
 import { Modal } from "@/components/ui/Modal";
 import { OrcamentoItemForm } from "./OrcamentoItemForm";
 import { InsumosDrawer } from "./InsumosDrawer";
+import { AtualizarPrecosPropriaModal } from "./AtualizarPrecosPropriaModal";
+import { useToast } from "@/components/common/toast";
 import { EtapasEstrutura, MAX_NIVEL_ETAPAS, type DropPos } from "./EtapasEstrutura";
 
 interface PlanilhaViewProps {
@@ -27,7 +31,12 @@ interface PlanilhaViewProps {
 }
 
 export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "SINAPI", bdiOrcamento = 0, onTotalChanged }: PlanilhaViewProps) {
+  const { showToast } = useToast();
   const [etapas, setEtapas] = React.useState<Etapa[]>([]);
+  const [previaPrecos, setPreviaPrecos] = React.useState<AtualizacaoPrecosPropriaResponse | null>(null);
+  const [modalPrecosAberto, setModalPrecosAberto] = React.useState(false);
+  const [carregandoPrevia, setCarregandoPrevia] = React.useState(false);
+  const [aplicandoPrecos, setAplicandoPrecos] = React.useState(false);
   const [itens, setItens] = React.useState<OrcamentoItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [modoPreco, setModoPreco] = React.useState<"VENDA" | "DIRETO">("VENDA");
@@ -77,7 +86,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
       });
       carregarDados();
     } catch (error) {
-      alert("Erro ao criar etapa.");
+      showToast("Erro ao criar etapa.", undefined, "error");
     }
   };
 
@@ -134,14 +143,14 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
       await Promise.all(mudou.map(([id, v]) => updateEtapa(orcamentoId, id, v)));
       carregarDados();
     } catch (error) {
-      alert("Erro ao mover etapa.");
+      showToast("Erro ao mover etapa.", undefined, "error");
       carregarDados();
     }
   };
 
   const handleAddSubEtapa = async (parentId: string) => {
     if (getNivelEtapa(parentId) >= MAX_NIVEL_ETAPAS) {
-      alert(`O limite é de ${MAX_NIVEL_ETAPAS} níveis de etapas.`);
+      showToast(`O limite é de ${MAX_NIVEL_ETAPAS} níveis de etapas.`, undefined, "warning");
       return;
     }
     try {
@@ -153,7 +162,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
       });
       carregarDados();
     } catch (error) {
-      alert("Erro ao criar sub-etapa.");
+      showToast("Erro ao criar sub-etapa.", undefined, "error");
     }
   };
 
@@ -176,7 +185,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
       await deleteEtapa(orcamentoId, id);
       carregarDados();
     } catch (error) {
-      alert("Erro ao remover etapa.");
+      showToast("Erro ao remover etapa.", undefined, "error");
     }
   };
 
@@ -189,7 +198,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
     try {
       await updateEtapa(orcamentoId, id, { nome: novoNome });
     } catch (error) {
-      alert("Erro ao renomear etapa.");
+      showToast("Erro ao renomear etapa.", undefined, "error");
       carregarDados(); // revert on error
     }
   };
@@ -200,11 +209,51 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
       await deleteItem(orcamentoId, itemId);
       carregarDados();
     } catch (error) {
-      alert("Erro ao remover item.");
+      showToast("Erro ao remover item.", undefined, "error");
     }
   };
 
-  const openModalToCreate = (etapaId: string = "") => {
+  const abrirPreviaPrecos = async () => {
+    setModalPrecosAberto(true);
+    setPreviaPrecos(null);
+    setCarregandoPrevia(true);
+    try {
+      setPreviaPrecos(await atualizarPrecosPropria(orcamentoId, false));
+    } catch (error) {
+      setModalPrecosAberto(false);
+      showToast(
+        "Erro ao calcular prévia",
+        error instanceof Error ? error.message : undefined,
+        "error",
+      );
+    } finally {
+      setCarregandoPrevia(false);
+    }
+  };
+
+  const confirmarAtualizacaoPrecos = async () => {
+    setAplicandoPrecos(true);
+    try {
+      const resultado = await atualizarPrecosPropria(orcamentoId, true);
+      setModalPrecosAberto(false);
+      showToast(
+        "Preços atualizados",
+        `${resultado.itens_alterados} item(ns) atualizado(s) a partir da base própria.`,
+        "success",
+      );
+      await carregarDados();
+    } catch (error) {
+      showToast(
+        "Erro ao atualizar preços",
+        error instanceof Error ? error.message : undefined,
+        "error",
+      );
+    } finally {
+      setAplicandoPrecos(false);
+    }
+  };
+
+  const openModalToCreate =  (etapaId: string = "") => {
     setActiveEtapaId(etapaId);
     setEditingItem(null);
     setIsModalOpen(true);
@@ -279,11 +328,15 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-1.5">
                             <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
-                              item.fonte === 'SEINFRA'
-                                ? 'bg-orange-100 text-orange-700 border border-orange-200' 
-                                : 'bg-blue-100 text-blue-700 border border-blue-200'
+                              item.fonte === 'PROPRIA'
+                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                : item.fonte === 'SEINFRA'
+                                  ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                                  : 'bg-blue-100 text-blue-700 border border-blue-200'
                             }`}>
-                              {item.fonte}
+                              {item.fonte === 'PROPRIA'
+                                ? `Própria${item.base_propria_nome ? `: ${item.base_propria_nome}` : ''}`
+                                : item.fonte}
                             </span>
                           </div>
                           {item.tipo_bdi_item === "DIFERENCIADO" ? (
@@ -550,8 +603,16 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
             </button>
           </div>
 
-          <button 
-            onClick={handleAddEtapa} 
+          <button
+            type="button"
+            onClick={abrirPreviaPrecos}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded text-[12px] font-bold transition-colors hover:bg-bg-light shadow-sm text-text-main cursor-pointer"
+          >
+            <ArrowsClockwise size={16} /> Atualizar preços da base própria
+          </button>
+
+          <button
+            onClick={handleAddEtapa}  
             className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded text-[12px] font-bold transition-colors hover:bg-bg-light shadow-sm text-text-main cursor-pointer"
           >
             <Plus size={16} /> NOVA ETAPA
@@ -612,6 +673,14 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
           )}
         </div>
       </Modal>
+      <AtualizarPrecosPropriaModal
+        isOpen={modalPrecosAberto}
+        onClose={() => setModalPrecosAberto(false)}
+        previa={previaPrecos}
+        loading={carregandoPrevia}
+        confirmando={aplicandoPrecos}
+        onConfirmar={confirmarAtualizacaoPrecos}
+      />
       {/* Insumos Drawer */}
       <InsumosDrawer
         orcamentoId={orcamentoId}

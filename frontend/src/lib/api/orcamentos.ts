@@ -132,6 +132,8 @@ export interface OrcamentoItem {
   memoria_calculo?: string;
   variaveis?: MemoriaCalculoContainer | any;
   fonte: string;
+  base_propria_id?: string | null;
+  base_propria_nome?: string | null;
   created_at?: string;
 }
 
@@ -144,6 +146,7 @@ export interface OrcamentoItemCreate {
   etapa_id?: string;
   memoria_calculo?: string;
   fonte?: string;
+  base_propria_id?: string;
   variaveis?: MemoriaCalculoContainer | any;
   preco_unitario?: number;
   tipo_bdi_item?: TipoBDIItem;
@@ -151,6 +154,7 @@ export interface OrcamentoItemCreate {
 }
 
 export interface OrcamentoItemUpdate {
+  base_propria_id?: string;
   codigo_composicao?: string;
   descricao?: string;
   quantidade?: number;
@@ -558,5 +562,75 @@ export async function getOrcamentoCurvaABC(orcamentoId: string): Promise<CurvaAB
 export async function getOrcamentoCronograma(orcamentoId: string): Promise<CronogramaResponse> {
   const response = await fetchWithAuth(`/orcamentos/${orcamentoId}/cronograma`);
   if (!response.ok) throw new Error("Erro ao buscar cronograma do orçamento");
+  return response.json();
+}
+
+// Bases próprias no orçamento
+export interface ComposicaoPropriaBusca {
+  base_propria_id: string;
+  base_propria_nome: string;
+  codigo: string;
+  descricao: string;
+  unidade: string;
+  grupo?: string | null;
+  preco_unitario: number | null;
+}
+
+export interface AtualizacaoPrecoItem {
+  item_id: string;
+  codigo_composicao: string;
+  descricao: string;
+  base_propria_id: string;
+  preco_atual: number | null;
+  preco_novo: number | null;
+  diferenca: number;
+  variacao_percentual: number | null;
+  alterado: boolean;
+  aplicado: boolean;
+}
+
+export interface AtualizacaoPrecoIgnorado {
+  item_id: string;
+  codigo_composicao: string;
+  motivo: string;
+}
+
+export interface AtualizacaoPrecosPropriaResponse {
+  aplicado: boolean;
+  total_itens: number;
+  itens_alterados: number;
+  diferenca_custo_direto: number;
+  itens: AtualizacaoPrecoItem[];
+  ignorados: AtualizacaoPrecoIgnorado[];
+}
+
+export async function buscarComposicoesProprias(
+  orcamentoId: string,
+  termo: string,
+  limite = 20,
+): Promise<ComposicaoPropriaBusca[]> {
+  const params = new URLSearchParams({ termo, limite: String(limite) });
+  const response = await fetchWithAuth(
+    `/orcamentos/${orcamentoId}/buscar-composicoes-proprias?${params.toString()}`,
+  );
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || "Erro ao buscar composições das bases próprias");
+  }
+  return response.json();
+}
+
+export async function atualizarPrecosPropria(
+  orcamentoId: string,
+  aplicar: boolean,
+): Promise<AtualizacaoPrecosPropriaResponse> {
+  const response = await fetchWithAuth(
+    `/orcamentos/${orcamentoId}/itens/atualizar-precos-propria?aplicar=${aplicar}`,
+    { method: "POST" },
+  );
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || "Erro ao atualizar preços da base própria");
+  }
   return response.json();
 }
