@@ -6,6 +6,7 @@ from app.modules.obra.repositories import ObraRepository
 from app.modules.obra.schemas import ObraCreate, ObraTransitionCreate
 from app.modules.orcamento.repositories import OrcamentoItemRepository, OrcamentoRepository
 from core.exceptions import NaoEncontradoError
+from core.obras import resolver_obra_id
 
 
 class ObraService:
@@ -188,3 +189,16 @@ class ObraService:
         if status_upper not in ["EM_ANDAMENTO", "CONCLUIDA"]:
             raise ValueError("Status inválido. Use EM_ANDAMENTO ou CONCLUIDA")
         return self.obra_repository.atualizar_obra_status(obra_id, status_upper)
+
+    def excluir_obra(self, obra_id: str) -> None:
+        """
+        Exclui a obra e tudo que depende dela (diário, medições, estoque, locações, despesas).
+        O orçamento de origem é mantido.
+        """
+        real = resolver_obra_id(self.supabase, obra_id)
+        if not real:
+            raise NaoEncontradoError("Obra não encontrada")
+        caminhos = self.obra_repository.listar_caminhos_fotos_diario(real)
+        if not self.obra_repository.deletar_obra(real):
+            raise NaoEncontradoError("Obra não encontrada")
+        self.obra_repository.remover_arquivos_diario(caminhos)
