@@ -4,22 +4,23 @@ Script de automatização para coleta e processamento de planilhas SINAPI.
 Pode ser executado diretamente ou via cron job para atualizar os índices de custos.
 """
 
-import os
-import sys
 import argparse
-import requests
-import zipfile
 import io
 import logging
+import sys
+import zipfile
 from pathlib import Path
+
+import requests
 
 # Adiciona o diretório backend ao PYTHONPATH
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_DIR))
 
-from app.services.import_service import process_import_file
-from app.repositories.item_repository import ItemRepository
-from core.supabase_client import get_supabase_client
+from app.repositories.item_repository import ItemRepository  # noqa: E402
+from app.services.import_service import process_import_file  # noqa: E402
+
+from core.supabase_client import get_supabase_client  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("sinapi_scraper")

@@ -4,10 +4,9 @@ Edge-case and security tests for the API layer.
 Uses the `client` fixture from conftest.py (FastAPI TestClient with mocked
 Supabase and authentication).
 """
-import pytest
-from io import BytesIO
-from fastapi.testclient import TestClient
 
+import pytest
+from fastapi.testclient import TestClient
 
 # ---------------------------------------------------------------------------
 # Upload endpoint — structural validation

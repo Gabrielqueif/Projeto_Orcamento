@@ -1,8 +1,10 @@
-import pytest
-import pandas as pd
 from io import BytesIO
 from unittest.mock import MagicMock
+
+import pandas as pd
+
 from app.modules.importacao.services.import_service import process_import_file
+
 
 def test_sheet_identification():
     # 1. Create a mock Excel file with CSD, CCD, CSE sheets
@@ -37,7 +39,7 @@ def test_sheet_identification():
     mock_repo.upsert_batch_estados.return_value = 1
 
     # 3. Process
-    result = process_import_file(file_content, mock_repo)
+    process_import_file(file_content, mock_repo)
 
     # 4. Verification
     # Check that repo methods were called

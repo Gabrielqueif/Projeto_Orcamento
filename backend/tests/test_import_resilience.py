@@ -1,8 +1,11 @@
-import pytest
-from unittest.mock import MagicMock, patch
-from app.modules.importacao.services.import_service import process_import_file, _deduplicar_composicoes
-import pandas as pd
 from io import BytesIO
+from unittest.mock import MagicMock
+
+import pandas as pd
+import pytest
+
+from app.modules.importacao.services.import_service import _deduplicar_composicoes, process_import_file
+
 
 def create_mock_sinapi_excel() -> bytes:
     output = BytesIO()

@@ -6,10 +6,10 @@ Mockamos o supabase client para simular tokens válidos, inválidos e expirados.
 Como a função é async, usamos asyncio.run() para invocá-la de forma síncrona.
 """
 import asyncio
-import pytest
-from unittest.mock import MagicMock, patch
-from fastapi import HTTPException
+from unittest.mock import MagicMock
 
+import pytest
+from fastapi import HTTPException
 
 # ---------------------------------------------------------------------------
 # Helpers

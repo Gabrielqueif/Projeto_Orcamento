@@ -1,7 +1,7 @@
-import pytest
-from unittest.mock import MagicMock, patch
 from datetime import date
-from fastapi.testclient import TestClient
+from unittest.mock import MagicMock
+
+import pytest
 
 from app.modules.obra.schemas import ObraTransitionCreate
 from app.modules.obra.services import ObraService
@@ -373,7 +373,8 @@ def test_routes_obras_endpoints(client):
 # ObraRepository Unit Tests
 # ---------------------------------------------------------------------------
 
-from app.modules.obra.repositories import ObraRepository
+from app.modules.obra.repositories import ObraRepository  # noqa: E402
+
 
 def test_repo_criar_obra_sucesso():
     supabase = MagicMock()

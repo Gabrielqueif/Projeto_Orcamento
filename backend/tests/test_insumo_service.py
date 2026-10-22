@@ -6,9 +6,8 @@ Unit tests for OrcamentoItemService — métodos de insumo:
 
 Todos os repositórios são mockados via conftest.py.
 """
-import pytest
-from unittest.mock import MagicMock, call
 
+import pytest
 
 # ---------------------------------------------------------------------------
 # listar_insumos
