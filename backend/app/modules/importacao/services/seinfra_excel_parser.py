@@ -100,7 +100,9 @@ class SeinfraExcelParser(BaseExcelParser):
             if mes != "UNKNOWN":
                 break
         if mes == "UNKNOWN":
-            raise ValueError("Tabela SEINFRA não identificada: esperado 'Tabela NNN - ENC. SOCIAIS NN,NN%' no topo da planilha.")
+            raise ValueError(
+                "Tabela SEINFRA não identificada: esperado 'Tabela NNN - ENC. SOCIAIS NN,NN%' no topo da planilha."
+            )
         return {"mes_referencia": mes, "uf": "CE", "desoneracao": "Encargos incluídos"}
 
     # ------------------------------------------------------------------
