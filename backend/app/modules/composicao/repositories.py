@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 from typing import Any, Dict, List, Optional
 
@@ -17,6 +18,18 @@ UFS = [
 
 _CACHE_BASES_TTL_SEGUNDOS = 300
 _CACHE_BASES: Dict[str, Any] = {"dados": None, "expira_em": 0.0}
+
+
+_PADRAO_CODIGO = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,29}$")
+
+
+def parece_codigo(termo: str) -> bool:
+    """Código = uma palavra só com pelo menos um dígito (SINAPI `100063`, SEINFRA `C0001`).
+
+    Palavras comuns ("cimento") ficam de fora e seguem para a busca por descrição.
+    """
+    termo = termo.strip()
+    return bool(_PADRAO_CODIGO.match(termo)) and any(c.isdigit() for c in termo)
 
 
 class ItemRepository:
@@ -76,6 +89,20 @@ class ItemRepository:
             .data
         )
 
+    def buscar_por_codigo_parcial(self, termo: str, fonte: str = "SINAPI", limit: int = 50) -> List[Dict[str, Any]]:
+        """Código que começa com o termo (`C00` traz `C0001`, `C0002`…), sem diferenciar maiúsculas."""
+        return (
+            self.supabase.table(TABELA_COMPOSICOES)
+            .select("*")
+            .eq("fonte", fonte)
+            .ilike("codigo_composicao", f"{termo.strip()}%")
+            .order("codigo_composicao")
+            .limit(limit)
+            .execute()
+            .data
+            or []
+        )
+
     def buscar_por_descricao(self, termo: str, fonte: str = "SINAPI", limit: int = 50) -> List[Dict[str, Any]]:
         termo_limpo = termo.strip()
         if not termo_limpo:
@@ -117,13 +144,25 @@ class ItemRepository:
         if not termo_limpo:
             return []
 
-        query = self.supabase.table(VIEW_INSUMOS).select("*").eq("fonte", fonte)
-        if termo_limpo.isdigit():
-            query = query.eq("codigo_insumo", termo_limpo)
-        else:
+        def consulta():
+            return self.supabase.table(VIEW_INSUMOS).select("*").eq("fonte", fonte)
+
+        rows: List[Dict[str, Any]] = []
+        if parece_codigo(termo_limpo):
+            rows = (
+                consulta()
+                .ilike("codigo_insumo", f"{termo_limpo}%")
+                .order("codigo_insumo")
+                .limit(limit * 2)
+                .execute()
+                .data
+                or []
+            )
+        if not rows:
+            query = consulta()
             for palavra in termo_limpo.split():
                 query = query.ilike("descricao", f"%{palavra}%")
-        rows = query.order("descricao").limit(limit * 2).execute().data or []
+            rows = query.order("descricao").limit(limit * 2).execute().data or []
 
         # Mesmo insumo em vários meses de referência: mantém só o mês mais recente.
         def chave_mes(r):

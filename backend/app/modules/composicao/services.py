@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app.modules.composicao.repositories import ItemRepository
+from app.modules.composicao.repositories import ItemRepository, parece_codigo
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 PLANILHA_SINAPI_CAMINHO = BASE_DIR / "planilhas" / "planilha_sinapi.xlsx"
@@ -51,10 +51,14 @@ class ItemService:
         mes_referencia: str = "",
         tipo_composicao: str = "",
     ):
-        if "%" in termo or termo.isdigit():
+        if "%" in termo:
             resultados = self.repository.buscar_por_codigo(termo, fonte=fonte)
         else:
-            resultados = self.repository.buscar_por_descricao(termo, fonte=fonte)
+            resultados = []
+            if parece_codigo(termo):
+                resultados = self.repository.buscar_por_codigo_parcial(termo, fonte=fonte)
+            if not resultados:
+                resultados = self.repository.buscar_por_descricao(termo, fonte=fonte)
 
         if estado and resultados:
             precos = self.repository.buscar_precos_lote(
@@ -63,6 +67,9 @@ class ItemService:
             for r in resultados:
                 r["preco"] = precos.get(r["codigo_composicao"])
         return resultados
+
+    def buscar_insumo(self, termo: str, fonte: str = "SINAPI", tipo: str = "Sem Desoneração"):
+        return self.repository.buscar_insumos(termo, fonte=fonte, tipo=tipo)
 
     def listar_estados_composicao(self, codigo_composicao: str, mes_referencia: str, fonte: str = "SINAPI"):
         return self.repository.listar_estados_por_item(codigo_composicao, mes_referencia, fonte=fonte)
