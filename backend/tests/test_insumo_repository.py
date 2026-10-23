@@ -174,3 +174,22 @@ def test_deletar_por_item_chama_delete_eq(repo, supabase):
 
     # Assert
     supabase.table.return_value.delete.assert_called_once()
+
+
+@pytest.mark.unit
+def test_buscar_insumos_por_codigo_alfanumerico_usa_prefixo_do_codigo():
+    """Termo com cara de código (`I00`) filtra por código que começa com ele, não pela descrição."""
+    from unittest.mock import MagicMock
+
+    from app.modules.composicao.repositories import ItemRepository
+
+    supabase = MagicMock()
+    chain = supabase.table.return_value.select.return_value
+    for metodo in ("eq", "ilike", "order", "limit"):
+        getattr(chain, metodo).return_value = chain
+    chain.execute.return_value.data = []
+
+    ItemRepository(supabase).buscar_insumos("I00", fonte="SEINFRA")
+
+    primeiro_ilike = chain.ilike.call_args_list[0].args
+    assert primeiro_ilike == ("codigo_insumo", "I00%")
