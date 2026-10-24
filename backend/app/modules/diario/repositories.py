@@ -8,6 +8,7 @@ logger = logging.getLogger("projeto_orcamento")
 
 TABELA_DIARIOS = "diarios_obra"
 TABELA_FOTOS = "diario_fotos"
+TABELA_SERVICOS = "diario_servicos"
 BUCKET_FOTOS = "diario-fotos"
 VALIDADE_URL_SEGUNDOS = 3600
 
@@ -15,6 +16,7 @@ COLUNAS_DIARIO = (
     "id, obra_id, data, titulo, atividades, ocorrencias, clima, temperatura, "
     "equipe_presente, responsavel, status, created_at, updated_at"
 )
+COLUNAS_ITEM = "id, orcamento_id, etapa_id, codigo_composicao, descricao, unidade, quantidade, preco_total"
 COLUNAS_FOTO = "id, diario_id, caminho, legenda, created_at"
 COLUNAS_OBRA = (
     "id, orcamento_id, cliente, escopo, endereco, data_inicio_real, "
@@ -167,25 +169,51 @@ class DiarioRepository:
         )
         return resultado.data or []
 
-    def avancos_dos_diarios(self, diario_ids: List[str]) -> List[Dict[str, Any]]:
-        """Medições nascidas dos diários, com o nome da etapa."""
+    def itens_por_ids(self, item_ids: List[str]) -> List[Dict[str, Any]]:
+        if not item_ids:
+            return []
+        resultado = self.supabase.table("orcamento_itens").select(COLUNAS_ITEM).in_("id", item_ids).execute()
+        return resultado.data or []
+
+    def itens_do_orcamento(self, orcamento_id: str) -> List[Dict[str, Any]]:
+        resultado = self.supabase.table("orcamento_itens").select(COLUNAS_ITEM).eq("orcamento_id", orcamento_id).execute()
+        return resultado.data or []
+
+    def servicos_dos_diarios(self, diario_ids: List[str]) -> List[Dict[str, Any]]:
         if not diario_ids:
             return []
         resultado = (
-            self.supabase.table("medicoes_etapa")
-            .select("diario_id, etapa_id, progresso, orcamento_etapas(nome)")
+            self.supabase.table(TABELA_SERVICOS)
+            .select("diario_id, item_id, quantidade")
             .in_("diario_id", diario_ids)
+            .execute()
+        )
+        return resultado.data or []
+
+    def servicos_da_obra(self, obra_id: str) -> List[Dict[str, Any]]:
+        """Todos os serviços lançados nos diários da obra, com a data do diário."""
+        resultado = (
+            self.supabase.table(TABELA_SERVICOS)
+            .select("diario_id, item_id, quantidade, diarios_obra!inner(data, obra_id)")
+            .eq("diarios_obra.obra_id", obra_id)
             .execute()
         )
         return [
             {
                 "diario_id": r["diario_id"],
-                "etapa_id": r["etapa_id"],
-                "etapa_nome": (r.get("orcamento_etapas") or {}).get("nome"),
-                "progresso": r["progresso"],
+                "item_id": r["item_id"],
+                "quantidade": float(r["quantidade"]),
+                "data": r["diarios_obra"]["data"],
             }
             for r in (resultado.data or [])
         ]
+
+    def substituir_servicos(self, diario_id: str, servicos: List[Dict[str, Any]]) -> None:
+        self.supabase.table(TABELA_SERVICOS).delete().eq("diario_id", diario_id).execute()
+        if servicos:
+            self.supabase.table(TABELA_SERVICOS).insert(
+                [{"diario_id": diario_id, "item_id": s["item_id"], "quantidade": s["quantidade"]} for s in servicos]
+            ).execute()
 
     def diarios_recentes(self, obra_ids: List[str], desde: date) -> List[Dict[str, Any]]:
         if not obra_ids:

@@ -5,8 +5,8 @@ import pytest
 
 from app.main import app
 from app.modules.diario import services as diario_services
-from app.modules.diario.schemas import DiarioCreate, DiarioUpdate
-from app.modules.diario.services import DiarioService
+from app.modules.diario.schemas import DiarioCreate, DiarioUpdate, ServicoInput
+from app.modules.diario.services import DiarioService, calcular_avancos
 from app.modules.medicao import services as medicao_services
 from app.modules.medicao.routes import get_medicao_service
 from app.modules.medicao.schemas import AvancoEtapa, MedicaoCreate
@@ -327,13 +327,29 @@ def test_rota_listar_medicoes(api, repo):
 # --- integração com o diário ---------------------------------------------------
 
 
+ITEM = {
+    "id": "i1",
+    "orcamento_id": "orc-1",
+    "etapa_id": "e1",
+    "codigo_composicao": "SB-1",
+    "descricao": "Concreto",
+    "unidade": "m3",
+    "quantidade": 100,
+    "preco_total": 1000,
+}
+
+
 def _repo_diario():
     r = MagicMock()
     r.resolver_obra.return_value = OBRA
+    r.buscar_obra.return_value = {"id": OBRA, "orcamento_id": "orc-1"}
     r.buscar_por_data.return_value = None
     r.listar_fotos.return_value = []
     r.assinar_urls.return_value = {}
-    r.avancos_dos_diarios.return_value = []
+    r.servicos_dos_diarios.return_value = []
+    r.itens_por_ids.return_value = [ITEM]
+    r.itens_do_orcamento.return_value = [ITEM]
+    r.servicos_da_obra.return_value = []
     r.criar.side_effect = lambda obra_id, dados: {
         "id": "d1",
         "obra_id": obra_id,
@@ -349,38 +365,63 @@ def _novo_diario(**extra):
     return DiarioCreate(**{**base, **extra})
 
 
-def test_diario_com_avancos_registra_as_medicoes_na_data_do_diario():
-    medicoes = MagicMock()
-    DiarioService(_repo_diario(), medicoes).criar(OBRA, _novo_diario(avancos=[AvancoEtapa(etapa_id="e1", progresso=30)]))
+def _linha(diario_id, data, quantidade, item_id="i1"):
+    return {"diario_id": diario_id, "data": data, "item_id": item_id, "quantidade": quantidade}
 
+
+def test_calcular_avancos_acumula_os_servicos_pelos_diarios():
+    linhas = [_linha("d2", "2026-10-22", 30), _linha("d1", "2026-10-21", 20)]
+    assert calcular_avancos([ITEM], linhas) == {"d1": {"e1": 20}, "d2": {"e1": 50}}
+
+
+def test_calcular_avancos_pondera_pelo_preco_e_limita_em_100():
+    outro = {**ITEM, "id": "i2", "quantidade": 10, "preco_total": 3000}
+    linhas = [_linha("d1", "2026-10-21", 100), _linha("d1", "2026-10-21", 5, "i2"), _linha("d2", "2026-10-22", 50)]
+    # 1000 * 100% + 3000 * 50% = 2500 de 4000; depois o i1 passa do orçado e continua em 100%.
+    assert calcular_avancos([ITEM, outro], linhas) == {"d1": {"e1": 62}, "d2": {"e1": 62}}
+
+
+def test_diario_com_servicos_registra_as_medicoes_na_data_do_diario():
+    repo = _repo_diario()
+    repo.servicos_da_obra.return_value = [_linha("d1", "2026-10-21", 30)]
+    medicoes = MagicMock()
+    DiarioService(repo, medicoes).criar(OBRA, _novo_diario(servicos=[ServicoInput(item_id="i1", quantidade=30)]))
+
+    repo.substituir_servicos.assert_called_once_with("d1", [{"item_id": "i1", "quantidade": 30}])
     obra, diario_id, data, avancos = medicoes.substituir_do_diario.call_args.args
     assert (obra, diario_id, data) == (OBRA, "d1", date(2026, 10, 21))
-    assert avancos[0].progresso == 30
+    assert (avancos[0].etapa_id, avancos[0].progresso) == ("e1", 30)
 
 
-def test_avancos_nao_vao_para_a_tabela_do_diario():
+def test_servicos_nao_vao_para_a_tabela_do_diario():
     repo = _repo_diario()
-    DiarioService(repo, MagicMock()).criar(OBRA, _novo_diario(avancos=[AvancoEtapa(etapa_id="e1", progresso=30)]))
-    assert "avancos" not in repo.criar.call_args.args[1]
+    DiarioService(repo, MagicMock()).criar(OBRA, _novo_diario(servicos=[ServicoInput(item_id="i1", quantidade=30)]))
+    assert "servicos" not in repo.criar.call_args.args[1]
 
 
-def test_falha_nas_medicoes_desfaz_a_criacao_do_diario():
+def test_servico_de_outro_orcamento_desfaz_a_criacao_do_diario():
     repo = _repo_diario()
-    medicoes = MagicMock()
-    medicoes.substituir_do_diario.side_effect = NaoEncontradoError("Etapa não encontrada nesta obra")
+    repo.itens_por_ids.return_value = [{**ITEM, "orcamento_id": "outro"}]
 
     with pytest.raises(NaoEncontradoError):
-        DiarioService(repo, medicoes).criar(OBRA, _novo_diario(avancos=[AvancoEtapa(etapa_id="outra", progresso=30)]))
+        DiarioService(repo, MagicMock()).criar(OBRA, _novo_diario(servicos=[ServicoInput(item_id="i1", quantidade=30)]))
     repo.deletar.assert_called_once_with("d1", OBRA)
 
 
-def test_diario_sem_avancos_nao_mexe_nas_medicoes():
+def test_quantidade_acima_do_orcado_e_recusada():
+    with pytest.raises(ValueError):
+        DiarioService(_repo_diario(), MagicMock()).criar(
+            OBRA, _novo_diario(servicos=[ServicoInput(item_id="i1", quantidade=101)])
+        )
+
+
+def test_diario_sem_servicos_nao_mexe_nas_medicoes():
     medicoes = MagicMock()
     DiarioService(_repo_diario(), medicoes).criar(OBRA, _novo_diario())
     medicoes.substituir_do_diario.assert_not_called()
 
 
-def test_atualizar_sem_informar_avancos_preserva_as_medicoes():
+def test_atualizar_sem_informar_servicos_preserva_as_medicoes():
     repo = _repo_diario()
     repo.buscar.return_value = {"id": "d1", "obra_id": OBRA, "data": "2026-10-21", "status": "RASCUNHO"}
     repo.atualizar.side_effect = lambda diario_id, obra_id, dados: {**repo.buscar.return_value, **dados}
@@ -396,7 +437,7 @@ def test_atualizar_com_lista_vazia_remove_as_medicoes():
     repo.atualizar.side_effect = lambda diario_id, obra_id, dados: {**repo.buscar.return_value, **dados}
     medicoes = MagicMock()
 
-    DiarioService(repo, medicoes).atualizar(OBRA, "d1", DiarioUpdate(avancos=[]))
+    DiarioService(repo, medicoes).atualizar(OBRA, "d1", DiarioUpdate(servicos=[]))
     assert medicoes.substituir_do_diario.call_args.args[3] == []
 
 
@@ -411,11 +452,18 @@ def test_excluir_diario_remove_as_medicoes_dele():
     repo.deletar.assert_called_once_with("d1", OBRA)
 
 
-def test_diario_traz_os_avancos_com_o_nome_da_etapa():
+def test_diario_traz_os_servicos_com_quantidade_e_percentual():
     repo = _repo_diario()
     repo.buscar.return_value = {"id": "d1", "obra_id": OBRA, "status": "RASCUNHO", "ocorrencias": None}
-    repo.avancos_dos_diarios.return_value = [
-        {"diario_id": "d1", "etapa_id": "e1", "etapa_nome": "Fundação", "progresso": 30}
+    repo.servicos_dos_diarios.return_value = [{"diario_id": "d1", "item_id": "i1", "quantidade": 30}]
+    servicos = DiarioService(repo).obter(OBRA, "d1")["servicos"]
+    assert servicos == [
+        {
+            "item_id": "i1",
+            "codigo": "SB-1",
+            "descricao": "Concreto",
+            "unidade": "m3",
+            "quantidade": 30.0,
+            "percentual": 30.0,
+        }
     ]
-    avancos = DiarioService(repo).obter(OBRA, "d1")["avancos"]
-    assert avancos == [{"etapa_id": "e1", "etapa_nome": "Fundação", "progresso": 30}]
