@@ -29,11 +29,7 @@ def get_etapa_service(supabase=Depends(get_supabase)) -> EtapaService:
 @router.post("/{orcamento_id}/etapas", response_model=EtapaResponse, summary="Criar etapa no orçamento")
 async def criar_etapa(orcamento_id: str, etapa: EtapaCreate, service: EtapaService = Depends(get_etapa_service)):
     """Cria uma nova etapa para um orçamento"""
-    try:
-        return service.criar_etapa(orcamento_id, etapa)
-    except Exception:
-        logger.error("Erro ao criar etapa", exc_info=True)
-        raise HTTPException(status_code=400, detail="Erro ao criar etapa")
+    return service.criar_etapa(orcamento_id, etapa)
 
 
 @router.get("/{orcamento_id}/etapas", response_model=List[EtapaResponse], summary="Listar etapas do orçamento")
@@ -55,21 +51,13 @@ async def atualizar_etapa(
     orcamento_id: str, etapa_id: str, etapa_update: EtapaUpdate, service: EtapaService = Depends(get_etapa_service)
 ):
     """Atualiza uma etapa (nome, ordem ou hierarquia)"""
-    try:
-        return service.atualizar_etapa(orcamento_id, etapa_id, etapa_update.model_dump(exclude_unset=True, mode="json"))
-    except Exception:
-        logger.error("Erro ao atualizar etapa", exc_info=True)
-        raise HTTPException(status_code=400, detail="Erro ao atualizar etapa")
+    return service.atualizar_etapa(orcamento_id, etapa_id, etapa_update.model_dump(exclude_unset=True, mode="json"))
 
 
 @router.delete("/{orcamento_id}/etapas/{etapa_id}", summary="Deletar etapa")
 async def deletar_etapa(orcamento_id: str, etapa_id: str, service: EtapaService = Depends(get_etapa_service)):
     """Deleta uma etapa"""
-    try:
-        return service.deletar_etapa(etapa_id, orcamento_id)
-    except Exception:
-        logger.error("Erro ao deletar etapa", exc_info=True)
-        raise HTTPException(status_code=400, detail="Erro ao deletar etapa")
+    return service.deletar_etapa(etapa_id, orcamento_id)
 
 
 @router.patch(
@@ -88,15 +76,7 @@ async def atualizar_progresso_etapa(
     progresso = payload.get("progresso")
     if progresso is None or not isinstance(progresso, int) or not (0 <= progresso <= 100):
         raise HTTPException(status_code=422, detail="progresso deve ser um inteiro entre 0 e 100")
-    try:
-        resultado = service.atualizar_etapa(orcamento_id, etapa_id, {"progresso": progresso})
-        if not resultado:
-            raise HTTPException(status_code=404, detail="Etapa não encontrada")
-        # Mantém o histórico da Curva S coerente com a atualização rápida (se já for obra).
-        MedicaoService(MedicaoRepository(supabase)).registrar_por_orcamento(orcamento_id, etapa_id, progresso)
-        return resultado
-    except HTTPException:
-        raise
-    except Exception:
-        logger.error("Erro ao atualizar progresso", exc_info=True)
-        raise HTTPException(status_code=400, detail="Erro ao atualizar progresso")
+    resultado = service.atualizar_etapa(orcamento_id, etapa_id, {"progresso": progresso})
+    # Mantém o histórico da Curva S coerente com a atualização rápida (se já for obra).
+    MedicaoService(MedicaoRepository(supabase)).registrar_por_orcamento(orcamento_id, etapa_id, progresso)
+    return resultado

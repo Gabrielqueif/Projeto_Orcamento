@@ -3,6 +3,7 @@ from typing import List
 
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.etapa.schemas import EtapaCreate
+from core.exceptions import NaoEncontradoError
 
 
 class EtapaService:
@@ -28,7 +29,7 @@ class EtapaService:
     def atualizar_etapa(self, orcamento_id: str, etapa_id: str, etapa_update: dict) -> dict:
         resultado = self.repository.atualizar(etapa_id, etapa_update, orcamento_id)
         if not resultado:
-            raise Exception("Erro ao atualizar etapa")
+            raise NaoEncontradoError("Etapa não encontrada")
         return resultado
 
     def deletar_etapa(self, etapa_id: str, orcamento_id: str) -> dict:

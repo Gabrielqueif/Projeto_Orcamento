@@ -69,21 +69,18 @@ def get_base_propria_service(supabase=Depends(get_supabase)) -> BasePropriaServi
 )
 async def simular_calculo_bdi(payload: BDICalculateRequest):
     """Calcula a taxa de BDI pela fórmula oficial TCU (Acórdão 2622/2013) sem persistir."""
-    try:
-        bdi_resultado = calcular_bdi_tcu(payload.config)
-        impostos = payload.config.calcular_impostos_total()
-        return {
-            "bdi": bdi_resultado,
-            "bdi_diferenciado": payload.config.bdi_diferenciado,
-            "impostos_total": impostos,
-            "detalhamento": {
-                "formula": "BDI = [ ((1 + AC + SG + R) * (1 + DF) * (1 + L)) / (1 - I) ] - 1",
-                "faixas_referencia_edificios": FAIXAS_REFERENCIA_TCU["CONSTRUCAO_EDIFICIOS"],
-                "faixas_referencia_equipamentos": FAIXAS_REFERENCIA_TCU["FORNECIMENTO_MATERIAIS_EQUIPAMENTOS"],
-            },
-        }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    bdi_resultado = calcular_bdi_tcu(payload.config)
+    impostos = payload.config.calcular_impostos_total()
+    return {
+        "bdi": bdi_resultado,
+        "bdi_diferenciado": payload.config.bdi_diferenciado,
+        "impostos_total": impostos,
+        "detalhamento": {
+            "formula": "BDI = [ ((1 + AC + SG + R) * (1 + DF) * (1 + L)) / (1 - I) ] - 1",
+            "faixas_referencia_edificios": FAIXAS_REFERENCIA_TCU["CONSTRUCAO_EDIFICIOS"],
+            "faixas_referencia_equipamentos": FAIXAS_REFERENCIA_TCU["FORNECIMENTO_MATERIAIS_EQUIPAMENTOS"],
+        },
+    }
 
 
 @router.post("/", response_model=OrcamentoResponse, summary="Criar novo orçamento", tags=["Orçamentos"])
@@ -124,10 +121,7 @@ async def obter_estatisticas_endpoint(
 @router.get("/{orcamento_id}", response_model=OrcamentoResponse, summary="Buscar orçamento por ID", tags=["Orçamentos"])
 async def buscar_orcamento(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
     """Busca um orçamento específico por ID"""
-    try:
-        return service.buscar_orcamento(orcamento_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    return service.buscar_orcamento(orcamento_id)
 
 
 @router.put("/{orcamento_id}", response_model=OrcamentoResponse, summary="Atualizar orçamento", tags=["Orçamentos"])
@@ -135,20 +129,14 @@ async def atualizar_orcamento(
     orcamento_id: str, orcamento: OrcamentoUpdate, service: OrcamentoService = Depends(get_orcamento_service)
 ):
     """Atualiza um orçamento existente"""
-    try:
-        return service.atualizar_orcamento(orcamento_id, orcamento)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    return service.atualizar_orcamento(orcamento_id, orcamento)
 
 
 @router.delete("/{orcamento_id}", summary="Deletar orçamento", tags=["Orçamentos"])
 async def deletar_orcamento(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
     """Deleta um orçamento e seus itens relacionados"""
-    try:
-        service.deletar_orcamento(orcamento_id)
-        return {"message": "Orçamento deletado com sucesso", "id": orcamento_id}
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    service.deletar_orcamento(orcamento_id)
+    return {"message": "Orçamento deletado com sucesso", "id": orcamento_id}
 
 
 @router.get("/{orcamento_id}/pdf", tags=["Orçamentos"])
@@ -171,8 +159,8 @@ async def download_pdf_orcamento(
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento_id}.pdf"},
         )
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError:
+        raise
     except Exception:
         logger.error("Erro ao gerar PDF", exc_info=True)
         raise HTTPException(status_code=500, detail="Erro ao gerar PDF")
@@ -202,8 +190,8 @@ async def download_excel_orcamento(
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": f"attachment; filename=orcamento_{orcamento_id}.xlsx"},
         )
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError:
+        raise
     except Exception:
         logger.error("Erro ao gerar planilha Excel", exc_info=True)
         raise HTTPException(status_code=500, detail="Erro ao gerar planilha Excel")
@@ -217,10 +205,7 @@ async def download_excel_orcamento(
 )
 async def obter_curva_abc_endpoint(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
     """Retorna a Curva ABC real de insumos do orçamento"""
-    try:
-        return service.obter_curva_abc(orcamento_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    return service.obter_curva_abc(orcamento_id)
 
 
 @router.get(
@@ -231,10 +216,7 @@ async def obter_curva_abc_endpoint(orcamento_id: str, service: OrcamentoService 
 )
 async def obter_cronograma_endpoint(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
     """Retorna o Cronograma Físico-Financeiro dinâmico do orçamento"""
-    try:
-        return service.obter_cronograma(orcamento_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    return service.obter_cronograma(orcamento_id)
 
 
 # --- Rotas de Itens do Orçamento ---
@@ -252,8 +234,8 @@ async def adicionar_item(
     """Adiciona um novo item ao orçamento"""
     try:
         return service.adicionar_item(orcamento_id, item)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise
     except Exception:
         logger.error("Erro ao adicionar item", exc_info=True)
         raise HTTPException(status_code=500, detail="Erro ao adicionar item")
@@ -267,10 +249,7 @@ async def adicionar_item(
 )
 async def listar_itens(orcamento_id: str, service: OrcamentoItemService = Depends(get_orcamento_item_service)):
     """Lista todos os itens de um orçamento"""
-    try:
-        return service.listar_itens(orcamento_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    return service.listar_itens(orcamento_id)
 
 
 @router.post(
@@ -317,10 +296,7 @@ async def atualizar_item(
     service: OrcamentoItemService = Depends(get_orcamento_item_service),
 ):
     """Atualiza um item do orçamento"""
-    try:
-        return service.atualizar_item(orcamento_id, item_id, item_update)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.atualizar_item(orcamento_id, item_id, item_update)
 
 
 @router.delete("/{orcamento_id}/itens/{item_id}", summary="Remover item do orçamento", tags=["Itens do Orçamento"])
@@ -328,10 +304,7 @@ async def remover_item(
     orcamento_id: str, item_id: str, service: OrcamentoItemService = Depends(get_orcamento_item_service)
 ):
     """Remove um item do orçamento"""
-    try:
-        return service.remover_item(orcamento_id, item_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.remover_item(orcamento_id, item_id)
 
 
 @router.get(
@@ -343,10 +316,7 @@ async def listar_insumos(
     orcamento_id: str, item_id: str, service: OrcamentoItemService = Depends(get_orcamento_item_service)
 ):
     """Lista os insumos (explosão analítica) de um item do orçamento"""
-    try:
-        return service.listar_insumos(orcamento_id, item_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.listar_insumos(orcamento_id, item_id)
 
 
 @router.put(
@@ -362,7 +332,4 @@ async def atualizar_insumo(
     service: OrcamentoItemService = Depends(get_orcamento_item_service),
 ):
     """Atualiza um insumo e recalcula os totais"""
-    try:
-        return service.atualizar_insumo(orcamento_id, item_id, insumo_id, insumo_update.model_dump(exclude_unset=True))
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.atualizar_insumo(orcamento_id, item_id, insumo_id, insumo_update.model_dump(exclude_unset=True))
