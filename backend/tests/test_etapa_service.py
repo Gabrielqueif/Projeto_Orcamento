@@ -2,12 +2,14 @@
 Unit tests for EtapaService.
 All external dependencies (repository) are mocked.
 """
+
 from unittest.mock import MagicMock
 
 import pytest
 
 from app.modules.etapa.schemas import EtapaCreate
 from app.modules.etapa.services import EtapaService
+from core.exceptions import NaoEncontradoError
 
 
 @pytest.fixture
@@ -67,6 +69,7 @@ def test_deletar_etapa(etapa_service, repository_mock):
 # atualizar_etapa — cenários faltantes
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_atualizar_etapa_sucesso(etapa_service, repository_mock):
     """atualizar_etapa com dados válidos → retorna resultado do repository."""
@@ -89,6 +92,5 @@ def test_atualizar_etapa_falha_repositorio_retorna_none(etapa_service, repositor
     repository_mock.atualizar.return_value = None
 
     # Act + Assert
-    with pytest.raises(Exception, match="Erro ao atualizar etapa"):
+    with pytest.raises(NaoEncontradoError):
         etapa_service.atualizar_etapa("orc1", "1", {"nome": "X"})
-

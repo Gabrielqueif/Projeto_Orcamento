@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
 from app.dependencies import get_supabase
 from app.modules.equipe.repositories import EquipeRepository, MembroEquipeRepository
@@ -54,10 +54,7 @@ async def criar_equipe(
     service: EquipeService = Depends(get_equipe_service),
 ):
     user_id = current_user.get("id")
-    try:
-        return service.criar_equipe(equipe, user_id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.criar_equipe(equipe, user_id)
 
 
 @router_equipes.get("/", response_model=List[EquipeResponse], summary="Listar equipes")
@@ -75,10 +72,7 @@ async def buscar_equipe(
     equipe_id: str, current_user: dict = Depends(get_current_user), service: EquipeService = Depends(get_equipe_service)
 ):
     user_id = current_user.get("id")
-    try:
-        return service.buscar_equipe(equipe_id, user_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    return service.buscar_equipe(equipe_id, user_id)
 
 
 @router_equipes.put("/{equipe_id}", response_model=EquipeResponse, summary="Atualizar equipe")
@@ -89,12 +83,7 @@ async def atualizar_equipe(
     service: EquipeService = Depends(get_equipe_service),
 ):
     user_id = current_user.get("id")
-    try:
-        return service.atualizar_equipe(equipe_id, equipe, user_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.atualizar_equipe(equipe_id, equipe, user_id)
 
 
 @router_equipes.delete("/{equipe_id}", summary="Deletar equipe")
@@ -102,13 +91,8 @@ async def deletar_equipe(
     equipe_id: str, current_user: dict = Depends(get_current_user), service: EquipeService = Depends(get_equipe_service)
 ):
     user_id = current_user.get("id")
-    try:
-        service.deletar_equipe(equipe_id, user_id)
-        return {"message": "Equipe deletada com sucesso", "id": equipe_id}
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    service.deletar_equipe(equipe_id, user_id)
+    return {"message": "Equipe deletada com sucesso", "id": equipe_id}
 
 
 # --- Rotas de Membros da Equipe ---
@@ -121,10 +105,7 @@ async def criar_membro(
     service: MembroEquipeService = Depends(get_membro_equipe_service),
 ):
     user_id = current_user.get("id")
-    try:
-        return service.criar_membro(membro, user_id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.criar_membro(membro, user_id)
 
 
 @router_membros.get("/", response_model=List[MembroEquipeResponse], summary="Listar membros da equipe")
@@ -148,10 +129,7 @@ async def buscar_membro(
     service: MembroEquipeService = Depends(get_membro_equipe_service),
 ):
     user_id = current_user.get("id")
-    try:
-        return service.buscar_membro(membro_id, user_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    return service.buscar_membro(membro_id, user_id)
 
 
 @router_membros.put("/{membro_id}", response_model=MembroEquipeResponse, summary="Atualizar membro da equipe")
@@ -162,12 +140,7 @@ async def atualizar_membro(
     service: MembroEquipeService = Depends(get_membro_equipe_service),
 ):
     user_id = current_user.get("id")
-    try:
-        return service.atualizar_membro(membro_id, membro, user_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return service.atualizar_membro(membro_id, membro, user_id)
 
 
 @router_membros.delete("/{membro_id}", summary="Deletar membro da equipe")
@@ -177,13 +150,8 @@ async def deletar_membro(
     service: MembroEquipeService = Depends(get_membro_equipe_service),
 ):
     user_id = current_user.get("id")
-    try:
-        service.deletar_membro(membro_id, user_id)
-        return {"message": "Colaborador removido da equipe com sucesso", "id": membro_id}
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    service.deletar_membro(membro_id, user_id)
+    return {"message": "Colaborador removido da equipe com sucesso", "id": membro_id}
 
 
 @router_membros.post("/alocar", summary="Alocar múltiplos membros a um orçamento")
@@ -193,12 +161,9 @@ async def alocar_membros(
     service: MembroEquipeService = Depends(get_membro_equipe_service),
 ):
     user_id = current_user.get("id")
-    try:
-        membro_ids_str = [str(m_id) for m_id in request.membro_ids]
-        service.alocar_membros(membro_ids_str, request.equipe_id, user_id)
-        return {"message": "Membros alocados com sucesso"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    membro_ids_str = [str(m_id) for m_id in request.membro_ids]
+    service.alocar_membros(membro_ids_str, request.equipe_id, user_id)
+    return {"message": "Membros alocados com sucesso"}
 
 
 @router_membros.post("/apontamentos", summary="Registrar apontamento diário de presença/horas")

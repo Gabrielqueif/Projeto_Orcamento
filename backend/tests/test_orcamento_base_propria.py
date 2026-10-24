@@ -143,7 +143,7 @@ def test_item_proprio_exige_base_e_codigo_existentes(a, banco, cenario):
     url = f"/orcamentos/{cenario['orcamento']}/itens"
     sem_base = {**payload(cenario["base"]), "base_propria_id": None}
     assert a.post(url, json=sem_base).status_code == 400
-    assert a.post(url, json=payload(cenario["base"], codigo="NAO-EXISTE")).status_code == 400  # 404 vira 400 na rota
+    assert a.post(url, json=payload(cenario["base"], codigo="NAO-EXISTE")).status_code == 404
     assert a.post(url, json={**payload(cenario["base"]), "codigo_composicao": "MANUAL"}).status_code == 400
     assert banco.tabelas.get("orcamento_itens", []) == []
 
@@ -171,7 +171,7 @@ def test_nao_usa_base_de_outro_usuario(api, banco, cenario):
     orc_b = criar_orcamento(banco, dono=USUARIO_B)
 
     r = b.post(f"/orcamentos/{orc_b}/itens", json=payload(cenario["base"]))
-    assert r.status_code == 400
+    assert r.status_code == 404
     assert "Base própria não encontrada" in r.json()["detail"]
     assert banco.tabelas.get("orcamento_itens", []) == []
 
