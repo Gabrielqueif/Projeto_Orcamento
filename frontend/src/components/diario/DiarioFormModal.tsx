@@ -108,9 +108,15 @@ function FormularioDiario({ onClose, obraId, registro, responsavelPadrao, servic
     }));
 
   const termo = busca.trim().toLowerCase();
-  const visiveis = servicos.filter(
-    (s) => !termo || `${s.codigo ?? ""} ${s.descricao} ${s.etapa_nome ?? ""}`.toLowerCase().includes(termo)
-  );
+  // O que sobra do orçado: o executado em todos os diários, menos o que este mesmo diário já lançou.
+  const restanteDe = (s: ServicoObra) => {
+    const proprio = registro?.servicos.find((x) => x.item_id === s.id)?.quantidade ?? 0;
+    return Math.max(0, Number((s.quantidade - s.executado + proprio).toFixed(6)));
+  };
+  // Serviços já concluídos em outros diários vão para o fim da lista.
+  const visiveis = servicos
+    .filter((s) => !termo || `${s.codigo ?? ""} ${s.descricao} ${s.etapa_nome ?? ""}`.toLowerCase().includes(termo))
+    .sort((a, b) => Number(restanteDe(a) === 0) - Number(restanteDe(b) === 0));
 
   const escolherArquivos = (lista: FileList | null) => {
     if (!lista) return;
@@ -150,10 +156,10 @@ function FormularioDiario({ onClose, obraId, registro, responsavelPadrao, servic
     const marcados = servicos
       .filter((s) => feitos[s.id])
       .map((s) => ({ servico: s, quantidade: paraNumero(feitos[s.id].qtd) }));
-    const invalido = marcados.find(({ servico, quantidade }) => !(quantidade > 0 && quantidade <= servico.quantidade));
+    const invalido = marcados.find(({ servico, quantidade }) => !(quantidade > 0 && quantidade <= restanteDe(servico)));
     if (invalido) {
       setErro(
-        `Informe para "${invalido.servico.descricao}" uma quantidade entre 0 e ${invalido.servico.quantidade} ${invalido.servico.unidade}.`
+        `Informe para "${invalido.servico.descricao}" uma quantidade entre 0 e ${restanteDe(invalido.servico)} ${invalido.servico.unidade} (o que ainda falta do orçado).`
       );
       return;
     }
@@ -273,20 +279,35 @@ function FormularioDiario({ onClose, obraId, registro, responsavelPadrao, servic
             <ul className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
               {visiveis.map((servico) => {
                 const feito = feitos[servico.id];
+                const restante = restanteDe(servico);
+                const concluido = restante === 0;
                 return (
-                  <li key={servico.id} className="border border-[#e2e8f0] rounded-[8px] px-3 py-2">
-                    <label className="flex items-start gap-2 text-[13px] text-[#001b3c] cursor-pointer">
+                  <li
+                    key={servico.id}
+                    className={`border rounded-[8px] px-3 py-2 ${
+                      concluido ? "border-[#9fd300] bg-[rgba(159,211,0,0.15)]" : "border-[#e2e8f0]"
+                    }`}
+                  >
+                    <label
+                      className={`flex items-start gap-2 text-[13px] ${
+                        concluido ? "text-[#405700] cursor-default" : "text-[#001b3c] cursor-pointer"
+                      }`}
+                    >
                       <input
                         type="checkbox"
                         checked={!!feito}
+                        disabled={concluido}
                         onChange={(e) => marcar(servico.id, e.target.checked)}
                         className="mt-0.5"
                       />
                       <span className="flex-1">
                         {servico.descricao}
-                        <span className="block text-[11px] text-[#94a3b8]">
+                        <span className={`block text-[11px] ${concluido ? "text-[#4c6700]" : "text-[#94a3b8]"}`}>
                           {[servico.codigo, servico.etapa_nome].filter(Boolean).join(" · ")}
-                          {" · "}orçado: {servico.quantidade} {servico.unidade}
+                          {" · "}
+                          {concluido
+                            ? `concluído (100% de ${servico.quantidade} ${servico.unidade})`
+                            : `falta ${restante} de ${servico.quantidade} ${servico.unidade}`}
                         </span>
                       </span>
                     </label>
