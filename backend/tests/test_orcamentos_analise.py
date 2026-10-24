@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from app.modules.orcamento.analise import CronogramaService, CurvaAbcService
 from app.modules.orcamento.services import OrcamentoService
 
 
@@ -18,17 +19,20 @@ def item_repo():
     return MagicMock()
 
 @pytest.fixture
-def supabase():
+def insumo_repo():
     return MagicMock()
 
 @pytest.fixture
-def service(orcamento_repo, etapa_repo, item_repo, supabase):
-    return OrcamentoService(
-        repository=orcamento_repo,
-        etapa_repository=etapa_repo,
-        orcamento_item_repository=item_repo,
-        supabase_client=supabase
-    )
+def service(orcamento_repo, item_repo):
+    return OrcamentoService(repository=orcamento_repo, item_repository=item_repo)
+
+@pytest.fixture
+def curva_abc(orcamento_repo, item_repo, insumo_repo):
+    return CurvaAbcService(orcamento_repo, item_repo, insumo_repo)
+
+@pytest.fixture
+def cronograma(orcamento_repo, etapa_repo, item_repo):
+    return CronogramaService(orcamento_repo, etapa_repo, item_repo)
 
 # ---------------------------------------------------------------------------
 # obter_estatisticas
@@ -81,7 +85,7 @@ def test_obter_estatisticas_vazio(service, orcamento_repo):
 # obter_curva_abc
 # ---------------------------------------------------------------------------
 
-def test_obter_curva_abc_sucesso(service, orcamento_repo, item_repo, supabase):
+def test_obter_curva_abc_sucesso(curva_abc, orcamento_repo, item_repo, insumo_repo):
     # Arrange
     orcamento_id = "orc-1"
     orcamento_repo.buscar_por_id.return_value = {"id": orcamento_id}
@@ -103,10 +107,10 @@ def test_obter_curva_abc_sucesso(service, orcamento_repo, item_repo, supabase):
             "total": 20.0
         }
     ]
-    supabase.table.return_value.select.return_value.in_.return_value.execute.return_value.data = mock_insumos
+    insumo_repo.listar_por_itens.return_value = mock_insumos
 
     # Act
-    res = service.obter_curva_abc(orcamento_id)
+    res = curva_abc.obter_curva_abc(orcamento_id)
 
     # Assert
     assert res["valor_total"] == 100.0
@@ -129,19 +133,19 @@ def test_obter_curva_abc_sucesso(service, orcamento_repo, item_repo, supabase):
     assert res["resumo_classes"]["B"] == 0.0
     assert res["resumo_classes"]["C"] == 20.0
 
-def test_obter_curva_abc_orcamento_inexistente(service, orcamento_repo):
+def test_obter_curva_abc_orcamento_inexistente(curva_abc, orcamento_repo):
     # Arrange
     orcamento_repo.buscar_por_id.return_value = None
 
     # Act & Assert
     with pytest.raises(ValueError, match="Orçamento não encontrado"):
-        service.obter_curva_abc("orc-invalido")
+        curva_abc.obter_curva_abc("orc-invalido")
 
 # ---------------------------------------------------------------------------
 # obter_cronograma
 # ---------------------------------------------------------------------------
 
-def test_obter_cronograma_sucesso(service, orcamento_repo, etapa_repo, item_repo):
+def test_obter_cronograma_sucesso(cronograma, orcamento_repo, etapa_repo, item_repo):
     # Arrange
     orcamento_id = "orc-1"
     orcamento_repo.buscar_por_id.return_value = {
@@ -172,7 +176,7 @@ def test_obter_cronograma_sucesso(service, orcamento_repo, etapa_repo, item_repo
     ]
 
     # Act
-    res = service.obter_cronograma(orcamento_id)
+    res = cronograma.obter_cronograma(orcamento_id)
 
     # Assert
     assert res["valor_total"] == 100000.0

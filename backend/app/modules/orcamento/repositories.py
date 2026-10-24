@@ -141,6 +141,10 @@ class InsumoRepository:
             logger.error(f"Erro ao listar insumos do item {orcamento_item_id}: {e}")
             return []
 
+    def listar_por_itens(self, orcamento_item_ids: List[str]) -> List[Dict[str, Any]]:
+        r = self.supabase.table(TABELA_INSUMOS).select("*").in_("orcamento_item_id", orcamento_item_ids).execute()
+        return r.data or []
+
     def atualizar(self, insumo_id: str, dados: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         try:
             r = self.supabase.table(TABELA_INSUMOS).update(dados).eq("id", insumo_id).execute()

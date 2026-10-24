@@ -18,7 +18,7 @@ def repository_mock():
 
 @pytest.fixture
 def orcamento_service(repository_mock):
-    return OrcamentoService(repository_mock)
+    return OrcamentoService(repository_mock, MagicMock())
 
 
 @pytest.mark.unit

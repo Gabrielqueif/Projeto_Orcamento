@@ -9,6 +9,7 @@ from app.modules.base_propria.services import BasePropriaService
 from app.modules.composicao.repositories import ItemRepository
 from app.modules.etapa.repositories import EtapaRepository
 from app.modules.importacao.services.pdf_service import PdfService
+from app.modules.orcamento.analise import CronogramaService, CurvaAbcService
 from app.modules.orcamento.bdi import FAIXAS_REFERENCIA_TCU, calcular_bdi_tcu
 from app.modules.orcamento.repositories import InsumoRepository, OrcamentoItemRepository, OrcamentoRepository
 from app.modules.orcamento.schemas import (
@@ -40,9 +41,18 @@ router = APIRouter(prefix="/orcamentos", dependencies=[Depends(enforce_ownership
 
 def get_orcamento_service(supabase=Depends(get_supabase)) -> OrcamentoService:
     repository = OrcamentoRepository(supabase)
-    etapa_repo = EtapaRepository(supabase)
     item_repo = OrcamentoItemRepository(supabase)
-    return OrcamentoService(repository, etapa_repo, item_repo, supabase)
+    return OrcamentoService(repository, item_repo)
+
+
+def get_curva_abc_service(supabase=Depends(get_supabase)) -> CurvaAbcService:
+    return CurvaAbcService(OrcamentoRepository(supabase), OrcamentoItemRepository(supabase), InsumoRepository(supabase))
+
+
+def get_cronograma_service(supabase=Depends(get_supabase)) -> CronogramaService:
+    return CronogramaService(
+        OrcamentoRepository(supabase), EtapaRepository(supabase), OrcamentoItemRepository(supabase)
+    )
 
 
 def get_orcamento_item_service(supabase=Depends(get_supabase)) -> OrcamentoItemService:
@@ -203,7 +213,7 @@ async def download_excel_orcamento(
     summary="Obter Curva ABC real de insumos do orçamento",
     tags=["Orçamentos"],
 )
-async def obter_curva_abc_endpoint(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
+async def obter_curva_abc_endpoint(orcamento_id: str, service: CurvaAbcService = Depends(get_curva_abc_service)):
     """Retorna a Curva ABC real de insumos do orçamento"""
     return service.obter_curva_abc(orcamento_id)
 
@@ -214,7 +224,7 @@ async def obter_curva_abc_endpoint(orcamento_id: str, service: OrcamentoService 
     summary="Obter Cronograma Físico-Financeiro dinâmico do orçamento",
     tags=["Orçamentos"],
 )
-async def obter_cronograma_endpoint(orcamento_id: str, service: OrcamentoService = Depends(get_orcamento_service)):
+async def obter_cronograma_endpoint(orcamento_id: str, service: CronogramaService = Depends(get_cronograma_service)):
     """Retorna o Cronograma Físico-Financeiro dinâmico do orçamento"""
     return service.obter_cronograma(orcamento_id)
 

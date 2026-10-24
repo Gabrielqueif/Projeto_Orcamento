@@ -82,7 +82,7 @@ def test_criar_orcamento_grava_user_id():
 
     repo = MagicMock()
     repo.criar.return_value = {"id": "o1"}
-    service = OrcamentoService(repo, MagicMock(), MagicMock(), MagicMock())
+    service = OrcamentoService(repo, MagicMock())
     service.criar_orcamento(
         OrcamentoCreate(nome="X", cliente="Y", data=date(2026, 1, 1), base_referencia="01/2026",
                         tipo_composicao="Sem Desoneração", estado="SP"),
