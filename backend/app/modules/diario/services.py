@@ -211,17 +211,23 @@ class DiarioService:
             "ultima_atualizacao": ultima_atualizacao,
         }
 
-    def _validar_servicos(self, obra: Dict[str, Any], servicos: List[ServicoInput]) -> None:
+    def _validar_servicos(self, obra: Dict[str, Any], diario_id: str, servicos: List[ServicoInput]) -> None:
         ids = [s.item_id for s in servicos]
         if len(set(ids)) != len(ids):
             raise ValueError("Há serviço repetido no diário")
         itens = {i["id"]: i for i in self.repository.itens_por_ids(ids)}
+        em_outros: Dict[str, float] = {}
+        for linha in self.repository.servicos_da_obra(obra["id"]):
+            if linha["diario_id"] != diario_id:
+                em_outros[linha["item_id"]] = em_outros.get(linha["item_id"], 0.0) + linha["quantidade"]
         for servico in servicos:
             item = itens.get(servico.item_id)
             if not item or item["orcamento_id"] != obra.get("orcamento_id"):
                 raise NaoEncontradoError("Serviço não encontrado nesta obra")
-            if servico.quantidade > float(item["quantidade"]):
-                raise ValueError(f"A quantidade de '{item['descricao']}' passa do total orçado")
+            # Outros diários já consumiram parte do orçado; este só pode lançar o que sobra.
+            restante = float(item["quantidade"]) - em_outros.get(servico.item_id, 0.0)
+            if servico.quantidade > restante + 1e-6:
+                raise ValueError(f"A quantidade de '{item['descricao']}' passa do que falta do orçado ({max(restante, 0):g})")
 
     def _sincronizar_medicoes(
         self, real: str, orcamento_id: Optional[str], desde: date, diario_id: Optional[str], data_diario: Optional[date]
@@ -247,7 +253,7 @@ class DiarioService:
         self, real: str, diario_id: str, data: date, desde: date, servicos: List[ServicoInput]
     ) -> None:
         obra = self.repository.buscar_obra(real)
-        self._validar_servicos(obra, servicos)
+        self._validar_servicos(obra, diario_id, servicos)
         self.repository.substituir_servicos(diario_id, [s.model_dump() for s in servicos])
         self._sincronizar_medicoes(real, obra.get("orcamento_id"), desde, diario_id, data)
 

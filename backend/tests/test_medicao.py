@@ -415,6 +415,24 @@ def test_quantidade_acima_do_orcado_e_recusada():
         )
 
 
+def test_quantidade_ja_consumida_por_outro_diario_nao_pode_ser_lancada_de_novo():
+    repo = _repo_diario()
+    repo.servicos_da_obra.return_value = [_linha("outro", "2026-10-20", 90)]
+
+    with pytest.raises(ValueError):
+        DiarioService(repo, MagicMock()).criar(OBRA, _novo_diario(servicos=[ServicoInput(item_id="i1", quantidade=11)]))
+    DiarioService(repo, MagicMock()).criar(OBRA, _novo_diario(servicos=[ServicoInput(item_id="i1", quantidade=10)]))
+
+
+def test_editar_o_proprio_diario_nao_conta_o_que_ele_ja_lancou():
+    repo = _repo_diario()
+    repo.buscar.return_value = {"id": "d1", "obra_id": OBRA, "data": "2026-10-21", "status": "RASCUNHO"}
+    repo.atualizar.side_effect = lambda diario_id, obra_id, dados: {**repo.buscar.return_value, **dados}
+    repo.servicos_da_obra.return_value = [_linha("d1", "2026-10-21", 100)]
+
+    DiarioService(repo, MagicMock()).atualizar(OBRA, "d1", DiarioUpdate(servicos=[ServicoInput(item_id="i1", quantidade=100)]))
+
+
 def test_diario_sem_servicos_nao_mexe_nas_medicoes():
     medicoes = MagicMock()
     DiarioService(_repo_diario(), medicoes).criar(OBRA, _novo_diario())
