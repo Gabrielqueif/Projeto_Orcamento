@@ -172,6 +172,13 @@ class BasePropriaService:
     def listar_bases(self, user_id: str) -> List[Dict[str, Any]]:
         return self.repo.listar_bases(user_id)
 
+    def buscar_base(self, base_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+        """Base do usuário, ou None se não existir (ao contrário de `obter_base`, que levanta)."""
+        return self.repo.buscar_base(base_id, user_id)
+
+    def buscar_composicao_por_codigo(self, base_id: str, codigo: str) -> Optional[Dict[str, Any]]:
+        return self.repo.buscar_composicao_por_codigo(base_id, codigo)
+
     def obter_base(self, base_id: str, user_id: str) -> Dict[str, Any]:
         base = self.repo.buscar_base(base_id, user_id)
         if not base:

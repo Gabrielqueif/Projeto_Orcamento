@@ -396,7 +396,7 @@ def test_pdf_descreve_a_fonte_dos_itens_proprios():
 
 def test_anexar_nome_ignora_itens_de_outras_fontes_e_base_removida():
     servico = MagicMock()
-    servico.repo.buscar_base.return_value = None
+    servico.buscar_base.return_value = None
     itens = [{"fonte": "SINAPI"}, {"fonte": "PROPRIA", "base_propria_id": "b1"}, {"fonte": "PROPRIA"}]
     anexar_nome_base_propria(itens, servico, "u")
     assert "base_propria_nome" not in itens[0]

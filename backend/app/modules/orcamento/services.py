@@ -24,7 +24,7 @@ def anexar_nome_base_propria(itens: list, base_propria_service: Optional[BasePro
     for item in propria:
         base_id = item.get("base_propria_id")
         if base_id and base_id not in nomes:
-            base = base_propria_service.repo.buscar_base(base_id, user_id) if base_propria_service else None
+            base = base_propria_service.buscar_base(base_id, user_id) if base_propria_service else None
             nomes[base_id] = base["nome"] if base else None
         item["base_propria_nome"] = nomes.get(base_id) or "Base própria"
     return itens
@@ -532,10 +532,10 @@ class OrcamentoItemService:
         if item.codigo_composicao == "MANUAL" or not item.base_propria_id:
             raise ValueError("Item de base própria exige base_propria_id e o código da composição")
         servico = self._exigir_base_propria_service()
-        base = servico.repo.buscar_base(item.base_propria_id, orcamento.get("user_id"))
+        base = servico.buscar_base(item.base_propria_id, orcamento.get("user_id"))
         if not base:
             raise NaoEncontradoError("Base própria não encontrada")
-        composicao = servico.repo.buscar_composicao_por_codigo(base["id"], item.codigo_composicao)
+        composicao = servico.buscar_composicao_por_codigo(base["id"], item.codigo_composicao)
         if not composicao:
             raise NaoEncontradoError(f"Composição {item.codigo_composicao} não encontrada na base própria")
         calculo = servico.calcular_preco(base["id"], composicao["id"], **self._parametros_preco(orcamento, estado))
@@ -615,7 +615,7 @@ class OrcamentoItemService:
                 self._ignorar(resultado, item, "Item sem vínculo com a base (base removida)")
 
         for base_id, itens_base in por_base.items():
-            if not servico.repo.buscar_base(base_id, dono):
+            if not servico.buscar_base(base_id, dono):
                 for item in itens_base:
                     self._ignorar(resultado, item, "Base própria não encontrada")
                 continue

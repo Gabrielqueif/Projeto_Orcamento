@@ -10,6 +10,12 @@ from core.exceptions import NaoEncontradoError
 logger = logging.getLogger("projeto_orcamento")
 
 
+def _status(insumo: Dict[str, Any]) -> str:
+    atual = Decimal(str(insumo.get("quantidade_atual", 0)))
+    minima = Decimal(str(insumo.get("quantidade_minima", 0)))
+    return "Crítico" if atual <= minima else "Normal"
+
+
 class AlmoxarifadoService:
     def __init__(self, repository: AlmoxarifadoRepository):
         self.repository = repository
@@ -18,9 +24,7 @@ class AlmoxarifadoService:
         insumos = self.repository.listar_insumos(obra_id)
         for insumo in insumos:
             # Adiciona o status calculado dinamicamente
-            qtd_atual = Decimal(str(insumo.get("quantidade_atual", 0)))
-            qtd_min = Decimal(str(insumo.get("quantidade_minima", 0)))
-            insumo["status"] = "Crítico" if qtd_atual <= qtd_min else "Normal"
+            insumo["status"] = _status(insumo)
         return insumos
 
     def criar_insumo(self, obra_id: str, schema: InsumoCreate) -> Dict[str, Any]:
@@ -31,11 +35,7 @@ class AlmoxarifadoService:
 
         insumo = self.repository.criar_insumo(obra_id, dados)
         # Calcula status para o retorno
-        insumo["status"] = (
-            "Crítico"
-            if Decimal(str(insumo["quantidade_atual"])) <= Decimal(str(insumo["quantidade_minima"]))
-            else "Normal"
-        )
+        insumo["status"] = _status(insumo)
         return insumo
 
     def registrar_movimentacao(self, obra_id: str, insumo_id: str, schema: MovimentacaoCreate) -> Dict[str, Any]:
@@ -87,10 +87,6 @@ class AlmoxarifadoService:
 
     def listar_movimentacoes(self, obra_id: str) -> List[Dict[str, Any]]:
         return self.repository.listar_movimentacoes(obra_id)
-
-    def font_manrope(self) -> str:
-        # Apenas para manter compatibilidade com testes anteriores
-        return "Manrope"
 
     def listar_locacoes(self, obra_id: str) -> List[Dict[str, Any]]:
         return self.repository.listar_locacoes(obra_id)
