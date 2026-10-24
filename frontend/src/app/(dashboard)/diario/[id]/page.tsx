@@ -287,17 +287,20 @@ export default function DiarioObraPage() {
                         </p>
                       )}
 
-                      {registro.avancos.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-4">
-                          {registro.avancos.map((avanco) => (
-                            <span
-                              key={avanco.etapa_id}
-                              className="px-3 py-1 rounded-full bg-[#f0f3ff] text-[12px] font-bold text-[#001b3c]"
+                      {registro.servicos.length > 0 && (
+                        <ul className="flex flex-col gap-1.5 mt-4">
+                          {registro.servicos.map((servico) => (
+                            <li
+                              key={servico.item_id}
+                              className="flex items-center justify-between gap-3 px-3 py-2 rounded-[8px] bg-[#f0f3ff] text-[13px] text-[#001b3c]"
                             >
-                              {avanco.etapa_nome ?? "Etapa"}: {avanco.progresso}%
-                            </span>
+                              <span className="truncate">✓ {servico.descricao}</span>
+                              <span className="font-bold whitespace-nowrap">
+                                {servico.quantidade} {servico.unidade} · {servico.percentual}%
+                              </span>
+                            </li>
                           ))}
-                        </div>
+                        </ul>
                       )}
 
                       {registro.fotos.length > 0 && (
@@ -389,7 +392,7 @@ export default function DiarioObraPage() {
         obraId={obraId}
         registro={emEdicao}
         responsavelPadrao={obra.responsavel}
-        etapas={obra.etapas}
+        servicos={obra.servicos}
         onSaved={carregar}
       />
     </div>

@@ -5,7 +5,8 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.modules.diario.repositories import DiarioRepository
-from app.modules.diario.schemas import DiarioCreate, DiarioUpdate
+from app.modules.diario.schemas import DiarioCreate, DiarioUpdate, ServicoInput
+from app.modules.medicao.schemas import AvancoEtapa
 from app.modules.medicao.services import MedicaoService
 from core.exceptions import NaoEncontradoError
 from core.tempo import hoje
@@ -62,6 +63,46 @@ def _serializar(dados: Dict[str, Any]) -> Dict[str, Any]:
     return saida
 
 
+def calcular_avancos(itens: List[Dict[str, Any]], linhas: List[Dict[str, Any]]) -> Dict[str, Dict[str, int]]:
+    """
+    {diario_id: {etapa_id: % acumulado}} das etapas que receberam serviço em cada diário.
+    O % da etapa é a média dos serviços (executado/orçado, no máximo 100%) ponderada pelo preço.
+    """
+    por_item = {i["id"]: i for i in itens}
+    itens_da_etapa: Dict[str, List[Dict[str, Any]]] = {}
+    for item in itens:
+        if item.get("etapa_id"):
+            itens_da_etapa.setdefault(item["etapa_id"], []).append(item)
+
+    def progresso(etapa_id: str, feito: Dict[str, float]) -> int:
+        grupo = itens_da_etapa[etapa_id]
+        pesos = [float(i.get("preco_total") or 0) for i in grupo]
+        if sum(pesos) <= 0:
+            pesos = [1.0] * len(grupo)
+        total = sum(
+            peso * min(feito.get(i["id"], 0.0) / float(i["quantidade"]), 1.0) if float(i["quantidade"]) > 0 else 0.0
+            for peso, i in zip(pesos, grupo, strict=True)
+        )
+        return round(100 * total / sum(pesos))
+
+    por_diario: Dict[str, List[Dict[str, Any]]] = {}
+    for linha in linhas:
+        por_diario.setdefault(linha["diario_id"], []).append(linha)
+    cronologia = sorted(por_diario, key=lambda d: (str(por_diario[d][0]["data"]), d))
+
+    feito: Dict[str, float] = {}
+    saida: Dict[str, Dict[str, int]] = {}
+    for diario_id in cronologia:
+        etapas_tocadas = set()
+        for linha in por_diario[diario_id]:
+            item = por_item.get(linha["item_id"])
+            if item and item.get("etapa_id"):
+                feito[item["id"]] = feito.get(item["id"], 0.0) + float(linha["quantidade"])
+                etapas_tocadas.add(item["etapa_id"])
+        saida[diario_id] = {etapa_id: progresso(etapa_id, feito) for etapa_id in etapas_tocadas}
+    return saida
+
+
 class DiarioService:
     def __init__(self, repository: DiarioRepository, medicoes: Optional[MedicaoService] = None):
         self.repository = repository
@@ -105,17 +146,30 @@ class DiarioService:
                     "created_at": f.get("created_at"),
                 }
             )
-        avancos: Dict[str, List[Dict[str, Any]]] = {}
-        for a in self.repository.avancos_dos_diarios([d["id"] for d in diarios]):
-            avancos.setdefault(a["diario_id"], []).append(
-                {"etapa_id": a["etapa_id"], "etapa_nome": a["etapa_nome"], "progresso": a["progresso"]}
+        linhas = self.repository.servicos_dos_diarios([d["id"] for d in diarios])
+        itens = {i["id"]: i for i in self.repository.itens_por_ids(list({l["item_id"] for l in linhas}))}
+        servicos: Dict[str, List[Dict[str, Any]]] = {}
+        for linha in linhas:
+            item = itens.get(linha["item_id"])
+            if not item:
+                continue
+            quantidade = float(linha["quantidade"])
+            servicos.setdefault(linha["diario_id"], []).append(
+                {
+                    "item_id": item["id"],
+                    "codigo": item.get("codigo_composicao"),
+                    "descricao": item["descricao"],
+                    "unidade": item["unidade"],
+                    "quantidade": quantidade,
+                    "percentual": round(100 * quantidade / float(item["quantidade"]), 1) if float(item["quantidade"]) else 0,
+                }
             )
         return [
             {
                 **d,
                 "tem_ocorrencia": bool((d.get("ocorrencias") or "").strip()),
                 "fotos": por_diario.get(d["id"], []),
-                "avancos": avancos.get(d["id"], []),
+                "servicos": servicos.get(d["id"], []),
             }
             for d in diarios
         ]
@@ -126,10 +180,14 @@ class DiarioService:
         membro_id = obra.get("engenheiro_responsavel_id")
         membros = self.repository.nomes_de_membros([membro_id] if membro_id else [])
         etapas = self.repository.etapas_do_orcamento(orcamento_id) if orcamento_id else []
-        pais = {e["parent_id"] for e in etapas if e.get("parent_id")}
-        # Só etapas-folha recebem avanço; as demais são agrupadores.
-        folhas = [e for e in etapas if e["id"] not in pais]
         progressos = [int(e.get("progresso") or 0) for e in etapas]
+        itens = self.repository.itens_do_orcamento(orcamento_id) if orcamento_id else []
+        feito: Dict[str, float] = {}
+        for linha in self.repository.servicos_da_obra(obra["id"]) if itens else []:
+            feito[linha["item_id"]] = feito.get(linha["item_id"], 0.0) + linha["quantidade"]
+        ordem = {e["id"]: n for n, e in enumerate(etapas)}
+        nomes_etapa = {e["id"]: e["nome"] for e in etapas}
+        itens.sort(key=lambda i: (ordem.get(i.get("etapa_id"), len(ordem)), i.get("codigo_composicao") or ""))
         return {
             "obra_id": obra["id"],
             "nome": nomes.get(orcamento_id) or obra.get("escopo") or obra.get("cliente") or "Obra",
@@ -138,9 +196,60 @@ class DiarioService:
             "data_inicio": obra.get("data_inicio_real"),
             "prazo_dias": obra.get("prazo_estimado_dias"),
             "progresso": round(sum(progressos) / len(progressos)) if progressos else 0,
-            "etapas": [{"id": e["id"], "nome": e["nome"], "progresso": int(e.get("progresso") or 0)} for e in folhas],
+            "servicos": [
+                {
+                    "id": i["id"],
+                    "codigo": i.get("codigo_composicao"),
+                    "descricao": i["descricao"],
+                    "unidade": i["unidade"],
+                    "quantidade": float(i["quantidade"]),
+                    "executado": feito.get(i["id"], 0.0),
+                    "etapa_nome": nomes_etapa.get(i.get("etapa_id")),
+                }
+                for i in itens
+            ],
             "ultima_atualizacao": ultima_atualizacao,
         }
+
+    def _validar_servicos(self, obra: Dict[str, Any], servicos: List[ServicoInput]) -> None:
+        ids = [s.item_id for s in servicos]
+        if len(set(ids)) != len(ids):
+            raise ValueError("Há serviço repetido no diário")
+        itens = {i["id"]: i for i in self.repository.itens_por_ids(ids)}
+        for servico in servicos:
+            item = itens.get(servico.item_id)
+            if not item or item["orcamento_id"] != obra.get("orcamento_id"):
+                raise NaoEncontradoError("Serviço não encontrado nesta obra")
+            if servico.quantidade > float(item["quantidade"]):
+                raise ValueError(f"A quantidade de '{item['descricao']}' passa do total orçado")
+
+    def _sincronizar_medicoes(
+        self, real: str, orcamento_id: Optional[str], desde: date, diario_id: Optional[str], data_diario: Optional[date]
+    ) -> None:
+        """
+        Reescreve o avanço das etapas a partir dos serviços dos diários. O % é acumulado, então
+        os diários de data igual ou posterior à alterada também são refeitos.
+        """
+        if not self.medicoes or not orcamento_id:
+            return
+        linhas = self.repository.servicos_da_obra(real)
+        avancos = calcular_avancos(self.repository.itens_do_orcamento(orcamento_id), linhas)
+        datas = {linha["diario_id"]: _como_data(linha["data"]) for linha in linhas}
+        if diario_id:
+            avancos.setdefault(diario_id, {})
+            datas.setdefault(diario_id, data_diario)
+        for d_id, por_etapa in avancos.items():
+            if d_id == diario_id or datas[d_id] >= desde:
+                lista = [AvancoEtapa(etapa_id=e, progresso=p) for e, p in por_etapa.items()]
+                self.medicoes.substituir_do_diario(real, d_id, datas[d_id], lista)
+
+    def _gravar_servicos(
+        self, real: str, diario_id: str, data: date, desde: date, servicos: List[ServicoInput]
+    ) -> None:
+        obra = self.repository.buscar_obra(real)
+        self._validar_servicos(obra, servicos)
+        self.repository.substituir_servicos(diario_id, [s.model_dump() for s in servicos])
+        self._sincronizar_medicoes(real, obra.get("orcamento_id"), desde, diario_id, data)
 
     # --- Diários -------------------------------------------------------------
 
@@ -160,12 +269,12 @@ class DiarioService:
         self._validar_data(schema.data)
         if self.repository.buscar_por_data(real, schema.data.isoformat()):
             raise ValueError("Já existe um diário para essa data nesta obra")
-        criado = self.repository.criar(real, _serializar(schema.model_dump(exclude={"avancos"})))
-        if schema.avancos and self.medicoes:
+        criado = self.repository.criar(real, _serializar(schema.model_dump(exclude={"servicos"})))
+        if schema.servicos:
             try:
-                self.medicoes.substituir_do_diario(real, criado["id"], schema.data, schema.avancos)
+                self._gravar_servicos(real, criado["id"], schema.data, schema.data, schema.servicos)
             except Exception:
-                # Sem as medições o registro ficaria incompleto: desfaz a criação.
+                # Sem os serviços o registro ficaria incompleto: desfaz a criação.
                 self.repository.deletar(criado["id"], real)
                 raise
         return self._com_fotos([criado])[0]
@@ -175,11 +284,11 @@ class DiarioService:
         atual = self._diario(real, diario_id)
         self._exigir_editavel(atual)
 
-        dados = schema.model_dump(exclude_unset=True, exclude={"avancos"})
+        dados = schema.model_dump(exclude_unset=True, exclude={"servicos"})
         for campo in CAMPOS_OBRIGATORIOS:
             if campo in dados and dados[campo] is None:
                 raise ValueError(f"O campo '{campo}' não pode ser vazio")
-        if not dados and schema.avancos is None:
+        if not dados and schema.servicos is None:
             return self._com_fotos([atual])[0]
 
         nova_data = dados.get("data")
@@ -193,8 +302,9 @@ class DiarioService:
         atualizado = self.repository.atualizar(diario_id, real, _serializar(dados))
         if not atualizado:
             raise NaoEncontradoError("Diário não encontrado")
-        if schema.avancos is not None and self.medicoes:
-            self.medicoes.substituir_do_diario(real, diario_id, _como_data(atualizado["data"]), schema.avancos)
+        if schema.servicos is not None:
+            nova = _como_data(atualizado["data"])
+            self._gravar_servicos(real, diario_id, nova, min(nova, _como_data(atual["data"])), schema.servicos)
         return self._com_fotos([atualizado])[0]
 
     def alterar_status(self, obra_id: str, diario_id: str, novo_status: str) -> Dict[str, Any]:
@@ -220,6 +330,10 @@ class DiarioService:
         if not self.repository.deletar(diario_id, real):
             raise NaoEncontradoError("Diário não encontrado")
         self.repository.remover_arquivos(caminhos)
+        # Os diários seguintes acumulavam sobre os serviços deste.
+        self._sincronizar_medicoes(
+            real, self.repository.buscar_obra(real).get("orcamento_id"), _como_data(atual["data"]), None, None
+        )
 
     # --- Fotos ---------------------------------------------------------------
 

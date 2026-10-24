@@ -4,8 +4,6 @@ from typing import Annotated, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-from app.modules.medicao.schemas import AvancoEtapa
-
 Clima = Literal["SOL", "NUBLADO", "CHUVA"]
 StatusDiario = Literal["RASCUNHO", "ENVIADO", "APROVADO"]
 SituacaoDiario = Literal["ENVIADO", "RASCUNHO", "PENDENTE", "ALERTA"]
@@ -13,6 +11,13 @@ SituacaoDiario = Literal["ENVIADO", "RASCUNHO", "PENDENTE", "ALERTA"]
 Titulo = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
 TextoObrigatorio = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 Responsavel = Annotated[str, StringConstraints(strip_whitespace=True, max_length=150)]
+
+
+class ServicoInput(BaseModel):
+    """Serviço (item do orçamento) executado no dia, na unidade do próprio item."""
+
+    item_id: str
+    quantidade: float = Field(gt=0)
 
 
 class DiarioCreate(BaseModel):
@@ -24,7 +29,7 @@ class DiarioCreate(BaseModel):
     temperatura: Optional[Decimal] = Field(default=None, ge=-10, le=60)
     equipe_presente: int = Field(default=0, ge=0, le=10000)
     responsavel: Optional[Responsavel] = None
-    avancos: List[AvancoEtapa] = []
+    servicos: List[ServicoInput] = []
 
 
 class DiarioUpdate(BaseModel):
@@ -36,8 +41,8 @@ class DiarioUpdate(BaseModel):
     temperatura: Optional[Decimal] = Field(default=None, ge=-10, le=60)
     equipe_presente: Optional[int] = Field(default=None, ge=0, le=10000)
     responsavel: Optional[Responsavel] = None
-    # None mantém as medições do diário; lista (mesmo vazia) substitui.
-    avancos: Optional[List[AvancoEtapa]] = None
+    # None mantém os serviços do diário; lista (mesmo vazia) substitui.
+    servicos: Optional[List[ServicoInput]] = None
 
 
 class DiarioStatusUpdate(BaseModel):
@@ -52,16 +57,23 @@ class FotoResponse(BaseModel):
     created_at: Optional[datetime] = None
 
 
-class AvancoDiario(BaseModel):
-    etapa_id: str
-    etapa_nome: Optional[str] = None
-    progresso: int
+class ServicoDiario(BaseModel):
+    item_id: str
+    codigo: Optional[str] = None
+    descricao: str
+    unidade: str
+    quantidade: float
+    percentual: float
 
 
-class EtapaResumo(BaseModel):
+class ServicoObra(BaseModel):
     id: str
-    nome: str
-    progresso: int = 0
+    codigo: Optional[str] = None
+    descricao: str
+    unidade: str
+    quantidade: float
+    executado: float = 0
+    etapa_nome: Optional[str] = None
 
 
 class DiarioResponse(BaseModel):
@@ -78,7 +90,7 @@ class DiarioResponse(BaseModel):
     responsavel: Optional[str] = None
     status: StatusDiario
     fotos: List[FotoResponse] = []
-    avancos: List[AvancoDiario] = []
+    servicos: List[ServicoDiario] = []
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -93,7 +105,7 @@ class ObraDiarioInfo(BaseModel):
     data_inicio: Optional[date] = None
     prazo_dias: Optional[int] = None
     progresso: int = 0
-    etapas: List[EtapaResumo] = []
+    servicos: List[ServicoObra] = []
     ultima_atualizacao: Optional[datetime] = None
 
 
