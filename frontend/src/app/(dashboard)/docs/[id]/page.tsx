@@ -2,478 +2,145 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import {
-  CaretRight,
-  Funnel,
-  UploadSimple,
-  FilePdf,
-  File,
-  DotsThreeVertical,
-  Camera,
-  Plus,
-  FileText,
-  ShieldCheck,
-  Clock,
-  ArrowLeft,
-} from "@phosphor-icons/react";
+import { Funnel, UploadSimple, FilePdf, File, DotsThreeVertical, Camera, FileText, ShieldCheck } from "@phosphor-icons/react";
 
-interface DocumentFile {
-  name: string;
-  category: string;
-  revision?: string;
-  date: string;
-  size: string;
-  type: "pdf" | "dwg";
-}
+const NOMES: Record<string, string> = {
+  aurora: "Residencial Aurora",
+  viracopos: "Complexo Logístico",
+  retrofit: "Retrofit Central",
+  "parque-flores": "Parque das Flores",
+};
 
-const mainFiles: DocumentFile[] = [
-  {
-    name: "Planta_Baixa_Pav01_V4.pdf",
-    category: "Arquitetônico",
-    revision: "Rev.04",
-    date: "15 Out 2023",
-    size: "4.2 MB",
-    type: "pdf",
-  },
-  {
-    name: "Calculo_Estrutural_Final.dwg",
-    category: "Engenharia Civil",
-    date: "12 Out 2023",
-    size: "18.7 MB",
-    type: "dwg",
-  },
-  {
-    name: "Projeto_Eletrico_Rev01.pdf",
-    category: "Instalações",
-    date: "08 Out 2023",
-    size: "2.1 MB",
-    type: "pdf",
-  },
+const mainFiles = [
+  { name: "Planta_Baixa_Pav01_V4.pdf", category: "Arquitetônico", revision: "Rev.04", date: "15 out 2026", size: "4,2 MB", type: "pdf" },
+  { name: "Calculo_Estrutural_Final.dwg", category: "Engenharia civil", revision: "", date: "12 out 2026", size: "18,7 MB", type: "dwg" },
+  { name: "Projeto_Eletrico_Rev01.pdf", category: "Instalações", revision: "", date: "08 out 2026", size: "2,1 MB", type: "pdf" },
 ];
 
-interface ContractFile {
-  name: string;
-  statusText: string;
-  date: string;
-  size: string;
-}
-
-const contractFiles: ContractFile[] = [
-  {
-    name: "Contrato_Fornecedor_Aço.pdf",
-    statusText: "Assinado via DocuSign",
-    date: "12 Set 2023",
-    size: "1.2 MB",
-  },
-  {
-    name: "Aditivo_Prazo_Obra_01.pdf",
-    statusText: "Pendente Assinatura",
-    date: "05 Out 2023",
-    size: "0.8 MB",
-  },
+const contractFiles = [
+  { name: "Contrato_Fornecedor_Aço.pdf", statusText: "Assinado via DocuSign", date: "12 set 2026", size: "1,2 MB", cls: "gp-ok" },
+  { name: "Aditivo_Prazo_Obra_01.pdf", statusText: "Pendente de assinatura", date: "05 out 2026", size: "0,8 MB", cls: "gp-wa" },
 ];
 
-interface LicenseFile {
-  name: string;
-  expiration: string;
-  status: "valido" | "expira";
-  statusText: string;
-}
+const licenseFiles = [
+  { name: "Alvara_Construcao_2026_045.pdf", expiration: "12 dez 2027", statusText: "Válido", cls: "gp-ok" },
+  { name: "Licenca_Ambiental_Previa.pdf", expiration: "30 out 2026", statusText: "Expira em breve", cls: "gp-wa" },
+];
 
-const licenseFiles: LicenseFile[] = [
-  {
-    name: "Alvara_Construcao_2023_045.pdf",
-    expiration: "12 Dez 2024",
-    status: "valido",
-    statusText: "Válido",
-  },
-  {
-    name: "Licenca_Ambiental_Previa.pdf",
-    expiration: "30 Out 2023",
-    status: "expira",
-    statusText: "Expira em breve",
-  },
+const fotos = ["Fundação · Setor A", "Equipe em campo", "Fachada Norte"];
+
+const atividades = [
+  { quem: "Ricardo M.", acao: "fez o upload de", alvo: "Planta_Baixa_Pav01_V4.pdf", quando: "Hoje, 14:32" },
+  { quem: "Ana R.", acao: "assinou", alvo: "Contrato_Fornecedor_Aço.pdf", quando: "Ontem, 09:10" },
+  { quem: "Sistema", acao: "avisou o vencimento de", alvo: "Licenca_Ambiental_Previa.pdf", quando: "08 out, 08:00" },
 ];
 
 export default function ProjectDocsPage() {
-  const params = useParams();
-  const id = params.id as string;
-
-  // Formatting project name dynamically from id
-  const projectName = id
-    ? id === "aurora"
-      ? "Residencial Aurora"
-      : id === "viracopos"
-      ? "Complexo Logístico"
-      : id === "retrofit"
-      ? "Retrofit Central"
-      : "Parque das Flores"
-    : "Residencial Aurora";
+  const id = useParams().id as string;
+  const projectName = NOMES[id] ?? "Residencial Aurora";
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Breadcrumbs Nav */}
-      <div className="flex items-center gap-2 mb-4">
-        <Link
-          href="/docs"
-          className="text-[10px] font-bold text-[#737685] tracking-[1px] uppercase hover:text-[#001848] transition-colors"
-        >
-          Documentos
-        </Link>
-        <CaretRight size={10} className="text-[#737685]" weight="bold" />
-        <span className="text-[10px] font-bold text-[#191c1e] tracking-[1px] uppercase">
-          {projectName.toUpperCase()}
-        </span>
-      </div>
-
-      {/* Header and Action Buttons */}
-      <div className="flex justify-between items-end mb-8">
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
         <div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/docs"
-              className="p-1.5 bg-white border border-[#e1e2e4] rounded-[8px] text-[#434654] hover:bg-[#f8f9fb] transition-colors"
-            >
-              <ArrowLeft size={16} weight="bold" />
-            </Link>
-            <h1 className="text-[36px] font-extrabold text-[#191c1e] tracking-[-0.9px] font-['Manrope']">
-              {projectName}
-            </h1>
-          </div>
-          <p className="text-[14px] text-[#737685] italic mt-1 font-['Inter'] pl-9">
-            Arquivo Técnico Centralizado • Atualizado há 2 horas
-          </p>
+          <nav aria-label="Trilha" className="gp-crumb"><Link href="/docs">Documentos</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{projectName}</span></nav>
+          <h1 className="gp-h1">{projectName}</h1>
+          <p className="gp-sub">Arquivo técnico centralizado · atualizado há 2 horas</p>
         </div>
-
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-[9px] bg-white border border-[#e1e2e4] text-[#434654] rounded-[8px] text-[14px] font-semibold transition-all hover:bg-[#f8f9fb] cursor-pointer">
-            <Funnel size={16} weight="bold" /> Filtrar
-          </button>
-          <button className="flex items-center gap-2 px-6 py-[9px] bg-[#9fd300] text-[#001e00] rounded-[8px] text-[14px] font-bold transition-all hover:opacity-90 shadow-[0px_4px_6px_rgba(159,211,0,0.2)] cursor-pointer">
-            <UploadSimple size={16} weight="bold" /> Upload de Arquivos
-          </button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button type="button" className="gp-btn gp-bs"><Funnel size={16} weight="bold" aria-hidden="true" />Filtrar</button>
+          <button type="button" className="gp-btn gp-bp"><UploadSimple size={16} weight="bold" aria-hidden="true" />Enviar arquivos</button>
         </div>
       </div>
 
-      {/* Bento Grid Layout */}
-      <div className="grid grid-cols-12 gap-6 mb-8">
-        {/* Section 1: Plantas e Projetos (Large 8/12 grid) */}
-        <div className="col-span-12 lg:col-span-8 bg-white border border-[#e1e2e4] rounded-[16px] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col justify-between">
-          <div>
-            {/* Header row */}
-            <div className="border-b border-[#e1e2e4]/50 px-6 py-5 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="h-[18px] w-[11px] bg-[#006492] rounded-[2px]" />
-                <h3 className="text-[20px] font-bold text-[#191c1e] font-['Manrope']">
-                  Plantas e Projetos
-                </h3>
-              </div>
-              <div className="bg-[#f8f9fb] border border-[#e1e2e4] px-[13px] py-[7px] rounded-full text-[10px] font-bold text-[#737685] tracking-[-0.5px]">
-                12 ARQUIVOS
-              </div>
-            </div>
-
-            {/* Table */}
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[rgba(248,249,251,0.5)] border-b border-[#e1e2e4]/30">
-                  <th className="px-6 py-4 text-[10px] font-bold text-[#737685] tracking-[0.5px] uppercase">
-                    Nome do Arquivo
-                  </th>
-                  <th className="px-6 py-4 text-right text-[10px] font-bold text-[#737685] tracking-[0.5px] uppercase">
-                    Data
-                  </th>
-                  <th className="px-6 py-4 text-right text-[10px] font-bold text-[#737685] tracking-[0.5px] uppercase">
-                    Tamanho
-                  </th>
-                  <th className="px-6 py-4 text-right border-none"></th>
-                </tr>
-              </thead>
+      <div className="gp-split">
+        <section className="gp-card gp-main" aria-labelledby="h-pl" style={{ overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid #E6EBF2" }}>
+            <h2 id="h-pl" className="gp-h2">Plantas e projetos</h2>
+            <span className="gp-bg gp-ne">12 arquivos</span>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
+              <caption className="gp-sr">Plantas e projetos</caption>
+              <thead><tr><th scope="col" className="gp-th" style={{ paddingLeft: 22 }}>Arquivo</th><th scope="col" className="gp-th">Data</th><th scope="col" className="gp-th" style={{ textAlign: "right" }}>Tamanho</th><th scope="col" className="gp-th" style={{ paddingRight: 22 }}><span className="gp-sr">Ações</span></th></tr></thead>
               <tbody>
-                {mainFiles.map((file, idx) => (
-                  <tr
-                    key={idx}
-                    className="hover:bg-[#f8f9fb] transition-colors duration-150 border-b border-[#e1e2e4]/30 last:border-b-0"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`p-2 rounded-[8px] ${
-                            file.type === "pdf" ? "bg-[#fef2f2]" : "bg-[#c9e6ff]"
-                          }`}
-                        >
-                          {file.type === "pdf" ? (
-                            <FilePdf size={20} className="text-[#ba1a1a]" />
-                          ) : (
-                            <File size={20} className="text-[#006492]" />
-                          )}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[14px] font-bold text-[#191c1e] hover:text-[#006492] cursor-pointer transition-colors">
-                            {file.name}
-                          </span>
-                          <span className="text-[10px] text-[#737685] mt-0.5">
-                            {file.category} {file.revision ? `• ${file.revision}` : ""}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right text-[12px] text-[#737685] font-medium">
-                      {file.date}
-                    </td>
-                    <td className="px-6 py-4 text-right text-[12px] text-[#737685] font-medium">
-                      {file.size}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button className="p-2 hover:bg-[#e1e2e4]/50 rounded-full transition-colors cursor-pointer text-[#737685]">
-                        <DotsThreeVertical size={18} weight="bold" />
-                      </button>
-                    </td>
+                {mainFiles.map((f) => (
+                  <tr key={f.name} className="gp-row">
+                    <th scope="row" className="gp-td" style={{ paddingLeft: 22, textAlign: "left" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span aria-hidden="true" style={{ width: 38, height: 38, flex: "0 0 38px", borderRadius: 12, background: f.type === "pdf" ? "#FEE2E2" : "#e0f5f7", color: f.type === "pdf" ? "#B91C1C" : "#00626b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {f.type === "pdf" ? <FilePdf size={20} weight="bold" /> : <File size={20} weight="bold" />}
+                        </span>
+                        <span><span style={{ display: "block", fontSize: 15, fontWeight: 800 }}>{f.name}</span><span style={{ fontSize: 13, color: "#475569" }}>{f.category}{f.revision ? ` · ${f.revision}` : ""}</span></span>
+                      </span>
+                    </th>
+                    <td className="gp-td" style={{ color: "#475569" }}>{f.date}</td>
+                    <td className="gp-td gp-mono" style={{ textAlign: "right" }}>{f.size}</td>
+                    <td className="gp-td" style={{ paddingRight: 22, textAlign: "right" }}><button type="button" className="gp-ib" aria-label={`Ações de ${f.name}`} style={{ width: 40, height: 40 }}><DotsThreeVertical size={18} weight="bold" aria-hidden="true" /></button></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        </section>
 
-          {/* Footer bar */}
-          <div className="bg-[rgba(248,249,251,0.3)] border-t border-[#e1e2e4]/30 px-6 py-4 flex justify-center">
-            <button className="text-[12px] font-bold text-[#006492] tracking-[1.2px] uppercase hover:underline">
-              Ver todos os projetos
-            </button>
+        <aside className="gp-card gp-pad gp-side" aria-labelledby="h-fo" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <h2 id="h-fo" className="gp-h2">Fotos de campo</h2>
+            <button type="button" className="gp-ib" aria-label="Adicionar foto" style={{ width: 40, height: 40 }}><Camera size={18} weight="bold" aria-hidden="true" /></button>
           </div>
-        </div>
-
-        {/* Section 2: Fotos de Campo (Small 4/12 grid) */}
-        <div className="col-span-12 lg:col-span-4 bg-white border border-[#e1e2e4] rounded-[16px] p-6 shadow-[0px_1px_2px_rgba(0,0,0,0.05)] flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center gap-3">
-                <Camera size={20} className="text-[#191c1e]" />
-                <h3 className="text-[20px] font-bold text-[#191c1e] font-['Manrope']">
-                  Fotos de Campo
-                </h3>
-              </div>
-              <button className="p-1 hover:bg-[#f8f9fb] rounded-full transition-colors text-[#191c1e]">
-                <Plus size={20} weight="bold" />
-              </button>
-            </div>
-
-            {/* Visual Grid of photos */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {/* Photo 1 */}
-              <div className="relative group overflow-hidden rounded-[16px] aspect-square bg-gradient-to-tr from-slate-700 to-slate-400 flex items-end p-3 shadow-inner">
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-200" />
-                <div className="relative z-10">
-                  <p className="text-[10px] font-bold text-white tracking-[0.25px] uppercase leading-[15px]">
-                    Fundação -<br />Setor A
-                  </p>
-                </div>
-              </div>
-
-              {/* Photo 2 */}
-              <div className="relative group overflow-hidden rounded-[16px] aspect-square bg-gradient-to-tr from-cyan-800 to-cyan-500 flex items-end p-3 shadow-inner">
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-200" />
-                <div className="relative z-10">
-                  <p className="text-[10px] font-bold text-white tracking-[0.25px] uppercase leading-[15px]">
-                    Equipe em<br />campo
-                  </p>
-                </div>
-              </div>
-
-              {/* Photo 3 */}
-              <div className="relative group overflow-hidden rounded-[16px] aspect-square bg-gradient-to-tr from-[#001848] to-[#006492] flex items-end p-3 shadow-inner">
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-200" />
-                <div className="relative z-10">
-                  <p className="text-[10px] font-bold text-white tracking-[0.25px] uppercase leading-[15px]">
-                    Fachada Norte
-                  </p>
-                </div>
-              </div>
-
-              {/* Dotted slots "Ver Mais" */}
-              <div className="border-2 border-[#e1e2e4] border-dashed rounded-[16px] aspect-square flex flex-col items-center justify-center gap-1 group hover:border-[#006492] hover:bg-[#f8f9fb] transition-all cursor-pointer">
-                <Camera size={20} className="text-[#737685] group-hover:text-[#006492]" />
-                <span className="text-[10px] font-bold text-[#737685] tracking-[-0.5px] uppercase group-hover:text-[#006492]">
-                  Ver mais
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Progress storage */}
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center text-[12px] font-bold text-[#191c1e]">
-              <span className="flex items-center gap-1.5 uppercase tracking-[-0.3px]">
-                <FileText size={16} /> Armazenamento
-              </span>
-              <span className="text-[#006492]">45%</span>
-            </div>
-            <div className="h-[8px] bg-[#f8f9fb] border border-[#e1e2e4]/30 rounded-full overflow-hidden w-full">
-              <div className="h-full bg-[#006492] rounded-full w-[45%]" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Grid bottom */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* Section 3: Contratos (col-span-6) */}
-        <div className="bg-white border border-[#e1e2e4] rounded-[16px] p-6 shadow-[0px_1px_2px_rgba(0,0,0,0.05)]">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-3">
-              <FileText size={20} className="text-[#191c1e]" />
-              <h3 className="text-[20px] font-bold text-[#191c1e] font-['Manrope']">
-                Contratos
-              </h3>
-            </div>
-            <button className="text-[12px] font-bold text-[#006492] tracking-[1.2px] uppercase hover:underline">
-              Acessar Tudo
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            {contractFiles.map((doc, idx) => (
-              <div
-                key={idx}
-                className="bg-[#f9fafb] border border-[rgba(0,0,0,0)] p-4 rounded-[16px] flex justify-between items-center hover:bg-slate-50 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="bg-[#c9e6ff] p-3 rounded-[8px] flex items-center justify-center shadow-[0px_1px_2px_rgba(0,0,0,0.05)]">
-                    <File size={20} className="text-[#006492]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[14px] font-bold text-[#191c1e] hover:text-[#006492] cursor-pointer">
-                      {doc.name}
-                    </span>
-                    <span className="text-[10px] text-[#737685] mt-1">
-                      {doc.statusText} • {doc.date}
-                    </span>
-                  </div>
-                </div>
-                <span className="text-[12px] font-bold text-[#737685]">{doc.size}</span>
-              </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+            {fotos.map((t) => (
+              <figure key={t} style={{ margin: 0, aspectRatio: "1", borderRadius: 14, background: "linear-gradient(135deg, #001b3d, #00a3b1)", color: "#fff", display: "flex", alignItems: "flex-end", padding: 10, boxSizing: "border-box" }}>
+                <figcaption style={{ fontSize: 13, fontWeight: 800 }}>{t}</figcaption>
+              </figure>
             ))}
+            <button type="button" className="gp-btn gp-bs" style={{ aspectRatio: "1", height: "auto", flexDirection: "column", borderStyle: "dashed", borderRadius: 14 }}><Camera size={20} weight="bold" aria-hidden="true" />Ver mais</button>
           </div>
-        </div>
-
-        {/* Section 4: Licenças e Alvarás (col-span-6) */}
-        <div className="bg-white border border-[#e1e2e4] rounded-[16px] p-6 shadow-[0px_1px_2px_rgba(0,0,0,0.05)]">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-3">
-              <ShieldCheck size={20} className="text-[#191c1e]" />
-              <h3 className="text-[20px] font-bold text-[#191c1e] font-['Manrope']">
-                Licenças e Alvarás
-              </h3>
-            </div>
-            <button className="text-[12px] font-bold text-[#006492] tracking-[1.2px] uppercase hover:underline">
-              Acessar Tudo
-            </button>
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#475569", marginBottom: 6 }}><span>Armazenamento</span><span className="gp-mono" style={{ fontWeight: 600, color: "#001b3d" }}>45%</span></div>
+            <span className="gp-bar" role="progressbar" aria-label="Armazenamento usado" aria-valuenow={45} aria-valuemin={0} aria-valuemax={100}><span style={{ width: "45%", background: "#00a3b1" }} /></span>
           </div>
-
-          <div className="flex flex-col gap-3">
-            {licenseFiles.map((doc, idx) => {
-              const isValido = doc.status === "valido";
-              return (
-                <div
-                  key={idx}
-                  className="bg-[#f9fafb] border border-[rgba(0,0,0,0)] p-4 rounded-[16px] flex justify-between items-center hover:bg-slate-50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`p-3 rounded-[8px] flex items-center justify-center shadow-[0px_1px_2px_rgba(0,0,0,0.05)] ${
-                        isValido ? "bg-[rgba(183,244,49,0.2)]" : "bg-[#fffbeb]"
-                      }`}
-                    >
-                      <ShieldCheck
-                        size={20}
-                        className={isValido ? "text-[#001e00]" : "text-[#92400e]"}
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[14px] font-bold text-[#191c1e] hover:text-[#006492] cursor-pointer">
-                        {doc.name}
-                      </span>
-                      <span className="text-[10px] text-[#737685] mt-1 font-medium">
-                        Vencimento: {doc.expiration}
-                      </span>
-                    </div>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-[8px] text-[9px] font-bold tracking-[0.45px] uppercase ${
-                      isValido ? "bg-[#9fd300] text-[#001e00]" : "bg-[#fef3c7] text-[#92400e] border border-[#fde68a]"
-                    }`}
-                  >
-                    {doc.statusText}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        </aside>
       </div>
 
-      {/* Section 5: Atividades Recentes (col-span-12 - Spans full width) */}
-      <div className="bg-[#e8f0fe] border border-[rgba(201,230,255,0.3)] rounded-[16px] p-8 relative overflow-hidden flex flex-col lg:flex-row justify-between items-start gap-8 shadow-inner">
-        {/* Glow detail */}
-        <div className="absolute bg-[rgba(0,100,146,0.05)] blur-[32px] right-[-128px] top-[-128px] rounded-full w-80 h-80 pointer-events-none" />
-
-        <div className="max-w-xs relative z-10">
-          <div className="bg-white shadow-[0px_1px_2px_rgba(0,0,0,0.05)] w-12 h-12 rounded-[16px] flex items-center justify-center mb-6">
-            <Clock size={20} className="text-[#006492]" />
-          </div>
-          <h4 className="text-[24px] font-extrabold text-[#191c1e] tracking-tight mb-2 font-['Manrope']">
-            Atividades Recentes
-          </h4>
-          <p className="text-[14px] text-[#737685] leading-[22px] font-['Inter']">
-            Auditoria em tempo real de acessos e modificações nos documentos do projeto.
-          </p>
-        </div>
-
-        {/* Timeline */}
-        <div className="flex-1 w-full lg:pl-16 relative z-10 flex flex-col gap-6">
-          {/* Timeline Item 1 */}
-          <div className="flex gap-5 items-start relative">
-            {/* Dot */}
-            <div className="pt-1.5 z-10">
-              <div className="w-4 h-4 bg-[#9fd300] border-4 border-white rounded-full shadow-[0px_1px_2px_rgba(0,0,0,0.05)]" />
-            </div>
-            {/* Vert Line connecting to item 2 */}
-            <div className="absolute top-[22px] left-[7px] bottom-[-24px] w-[2px] bg-[rgba(0,100,146,0.1)]" />
-
-            <div className="flex flex-col">
-              <p className="text-[16px] text-[#191c1e]">
-                <span className="font-bold">Ricardo M.</span> fez o upload de{" "}
-                <span className="font-bold text-[#006492] hover:underline cursor-pointer">
-                  Planta_Baixa_Pav01_V4.pdf
-                </span>
-              </p>
-              <span className="text-[10px] font-bold text-[#737685] tracking-[1px] uppercase mt-1">
-                Hoje às 14:32
+      <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))" }}>
+        <section className="gp-card gp-pad" aria-labelledby="h-co">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}><h2 id="h-co" className="gp-h2">Contratos</h2><button type="button" className="gp-btn gp-bs gp-sm">Ver tudo</button></div>
+          {contractFiles.map((c) => (
+            <div key={c.name} className="gp-li">
+              <span style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                <span aria-hidden="true" style={{ width: 38, height: 38, flex: "0 0 38px", borderRadius: 12, background: "#EDF1F6", display: "flex", alignItems: "center", justifyContent: "center" }}><FileText size={20} weight="bold" /></span>
+                <span><span style={{ display: "block", fontSize: 15, fontWeight: 800 }}>{c.name}</span><span style={{ fontSize: 13, color: "#475569" }}>{c.date} · {c.size}</span></span>
               </span>
+              <span className={`gp-bg ${c.cls}`}><span className="gp-dot" aria-hidden="true" />{c.statusText}</span>
             </div>
-          </div>
-
-          {/* Timeline Item 2 */}
-          <div className="flex gap-5 items-start relative">
-            {/* Dot */}
-            <div className="pt-1.5 z-10">
-              <div className="w-4 h-4 bg-[#e1e2e4] border-4 border-white rounded-full shadow-[0px_1px_2px_rgba(0,0,0,0.05)]" />
-            </div>
-
-            <div className="flex flex-col">
-              <p className="text-[16px] text-[#191c1e]">
-                <span className="font-bold">Ana Silva</span> visualizou{" "}
-                <span className="font-bold text-[#191c1e] hover:underline cursor-pointer">
-                  Calculo_Estrutural_Final.dwg
-                </span>
-              </p>
-              <span className="text-[10px] font-bold text-[#737685] tracking-[1px] uppercase mt-1">
-                Hoje às 10:15
+          ))}
+        </section>
+        <section className="gp-card gp-pad" aria-labelledby="h-li">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}><h2 id="h-li" className="gp-h2">Licenças e alvarás</h2><button type="button" className="gp-btn gp-bs gp-sm">Ver tudo</button></div>
+          {licenseFiles.map((l) => (
+            <div key={l.name} className="gp-li">
+              <span style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                <span aria-hidden="true" style={{ width: 38, height: 38, flex: "0 0 38px", borderRadius: 12, background: "#EDF1F6", display: "flex", alignItems: "center", justifyContent: "center" }}><ShieldCheck size={20} weight="bold" /></span>
+                <span><span style={{ display: "block", fontSize: 15, fontWeight: 800 }}>{l.name}</span><span style={{ fontSize: 13, color: "#475569" }}>Vencimento: {l.expiration}</span></span>
               </span>
+              <span className={`gp-bg ${l.cls}`}><span className="gp-dot" aria-hidden="true" />{l.statusText}</span>
             </div>
-          </div>
-        </div>
+          ))}
+        </section>
       </div>
-    </div>
+
+      <section className="gp-card gp-pad" aria-labelledby="h-at">
+        <h2 id="h-at" className="gp-h2">Atividades recentes</h2>
+        <p className="gp-sub" style={{ marginBottom: 8 }}>Acessos e modificações nos documentos do projeto.</p>
+        {atividades.map((a) => (
+          <div key={a.alvo + a.quando} className="gp-li">
+            <span style={{ fontSize: 15 }}><strong>{a.quem}</strong> {a.acao} <strong style={{ color: "#007a85" }}>{a.alvo}</strong></span>
+            <span style={{ fontSize: 13, color: "#475569", whiteSpace: "nowrap" }}>{a.quando}</span>
+          </div>
+        ))}
+      </section>
+    </>
   );
 }

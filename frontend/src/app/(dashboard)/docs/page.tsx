@@ -3,391 +3,140 @@
 import Link from "next/link";
 import { FolderPlus, Folder, ArrowRight, FilePdf, FileText, DownloadSimple } from "@phosphor-icons/react";
 
+type Situacao = "conformidade" | "vencidos" | "pendencias";
+
 interface ProjectRepo {
   id: string;
   name: string;
   client: string;
-  status: "conformidade" | "vencidos" | "pendencias";
-  statusText: string;
+  status: Situacao;
   metricLabel: string;
-  metricValue: string;
-  metricMax: string;
-  progressPercent: number;
+  metricValue: number;
+  metricMax: number;
   storageUsed: string;
 }
 
 const projects: ProjectRepo[] = [
-  {
-    id: "aurora",
-    name: "Residencial Aurora Sky",
-    client: "Construtora Horizonte Sul",
-    status: "conformidade",
-    statusText: "Em Conformidade",
-    metricLabel: "Documentos Técnicos",
-    metricValue: "142",
-    metricMax: "142",
-    progressPercent: 100,
-    storageUsed: "1.2GB",
-  },
-  {
-    id: "viracopos",
-    name: "Complexo Logístico Viracopos",
-    client: "LogisTrans S.A.",
-    status: "vencidos",
-    statusText: "Documentos Vencidos",
-    metricLabel: "Alvarás e Licenças",
-    metricValue: "12",
-    metricMax: "15",
-    progressPercent: 80,
-    storageUsed: "845MB",
-  },
-  {
-    id: "retrofit",
-    name: "Retrofit Edifício Central",
-    client: "Investimentos Imob.",
-    status: "pendencias",
-    statusText: "Pendências Críticas",
-    metricLabel: "Segurança do Trabalho",
-    metricValue: "08",
-    metricMax: "24",
-    progressPercent: 33.3,
-    storageUsed: "2.1GB",
-  },
-  {
-    id: "parque-flores",
-    name: "Urbanização Parque das Flores",
-    client: "Prefeitura Municipal",
-    status: "conformidade",
-    statusText: "Em Conformidade",
-    metricLabel: "Projetos Executivos",
-    metricValue: "89",
-    metricMax: "89",
-    progressPercent: 100,
-    storageUsed: "456MB",
-  },
+  { id: "aurora", name: "Residencial Aurora Sky", client: "Construtora Horizonte Sul", status: "conformidade", metricLabel: "Documentos técnicos", metricValue: 142, metricMax: 142, storageUsed: "1,2 GB" },
+  { id: "viracopos", name: "Complexo Logístico Viracopos", client: "LogisTrans S.A.", status: "vencidos", metricLabel: "Alvarás e licenças", metricValue: 12, metricMax: 15, storageUsed: "845 MB" },
+  { id: "retrofit", name: "Retrofit Edifício Central", client: "Investimentos Imob.", status: "pendencias", metricLabel: "Segurança do trabalho", metricValue: 8, metricMax: 24, storageUsed: "2,1 GB" },
+  { id: "parque-flores", name: "Urbanização Parque das Flores", client: "Prefeitura Municipal", status: "conformidade", metricLabel: "Projetos executivos", metricValue: 89, metricMax: 89, storageUsed: "456 MB" },
 ];
 
-interface RecentDoc {
-  id: string;
-  name: string;
-  project: string;
-  date: string;
-  type: "pdf" | "doc";
-}
+// Mesmas famílias de cor do artefato: ok (verde), wa (laranja), da (vermelho).
+const SIT: Record<Situacao, { texto: string; cls: string; barra: string }> = {
+  conformidade: { texto: "Em conformidade", cls: "gp-ok", barra: "#65A30D" },
+  vencidos: { texto: "Documentos vencidos", cls: "gp-wa", barra: "#F97316" },
+  pendencias: { texto: "Pendências críticas", cls: "gp-da", barra: "#DC2626" },
+};
 
-const recentDocs: RecentDoc[] = [
-  {
-    id: "1",
-    name: "Planta_Baixa_Pav01_V4.pdf",
-    project: "Residencial Aurora Sky",
-    date: "Hoje, 10:45",
-    type: "pdf",
-  },
-  {
-    id: "2",
-    name: "Calculo_Estrutural_Final.dwg",
-    project: "Complexo Logístico Viracopos",
-    date: "Ontem, 16:20",
-    type: "doc",
-  },
-  {
-    id: "3",
-    name: "Projeto_Eletrico_Rev01.pdf",
-    project: "Retrofit Edifício Central",
-    date: "08 Out 2023",
-    type: "pdf",
-  },
+const recentDocs = [
+  { id: "1", name: "Planta_Baixa_Pav01_V4.pdf", project: "Residencial Aurora Sky", date: "Hoje, 10:45", type: "pdf" },
+  { id: "2", name: "Calculo_Estrutural_Final.dwg", project: "Complexo Logístico Viracopos", date: "Ontem, 16:20", type: "dwg" },
+  { id: "3", name: "Projeto_Eletrico_Rev01.pdf", project: "Retrofit Edifício Central", date: "08 out 2026", type: "pdf" },
 ];
 
 export default function DocsPage() {
-  // Radial Chart configuration
-  const pct = 74;
-  const radius = 56;
-  const strokeWidth = 12;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (pct / 100) * circumference;
-
   return (
-    <div className="flex flex-col h-full">
-      {/* Top Header Section */}
-      <div className="flex justify-between items-end mb-8">
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
         <div>
-          <p className="text-[12px] font-bold text-[#001848] uppercase tracking-[1.2px] font-['Manrope'] mb-1">
-            Gestão Documental
-          </p>
-          <h1 className="text-[30px] font-extrabold text-[#191c1e] tracking-[-0.75px] font-['Manrope']">
-            Repositório de Projetos
-          </h1>
-          <p className="text-[14px] text-[#434654] font-['Manrope'] mt-1">
-            Acompanhamento de conformidade técnica e legal das obras ativas.
-          </p>
+          <nav aria-label="Trilha" className="gp-crumb">Gestão / <span aria-current="page" style={{ color: "#001b3d" }}>Documentos</span></nav>
+          <h1 className="gp-h1">Repositório de projetos</h1>
+          <p className="gp-sub">Conformidade técnica e legal das obras ativas.</p>
         </div>
-        <button className="flex items-center gap-2 px-5 py-[10px] bg-[#001848] text-white rounded-[8px] text-[14px] font-bold transition-all hover:bg-[#002878] shadow-[0px_4px_6px_rgba(0,24,72,0.15)] cursor-pointer">
-          <FolderPlus size={18} weight="bold" /> Novo Repositório
+        <button type="button" className="gp-btn gp-bp">
+          <FolderPlus size={18} weight="bold" aria-hidden="true" /> Novo repositório
         </button>
       </div>
 
-      {/* Hero Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Metric 1 */}
-        <div className="bg-white border-[#9fd300] border-b-4 border-solid rounded-[8px] p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.05)]">
-          <p className="text-[12px] font-bold text-[#64748b] uppercase tracking-[-0.6px] mb-1 font-['Manrope']">
-            Total de Arquivos
-          </p>
-          <p className="text-[30px] font-extrabold text-[#191c1e] font-['Manrope']">
-            2,842
-          </p>
-        </div>
+      <section aria-label="Indicadores" className="gp-grid">
+        <div className="gp-card gp-met gp-dark"><span className="gp-ml">Total de arquivos</span><span className="gp-mv">2.842</span><span className="gp-ms">em 4 repositórios</span></div>
+        <div className="gp-card gp-met"><span className="gp-ml">Em conformidade</span><span className="gp-mv">18</span><span className="gp-ms">obras</span></div>
+        <div className="gp-card gp-met"><span className="gp-ml">Pendências críticas</span><span className="gp-mv" style={{ color: "#9A3412" }}>04</span><span className="gp-ms">exigem ação</span></div>
+        <div className="gp-card gp-met"><span className="gp-ml">Vencidos</span><span className="gp-mv" style={{ color: "#B91C1C" }}>07</span><span className="gp-ms">documentos</span></div>
+      </section>
 
-        {/* Metric 2 */}
-        <div className="bg-white border-[#001848] border-b-4 border-solid rounded-[8px] p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.05)]">
-          <p className="text-[12px] font-bold text-[#64748b] uppercase tracking-[-0.6px] mb-1 font-['Manrope']">
-            Em Conformidade
-          </p>
-          <p className="text-[30px] font-extrabold text-[#191c1e] font-['Manrope'] flex items-baseline gap-1">
-            18 <span className="text-[14px] font-medium text-[#94a3b8]">obras</span>
-          </p>
-        </div>
-
-        {/* Metric 3 */}
-        <div className="bg-white border-[#7b2600] border-b-4 border-solid rounded-[8px] p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.05)]">
-          <p className="text-[12px] font-bold text-[#64748b] uppercase tracking-[-0.6px] mb-1 font-['Manrope']">
-            Pendências Críticas
-          </p>
-          <p className="text-[30px] font-extrabold text-[#7b2600] font-['Manrope']">
-            04
-          </p>
-        </div>
-
-        {/* Metric 4 */}
-        <div className="bg-white border-[#ba1a1a] border-b-4 border-solid rounded-[8px] p-5 shadow-[0px_1px_3px_rgba(0,0,0,0.05)]">
-          <p className="text-[12px] font-bold text-[#64748b] uppercase tracking-[-0.6px] mb-1 font-['Manrope']">
-            Vencidos
-          </p>
-          <p className="text-[30px] font-extrabold text-[#ba1a1a] font-['Manrope']">
-            07
-          </p>
-        </div>
-      </div>
-
-      {/* Repositories Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-        {projects.map((project) => {
-          // Color schemes according to status
-          let folderColor = "text-[#001848]";
-          let badgeBg = "bg-[rgba(159,211,0,0.2)]";
-          let badgeText = "text-[#001848]";
-          let progressColor = "bg-[#9fd300]";
-          let progressValueColor = "text-[#191c1e]";
-
-          if (project.status === "vencidos") {
-            folderColor = "text-[#7b2600]";
-            badgeBg = "bg-[#ffedd5]";
-            badgeText = "text-[#7b2600]";
-            progressColor = "bg-[#7b2600]";
-            progressValueColor = "text-[#7b2600]";
-          } else if (project.status === "pendencias") {
-            folderColor = "text-[#ba1a1a]";
-            badgeBg = "bg-[#fee2e2]";
-            badgeText = "text-[#ba1a1a]";
-            progressColor = "bg-[#ba1a1a]";
-            progressValueColor = "text-[#ba1a1a]";
-          }
-
-          return (
-            <div
-              key={project.id}
-              className="bg-white border border-[#f1f5f9] rounded-[8px] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow duration-200 flex flex-col justify-between overflow-hidden"
-            >
-              {/* Card Main Info */}
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="bg-[#f8fafc] p-2.5 rounded-[8px] flex items-center justify-center">
-                    <Folder weight="fill" size={24} className={folderColor} />
-                  </div>
-                  <div className={`px-[12px] py-[4px] rounded-full text-[10px] font-bold tracking-[0.5px] uppercase ${badgeBg} ${badgeText}`}>
-                    {project.statusText}
-                  </div>
+      <section aria-labelledby="h-rep" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <h2 id="h-rep" className="gp-h2">Repositórios</h2>
+        <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
+          {projects.map((p) => {
+            const s = SIT[p.status];
+            const pct = Math.round((p.metricValue / p.metricMax) * 100);
+            return (
+              <article key={p.id} className="gp-card gp-pad" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                  <span aria-hidden="true" style={{ width: 44, height: 44, borderRadius: 14, background: "#F4F6FA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Folder size={24} weight="fill" color={s.barra} />
+                  </span>
+                  <span className={`gp-bg ${s.cls}`}><span className="gp-dot" aria-hidden="true" />{s.texto}</span>
                 </div>
-
-                <h3 className="text-[18px] font-bold text-[#191c1e] leading-[28px] mb-1 font-['Manrope']">
-                  {project.name}
-                </h3>
-                <p className="text-[12px] font-medium text-[#434654] mb-6 font-['Manrope']">
-                  Cliente: {project.client}
-                </p>
-
-                {/* Progress bar */}
-                <div className="flex flex-col gap-2 mt-4">
-                  <div className="flex justify-between text-[12px] font-medium text-[#64748b]">
-                    <span>{project.metricLabel}</span>
-                    <span className={`font-bold ${progressValueColor}`}>
-                      {project.metricValue}/{project.metricMax}
-                    </span>
-                  </div>
-                  <div className="h-[8px] bg-[#f1f5f9] rounded-full overflow-hidden w-full">
-                    <div
-                      className={`h-full ${progressColor} transition-all duration-300`}
-                      style={{ width: `${project.progressPercent}%` }}
-                    />
-                  </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>{p.name}</h3>
+                  <p style={{ margin: "2px 0 0", fontSize: 14, color: "#475569" }}>Cliente: {p.client}</p>
                 </div>
-              </div>
-
-              {/* Card Footer */}
-              <div className="bg-[#f8fafc] border-t border-[#f1f5f9] px-6 py-4 flex justify-between items-center">
-                <span className="text-[12px] font-bold text-[#64748b]">
-                  {project.storageUsed} Armazenados
-                </span>
-                <Link
-                  href={`/docs/${project.id}`}
-                  className="text-[12px] font-bold text-[#001848] hover:text-[#002878] transition-colors flex items-center gap-1 font-['Manrope']"
-                >
-                  Acessar Pasta <ArrowRight size={14} weight="bold" />
-                </Link>
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Empty state card */}
-        <div className="bg-[#f8fafc] border-2 border-dashed border-[#e2e8f0] rounded-[8px] flex flex-col items-center justify-center p-8 min-h-[290px] group hover:border-[#9fd300] hover:bg-white transition-all duration-200 cursor-pointer">
-          <div className="bg-white shadow-[0px_1px_2px_rgba(0,0,0,0.05)] w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-200">
-            <FolderPlus size={28} className="text-[#94a3b8] group-hover:text-[#9fd300]" />
-          </div>
-          <h4 className="text-[16px] font-bold text-[#64748b] mb-1 font-['Manrope'] group-hover:text-[#001848] transition-colors">
-            Novo Projeto
-          </h4>
-          <p className="text-[10px] font-bold text-[#94a3b8] tracking-[1px] uppercase font-['Manrope']">
-            Iniciar Repositório
-          </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#475569" }}>
+                    <span>{p.metricLabel}</span>
+                    <span className="gp-mono" style={{ fontWeight: 600, color: "#001b3d" }}>{p.metricValue}/{p.metricMax}</span>
+                  </div>
+                  <span className="gp-bar" role="progressbar" aria-label={`${p.metricLabel} de ${p.name}`} aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+                    <span style={{ width: `${pct}%`, background: s.barra }} />
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid #E6EBF2" }}>
+                  <span style={{ fontSize: 13, color: "#475569" }}>{p.storageUsed} armazenados</span>
+                  <Link href={`/docs/${p.id}`} className="gp-btn gp-bs gp-sm">Acessar pasta <ArrowRight size={14} weight="bold" aria-hidden="true" /></Link>
+                </div>
+              </article>
+            );
+          })}
         </div>
-      </div>
+      </section>
 
-      {/* Bottom Layout - Recent Activity and Storage stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Documents Table (Spans 2 columns) */}
-        <div className="lg:col-span-2 flex flex-col">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[20px] font-bold text-[#191c1e] font-['Manrope']">
-              Documentos Recentes
-            </h3>
-            <button className="text-[12px] font-bold text-[#001848] uppercase tracking-[0.6px] hover:underline font-['Manrope']">
-              Ver todos
-            </button>
+      <div className="gp-split">
+        <section className="gp-card gp-main" aria-labelledby="h-rec" style={{ overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid #E6EBF2" }}>
+            <h2 id="h-rec" className="gp-h2">Documentos recentes</h2>
+            <button type="button" className="gp-btn gp-bs gp-sm">Ver todos</button>
           </div>
-
-          <div className="bg-white border border-[#f1f5f9] rounded-[8px] shadow-[0px_1px_2px_rgba(0,0,0,0.05)] overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#f8fafc]">
-                  <th className="px-6 py-3 text-[10px] font-bold text-[#64748b] tracking-[1px] uppercase border-b border-[#f1f5f9]">
-                    Documento
-                  </th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-[#64748b] tracking-[1px] uppercase border-b border-[#f1f5f9]">
-                    Projeto
-                  </th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-[#64748b] tracking-[1px] uppercase border-b border-[#f1f5f9]">
-                    Data
-                  </th>
-                  <th className="px-6 py-3 text-right text-[10px] font-bold text-[#64748b] tracking-[1px] uppercase border-b border-[#f1f5f9]">
-                    Ação
-                  </th>
-                </tr>
-              </thead>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
+              <caption className="gp-sr">Documentos recentes</caption>
+              <thead><tr><th scope="col" className="gp-th" style={{ paddingLeft: 22 }}>Documento</th><th scope="col" className="gp-th">Projeto</th><th scope="col" className="gp-th">Data</th><th scope="col" className="gp-th" style={{ paddingRight: 22 }}><span className="gp-sr">Baixar</span></th></tr></thead>
               <tbody>
-                {recentDocs.map((doc) => (
-                  <tr key={doc.id} className="hover:bg-[#f8fafc] transition-colors duration-150">
-                    <td className="px-6 py-4 border-b border-[#f1f5f9]">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-[#f8fafc] rounded-[6px]">
-                          {doc.type === "pdf" ? (
-                            <FilePdf size={20} className="text-[#ba1a1a]" />
-                          ) : (
-                            <FileText size={20} className="text-[#006492]" />
-                          )}
-                        </div>
-                        <span className="text-[14px] font-bold text-[#191c1e] hover:text-[#001848] transition-colors cursor-pointer">
-                          {doc.name}
+                {recentDocs.map((d) => (
+                  <tr key={d.id} className="gp-row">
+                    <th scope="row" className="gp-td" style={{ paddingLeft: 22, textAlign: "left" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span aria-hidden="true" style={{ width: 38, height: 38, borderRadius: 12, background: d.type === "pdf" ? "#FEE2E2" : "#e0f5f7", color: d.type === "pdf" ? "#B91C1C" : "#00626b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {d.type === "pdf" ? <FilePdf size={20} weight="bold" /> : <FileText size={20} weight="bold" />}
                         </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 border-b border-[#f1f5f9] text-[12px] text-[#434654] font-medium">
-                      {doc.project}
-                    </td>
-                    <td className="px-6 py-4 border-b border-[#f1f5f9] text-[12px] text-[#64748b]">
-                      {doc.date}
-                    </td>
-                    <td className="px-6 py-4 border-b border-[#f1f5f9] text-right">
-                      <button className="p-2 hover:bg-[#f1f5f9] rounded-full transition-colors cursor-pointer text-[#001848]">
-                        <DownloadSimple size={18} weight="bold" />
-                      </button>
+                        <span style={{ fontSize: 15, fontWeight: 800 }}>{d.name}</span>
+                      </span>
+                    </th>
+                    <td className="gp-td" style={{ color: "#475569" }}>{d.project}</td>
+                    <td className="gp-td" style={{ color: "#475569" }}>{d.date}</td>
+                    <td className="gp-td" style={{ paddingRight: 22, textAlign: "right" }}>
+                      <button type="button" className="gp-ib" aria-label={`Baixar ${d.name}`} style={{ width: 40, height: 40 }}><DownloadSimple size={18} weight="bold" aria-hidden="true" /></button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
 
-        {/* Storage Stats Card */}
-        <div className="bg-white border border-[#f1f5f9] rounded-[16px] p-6 shadow-[0px_1px_2px_rgba(0,0,0,0.05)] flex flex-col">
-          <h3 className="text-[18px] font-bold text-[#191c1e] mb-6 font-['Manrope']">
-            Estatísticas de Armazenamento
-          </h3>
-
-          {/* Radial circular progress bar */}
-          <div className="flex justify-center items-center relative my-4">
-            <svg className="w-[140px] h-[140px] transform -rotate-90">
-              <circle
-                cx="70"
-                cy="70"
-                r={radius}
-                stroke="#e2e8f0"
-                strokeWidth={strokeWidth}
-                fill="transparent"
-              />
-              <circle
-                cx="70"
-                cy="70"
-                r={radius}
-                stroke="#001848"
-                strokeWidth={strokeWidth}
-                fill="transparent"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-              />
-            </svg>
-            <div className="absolute flex flex-col items-center justify-center text-center">
-              <span className="text-[28px] font-extrabold text-[#191c1e] leading-none">
-                {pct}%
-              </span>
-              <span className="text-[9px] font-bold text-[#64748b] tracking-[0.5px] uppercase mt-1">
-                Capacidade
-              </span>
-            </div>
+        <aside className="gp-card gp-pad gp-side" aria-labelledby="h-arm" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <h2 id="h-arm" className="gp-h2">Armazenamento</h2>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+            <span className="gp-mv">74%</span><span className="gp-ms">de 22 GB</span>
           </div>
-
-          {/* Breakdown items */}
-          <div className="flex flex-col gap-4 mt-6">
-            <div className="flex justify-between items-center text-[13px]">
-              <span className="text-[#64748b] font-medium flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#001848] inline-block" />
-                Arquivos de Desenho
-              </span>
-              <span className="font-bold text-[#191c1e]">12.4 GB</span>
-            </div>
-            <div className="flex justify-between items-center text-[13px]">
-              <span className="text-[#64748b] font-medium flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#9fd300] inline-block" />
-                Relatórios & Docs
-              </span>
-              <span className="font-bold text-[#191c1e]">4.2 GB</span>
-            </div>
-          </div>
-        </div>
+          <span className="gp-bar" role="progressbar" aria-label="Capacidade usada" aria-valuenow={74} aria-valuemin={0} aria-valuemax={100}><span style={{ width: "74%", background: "#00a3b1" }} /></span>
+          <div className="gp-li"><span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}><span className="gp-dot" aria-hidden="true" style={{ background: "#001b3d" }} />Arquivos de desenho</span><span className="gp-mono" style={{ fontWeight: 600 }}>12,4 GB</span></div>
+          <div className="gp-li"><span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}><span className="gp-dot" aria-hidden="true" style={{ background: "#9fd300" }} />Relatórios e docs</span><span className="gp-mono" style={{ fontWeight: 600 }}>4,2 GB</span></div>
+        </aside>
       </div>
-    </div>
+    </>
   );
 }
