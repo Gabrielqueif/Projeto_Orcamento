@@ -1,116 +1,142 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  SquaresFour,
+  House,
   HardHat,
   Database,
   Users,
-  UserPlus,
-  BookOpen,
   Plus,
   Question,
   SignOut,
   Coins,
   UploadSimple,
+  Notebook,
+  ChartBar,
 } from "@phosphor-icons/react";
-import clsx from "clsx";
 import { logout } from "@/app/auth/actions";
 import Image from "next/image";
 import { useUserRole } from "@/hooks/use-user-role";
+import { createClient } from "@/utils/supabase/client";
+
+type NavLink = { href: string; icon: typeof House; label: string };
 
 export function Sidebar() {
   const pathname = usePathname();
   const { role } = useUserRole();
+  const [nome, setNome] = useState("");
+  const [cargo, setCargo] = useState("");
 
-  const links = [
-    { href: "/", icon: SquaresFour, label: "Dashboard" },
-    { href: "/orcamentos", icon: Coins, label: "Orçamentos" },
-    { href: "/obras", icon: HardHat, label: "Obras" },
-    { href: "/bases", icon: Database, label: "Bases de Dados" },
-    { href: "/equipe", icon: Users, label: "Equipe" },
-    { href: "/diario", icon: BookOpen, label: "Diário de Obra" },
-    ...(role === "admin"
-      ? [{ href: "/admin/sinapi", icon: UploadSimple, label: "Importação" }]
-      : []),
+  useEffect(() => {
+    createClient()
+      .auth.getUser()
+      .then(({ data: { user } }) => {
+        const meta = user?.user_metadata;
+        setNome(meta?.full_name || meta?.username || user?.email || "Usuário");
+        setCargo(meta?.role || meta?.cargo || "Gerente de obras");
+      })
+      .catch(() => setNome("Usuário"));
+  }, []);
+
+  const grupos: { titulo: string; links: NavLink[] }[] = [
+    {
+      titulo: "Comercial",
+      links: [
+        { href: "/", icon: House, label: "Visão geral" },
+        { href: "/orcamentos", icon: Coins, label: "Orçamentos" },
+        { href: "/bases", icon: Database, label: "Bases de dados" },
+      ],
+    },
+    {
+      titulo: "Operação",
+      links: [
+        { href: "/obras", icon: HardHat, label: "Obras" },
+        { href: "/diario", icon: Notebook, label: "Diário de obra" },
+        { href: "/equipe", icon: Users, label: "Equipe" },
+      ],
+    },
+    {
+      titulo: "Gestão",
+      links: [
+        { href: "/financeiro", icon: ChartBar, label: "Financeiro" },
+        ...(role === "admin"
+          ? [{ href: "/admin/sinapi", icon: UploadSimple, label: "Importação" }]
+          : []),
+      ],
+    },
   ];
+
+  const ativo = (href: string) =>
+    pathname === href || (href !== "/" && !!pathname?.startsWith(href + "/"));
+  const iniciais = nome
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
+
   return (
-    <aside className="w-[256px] bg-[#001b3d] text-white flex flex-col fixed h-screen left-0 top-0 z-50">
-      {/* Logo */}
-      <div className="flex flex-col gap-0.5 py-6 px-6 border-b border-[rgba(255,255,255,0.06)]">
-        <Link href="/" className="no-underline flex items-center gap-3">
-          <Image src="/logo.png" alt="Logo" width={40} height={40} className="object-contain" />
-          <span className="font-['Manrope'] font-extrabold text-[22px] text-white tracking-[-0.5px] m-1">
-            GP<span className="text-[#9fd300]">Obras</span>
-          </span>
-        </Link>
+    <aside
+      aria-label="Menu lateral"
+      className="gp-sd fixed left-0 top-0 z-50 h-screen w-[256px] flex-none overflow-y-auto"
+    >
+      <Link href="/" className="gp-sd-brand">
+        <span className="gp-sd-logo">
+          <Image src="/logo.png" alt="" width={26} height={30} className="object-contain" />
+        </span>
+        <span>
+          GP<span style={{ color: "#9fd300" }}>Obras</span>
+        </span>
+      </Link>
 
-      </div>
+      <Link href="/obras/novo" className="gp-sd-cta">
+        <Plus size={18} weight="bold" aria-hidden="true" />
+        Nova obra
+      </Link>
 
-      {/* Nav */}
-      <nav className="flex-1 py-5 px-3 flex flex-col gap-1">
-        {links.map((link) => {
-          const isActive =
-            pathname === link.href ||
-            (link.href !== "/" && pathname?.startsWith(link.href + "/"));
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={clsx(
-                "flex items-center gap-3 py-[10px] px-4 no-underline rounded-[8px] font-['Manrope'] text-[14px] font-medium transition-all duration-150",
-                isActive
-                  ? "bg-[#9fd300] text-[#001b3d] font-bold shadow-[0_4px_12px_rgba(159,211,0,0.25)]"
-                  : "text-[#94a3b8] hover:text-white hover:bg-[rgba(255,255,255,0.06)]"
-              )}
-            >
-              <link.icon
-                size={18}
-                weight={isActive ? "fill" : "regular"}
-                className={isActive ? "text-[#001b3d]" : "text-[#64748b]"}
-              />
-              {link.label}
-            </Link>
-          );
-        })}
+      <nav className="gp-sd-nav" aria-label="Navegação principal">
+        {grupos.map((g) => (
+          <div key={g.titulo} className="gp-sd-g">
+            <span>{g.titulo}</span>
+            {g.links.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="gp-sd-l"
+                aria-current={ativo(l.href) ? "page" : undefined}
+              >
+                <l.icon size={20} weight="bold" aria-hidden="true" />
+                {l.label}
+              </Link>
+            ))}
+          </div>
+        ))}
       </nav>
 
-      {/* Novo Membro / Nova Obra CTA */}
-      {pathname?.startsWith("/equipe") ? (
-        <Link
-          href="/equipe/novo"
-          className="mx-4 mb-4 py-[11px] px-4 bg-[#9fd300] text-[#001b3d] rounded-[8px] font-['Manrope'] font-bold text-[14px] flex items-center justify-center gap-2 transition-all duration-150 hover:opacity-90 no-underline"
-        >
-          <UserPlus size={18} weight="bold" />
-          Novo Membro
-        </Link>
-      ) : (
-        <Link
-          href="/obras/novo"
-          className="mx-4 mb-4 py-[11px] px-4 bg-[#9fd300] text-[#001b3d] rounded-[8px] font-['Manrope'] font-bold text-[14px] flex items-center justify-center gap-2 transition-all duration-150 hover:opacity-90 no-underline"
-        >
-          <Plus size={16} weight="bold" />
-          Nova Obra
-        </Link>
-      )}
-
-      {/* Bottom */}
-      <div className="p-4 border-t border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]">
-        <a
-          href="mailto:suporte@gpobras.com.br"
-          className="flex items-center gap-3 py-[10px] px-4 text-[#64748b] no-underline rounded-[8px] font-['Manrope'] text-[13px] transition-all duration-150 hover:text-white hover:bg-[rgba(255,255,255,0.06)]"
-        >
-          <Question size={16} />
+      <div className="gp-sd-ft">
+        <a href="mailto:suporte@gpobras.com.br" className="gp-sd-l" style={{ fontSize: 14 }}>
+          <Question size={20} weight="bold" aria-hidden="true" />
           Suporte
         </a>
-        <button
-          onClick={() => logout()}
-          className="w-full flex items-center gap-3 py-[10px] px-4 text-[rgba(239,68,68,0.7)] no-underline rounded-[8px] font-['Manrope'] text-[13px] transition-all duration-150 hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)] bg-transparent border-none cursor-pointer"
-        >
-          <SignOut size={16} />
-          Sair da conta
-        </button>
+        <div className="gp-sd-user">
+          <span className="gp-av" aria-hidden="true">{iniciais || "·"}</span>
+          <div style={{ flex: "1 1 auto", minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nome}</p>
+            <p style={{ margin: 0, fontSize: 12, color: "#94A9C4" }}>{cargo}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => logout()}
+            aria-label="Sair da conta"
+            className="gp-ib"
+            style={{ width: 40, height: 40, background: "transparent", border: 0, color: "#FCA5A5" }}
+          >
+            <SignOut size={18} weight="bold" aria-hidden="true" />
+          </button>
+        </div>
       </div>
     </aside>
   );

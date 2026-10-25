@@ -10,16 +10,16 @@ export default function DashboardLayout({
 }) {
   return (
     <ToastProvider>
-      <div className="flex min-h-screen bg-[#f8fafc] overflow-x-hidden">
+      <div className="flex min-h-screen bg-[#F4F6FA] font-['Manrope'] text-[#001b3d] overflow-x-hidden">
         <Sidebar />
-        <main className="ml-[256px] flex-1 flex flex-col min-h-screen">
+        <div className="ml-[256px] flex-1 flex flex-col min-h-screen min-w-0">
           <TopHeader />
-          <div className="p-8 flex-1">
+          <main className="gp-mn">
             <ErrorBoundary>
               {children}
             </ErrorBoundary>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </ToastProvider>
   );
