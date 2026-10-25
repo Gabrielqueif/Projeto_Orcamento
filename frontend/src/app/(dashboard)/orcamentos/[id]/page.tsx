@@ -176,233 +176,194 @@ export default function OrcamentoDetalhePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12">
-        <span className="font-['Manrope'] text-[14px] text-[#94a3b8]">
-          Carregando detalhes do orçamento...
-        </span>
-      </div>
+      <p role="status" className="gp-sub" style={{ textAlign: "center", padding: 48 }}>
+        Carregando detalhes do orçamento...
+      </p>
     );
   }
 
   if (!orcamento) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 gap-4">
-        <span className="font-['Manrope'] text-[14px] text-[#94a3b8]">
-          Orçamento não encontrado.
-        </span>
-        <Link href="/orcamentos" className="text-[#00a3b1] hover:underline font-bold text-[14px] font-['Manrope']">
-          Voltar para listagem
-        </Link>
+      <div style={{ textAlign: "center", padding: 48, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+        <p className="gp-sub" style={{ margin: 0 }}>Orçamento não encontrado.</p>
+        <Link href="/orcamentos" className="gp-btn gp-bs gp-sm">Voltar para listagem</Link>
       </div>
     );
   }
 
   // Estilo de status dinâmico
   const statusDisplay = getStatusDisplay(orcamento.status);
-  const isAprovado = normalizeStatus(orcamento.status) === "aprovado";
+  const statusNorm = normalizeStatus(orcamento.status);
+  const isAprovado = statusNorm === "aprovado";
+  const badgeClass = (n: ReturnType<typeof normalizeStatus>) =>
+    n === "em_elaboracao" ? "gp-te" : n === "pendente" ? "gp-wa" : n === "aprovado" ? "gp-ok" : n === "recusado" ? "gp-da" : "gp-ne";
+  const custoDireto = (orcamento.valor_total ?? 0) / (1 + (orcamento.bdi || 0) / 100);
+  const valorBdi = (orcamento.valor_total ?? 0) - custoDireto;
+  const totalCell = (dark: boolean): React.CSSProperties => ({
+    padding: "18px 20px",
+    background: dark ? "#001b3d" : "#fff",
+    color: dark ? "#fff" : undefined,
+  });
+
+  const TABS: { id: TabType; label: string }[] = [
+    { id: "planilha", label: "Planilha orçamentária" },
+    { id: "abc", label: "Curva ABC" },
+    { id: "cronograma", label: "Cronograma financeiro" },
+    { id: "anexos", label: "Anexos" },
+  ];
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Breadcrumbs & Header Actions */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 font-['JetBrains_Mono'] text-[10px] font-medium text-[#00a3b1] uppercase tracking-[0.5px]">
-          <Link href="/orcamentos" className="hover:underline text-[#00a3b1] no-underline">
-            ORÇAMENTOS
-          </Link>
-          <span className="text-[#94a3b8]">&gt;</span>
-          <span className="text-[#64748b]">{orcamento.nome}</span>
-        </div>
-
-        <div className="flex items-start justify-between flex-wrap gap-4">
-          <div className="flex flex-col gap-1 max-w-[650px]">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="font-['Manrope'] font-extrabold text-[32px] lg:text-[36px] text-[#001b3d] tracking-[-0.9px] leading-[40px]">
-                {orcamento.nome}
-              </h1>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-[8px] font-['JetBrains_Mono'] font-semibold text-[10px] uppercase tracking-[0.5px] cursor-pointer hover:brightness-95 transition-all border-none ${statusDisplay.style}`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${statusDisplay.dot}`} />
-                  {statusDisplay.label}
-                  <CaretDown size={10} weight="bold" />
-                </button>
-
-                {isStatusDropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10 bg-transparent" onClick={() => setIsStatusDropdownOpen(false)} />
-                    <div className="absolute left-0 mt-1 w-44 bg-white border border-[#f1f5f9] rounded-[8px] shadow-[0_4px_12px_rgba(0,0,0,0.1)] py-1 z-20">
-                      {STATUS_ORDER.map((key) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => handleUpdateStatus(key)}
-                          className="w-full text-left px-3 py-2 text-[11px] font-['JetBrains_Mono'] font-semibold text-[#001b3d] hover:bg-[#f8fafc] flex items-center gap-2 border-none bg-transparent cursor-pointer"
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${STATUS_INFO[key].dot}`} />
-                          {STATUS_INFO[key].label}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            <p className="font-['JetBrains_Mono'] font-normal text-[11px] text-[#94a3b8] mt-0.5">
-              #{`ORC-${orcamento.id.substring(0, 8).toUpperCase()}`} — {orcamento.cliente || "Cliente não informado"}
-            </p>
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <button 
-              onClick={handleExportPDF}
-              className="flex items-center gap-2 bg-white border border-[#f1f5f9] text-[#001b3d] font-['Manrope'] font-bold text-[14px] px-4 py-2.5 rounded-[8px] transition-all hover:bg-[#f8fafc] shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-pointer"
-            >
-              <DownloadSimple size={16} weight="bold" className="text-[#00a3b1]" />
-              Exportar PDF
-            </button>
-            <button
-              onClick={handleOpenEditModal}
-              className="flex items-center gap-2 bg-white border border-[#f1f5f9] text-[#001b3d] font-['Manrope'] font-bold text-[14px] px-4 py-2.5 rounded-[8px] transition-all hover:bg-[#f8fafc] shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-pointer"
-            >
-              <PencilSimple size={16} weight="bold" className="text-[#00a3b1]" />
-              Editar
-            </button>
-            <Link
-              href={`/prazo/${orcamento.id}`}
-              className="flex items-center gap-2 bg-white border border-[#f1f5f9] text-[#001b3d] font-['Manrope'] font-bold text-[14px] px-4 py-2.5 rounded-[8px] transition-all hover:bg-[#f8fafc] shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-pointer no-underline"
-            >
-              <CalendarBlank size={16} weight="bold" className="text-[#00a3b1]" />
-              Cronograma
-            </Link>
-            <button className="flex items-center gap-2 bg-white border border-[#f1f5f9] text-[#001b3d] font-['Manrope'] font-bold text-[14px] px-4 py-2.5 rounded-[8px] transition-all hover:bg-[#f8fafc] shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-pointer">
-              <Copy size={16} weight="bold" className="text-[#00a3b1]" />
-              Duplicar
-            </button>
-            {isAprovado ? (
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
+        <div>
+          <nav aria-label="Trilha" className="gp-crumb">
+            <Link href="/orcamentos">Orçamentos</Link> /{" "}
+            <span aria-current="page" style={{ color: "#001b3d" }}>{`ORC-${orcamento.id.substring(0, 8).toUpperCase()}`}</span>
+          </nav>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginTop: 4 }}>
+            <h1 className="gp-h1" style={{ margin: 0 }}>{orcamento.nome}</h1>
+            <div className="relative">
               <button
-                onClick={() => setIsTransitionDrawerOpen(true)}
-                disabled={jaTemObra}
-                title={jaTemObra ? "Este orçamento já está vinculado a uma obra" : undefined}
-                className="flex items-center gap-2 bg-[#001b3d] text-white font-['Manrope'] font-bold text-[14px] px-5 py-2.5 rounded-[8px] transition-all hover:bg-[#00102a] shadow-[0_10px_15px_-3px_rgba(0,27,61,0.1),0_4px_6px_-4px_rgba(0,27,61,0.1)] border-none cursor-pointer disabled:bg-[#f1f5f9] disabled:text-[#94a3b8] disabled:shadow-none disabled:cursor-not-allowed"
+                type="button"
+                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                aria-haspopup="true"
+                aria-expanded={isStatusDropdownOpen}
+                className={`gp-bg ${badgeClass(statusNorm)}`}
+                style={{ border: 0, cursor: "pointer", fontWeight: 800 }}
               >
-                <HardHat size={16} weight="bold" />
-                {jaTemObra ? "Obra já gerada" : "Gerar Obra"}
+                <span aria-hidden="true" className="gp-dot"></span>
+                {statusDisplay.label}
+                <CaretDown size={12} weight="bold" aria-hidden="true" />
               </button>
-            ) : (
-              <button className="flex items-center gap-2 bg-[#f1f5f9] text-[#94a3b8] font-['Manrope'] font-bold text-[14px] px-5 py-2.5 rounded-[8px] cursor-not-allowed border-none" disabled>
-                <FileText size={16} weight="bold" />
-                Gerar Contrato
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Stats KPI cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Card 1: VALOR TOTAL */}
-        <div className="bg-white border border-[#f1f5f9] rounded-[8px] p-5 flex flex-col justify-between shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-          <span className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-            VALOR TOTAL (COM BDI)
-          </span>
-          <h2 className="font-['Manrope'] font-extrabold text-[24px] lg:text-[28px] text-[#001b3d] mt-2 truncate" title={formatCurrency(orcamento.valor_total)}>
-            {formatCurrency(orcamento.valor_total)}
-          </h2>
-          <div className="bg-[#f1f5f9] h-[4px] rounded-full w-full overflow-hidden mt-3">
-            <div className="bg-[#00a3b1] h-full rounded-full" style={{ width: "100%" }} />
-          </div>
-        </div>
-
-        {/* Card 2: BDI APLICADO */}
-        <div 
-          onClick={() => setIsBdiModalOpen(true)}
-          className="bg-white border border-[#f1f5f9] rounded-[8px] p-5 flex flex-col justify-between shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-pointer hover:border-[#00a3b1] transition-colors group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-              BDI APLICADO
-            </span>
-            <span className="text-[10px] font-['JetBrains_Mono'] font-bold text-[#00a3b1] bg-[rgba(0,163,177,0.1)] px-2 py-0.5 rounded group-hover:bg-[rgba(0,163,177,0.15)] transition-colors flex items-center gap-1">
-              <Calculator size={12} /> {orcamento.tipo_bdi === "SINTETICO" ? "Sintético" : "Analítico TCU"}
-            </span>
-          </div>
-          <div className="flex items-end justify-between mt-2">
-            <h2 className="font-['Manrope'] font-extrabold text-[28px] text-[#001b3d] leading-none">
-              {orcamento.bdi ? `${orcamento.bdi}%` : "0%"}
-            </h2>
-            {orcamento.bdi_config?.bdi_diferenciado ? (
-              <span className="font-['JetBrains_Mono'] font-semibold text-[10px] text-[#00a3b1] bg-[rgba(0,163,177,0.1)] px-1.5 py-0.5 rounded">
-                Dif: {orcamento.bdi_config.bdi_diferenciado}%
-              </span>
-            ) : null}
-          </div>
-          <div className="bg-[#f1f5f9] h-[4px] rounded-full w-full overflow-hidden mt-3">
-            <div className="bg-[#9fd300] h-full rounded-full" style={{ width: "100%" }} />
-          </div>
-        </div>
-
-        {/* Card 3: MARGEM PREVISTA */}
-        <div className="bg-white border border-[#f1f5f9] rounded-[8px] p-5 flex flex-col justify-between shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-          <span className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-            MARGEM PREVISTA
-          </span>
-          <h2 className="font-['Manrope'] font-extrabold text-[24px] lg:text-[28px] text-[#001b3d] mt-2 truncate">
-            {formatCurrency((orcamento.valor_total || 1240000) * 0.15)}
-          </h2>
-          <div className="bg-[#f1f5f9] h-[4px] rounded-full w-full overflow-hidden mt-3">
-            <div className="bg-[#00a3b1] h-full rounded-full" style={{ width: "15%" }} />
-          </div>
-        </div>
-
-        {/* Card 4: DIAS DE EXECUÇÃO */}
-        <div className="bg-white border border-[#f1f5f9] rounded-[8px] p-5 flex flex-col justify-between shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-          <span className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-            DIAS DE EXECUÇÃO
-          </span>
-          <h2 className="font-['Manrope'] font-extrabold text-[28px] text-[#001b3d] mt-2">
-            {diasExecucao !== null ? `${diasExecucao} ${diasExecucao === 1 ? "Dia" : "Dias"}` : "Não definido"}
-          </h2>
-          <div className="bg-[#f1f5f9] h-[4px] rounded-full w-full overflow-hidden mt-3">
-            <div className="bg-[#00a3b1] h-full rounded-full" style={{ width: "100%" }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs list */}
-      <div className="bg-white border-b border-[#f1f5f9] flex items-center gap-6 overflow-x-auto px-2">
-        {[
-          { id: "planilha", label: "Planilha Orçamentária" },
-          { id: "abc", label: "Curva ABC" },
-          { id: "cronograma", label: "Cronograma Financeiro" },
-          { id: "anexos", label: "Anexos" }
-        ].map((tab) => {
-          const isSelected = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as TabType)}
-              className={`pb-4 pt-1 px-1 font-['Manrope'] text-[14px] font-bold transition-all border-none bg-transparent cursor-pointer whitespace-nowrap relative ${
-                isSelected ? "text-[#001b3d]" : "text-[#64748b] hover:text-[#001b3d]"
-              }`}
-            >
-              {tab.label}
-              {isSelected && (
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#00a3b1]" />
+              {isStatusDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-10 bg-transparent" onClick={() => setIsStatusDropdownOpen(false)} />
+                  <div className="gp-card absolute left-0 mt-1 w-48 py-1 z-20" style={{ borderRadius: 14, border: "1px solid #E6EBF2", boxShadow: "0 10px 24px -12px rgba(0,27,61,0.35)" }}>
+                    {STATUS_ORDER.map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => handleUpdateStatus(key)}
+                        className="gp-row w-full text-left px-3 flex items-center gap-2 border-none bg-transparent cursor-pointer"
+                        style={{ minHeight: 40, fontSize: 14, fontWeight: 700, color: "#001b3d" }}
+                      >
+                        <span aria-hidden="true" className={`gp-bg ${badgeClass(key)}`} style={{ padding: 0, background: "transparent" }}>
+                          <span className="gp-dot"></span>
+                        </span>
+                        {STATUS_INFO[key].label}
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
+            </div>
+          </div>
+          <p className="gp-ms" style={{ margin: "6px 0 0" }}>
+            {orcamento.cliente || "Cliente não informado"} · {orcamento.fonte}
+            {orcamento.estado ? ` ${orcamento.estado.toUpperCase()}` : ""} {orcamento.base_referencia} · {orcamento.tipo_composicao}
+          </p>
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <button type="button" onClick={handleExportPDF} className="gp-btn gp-bs">
+            <DownloadSimple size={16} weight="bold" aria-hidden="true" />
+            Exportar PDF
+          </button>
+          <button type="button" onClick={handleOpenEditModal} className="gp-btn gp-bs">
+            <PencilSimple size={16} weight="bold" aria-hidden="true" />
+            Editar
+          </button>
+          <Link href={`/prazo/${orcamento.id}`} className="gp-btn gp-bs">
+            <CalendarBlank size={16} weight="bold" aria-hidden="true" />
+            Cronograma
+          </Link>
+          <button type="button" className="gp-btn gp-bs">
+            <Copy size={16} weight="bold" aria-hidden="true" />
+            Duplicar
+          </button>
+          {isAprovado ? (
+            <button
+              type="button"
+              onClick={() => setIsTransitionDrawerOpen(true)}
+              disabled={jaTemObra}
+              title={jaTemObra ? "Este orçamento já está vinculado a uma obra" : undefined}
+              className="gp-btn gp-bd"
+              style={jaTemObra ? { background: "#EDF1F6", color: "#64748b", cursor: "not-allowed" } : undefined}
+            >
+              <HardHat size={16} weight="bold" aria-hidden="true" />
+              {jaTemObra ? "Obra já gerada" : "Gerar Obra"}
             </button>
-          );
-        })}
+          ) : (
+            <button type="button" className="gp-btn" style={{ background: "#EDF1F6", color: "#64748b", cursor: "not-allowed" }} disabled>
+              <FileText size={16} weight="bold" aria-hidden="true" />
+              Gerar Contrato
+            </button>
+          )}
+        </div>
+      </div>
+
+      <section
+        aria-label="Totais"
+        className="gp-card"
+        style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 1, overflow: "hidden", background: "#E6EBF2" }}
+      >
+        <div style={totalCell(true)}>
+          <p className="gp-ml" style={{ margin: 0, color: "#cbd5e1" }}>Total com BDI</p>
+          <p className="gp-mono" title={formatCurrency(orcamento.valor_total)} style={{ margin: "6px 0 0", fontSize: 26, fontWeight: 600 }}>
+            {formatCurrency(orcamento.valor_total)}
+          </p>
+        </div>
+        <div style={totalCell(false)}>
+          <p className="gp-ml" style={{ margin: 0 }}>Custo direto</p>
+          <p className="gp-mono" style={{ margin: "6px 0 0", fontSize: 22, fontWeight: 600 }}>{formatCurrency(custoDireto)}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsBdiModalOpen(true)}
+          aria-label="Configurar BDI aplicado"
+          style={{ ...totalCell(false), border: 0, textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit" }}
+        >
+          <p className="gp-ml" style={{ margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+            BDI {orcamento.bdi ? `${orcamento.bdi}%` : "0%"}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, color: "#00626b" }}>
+              <Calculator size={12} weight="bold" aria-hidden="true" />
+              {orcamento.tipo_bdi === "SINTETICO" ? "Sintético" : "Analítico TCU"}
+            </span>
+            {orcamento.bdi_config?.bdi_diferenciado ? (
+              <span style={{ fontSize: 12, color: "#9A3412" }}>Dif: {orcamento.bdi_config.bdi_diferenciado}%</span>
+            ) : null}
+          </p>
+          <p className="gp-mono" style={{ margin: "6px 0 0", fontSize: 22, fontWeight: 600 }}>{formatCurrency(valorBdi)}</p>
+        </button>
+        <div style={totalCell(false)}>
+          <p className="gp-ml" style={{ margin: 0 }}>Dias de execução</p>
+          <p className="gp-mono" style={{ margin: "6px 0 0", fontSize: 22, fontWeight: 600 }}>
+            {diasExecucao !== null ? `${diasExecucao} ${diasExecucao === 1 ? "dia" : "dias"}` : "Não definido"}
+          </p>
+        </div>
+      </section>
+
+      <div className="gp-tabs" role="tablist" aria-label="Seções do orçamento">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className="gp-tab"
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Active Tab View Rendering */}
-      <div className="min-h-[400px]">
+      <div className="min-h-[400px]" role="tabpanel">
         {activeTab === "planilha" && (
-          <PlanilhaView 
-            orcamentoId={orcamento.id} 
+          <PlanilhaView
+            orcamentoId={orcamento.id}
             estadoOrcamento={orcamento.estado}
             fonteOrcamento={orcamento.fonte}
             bdiOrcamento={orcamento.bdi || 0}
@@ -410,30 +371,22 @@ export default function OrcamentoDetalhePage() {
           />
         )}
 
-        {activeTab === "abc" && (
-          <CurvaAbcView orcamentoId={orcamento.id} />
-        )}
+        {activeTab === "abc" && <CurvaAbcView orcamentoId={orcamento.id} />}
 
-        {activeTab === "cronograma" && (
-          <CronogramaFinanceiroView orcamentoId={orcamento.id} />
-        )}
+        {activeTab === "cronograma" && <CronogramaFinanceiroView orcamentoId={orcamento.id} />}
 
         {activeTab === "anexos" && (
-          <div className="bg-white border border-[#f1f5f9] rounded-[8px] p-12 text-center flex flex-col items-center justify-center gap-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] border-dashed">
-            <div className="w-12 h-12 rounded-full bg-[#f8fafc] flex items-center justify-center text-[#00a3b1]">
-              <UploadSimple size={24} />
-            </div>
+          <div className="gp-card" style={{ padding: 48, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 14, border: "1px dashed #CBD5E1" }}>
+            <span aria-hidden="true" style={{ width: 48, height: 48, borderRadius: 14, background: "#e0f5f7", color: "#00626b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <UploadSimple size={24} weight="bold" />
+            </span>
             <div>
-              <h4 className="font-['Manrope'] font-extrabold text-[18px] text-[#001b3d] mb-1">
-                Nenhum anexo adicionado
-              </h4>
-              <p className="font-['Manrope'] font-medium text-[14px] text-[#64748b]">
+              <h3 className="gp-h2" style={{ marginBottom: 4 }}>Nenhum anexo adicionado</h3>
+              <p className="gp-sub" style={{ margin: 0 }}>
                 Faça o upload de contratos, imagens do canteiro ou documentos de suporte.
               </p>
             </div>
-            <button className="mt-2 border border-[#f1f5f9] rounded-[8px] bg-white text-[#001b3d] font-['Manrope'] font-bold text-[13px] px-5 py-2.5 hover:bg-[#f8fafc] transition-all shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-pointer">
-              Selecionar Arquivos
-            </button>
+            <button type="button" className="gp-btn gp-bs gp-sm">Selecionar arquivos</button>
           </div>
         )}
       </div>
@@ -445,115 +398,84 @@ export default function OrcamentoDetalhePage() {
         title="Configurações do Orçamento"
         maxWidth="max-w-4xl"
       >
-        <form onSubmit={handleSaveOrcamento} className="flex flex-col gap-6 text-[#001b3d]">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider font-['JetBrains_Mono']">Nome do Orçamento</label>
-              <input
-                type="text"
-                value={editNome}
-                onChange={(e) => setEditNome(e.target.value)}
-                required
-                className="border border-[#f1f5f9] rounded-[8px] p-2.5 outline-none focus:border-[#00a3b1] bg-[#f8fafc] text-sm font-['Manrope'] text-[#001b3d]"
-              />
+        <form onSubmit={handleSaveOrcamento} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+            <div className="gp-fld">
+              <label htmlFor="e-nome" className="gp-lb">Nome do orçamento</label>
+              <input id="e-nome" className="gp-in" type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} required />
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider font-['JetBrains_Mono']">Cliente</label>
-              <input
-                type="text"
-                value={editCliente}
-                onChange={(e) => setEditCliente(e.target.value)}
-                required
-                className="border border-[#f1f5f9] rounded-[8px] p-2.5 outline-none focus:border-[#00a3b1] bg-[#f8fafc] text-sm font-['Manrope'] text-[#001b3d]"
-              />
+            <div className="gp-fld">
+              <label htmlFor="e-cli" className="gp-lb">Cliente</label>
+              <input id="e-cli" className="gp-in" type="text" value={editCliente} onChange={(e) => setEditCliente(e.target.value)} required />
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider font-['JetBrains_Mono']">BDI (%)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={editBdi}
-                onChange={(e) => setEditBdi(parseFloat(e.target.value) || 0)}
-                required
-                className="border border-[#f1f5f9] rounded-[8px] p-2.5 outline-none focus:border-[#00a3b1] bg-[#f8fafc] text-sm font-['Manrope'] text-[#001b3d]"
-              />
+            <div className="gp-fld">
+              <label htmlFor="e-bdi" className="gp-lb">BDI (%)</label>
+              <input id="e-bdi" className="gp-in gp-mono" type="number" step="0.01" value={editBdi} onChange={(e) => setEditBdi(parseFloat(e.target.value) || 0)} required />
             </div>
           </div>
 
-          <div className="border-t border-[#f1f5f9] pt-4">
-            {/* Locais Section */}
-            <div className="flex flex-col gap-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-bold text-[13px] text-[#001b3d] uppercase tracking-wide font-['JetBrains_Mono']">
-                  Locais da Obra
-                </h3>
-                <button
-                  type="button"
-                  onClick={addLocal}
-                  className="text-[10px] font-bold text-[#001b3d] bg-[#9fd300] hover:bg-[#9fd300]/90 px-3 py-1.5 rounded-[8px] flex items-center gap-1 border-none cursor-pointer uppercase tracking-wider font-['JetBrains_Mono']"
-                >
-                  <Plus size={12} weight="bold" /> Add Local
-                </button>
-              </div>
+          <div style={{ borderTop: "1px solid #E6EBF2", paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 className="gp-h2" style={{ fontSize: 16 }}>Locais da obra</h3>
+              <button type="button" onClick={addLocal} className="gp-btn gp-bp gp-sm">
+                <Plus size={14} weight="bold" aria-hidden="true" /> Adicionar local
+              </button>
+            </div>
 
-              <div className="border border-[#f1f5f9] rounded-[8px] overflow-hidden bg-white max-h-[220px] overflow-y-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-[#f8fafc] text-[#64748b] font-medium text-[10px] uppercase border-b border-[#f1f5f9] font-['JetBrains_Mono']">
-                      <th className="px-3 py-2">Local (Nome)</th>
-                      <th className="px-3 py-2 w-10 text-center">Ações</th>
+            <div style={{ border: "1px solid #E6EBF2", borderRadius: 14, overflow: "hidden", maxHeight: 220, overflowY: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <caption className="gp-sr">Locais da obra</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" className="gp-th">Local (nome)</th>
+                    <th scope="col" className="gp-th" style={{ width: 56, textAlign: "center" }}>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {editLocais.length === 0 ? (
+                    <tr>
+                      <td colSpan={2} className="gp-td" style={{ textAlign: "center", color: "#475569" }}>
+                        Nenhum local cadastrado.
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#f1f5f9]">
-                    {editLocais.length === 0 ? (
-                      <tr>
-                        <td colSpan={2} className="text-center py-6 text-xs text-[#94a3b8] italic font-['Manrope']">
-                          Nenhum local cadastrado.
+                  ) : (
+                    editLocais.map((loc, index) => (
+                      <tr key={index}>
+                        <td className="gp-td" style={{ padding: "6px 12px" }}>
+                          <input
+                            type="text"
+                            value={loc}
+                            onChange={(e) => updateLocal(index, e.target.value)}
+                            aria-label={`Nome do local ${index + 1}`}
+                            className="gp-in"
+                            style={{ height: 40 }}
+                            placeholder="Ex.: Cozinha"
+                          />
+                        </td>
+                        <td className="gp-td" style={{ textAlign: "center", padding: "6px 12px" }}>
+                          <button
+                            type="button"
+                            onClick={() => removeLocal(index)}
+                            aria-label={`Remover local ${index + 1}`}
+                            className="gp-ib"
+                            style={{ width: 36, height: 36, borderRadius: 10, color: "#B91C1C" }}
+                          >
+                            <Trash size={16} weight="bold" aria-hidden="true" />
+                          </button>
                         </td>
                       </tr>
-                    ) : (
-                      editLocais.map((loc, index) => (
-                        <tr key={index}>
-                          <td className="px-3 py-1">
-                            <input
-                              type="text"
-                              value={loc}
-                              onChange={(e) => updateLocal(index, e.target.value)}
-                              className="w-full bg-transparent border-b border-transparent hover:border-[#f1f5f9] focus:border-[#00a3b1] outline-none text-xs py-1 font-['Manrope'] text-[#001b3d]"
-                              placeholder="EX: Cozinha"
-                            />
-                          </td>
-                          <td className="px-3 py-1 text-center">
-                            <button
-                              type="button"
-                              onClick={() => removeLocal(index)}
-                              className="text-[#94a3b8] hover:text-red-500 p-1 bg-transparent border-none cursor-pointer"
-                            >
-                              <Trash size={14} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-[#f1f5f9] pt-4 mt-2">
-            <button
-              type="button"
-              onClick={() => setIsEditModalOpen(false)}
-              className="px-5 py-2 text-[#64748b] hover:bg-[#f8fafc] rounded-[8px] text-sm font-bold border-none bg-transparent cursor-pointer font-['Manrope']"
-            >
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, borderTop: "1px solid #E6EBF2", paddingTop: 16 }}>
+            <button type="button" onClick={() => setIsEditModalOpen(false)} className="gp-btn gp-bs">
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-[#001b3d] text-white hover:bg-[#00102a] px-6 py-2.5 rounded-[8px] text-sm font-bold disabled:opacity-50 border-none cursor-pointer font-['Manrope']"
-            >
+            <button type="submit" disabled={saving} className="gp-btn gp-bd" style={{ opacity: saving ? 0.6 : 1 }}>
               {saving ? "Salvando..." : "Salvar Configurações"}
             </button>
           </div>
@@ -584,7 +506,6 @@ export default function OrcamentoDetalhePage() {
           }}
         />
       )}
-    </div>
+    </>
   );
 }
-

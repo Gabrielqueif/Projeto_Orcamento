@@ -2,16 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  BookOpen,
-  Clock,
-  CompassTool,
-  Cube,
-  Money,
-  TrendUp,
-  Wallet,
-  WarningCircle,
-} from '@phosphor-icons/react';
+import { BookOpen, Clock, Cube, Money, Plus } from '@phosphor-icons/react';
 import { MetricCard } from '../../components/dashboard/MetricCard';
 import WeeklyProgressChart, { CORES_SERIES } from '../../components/dashboard/WeeklyProgressChart';
 import BudgetGauge from '../../components/dashboard/BudgetGauge';
@@ -19,10 +10,10 @@ import { RiskItem } from '../../components/dashboard/RiskItem';
 import { getDashboard, type Dashboard, type TipoRisco } from '../../lib/api/dashboard';
 
 const ICONES_RISCO: Record<TipoRisco, React.ReactNode> = {
-  ATRASO: <Clock />,
-  ORCAMENTO: <Money />,
-  ESTOQUE: <Cube />,
-  DIARIO: <BookOpen />,
+  ATRASO: <Clock weight="bold" />,
+  ORCAMENTO: <Money weight="bold" />,
+  ESTOQUE: <Cube weight="bold" />,
+  DIARIO: <BookOpen weight="bold" />,
 };
 
 function formatarDia(iso: string): string {
@@ -52,69 +43,84 @@ export default function DashboardPage() {
   }, [carregar]);
 
   if (carregando) {
-    return <p className="p-12 text-center text-[14px] text-text-muted">Carregando painel…</p>;
+    return <p role="status" className="gp-sub" style={{ padding: 48, textAlign: 'center' }}>Carregando painel…</p>;
   }
 
   if (erro || !painel) {
     return (
-      <div className="p-12 text-center">
-        <p className="text-[14px] text-status-danger">{erro ?? 'Não foi possível carregar o painel.'}</p>
-        <button onClick={carregar} className="mt-4 px-4 py-2 rounded-lg bg-bg-light text-sm font-semibold text-text-main">
+      <div style={{ padding: 48, textAlign: 'center' }}>
+        <p role="alert" style={{ margin: 0, fontSize: 14, color: '#B91C1C' }}>{erro ?? 'Não foi possível carregar o painel.'}</p>
+        <button onClick={carregar} className="gp-btn gp-bs gp-sm" style={{ marginTop: 16 }}>
           Tentar novamente
         </button>
       </div>
     );
   }
 
+  const hojeLongo = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const hoje = hojeLongo.charAt(0).toUpperCase() + hojeLongo.slice(1);
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="mb-6">
-        <h1 className="text-[28px] font-bold text-text-main mb-2">Visão Executiva</h1>
-        <p className="text-[15px] text-text-muted">Métricas de desempenho das suas obras em andamento.</p>
+    <>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
+        <div>
+          <p className="gp-crumb" style={{ margin: 0 }}>{hoje}</p>
+          <h1 className="gp-h1">Visão geral</h1>
+          <p className="gp-sub">Métricas de desempenho das suas obras em andamento.</p>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          <Link href="/orcamentos/novo" className="gp-btn gp-bs">Novo orçamento</Link>
+          <Link href="/obras/novo" className="gp-btn gp-bd"><Plus size={18} weight="bold" aria-hidden="true" />Nova obra</Link>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <MetricCard
-          title="Obras Ativas"
-          value={painel.obras_ativas.toString().padStart(2, '0')}
-          icon={<CompassTool />}
-          borderBottomClass="border-b-brand-primary"
-        />
-        <MetricCard
-          title="Progresso Médio"
-          value={`${painel.progresso_medio}%`}
-          icon={<TrendUp />}
-          borderBottomClass="border-b-[#06B6D4]"
-        />
+      <section aria-label="Indicadores" className="gp-grid">
+        <MetricCard dark title="Obras Ativas" value={painel.obras_ativas.toString().padStart(2, '0')} />
+        <MetricCard title="Progresso Médio" value={`${painel.progresso_medio}%`} />
         <MetricCard
           title="Orçamento Utilizado"
           value={`${painel.utilizacao_orcamento.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}
-          icon={<Wallet />}
-          borderBottomClass="border-b-bg-dark"
         />
-        <MetricCard
-          title="Riscos Críticos"
-          value={painel.alertas_criticos.toString().padStart(2, '0')}
-          icon={<WarningCircle weight="fill" />}
-          borderBottomClass="border-b-status-danger"
-        />
-      </div>
+        <MetricCard title="Riscos Críticos" value={painel.alertas_criticos.toString().padStart(2, '0')} />
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2 bg-surface border border-border rounded-xl p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-border">
-          <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
-            <h3 className="text-base font-bold text-text-main">PROGRESSO SEMANAL</h3>
-            <div className="flex flex-wrap gap-4 text-[11px] font-bold text-text-muted uppercase tracking-wide">
+      <section aria-labelledby="h-atencao" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <h2 id="h-atencao" className="gp-h2">Riscos prioritários</h2>
+        {painel.riscos.length === 0 ? (
+          <p className="gp-sub" style={{ margin: 0 }}>Nenhum risco identificado nas obras em andamento.</p>
+        ) : (
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12 }}>
+            {painel.riscos.map((risco) => (
+              <li key={`${risco.tipo}-${risco.href}`}>
+                <Link href={risco.href} style={{ display: 'block', textDecoration: 'none' }}>
+                  <RiskItem
+                    icon={ICONES_RISCO[risco.tipo]}
+                    title={risco.titulo}
+                    description={risco.descricao}
+                    severity={risco.severidade}
+                  />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <div className="gp-split">
+        <section className="gp-card gp-pad gp-main" aria-labelledby="h-prog" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <h2 id="h-prog" className="gp-h2">Progresso semanal</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 13, fontWeight: 700, color: '#475569' }}>
               {painel.series.map((serie, i) => (
-                <span key={serie.obra_id} className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: CORES_SERIES[i % CORES_SERIES.length] }}></span>
+                <span key={serie.obra_id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span className="gp-dot" style={{ background: CORES_SERIES[i % CORES_SERIES.length] }} aria-hidden="true"></span>
                   {serie.nome}
                 </span>
               ))}
             </div>
           </div>
           {painel.series.length === 0 ? (
-            <p className="text-[14px] text-text-muted">
+            <p className="gp-sub" style={{ margin: 0 }}>
               {painel.obras_ativas === 0
                 ? 'Nenhuma obra em andamento.'
                 : 'Defina as datas das etapas e registre medições para acompanhar o avanço semanal.'}
@@ -122,60 +128,44 @@ export default function DashboardPage() {
           ) : (
             <WeeklyProgressChart semanas={painel.semanas} series={painel.series} />
           )}
-        </div>
-        <BudgetGauge
-          utilizacao={painel.utilizacao_orcamento}
-          gastoRealizado={painel.gasto_realizado}
-          disponivel={painel.disponivel}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
-          <h3 className="text-base font-bold text-text-main mb-4">RISCOS PRIORITÁRIOS</h3>
-          {painel.riscos.length === 0 ? (
-            <p className="text-[14px] text-text-muted">Nenhum risco identificado nas obras em andamento.</p>
-          ) : (
-            painel.riscos.map((risco) => (
-              <Link key={`${risco.tipo}-${risco.href}`} href={risco.href} className="block no-underline">
-                <RiskItem
-                  icon={ICONES_RISCO[risco.tipo]}
-                  title={risco.titulo}
-                  description={risco.descricao}
-                  severity={risco.severidade}
-                />
-              </Link>
-            ))
-          )}
-        </div>
-
-        <div>
-          <h3 className="text-base font-bold text-text-main mb-4">DIÁRIO DE OBRA</h3>
-          {painel.feed.length === 0 ? (
-            <p className="text-[14px] text-text-muted">Nenhum registro de diário nos últimos 60 dias.</p>
-          ) : (
-            painel.feed.map((item) => (
-              <Link
-                key={`${item.href}-${item.data}`}
-                href={item.href}
-                className="flex items-start gap-4 p-4 border border-border rounded-lg bg-surface mb-3 no-underline transition-all hover:-translate-y-0.5 hover:shadow-sm"
-              >
-                <div className="w-9 h-9 rounded-full bg-bg-dark text-white flex items-center justify-center shrink-0">
-                  <BookOpen weight="fill" />
-                </div>
-                <div>
-                  <h4 className="text-sm text-text-main mb-1">
-                    <strong className="font-semibold">{item.titulo}</strong>
-                  </h4>
-                  <p className="text-[11px] text-text-muted uppercase">
-                    {item.obra_nome} • {formatarDia(item.data)} • {item.status}
-                  </p>
-                </div>
-              </Link>
-            ))
-          )}
+        </section>
+        <div className="gp-side">
+          <BudgetGauge
+            utilizacao={painel.utilizacao_orcamento}
+            gastoRealizado={painel.gasto_realizado}
+            disponivel={painel.disponivel}
+          />
         </div>
       </div>
-    </div>
+
+      <section className="gp-card gp-pad" aria-labelledby="h-diario" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <h2 id="h-diario" className="gp-h2">Diário de obra</h2>
+        {painel.feed.length === 0 ? (
+          <p className="gp-sub" style={{ margin: 0 }}>Nenhum registro de diário nos últimos 60 dias.</p>
+        ) : (
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            {painel.feed.map((item) => (
+              <li key={`${item.href}-${item.data}`}>
+                <Link
+                  href={item.href}
+                  className="gp-row"
+                  style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 10px', borderTop: '1px solid #E6EBF2', borderRadius: 12, textDecoration: 'none', color: '#001b3d' }}
+                >
+                  <span aria-hidden="true" style={{ width: 36, height: 36, flex: '0 0 36px', borderRadius: 10, background: '#e0f5f7', color: '#00626b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <BookOpen weight="bold" size={18} />
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <strong style={{ display: 'block', fontSize: 15, fontWeight: 800 }}>{item.titulo}</strong>
+                    <span style={{ fontSize: 13, color: '#475569' }}>
+                      {item.obra_nome} · {formatarDia(item.data)} · {item.status}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
   );
 }

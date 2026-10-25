@@ -248,18 +248,21 @@ export function OrcamentoItemForm({
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md max-h-[80vh] overflow-y-auto">
-      <h3 className="text-lg font-bold text-slate-800 mb-4">
+    <div className="gp-card gp-pad" style={{ maxHeight: "80vh", overflowY: "auto" }}>
+      <h3 className="gp-h2" style={{ marginBottom: 16 }}>
         {itemToEdit ? "Editar Item" : "Adicionar Item"}
       </h3>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+        <div
+          role="alert"
+          style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 14, background: "#FEE2E2", color: "#B91C1C", fontSize: 14, fontWeight: 700 }}
+        >
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {/* Seleção de Etapa */}
         <EtapaSelect
           etapas={etapas}
@@ -285,30 +288,28 @@ export function OrcamentoItemForm({
 
         {/* Estado do Orçamento (Informativo) */}
         {estadoOrcamento ? (
-          <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">
-            <p className="text-sm text-blue-800">
-              <span className="font-semibold">Estado do orçamento:</span>{" "}
+          <div style={{ padding: "12px 16px", borderRadius: 14, background: "#e0f5f7", color: "#00626b" }}>
+            <p style={{ margin: 0, fontSize: 14 }}>
+              <strong>Estado do orçamento:</strong>{" "}
               {ESTADOS.find((e) => e.value === estadoOrcamento)?.label ||
                 estadoOrcamento.toUpperCase()}
             </p>
-            <p className="text-xs text-brand-primary mt-1">
+            <p className="gp-hint" style={{ margin: "4px 0 0", color: "#00626b" }}>
               Os preços serão buscados automaticamente para este estado.
             </p>
           </div>
         ) : (
-          <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md">
-            <p className="text-sm text-yellow-800">
-              ⚠️ Estado não definido. Por favor, edite o orçamento e selecione um estado primeiro.
-            </p>
+          <div role="alert" className="gp-wa" style={{ padding: "12px 16px", borderRadius: 14, fontSize: 14, fontWeight: 700 }}>
+            Estado não definido. Por favor, edite o orçamento e selecione um estado primeiro.
           </div>
         )}
 
         {/* Quantidade & Gatilho da Memória de Cálculo */}
-        <div>
-          <label className="block text-sm font-bold mb-2" htmlFor="quantidade">
+        <div className="gp-fld">
+          <label className="gp-lb" htmlFor="quantidade">
             Quantidade
           </label>
-          <div className="relative">
+          <div className="gp-affix">
             <input
               type="number"
               id="quantidade"
@@ -317,47 +318,36 @@ export function OrcamentoItemForm({
               onClick={openFormulaModal}
               min="0.01"
               step="0.01"
-              className="border border-gray-300 p-2 w-full rounded-md cursor-pointer hover:bg-slate-50 outline-none focus:ring-2 focus:ring-brand-primary"
               required
               disabled={!composicaoSelecionada}
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 6L6 18" />
-                <path d="M6 6l12 12" />
-              </svg>
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Clique para abrir a memória de cálculo e definir a fórmula
-            </p>
+            {composicaoSelecionada && <span>{composicaoSelecionada.unidade}</span>}
           </div>
+          <button
+            type="button"
+            onClick={openFormulaModal}
+            disabled={!composicaoSelecionada}
+            style={{ alignSelf: "flex-start", border: 0, background: "transparent", padding: 0, fontSize: 14, fontWeight: 800, color: "#001b3d", textDecoration: "underline", cursor: "pointer" }}
+          >
+            Calcular pela memória de cálculo
+          </button>
         </div>
 
+        {composicaoSelecionada?.preco != null && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "14px 16px", borderRadius: 14, background: "#001b3d", color: "#fff" }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#cbd5e1" }}>Total do item</span>
+            <span className="gp-mono" style={{ fontSize: 22, fontWeight: 600 }}>
+              {((parseFloat(quantidade) || 0) * composicaoSelecionada.preco).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            </span>
+          </div>
+        )}
+
         {/* Botões de Ação */}
-        <div className="flex gap-2">
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 p-2 rounded-md transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-          )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <button
             type="submit"
             disabled={submitting || !composicaoSelecionada || !estadoOrcamento}
-            className="flex-1 bg-brand-primary hover:bg-brand-navy disabled:bg-brand-primary/50 text-white p-2 rounded-md transition-colors cursor-pointer"
+            className="gp-btn gp-bp disabled:opacity-50"
           >
             {submitting
               ? "Salvando..."
@@ -365,6 +355,11 @@ export function OrcamentoItemForm({
                 ? "Salvar Alterações"
                 : "Adicionar ao Orçamento"}
           </button>
+          {onCancel && (
+            <button type="button" onClick={onCancel} className="gp-btn gp-bs">
+              Cancelar
+            </button>
+          )}
         </div>
       </form>
 

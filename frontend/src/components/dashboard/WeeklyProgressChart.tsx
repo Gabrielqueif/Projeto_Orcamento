@@ -15,7 +15,7 @@ import type { SerieSemanal } from '@/lib/api/dashboard';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 /** Cores das séries; a legenda do painel usa a mesma lista. */
-export const CORES_SERIES = ['#081225', '#06B6D4', '#AEE112', '#F59E0B'];
+export const CORES_SERIES = ['#001b3d', '#00a3b1', '#9fd300', '#F97316'];
 
 type WeeklyProgressChartProps = {
   semanas: string[];

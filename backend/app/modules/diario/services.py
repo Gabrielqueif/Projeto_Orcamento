@@ -147,7 +147,7 @@ class DiarioService:
                 }
             )
         linhas = self.repository.servicos_dos_diarios([d["id"] for d in diarios])
-        itens = {i["id"]: i for i in self.repository.itens_por_ids(list({l["item_id"] for l in linhas}))}
+        itens = {i["id"]: i for i in self.repository.itens_por_ids(list({linha["item_id"] for linha in linhas}))}
         servicos: Dict[str, List[Dict[str, Any]]] = {}
         for linha in linhas:
             item = itens.get(linha["item_id"])
@@ -161,7 +161,9 @@ class DiarioService:
                     "descricao": item["descricao"],
                     "unidade": item["unidade"],
                     "quantidade": quantidade,
-                    "percentual": round(100 * quantidade / float(item["quantidade"]), 1) if float(item["quantidade"]) else 0,
+                    "percentual": round(100 * quantidade / float(item["quantidade"]), 1)
+                    if float(item["quantidade"])
+                    else 0,
                 }
             )
         return [
@@ -227,7 +229,9 @@ class DiarioService:
             # Outros diários já consumiram parte do orçado; este só pode lançar o que sobra.
             restante = float(item["quantidade"]) - em_outros.get(servico.item_id, 0.0)
             if servico.quantidade > restante + 1e-6:
-                raise ValueError(f"A quantidade de '{item['descricao']}' passa do que falta do orçado ({max(restante, 0):g})")
+                raise ValueError(
+                    f"A quantidade de '{item['descricao']}' passa do que falta do orçado ({max(restante, 0):g})"
+                )
 
     def _sincronizar_medicoes(
         self, real: str, orcamento_id: Optional[str], desde: date, diario_id: Optional[str], data_diario: Optional[date]

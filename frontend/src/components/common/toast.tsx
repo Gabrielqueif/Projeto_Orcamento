@@ -18,18 +18,24 @@ interface ToastContextData {
 
 const ToastContext = createContext<ToastContextData>({} as ToastContextData);
 
+const ICONE: Record<ToastType, { bg: string; fg: string; Icon: typeof Info }> = {
+  success: { bg: "#9fd300", fg: "#001b3d", Icon: CheckCircle },
+  error: { bg: "#FEE2E2", fg: "#B91C1C", Icon: Warning },
+  warning: { bg: "#FEF3C7", fg: "#92400E", Icon: Warning },
+  info: { bg: "#00a3b1", fg: "#001b3d", Icon: Info },
+};
+
 export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const showToast = (title: string, message?: string, type: ToastType = "info") => {
     const id = Math.random().toString(36).substring(2, 9);
-    const newToast: ToastMessage = { id, type, title, message };
-    
-    setToasts((prev) => [...prev, newToast]);
+    setToasts((prev) => [...prev, { id, type, title, message }]);
 
-    setTimeout(() => {
-      removeToast(id);
-    }, 4000);
+    // Erro fica até o usuário fechar; os demais somem em 5 s.
+    if (type !== "error") {
+      setTimeout(() => removeToast(id), 5000);
+    }
   };
 
   const removeToast = (id: string) => {
@@ -39,51 +45,39 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      {/* Toast Container */}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-[360px] w-full pointer-events-none">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-lg border text-left transition-all animate-in fade-in slide-in-from-bottom-2 ${
-              toast.type === "success"
-                ? "bg-color-white border-color-success-dark/30 text-color-heading"
-                : toast.type === "error"
-                ? "bg-color-white border-color-danger-dark/30 text-color-heading"
-                : toast.type === "warning"
-                ? "bg-color-white border-color-warning-dark/30 text-color-heading"
-                : "bg-color-white border-color-border text-color-heading"
-            }`}
-          >
-            {toast.type === "success" && (
-              <CheckCircle size={20} className="text-color-success-dark shrink-0 mt-0.5" />
-            )}
-            {toast.type === "error" && (
-              <Warning size={20} className="text-color-danger shrink-0 mt-0.5" />
-            )}
-            {toast.type === "warning" && (
-              <Warning size={20} className="text-color-warning-dark shrink-0 mt-0.5" />
-            )}
-            {toast.type === "info" && (
-              <Info size={20} className="text-color-teal shrink-0 mt-0.5" />
-            )}
-
-            <div className="flex-1 min-w-0">
-              <h4 className="text-[13px] font-bold leading-tight">{toast.title}</h4>
-              {toast.message && (
-                <p className="text-[11px] text-color-text-muted mt-1 leading-snug">
-                  {toast.message}
-                </p>
-              )}
-            </div>
-
-            <button
-              onClick={() => removeToast(toast.id)}
-              className="text-color-text-muted hover:text-color-heading transition-colors border-none bg-transparent cursor-pointer p-0"
+      <div
+        role="status"
+        aria-live="polite"
+        style={{ position: "fixed", right: 24, bottom: 24, zIndex: 60, width: 420, maxWidth: "calc(100% - 48px)", display: "flex", flexDirection: "column", gap: 8, pointerEvents: "none" }}
+      >
+        {toasts.map((toast) => {
+          const { bg, fg, Icon } = ICONE[toast.type];
+          return (
+            <div
+              key={toast.id}
+              className="gp-toast"
+              style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 12, padding: "10px 8px 10px 16px", borderRadius: 16, background: "#00102a", color: "#fff", boxShadow: "0 18px 36px -14px rgba(0,16,42,.7)" }}
             >
-              <X size={14} />
-            </button>
-          </div>
-        ))}
+              <span aria-hidden="true" style={{ width: 28, height: 28, flex: "0 0 28px", borderRadius: 9, background: bg, color: fg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon size={16} weight="bold" />
+              </span>
+              <span style={{ flex: "1 1 auto", minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 15, fontWeight: 700 }}>{toast.title}</span>
+                {toast.message && (
+                  <span style={{ display: "block", fontSize: 13, color: "#cbd5e1", marginTop: 2 }}>{toast.message}</span>
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={() => removeToast(toast.id)}
+                aria-label="Fechar aviso"
+                style={{ width: 40, height: 40, border: 0, background: "transparent", color: "#cbd5e1", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+              >
+                <X size={16} weight="bold" />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </ToastContext.Provider>
   );

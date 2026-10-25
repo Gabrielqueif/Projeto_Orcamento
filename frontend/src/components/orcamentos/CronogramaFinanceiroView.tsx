@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Clock, Spinner } from "@phosphor-icons/react";
-import { getOrcamentoCronograma, type CronogramaResponse, type CronogramaMes } from "@/lib/api/orcamentos";
+import { Spinner } from "@phosphor-icons/react";
+import { getOrcamentoCronograma, type CronogramaResponse } from "@/lib/api/orcamentos";
 
 interface CronogramaFinanceiroViewProps {
   orcamentoId: string;
@@ -35,273 +35,97 @@ export function CronogramaFinanceiroView({ orcamentoId }: CronogramaFinanceiroVi
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12">
-        <div className="flex items-center gap-2 font-['Inter'] text-[14px] text-[#64748b]">
-          <Spinner size={16} className="animate-spin text-[#4b6700]" />
-          <span>Calculando Cronograma Financeiro...</span>
-        </div>
+      <div role="status" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 48, fontSize: 14, color: "#475569" }}>
+        <Spinner size={16} weight="bold" className="animate-spin" aria-hidden="true" />
+        <span>Calculando Cronograma Financeiro...</span>
       </div>
     );
   }
 
   if (!data || data.mensal.length === 0) {
     return (
-      <div className="flex items-center justify-center p-12 bg-white border border-[#c4c6cf] rounded-[12px] shadow-sm">
-        <span className="font-['Inter'] text-[14px] text-[#64748b]">
-          Nenhuma etapa com custos associados disponível para gerar o Cronograma Físico-Financeiro.
-        </span>
+      <div className="gp-card" style={{ padding: 48, textAlign: "center", fontSize: 14, color: "#475569" }}>
+        Nenhuma etapa com custos associados disponível para gerar o Cronograma Físico-Financeiro.
       </div>
     );
   }
 
   const mensalData = data.mensal;
-
-  // SVG Chart Dimensions
-  const width = 800;
-  const height = 280;
-  const paddingLeft = 90;
-  const paddingRight = 60;
-  const paddingTop = 30;
-  const paddingBottom = 40;
-
-  const chartInnerWidth = width - paddingLeft - paddingRight;
-  const chartInnerHeight = height - paddingTop - paddingBottom;
-
-  // X coordinate calculation
-  // Cada mês ocupa uma faixa; barra/ponto ficam centralizados nela (nunca sobre os eixos)
-  const slotWidth = chartInnerWidth / mensalData.length;
-  const barWidth = Math.min(36, slotWidth * 0.5);
-  const getX = (index: number) => paddingLeft + (index + 0.5) * slotWidth;
-
-  // Y coordinate for monthly disbursement bars
   const maxVal = Math.max(...mensalData.map((item) => item.valor), 1);
-  const getBarY = (val: number) => {
-    const ratio = val / maxVal;
-    return height - paddingBottom - ratio * chartInnerHeight;
-  };
-
-  const getBarHeight = (val: number) => {
-    const ratio = val / maxVal;
-    return ratio * chartInnerHeight;
-  };
-
-  // Y coordinate for cumulative S-curve (0% to 100%)
-  const getCurveY = (pct: number) => {
-    const ratio = pct / 100;
-    return height - paddingBottom - ratio * chartInnerHeight;
-  };
-
-  // Generate SVG path for S-curve
-  const curvePath = mensalData.map((item, idx) => {
-    const x = getX(idx);
-    const y = getCurveY(item.acumulado_pct);
-    return `${idx === 0 ? "M" : "L"} ${x} ${y}`;
-  }).join(" ");
-
-  // Encontrar o mês de pico (maior desembolso)
   const picoIndex = mensalData.reduce(
     (maxIdx, item, idx, arr) => (item.valor > arr[maxIdx].valor ? idx : maxIdx),
     0
   );
+  const mil = (v: number) => `${(v / 1000).toFixed(0)} mil`;
+  const ariaGrafico =
+    "Desembolso mensal: " + mensalData.map((m) => `${m.mes} ${mil(m.valor)}`).join("; ") + ".";
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Chart and Stats Row */}
-      <div className="bg-white border border-[#c4c6cf] rounded-[12px] p-6 shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#f1f5f9] pb-4 mb-4">
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <section className="gp-card" aria-labelledby="h-cf">
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "16px 22px", borderBottom: "1px solid #E6EBF2" }}>
           <div>
-            <h3 className="font-['Inter'] font-semibold text-[18px] text-black">
-              Desembolso Mensal e Curva S
-            </h3>
-            <p className="font-['Inter'] font-normal text-[12px] text-[#44474e] mt-0.5">
-              Visualização da projeção de fluxo de caixa e progresso físico-financeiro acumulado.
+            <h2 id="h-cf" className="gp-h2">Desembolso mensal</h2>
+            <p className="gp-hint" style={{ margin: "2px 0 0" }}>
+              Projeção de fluxo de caixa e progresso financeiro acumulado.
             </p>
           </div>
-          <div className="flex gap-4">
-            <div className="flex items-center gap-1.5">
-              <div className="bg-[#001b3d] w-[12px] h-[12px] rounded-[2px]" />
-              <span className="font-['Inter'] font-medium text-[11px] text-[#44474e]">
-                Mensal (R$)
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="bg-[#4b6700] w-[16px] h-[2px]" />
-              <span className="font-['Inter'] font-medium text-[11px] text-[#44474e]">
-                Curva S (% Acumulada)
-              </span>
-            </div>
+          <div className="gp-card" style={{ padding: "10px 16px", border: "1px solid #E6EBF2" }}>
+            <span className="gp-ml">Valor total</span>{" "}
+            <strong className="gp-mono" style={{ fontSize: 20 }}>{formatCurrency(data.valor_total)}</strong>
           </div>
         </div>
 
-        {/* Native SVG Chart */}
-        <div className="w-full overflow-x-auto">
-          <div className="min-w-[800px]">
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
-              {/* Y Axis Grid Lines & Labels (Left: Value, Right: Percent) */}
-              {[0, 25, 50, 75, 100].map((pct) => {
-                const y = getCurveY(pct);
-                const valueLabel = formatCurrency((pct / 100) * maxVal);
-                return (
-                  <g key={pct}>
-                    <line
-                      x1={paddingLeft}
-                      y1={y}
-                      x2={width - paddingRight}
-                      y2={y}
-                      stroke="#ebeef0"
-                      strokeDasharray="3 3"
-                    />
-                    {/* Left Y Axis Label (Currency) */}
-                    <text
-                      x={paddingLeft - 10}
-                      y={y + 3}
-                      className="font-['Inter'] text-[9px] text-[#44474e]"
-                      textAnchor="end"
-                    >
-                      {pct === 100 ? valueLabel : pct === 0 ? "R$ 0" : formatCurrency((pct / 100) * maxVal).split(",")[0]}
-                    </text>
-                    {/* Right Y Axis Label (Percentage) */}
-                    <text
-                      x={width - paddingRight + 10}
-                      y={y + 3}
-                      className="font-['Inter'] text-[9px] text-[#4b6700]"
-                      textAnchor="start"
-                    >
-                      {pct}%
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* Monthly Disbursement Bars */}
-              {mensalData.map((item, idx) => {
-                const x = getX(idx);
-                const y = getBarY(item.valor);
-                const barH = getBarHeight(item.valor);
-                const isPico = idx === picoIndex;
-
-                return (
-                  <g key={idx} className="group cursor-pointer">
-                    <rect
-                      x={x - barWidth / 2}
-                      y={y}
-                      width={barWidth}
-                      height={barH}
-                      fill={isPico ? "#b9f61d" : "#001b3d"}
-                      rx="4"
-                      className="transition-all duration-200 hover:opacity-90"
-                    />
-                    {/* Tooltip on Hover */}
-                    <title>{`${item.mes}: ${formatCurrency(item.valor)}`}</title>
-                  </g>
-                );
-              })}
-
-              {/* S-Curve Path */}
-              {curvePath && (
-                <path
-                  d={curvePath}
-                  fill="none"
-                  stroke="#4b6700"
-                  strokeWidth="3"
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 24, padding: 22 }}>
+          <div
+            role="img"
+            aria-label={ariaGrafico}
+            style={{ flex: "2 1 480px", display: "flex", alignItems: "flex-end", gap: 14, height: 260, paddingBottom: 28, borderBottom: "1px solid #94a3b8" }}
+          >
+            {mensalData.map((m, idx) => (
+              <span
+                key={m.mes}
+                title={`${m.mes}: ${formatCurrency(m.valor)} (acumulado ${m.acumulado_pct}%)`}
+                style={{ flex: "1 1 0", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 6, height: "100%" }}
+              >
+                <span className="gp-mono" style={{ fontSize: 12, fontWeight: 600 }}>{mil(m.valor)}</span>
+                <span
+                  style={{
+                    width: "100%", maxWidth: 56, borderRadius: "10px 10px 4px 4px",
+                    background: idx === picoIndex ? "#9fd300" : "#001b3d",
+                    height: Math.max(2, Math.round((m.valor / maxVal) * 190)),
+                  }}
                 />
-              )}
-
-              {/* S-Curve Markers */}
-              {mensalData.map((item, idx) => {
-                const x = getX(idx);
-                const y = getCurveY(item.acumulado_pct);
-                return (
-                  <g key={idx} className="cursor-pointer">
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="5"
-                      fill="#ffffff"
-                      stroke="#4b6700"
-                      strokeWidth="2.5"
-                    />
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="2"
-                      fill="#4b6700"
-                    />
-                    <title>{`Progresso: ${item.acumulado_pct}%`}</title>
-                  </g>
-                );
-              })}
-
-              {/* X Axis Month Labels */}
-              {mensalData.map((item, idx) => {
-                const x = getX(idx);
-                const y = height - paddingBottom + 20;
-                return (
-                  <text
-                    key={idx}
-                    x={x}
-                    y={y}
-                    className="font-['Inter'] font-semibold text-[10px] text-[#44474e]"
-                    textAnchor="middle"
-                  >
-                    {item.mes}
-                  </text>
-                );
-              })}
-            </svg>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#475569", marginBottom: -26 }}>{m.mes}</span>
+              </span>
+            ))}
           </div>
-        </div>
-      </div>
 
-      {/* Detailed Chronogram Table */}
-      <div className="bg-white border border-[#c4c6cf] rounded-[12px] p-6 shadow-sm">
-        <h3 className="font-['Inter'] font-semibold text-[18px] text-black border-b border-[#f1f5f9] pb-4 mb-4">
-          Detalhamento Cronológico
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table style={{ flex: "1 1 340px", borderCollapse: "collapse", alignSelf: "flex-start" }}>
+            <caption className="gp-sr">Cronograma financeiro por mês</caption>
             <thead>
-              <tr className="border-b border-[#c4c6cf]">
-                <th className="pb-3 font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] uppercase tracking-[0.5px] w-[100px]">
-                  Mês
-                </th>
-                <th className="pb-3 font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] uppercase tracking-[0.5px]">
-                  Serviços Previstos no Período
-                </th>
-                <th className="pb-3 font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] uppercase tracking-[0.5px] text-right w-[150px]">
-                  Desembolso Mensal
-                </th>
-                <th className="pb-3 font-['Hanken_Grotesk'] font-bold text-[10px] text-[#4b6700] uppercase tracking-[0.5px] text-right w-[100px]">
-                  Acumulado
-                </th>
+              <tr>
+                <th scope="col" className="gp-th">Mês</th>
+                <th scope="col" className="gp-th">Serviços previstos</th>
+                <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Valor</th>
+                <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Acum.</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#ebeef0]">
-              {mensalData.map((item, idx) => {
-                const isPico = idx === picoIndex;
-                return (
-                  <tr key={item.mes} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-4 font-['Inter'] font-bold text-[13px] text-[#181c1e]">
-                      {item.mes}
-                    </td>
-                    <td className="py-4 font-['Inter'] text-[13px] text-[#44474e]">
-                      {item.servicos || "—"}
-                    </td>
-                    <td className="py-4 font-['Inter'] font-bold text-[13px] text-black text-right">
-                      <span className={isPico ? "bg-[#b9f61d]/30 text-[#141f00] px-2 py-1 rounded" : ""}>
-                        {formatCurrency(item.valor)}
-                      </span>
-                    </td>
-                    <td className="py-4 font-['Inter'] font-semibold text-[13px] text-[#4b6700] text-right">
-                      {item.acumulado_pct}%
-                    </td>
-                  </tr>
-                );
-              })}
+            <tbody>
+              {mensalData.map((item, idx) => (
+                <tr key={item.mes} className="gp-row">
+                  <th scope="row" className="gp-td" style={{ textAlign: "left" }}>{item.mes}</th>
+                  <td className="gp-td" style={{ color: "#475569" }}>{item.servicos || "—"}</td>
+                  <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: idx === picoIndex ? 800 : 400 }}>
+                    {formatCurrency(item.valor)}
+                  </td>
+                  <td className="gp-td gp-mono" style={{ textAlign: "right" }}>{item.acumulado_pct}%</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

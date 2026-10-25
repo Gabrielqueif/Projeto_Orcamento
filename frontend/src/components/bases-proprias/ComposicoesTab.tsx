@@ -12,8 +12,6 @@ import {
 } from "@/lib/api/basesProprias";
 import { ComposicaoEditor } from "./ComposicaoEditor";
 
-const campo = "w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 bg-white";
-
 export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?: string }) {
   const { showToast } = useToast();
   const [lista, setLista] = useState<ComposicaoPropria[]>([]);
@@ -87,68 +85,81 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              carregar(busca);
-            }}
-            className="flex items-center gap-1 flex-1"
-          >
-            <input
-              aria-label="Buscar composições"
-              placeholder="Buscar composição"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className={campo}
-            />
-            <button type="submit" aria-label="Buscar composições" className="p-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-600">
-              <MagnifyingGlass size={18} />
-            </button>
-          </form>
-          <button
-            type="button"
-            onClick={() => setModalAberto(true)}
-            className="inline-flex items-center gap-1 px-3 py-2 text-sm font-bold rounded bg-brand-primary text-white hover:bg-brand-navy whitespace-nowrap"
-          >
-            <Plus size={16} weight="bold" /> Nova
+    <div>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "14px 16px" }}>
+        <form
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            carregar(busca);
+          }}
+          className="gp-srch"
+          style={{ flex: "1 1 240px", maxWidth: 360 }}
+        >
+          <MagnifyingGlass size={18} weight="bold" aria-hidden="true" color="#475569" />
+          <input
+            type="search"
+            aria-label="Buscar composições"
+            placeholder="Buscar composição"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+          <button type="submit" aria-label="Buscar composições" className="gp-btn gp-bs gp-sm" style={{ minHeight: 32, padding: "0 10px" }}>
+            Buscar
           </button>
-        </div>
+        </form>
+        <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp gp-sm" style={{ marginLeft: "auto" }}>
+          <Plus size={16} weight="bold" aria-hidden="true" /> Nova composição
+        </button>
+      </div>
 
-        {loading && <p className="text-sm text-slate-500">Carregando composições...</p>}
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse" }}>
+          <caption className="gp-sr">Composições da base própria</caption>
+          <thead>
+            <tr>
+              <th scope="col" className="gp-th" style={{ paddingLeft: 22 }}>Código</th>
+              <th scope="col" className="gp-th">Descrição</th>
+              <th scope="col" className="gp-th">Un.</th>
+              <th scope="col" className="gp-th" style={{ paddingRight: 22 }}><span className="gp-sr">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map((c) => {
+              const on = selecionada === c.id;
+              return (
+                <tr key={c.id} className="gp-row" style={on ? { background: "#F7FCE9" } : undefined}>
+                  <td className="gp-td gp-mono" style={{ paddingLeft: 22, color: "#00626b", fontWeight: 600 }}>{c.codigo}</td>
+                  <th scope="row" className="gp-td" style={{ textAlign: "left", fontWeight: 700 }}>{c.descricao}</th>
+                  <td className="gp-td">{c.unidade}</td>
+                  <td className="gp-td" style={{ paddingRight: 22, textAlign: "right", whiteSpace: "nowrap" }}>
+                    <button
+                      type="button"
+                      aria-pressed={on}
+                      aria-label={`Editar ${c.codigo}`}
+                      onClick={() => setSelecionada(c.id)}
+                      className="gp-btn gp-bs gp-sm"
+                    >
+                      Editar
+                    </button>{" "}
+                    <button type="button" aria-label={`Excluir ${c.codigo}`} onClick={() => excluir(c)} className="gp-ib" style={{ width: 40, height: 40, color: "#B91C1C" }}>
+                      <Trash size={18} weight="bold" aria-hidden="true" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {loading && <p className="gp-sub" style={{ padding: 16, margin: 0 }}>Carregando composições...</p>}
         {!loading && lista.length === 0 && (
-          <p className="text-sm text-slate-500 py-4 text-center" data-testid="composicoes-vazio">
+          <p className="gp-sub" style={{ padding: 24, margin: 0, textAlign: "center" }} data-testid="composicoes-vazio">
             Nenhuma composição ainda.
           </p>
         )}
-        <ul className="space-y-1 max-h-[60vh] overflow-y-auto">
-          {lista.map((c) => (
-            <li
-              key={c.id}
-              className={`flex items-start gap-1 rounded border ${
-                selecionada === c.id ? "border-brand-primary bg-slate-50" : "border-slate-100"
-              }`}
-            >
-              <button type="button" onClick={() => setSelecionada(c.id)} className="flex-1 text-left p-2 min-w-0">
-                <span className="block font-mono text-xs text-slate-500">{c.codigo}</span>
-                <span className="block text-sm text-slate-800 truncate">{c.descricao}</span>
-              </button>
-              <button
-                type="button"
-                aria-label={`Excluir ${c.codigo}`}
-                onClick={() => excluir(c)}
-                className="p-2 text-slate-400 hover:text-red-600"
-              >
-                <Trash size={16} />
-              </button>
-            </li>
-          ))}
-        </ul>
       </div>
 
-      <div>
+      <div style={{ padding: 16, borderTop: "1px solid #E6EBF2", background: "#F8FAFC" }}>
         {selecionada ? (
           <ComposicaoEditor
             key={selecionada}
@@ -158,39 +169,35 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
             onAlterada={() => carregar(busca)}
           />
         ) : (
-          <p className="text-sm text-slate-500 py-10 text-center">Selecione uma composição para editar seus itens.</p>
+          <p className="gp-hint" style={{ margin: 0, textAlign: "center", padding: "12px 0" }}>
+            Selecione uma composição para editar seus itens.
+          </p>
         )}
       </div>
 
       <Modal isOpen={modalAberto} onClose={fechar} title="Nova composição">
-        <form onSubmit={criar} className="space-y-3">
-          <div>
-            <label htmlFor="comp-codigo" className="block text-sm font-medium text-slate-700 mb-1">Código</label>
-            <input id="comp-codigo" value={codigo} onChange={(e) => setCodigo(e.target.value)} required maxLength={50} className={campo} />
+        <form onSubmit={criar} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="gp-fld">
+            <label htmlFor="comp-codigo" className="gp-lb">Código</label>
+            <input id="comp-codigo" value={codigo} onChange={(e) => setCodigo(e.target.value)} required maxLength={50} className="gp-in gp-mono" />
           </div>
-          <div>
-            <label htmlFor="comp-desc" className="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
-            <input id="comp-desc" value={descricao} onChange={(e) => setDescricao(e.target.value)} required className={campo} />
+          <div className="gp-fld">
+            <label htmlFor="comp-desc" className="gp-lb">Descrição</label>
+            <input id="comp-desc" value={descricao} onChange={(e) => setDescricao(e.target.value)} required className="gp-in" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="comp-un" className="block text-sm font-medium text-slate-700 mb-1">Unidade</label>
-              <input id="comp-un" value={unidade} onChange={(e) => setUnidade(e.target.value)} required maxLength={20} className={campo} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="gp-fld">
+              <label htmlFor="comp-un" className="gp-lb">Unidade</label>
+              <input id="comp-un" value={unidade} onChange={(e) => setUnidade(e.target.value)} required maxLength={20} className="gp-in" />
             </div>
-            <div>
-              <label htmlFor="comp-grupo" className="block text-sm font-medium text-slate-700 mb-1">Grupo</label>
-              <input id="comp-grupo" value={grupo} onChange={(e) => setGrupo(e.target.value)} maxLength={100} className={campo} />
+            <div className="gp-fld">
+              <label htmlFor="comp-grupo" className="gp-lb">Grupo</label>
+              <input id="comp-grupo" value={grupo} onChange={(e) => setGrupo(e.target.value)} maxLength={100} className="gp-in" />
             </div>
           </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={fechar} className="px-4 py-2 text-sm text-slate-600 rounded hover:bg-slate-100">
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={salvando}
-              className="px-4 py-2 text-sm font-bold text-white bg-brand-primary rounded hover:bg-brand-navy disabled:opacity-50"
-            >
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <button type="button" onClick={fechar} className="gp-btn gp-bs">Cancelar</button>
+            <button type="submit" disabled={salvando} className="gp-btn gp-bp" style={salvando ? { opacity: 0.5 } : undefined}>
               {salvando ? "Criando..." : "Criar composição"}
             </button>
           </div>

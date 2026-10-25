@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "@phosphor-icons/react";
 import { obterBase, type BasePropria } from "@/lib/api/basesProprias";
 import { InsumosTab } from "./InsumosTab";
 import { ComposicoesTab } from "./ComposicoesTab";
 
 type Aba = "insumos" | "composicoes";
+
+const ABAS: { k: Aba; label: string }[] = [
+  { k: "insumos", label: "Insumos" },
+  { k: "composicoes", label: "Composições" },
+];
 
 export function BasePropriaView({ baseId }: { baseId: string }) {
   const [base, setBase] = useState<BasePropria | null>(null);
@@ -20,45 +24,69 @@ export function BasePropriaView({ baseId }: { baseId: string }) {
       .catch(() => setErro("Base não encontrada."));
   }, [baseId]);
 
-  const abaClasse = (a: Aba) =>
-    `px-4 py-2 text-sm font-bold border-b-2 -mb-px ${
-      aba === a ? "border-brand-primary text-brand-primary" : "border-transparent text-slate-500 hover:text-slate-700"
-    }`;
+  const nome = base ? base.nome : "Base própria";
+  const meta = [
+    base?.uf ? `UF ${base.uf}` : null,
+    base?.updated_at ? `atualizada em ${new Date(base.updated_at).toLocaleDateString("pt-BR")}` : null,
+  ].filter(Boolean);
+
+  const tabStyle = (on: boolean): React.CSSProperties => ({
+    display: "inline-flex",
+    alignItems: "center",
+    minHeight: 48,
+    padding: "0 16px",
+    border: 0,
+    background: "transparent",
+    fontSize: 15,
+    cursor: "pointer",
+    color: on ? "#001b3d" : "#475569",
+    fontWeight: on ? 800 : 600,
+    boxShadow: on ? "inset 0 -3px 0 #9fd300" : undefined,
+  });
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <>
       <div>
-        <Link href="/bases" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700">
-          <ArrowLeft size={14} /> Bases de dados
-        </Link>
-        <h1 className="text-2xl font-bold text-slate-800 mt-2">{base ? base.nome : "Base própria"}</h1>
-        {base?.descricao && <p className="text-sm text-slate-500">{base.descricao}</p>}
+        <nav aria-label="Trilha" className="gp-crumb">
+          <Link href="/bases">Bases de dados</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{nome}</span>
+        </nav>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
+          <h1 className="gp-h1" style={{ margin: 0 }}>{nome}</h1>
+          {base && <span className="gp-bg gp-te">Própria</span>}
+        </div>
+        {base?.descricao && <p className="gp-sub">{base.descricao}</p>}
+        {meta.length > 0 && <p className="gp-sub" style={{ marginTop: base?.descricao ? 2 : 4 }}>{meta.join(" · ")}</p>}
       </div>
 
-      {erro && <p className="text-red-600">{erro}</p>}
+      {erro && <p style={{ margin: 0, color: "#B91C1C" }}>{erro}</p>}
 
       {!erro && (
-        <div className="bg-white rounded-lg shadow-md border border-slate-100 p-4 md:p-6">
-          <div className="flex border-b border-slate-200 mb-6" role="tablist">
-            <button role="tab" aria-selected={aba === "insumos"} className={abaClasse("insumos")} onClick={() => setAba("insumos")}>
-              Insumos
-            </button>
-            <button
-              role="tab"
-              aria-selected={aba === "composicoes"}
-              className={abaClasse("composicoes")}
-              onClick={() => setAba("composicoes")}
-            >
-              Composições
-            </button>
+        <section className="gp-card" style={{ overflow: "hidden" }}>
+          <div role="tablist" aria-label="Conteúdo da base" style={{ display: "flex", gap: 4, padding: "12px 16px 0", borderBottom: "1px solid #E6EBF2" }}>
+            {ABAS.map((a) => (
+              <button
+                key={a.k}
+                type="button"
+                role="tab"
+                id={`tp-${a.k}`}
+                aria-selected={aba === a.k}
+                aria-controls="pb"
+                style={tabStyle(aba === a.k)}
+                onClick={() => setAba(a.k)}
+              >
+                {a.label}
+              </button>
+            ))}
           </div>
-          {aba === "insumos" ? (
-            <InsumosTab baseId={baseId} />
-          ) : (
-            <ComposicoesTab baseId={baseId} ufPadrao={base?.uf ?? undefined} />
-          )}
-        </div>
+          <div id="pb" role="tabpanel" aria-labelledby={`tp-${aba}`}>
+            {aba === "insumos" ? (
+              <InsumosTab baseId={baseId} />
+            ) : (
+              <ComposicoesTab baseId={baseId} ufPadrao={base?.uf ?? undefined} />
+            )}
+          </div>
+        </section>
       )}
-    </div>
+    </>
   );
 }

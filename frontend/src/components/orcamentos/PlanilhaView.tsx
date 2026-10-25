@@ -286,116 +286,93 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
     }, 0);
 
     return (
-      <div className="overflow-x-auto mt-2 mb-4">
-        <table className="w-full text-left border-collapse min-w-[800px]">
+      <div style={{ overflowX: "auto", marginTop: 8, marginBottom: 16 }}>
+        <table style={{ width: "100%", minWidth: 860, borderCollapse: "collapse", fontSize: 14 }}>
+          <caption className="gp-sr">Itens da etapa</caption>
           <thead>
             <tr>
-              <th className="w-[10%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Fonte / BDI</th>
-              <th className="w-[12%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Código</th>
-              <th className="w-[28%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border">Descrição</th>
-              <th className="w-[8%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-center">Und</th>
-              <th className="w-[8%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-center">Qtd</th>
-              <th className="w-[12%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-right">
-                {modoPreco === "VENDA" ? "Preço Venda Un." : "Custo Direto Un."}
+              <th scope="col" className="gp-th">Fonte / BDI</th>
+              <th scope="col" className="gp-th">Código</th>
+              <th scope="col" className="gp-th">Descrição</th>
+              <th scope="col" className="gp-th" style={{ textAlign: "center" }}>Un.</th>
+              <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Quant.</th>
+              <th scope="col" className="gp-th" style={{ textAlign: "right" }}>
+                {modoPreco === "VENDA" ? "Preço venda un." : "Custo direto un."}
               </th>
-              <th className="w-[12%] pb-3 text-[11px] font-bold text-text-muted uppercase border-b border-border text-right">
-                {modoPreco === "VENDA" ? "Subtotal Venda" : "Subtotal Direto"}
+              <th scope="col" className="gp-th" style={{ textAlign: "right" }}>
+                {modoPreco === "VENDA" ? "Subtotal venda" : "Subtotal direto"}
               </th>
-              <th className="w-[10%] pb-3 border-b border-border"></th>
+              <th scope="col" className="gp-th"><span className="gp-sr">Ações</span></th>
             </tr>
           </thead>
           <tbody>
             {itensDaEtapa.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-4 text-center text-xs text-text-muted border-b border-border border-dashed italic">
+                <td colSpan={8} className="gp-td" style={{ textAlign: "center", color: "#475569" }}>
                   Nenhum insumo nesta etapa.
                 </td>
               </tr>
             ) : (
               itensDaEtapa.map(item => {
                 const taxaBdiItem = item.bdi_aplicado !== null && item.bdi_aplicado !== undefined ? item.bdi_aplicado : bdiOrcamento;
-                const precoUn = modoPreco === "VENDA" 
-                  ? (item.preco_unitario_bdi ?? ((item.preco_unitario || 0) * (1 + taxaBdiItem / 100))) 
+                const precoUn = modoPreco === "VENDA"
+                  ? (item.preco_unitario_bdi ?? ((item.preco_unitario || 0) * (1 + taxaBdiItem / 100)))
                   : item.preco_unitario;
-                const precoTot = modoPreco === "VENDA" 
-                  ? (item.preco_total_bdi ?? ((item.preco_total || 0) * (1 + taxaBdiItem / 100))) 
+                const precoTot = modoPreco === "VENDA"
+                  ? (item.preco_total_bdi ?? ((item.preco_total || 0) * (1 + taxaBdiItem / 100)))
                   : item.preco_total;
+                const selo =
+                  item.fonte === "PROPRIA"
+                    ? { bg: "#e0f5f7", fg: "#00626b" }
+                    : item.fonte === "SEINFRA"
+                      ? { bg: "#EDF1F6", fg: "#001b3d" }
+                      : { bg: "#E6F6D0", fg: "#3F6604" };
 
                 return (
-                  <React.Fragment key={item.id}>
-                    <tr className={`hover:bg-bg-light/35 transition-colors group`}>
-                      <td className="py-3 pr-2 border-b border-border border-dashed align-middle">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1.5">
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
-                              item.fonte === 'PROPRIA'
-                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                                : item.fonte === 'SEINFRA'
-                                  ? 'bg-orange-100 text-orange-700 border border-orange-200'
-                                  : 'bg-blue-100 text-blue-700 border border-blue-200'
-                            }`}>
-                              {item.fonte === 'PROPRIA'
-                                ? `Própria${item.base_propria_nome ? `: ${item.base_propria_nome}` : ''}`
-                                : item.fonte}
-                            </span>
-                          </div>
-                          {item.tipo_bdi_item === "DIFERENCIADO" ? (
-                            <span className="text-[8px] px-1 py-0.2 rounded font-bold uppercase bg-purple-100 text-purple-700 border border-purple-200 w-fit">
-                              BDI Dif. {item.bdi_aplicado ? `${item.bdi_aplicado}%` : ''}
-                            </span>
-                          ) : (
-                            modoPreco === "VENDA" && (
-                              <span className="text-[8px] px-1 py-0.2 rounded font-medium bg-slate-100 text-slate-600 w-fit">
-                                BDI {taxaBdiItem}%
-                              </span>
-                            )
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 pr-2 border-b border-border border-dashed text-xs font-semibold text-text-main align-middle">
-                        {item.codigo_composicao}
-                      </td>
-                      <td className="py-3 pr-2 border-b border-border border-dashed text-xs text-text-main align-middle">
-                        {item.descricao}
-                      </td>
-                      <td className="py-3 pr-2 border-b border-border border-dashed text-xs text-text-muted font-bold align-middle text-center">
-                        {item.unidade}
-                      </td>
-                      <td className="py-3 pr-2 border-b border-border border-dashed text-xs font-semibold text-text-main text-center align-middle">
-                        {item.quantidade}
-                      </td>
-                      <td className="py-3 pr-2 border-b border-border border-dashed text-xs text-text-main text-right align-middle font-medium">
-                        {formatarReal(precoUn)}
-                      </td>
-                      <td className={`py-3 pr-2 border-b border-border border-dashed text-xs font-bold text-right align-middle ${
-                        modoPreco === "VENDA" ? "text-emerald-700" : "text-brand-primary"
-                      }`}>
-                        {formatarReal(precoTot)}
-                      </td>
-                      <td className="py-3 pl-2 border-b border-border border-dashed text-right align-middle">
-                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => setDrawerItem(item)} className="p-1.5 text-text-muted hover:text-[#A78BFA] hover:bg-purple-50 rounded transition-colors cursor-pointer border-none bg-transparent" title="Ver Recursos (Insumos)">
-                            <Database size={16} />
-                          </button>
-                          <button onClick={() => openModalToEdit(item)} className="p-1.5 text-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded transition-colors cursor-pointer border-none bg-transparent" title="Editar Item">
-                            <PencilSimple size={16} />
-                          </button>
-                          <button onClick={() => handleRemoveItem(item.id)} className="p-1.5 text-text-muted hover:text-status-danger hover:bg-red-50 rounded transition-colors cursor-pointer border-none bg-transparent" title="Remover Item">
-                            <Trash size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                </React.Fragment>
-              );
-            })
-          )}
-        </tbody>
+                  <tr key={item.id} className="gp-row">
+                    <td className="gp-td">
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                        <span style={{ fontSize: 12, fontWeight: 800, padding: "2px 8px", borderRadius: 6, background: selo.bg, color: selo.fg }}>
+                          {item.fonte === "PROPRIA"
+                            ? `Própria${item.base_propria_nome ? `: ${item.base_propria_nome}` : ""}`
+                            : item.fonte}
+                        </span>
+                        {item.tipo_bdi_item === "DIFERENCIADO" ? (
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "#9A3412" }}>
+                            BDI dif. {item.bdi_aplicado ? `${item.bdi_aplicado}%` : ""}
+                          </span>
+                        ) : (
+                          modoPreco === "VENDA" && <span className="gp-ms" style={{ fontSize: 12 }}>BDI {taxaBdiItem}%</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="gp-td gp-mono" style={{ fontSize: 13, fontWeight: 600 }}>{item.codigo_composicao}</td>
+                    <td className="gp-td" style={{ fontWeight: 600, lineHeight: 1.4 }}>{item.descricao}</td>
+                    <td className="gp-td" style={{ textAlign: "center", color: "#475569" }}>{item.unidade}</td>
+                    <td className="gp-td gp-mono" style={{ textAlign: "right" }}>{item.quantidade}</td>
+                    <td className="gp-td gp-mono" style={{ textAlign: "right" }}>{formatarReal(precoUn)}</td>
+                    <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600 }}>{formatarReal(precoTot)}</td>
+                    <td className="gp-td" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                      <button type="button" onClick={() => setDrawerItem(item)} className="gp-ib" style={{ width: 36, height: 36, borderRadius: 10, marginRight: 6 }} title="Ver recursos (insumos)" aria-label={`Ver insumos de ${item.descricao}`}>
+                        <Database size={16} weight="bold" aria-hidden="true" />
+                      </button>
+                      <button type="button" onClick={() => openModalToEdit(item)} className="gp-ib" style={{ width: 36, height: 36, borderRadius: 10, marginRight: 6 }} title="Editar item" aria-label={`Editar item ${item.descricao}`}>
+                        <PencilSimple size={16} weight="bold" aria-hidden="true" />
+                      </button>
+                      <button type="button" onClick={() => handleRemoveItem(item.id)} className="gp-ib" style={{ width: 36, height: 36, borderRadius: 10, color: "#B91C1C" }} title="Remover item" aria-label={`Remover item ${item.descricao}`}>
+                        <Trash size={16} weight="bold" aria-hidden="true" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
         </table>
         {itensDaEtapa.length > 0 && (
-          <div className="flex justify-end gap-2 text-xs font-bold text-text-main mt-3 pr-2">
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12, paddingRight: 12, fontWeight: 800 }}>
             <span>Subtotal:</span>
-            <span className="text-brand-primary">{formatarReal(subtotal)}</span>
+            <span className="gp-mono">{formatarReal(subtotal)}</span>
           </div>
         )}
       </div>
@@ -436,21 +413,21 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
       <div
         key={etapa.id}
         id={`etapa-${etapa.id}`}
-        className={`relative scroll-mt-4 ${
-          isRaiz
-            ? "p-6 bg-white border border-border rounded-lg shadow-sm"
-            : "p-4 rounded-lg border border-slate-100 bg-slate-50/50"
-        }`}
+        className={`relative scroll-mt-4 ${isRaiz ? "gp-card" : ""}`}
+        style={isRaiz ? { padding: 24 } : { padding: 16, borderRadius: 16, background: "#F8FAFC", border: "1px solid #E6EBF2" }}
       >
         <button
           onClick={() => handleRemoveEtapa(etapa.id)}
-          className={`absolute text-status-danger hover:text-red-700 transition-colors border-none bg-transparent cursor-pointer ${isRaiz ? "top-6 right-6" : "top-4 right-4"}`}
-          title={isRaiz ? "Excluir Etapa Completa" : "Excluir Sub-etapa"}
+          type="button"
+          className={`absolute border-none bg-transparent cursor-pointer ${isRaiz ? "top-6 right-6" : "top-4 right-4"}`}
+          style={{ color: "#B91C1C" }}
+          title={isRaiz ? "Excluir etapa completa" : "Excluir sub-etapa"}
+          aria-label={isRaiz ? "Excluir etapa completa" : "Excluir sub-etapa"}
         >
-          <Trash size={isRaiz ? 20 : 16} />
+          <Trash size={isRaiz ? 20 : 16} weight="bold" aria-hidden="true" />
         </button>
 
-        <div className={`font-bold text-text-muted uppercase tracking-wide ${isRaiz ? "text-[10px] mb-2" : "text-[9px] mb-1"}`}>
+        <div className="gp-mono" style={{ fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
           {labelNivel} {isRaiz ? prefix.padStart(2, "0") : prefix}
         </div>
         <div className={`flex items-center gap-1.5 max-w-[80%] ${isRaiz ? "mb-4" : "mb-3"}`}>
@@ -462,10 +439,6 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
             onMouseDown={(e) => {
               if (editingEtapaId !== etapa.id) e.preventDefault();
             }}
-            style={{
-              width: `${Math.max((etapa.nome || "").length + 1, 10)}ch`,
-              fieldSizing: "content"
-            } as React.CSSProperties}
             onInput={(e) => {
               const val = e.currentTarget.value;
               e.currentTarget.style.width = `${Math.max(val.length + 1, 10)}ch`;
@@ -477,11 +450,13 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
             onKeyDown={(e) => {
               if (e.key === 'Enter') e.currentTarget.blur();
             }}
-            className={`font-bold text-text-main outline-none max-w-full transition-colors ${isRaiz ? "text-lg pb-2" : "text-sm pb-1"} ${
+            className={`outline-none max-w-full transition-colors ${isRaiz ? "text-lg pb-2" : "text-sm pb-1"} ${
               editingEtapaId === etapa.id
-                ? 'border-b-2 border-brand-primary bg-white px-2 py-0.5 rounded shadow-2xs cursor-text'
+                ? 'border-b-2 border-[#00a3b1] bg-white px-2 py-0.5 rounded cursor-text'
                 : 'border-none cursor-default bg-transparent'
             }`}
+            style={{ fontWeight: 800, color: "#001b3d", width: `${Math.max((etapa.nome || "").length + 1, 10)}ch`, fieldSizing: "content" } as React.CSSProperties}
+            aria-label="Nome da etapa"
             placeholder="Nome da etapa..."
           />
           <button
@@ -502,10 +477,11 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                 }, 50);
               }
             }}
-            className={`text-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center shrink-0 ${isRaiz ? "p-1.5 mb-2" : "p-1 mb-1"}`}
-            title={editingEtapaId === etapa.id ? "Salvar Nome" : "Alterar Nome"}
+            className={`text-[#475569] hover:text-[#007a85] rounded transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center shrink-0 ${isRaiz ? "p-1.5 mb-2" : "p-1 mb-1"}`}
+            title={editingEtapaId === etapa.id ? "Salvar nome" : "Alterar nome"}
+            aria-label={editingEtapaId === etapa.id ? "Salvar nome da etapa" : "Alterar nome da etapa"}
           >
-            {editingEtapaId === etapa.id ? <Check size={isRaiz ? 18 : 16} className="text-emerald-600 font-bold" /> : <PencilSimple size={isRaiz ? 18 : 16} />}
+            {editingEtapaId === etapa.id ? <Check size={isRaiz ? 18 : 16} weight="bold" color="#3F6604" /> : <PencilSimple size={isRaiz ? 18 : 16} weight="bold" />}
           </button>
         </div>
 
@@ -513,7 +489,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
         {(itensDaEtapa.length > 0 || subEtapas.length === 0) && (
           <div className="mb-4">
             {subEtapas.length > 0 && (
-              <h5 className="text-[11px] font-bold text-text-muted uppercase tracking-wider mb-2">Itens Diretos da Etapa</h5>
+              <h3 className="gp-ml" style={{ margin: "0 0 8px" }}>Itens diretos da etapa</h3>
             )}
             {renderItemTable(itensDaEtapa, etapa.id)}
           </div>
@@ -521,37 +497,31 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
 
         {/* Sub-etapas aninhadas (recursivo, até 3 níveis) */}
         {subEtapas.length > 0 && (
-          <div className="pl-6 border-l-2 border-slate-100 ml-2 space-y-6 my-4">
+          <div className="pl-6 ml-2 space-y-6 my-4" style={{ borderLeft: "2px solid #E6EBF2" }}>
             {subEtapas.map((sub, sIdx) => renderEtapa(sub, `${prefix}.${sIdx + 1}`, nivel + 1))}
           </div>
         )}
 
-        <div className="flex justify-between items-center border-t border-[#f1f5f9] pt-4 mt-6">
-          <div className="flex gap-3">
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, borderTop: "1px solid #E6EBF2", paddingTop: 16, marginTop: 24 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {nivel < MAX_NIVEL_ETAPAS && (
-              <button
-                onClick={() => handleAddSubEtapa(etapa.id)}
-                className="px-4 py-2 bg-white border border-[#CBD5E1] border-solid rounded text-[12px] font-bold text-[#0f172a] hover:bg-[#f8fafc] transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
-              >
-                <Plus size={14} /> ADICIONAR SUB-ETAPA
+              <button type="button" onClick={() => handleAddSubEtapa(etapa.id)} className="gp-btn gp-bs gp-sm">
+                <Plus size={14} weight="bold" aria-hidden="true" /> Adicionar sub-etapa
               </button>
             )}
-            <button
-              onClick={() => openModalToCreate(etapa.id)}
-              className="px-4 py-2 bg-slate-900 text-white rounded text-[12px] font-bold hover:bg-slate-800 transition-colors flex items-center gap-2 cursor-pointer shadow-sm border-none"
-            >
-              <Plus size={14} /> ADICIONAR ITEM À ETAPA
+            <button type="button" onClick={() => openModalToCreate(etapa.id)} className="gp-btn gp-bp gp-sm">
+              <Plus size={14} weight="bold" aria-hidden="true" /> Adicionar item à etapa
             </button>
           </div>
-          <div className="font-bold text-text-main text-sm">
-            Total da Etapa: <span className="ml-2 text-base text-brand-primary">{formatarReal(totaisPorEtapa[etapa.id] || 0)}</span>
+          <div style={{ fontWeight: 800, fontSize: 14 }}>
+            Total da etapa: <span className="gp-mono" style={{ marginLeft: 8, fontSize: 16, fontWeight: 600 }}>{formatarReal(totaisPorEtapa[etapa.id] || 0)}</span>
           </div>
         </div>
       </div>
     );
   };
   if (loading && etapas.length === 0) {
-    return <div className="text-center p-10 text-text-muted">Carregando estrutura da planilha...</div>;
+    return <div role="status" className="gp-sub" style={{ textAlign: "center", padding: 40 }}>Carregando estrutura da planilha...</div>;
   }
 
   // Identifica itens sem etapa e separa etapas em raiz e filhas
@@ -570,58 +540,34 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
         onSelect={scrollToEtapa}
         onMove={handleMoveEtapa}
       />
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 20 }}>
         <div>
-          <h3 className="text-lg font-bold text-text-main mb-1">Composição Dinâmica de Custos</h3>
-          <p className="text-[12px] text-text-muted">Gerencie as etapas, sub-etapas e insumos do seu orçamento.</p>
+          <h2 id="h-etapas" className="gp-h2">Etapas e itens</h2>
+          <p className="gp-ms" style={{ margin: "2px 0 0" }}>Gerencie as etapas, sub-etapas e insumos do seu orçamento.</p>
         </div>
-        
-        <div className="flex items-center gap-3">
-          {/* Toggle Custo Direto vs Preço de Venda */}
-          <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => setModoPreco("VENDA")}
-              className={`px-3 py-1 rounded transition-colors cursor-pointer ${
-                modoPreco === "VENDA"
-                  ? "bg-white text-emerald-700 shadow-2xs font-bold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Preço de Venda (com BDI)
+
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+          <div className="gp-seg" role="group" aria-label="Modo de preço">
+            <button type="button" aria-pressed={modoPreco === "VENDA"} onClick={() => setModoPreco("VENDA")} style={{ padding: "0 14px" }}>
+              Preço de venda (com BDI)
             </button>
-            <button
-              type="button"
-              onClick={() => setModoPreco("DIRETO")}
-              className={`px-3 py-1 rounded transition-colors cursor-pointer ${
-                modoPreco === "DIRETO"
-                  ? "bg-white text-blue-700 shadow-2xs font-bold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Custo Direto (sem BDI)
+            <button type="button" aria-pressed={modoPreco === "DIRETO"} onClick={() => setModoPreco("DIRETO")} style={{ padding: "0 14px" }}>
+              Custo direto (sem BDI)
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={abrirPreviaPrecos}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded text-[12px] font-bold transition-colors hover:bg-bg-light shadow-sm text-text-main cursor-pointer"
-          >
-            <ArrowsClockwise size={16} /> Atualizar preços da base própria
+          <button type="button" onClick={abrirPreviaPrecos} className="gp-btn gp-bs gp-sm">
+            <ArrowsClockwise size={16} weight="bold" aria-hidden="true" /> Atualizar preços da base própria
           </button>
 
-          <button
-            onClick={handleAddEtapa}  
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-border rounded text-[12px] font-bold transition-colors hover:bg-bg-light shadow-sm text-text-main cursor-pointer"
-          >
-            <Plus size={16} /> NOVA ETAPA
+          <button type="button" onClick={handleAddEtapa} className="gp-btn gp-bs gp-sm">
+            <Plus size={16} weight="bold" aria-hidden="true" /> Nova etapa
           </button>
         </div>
       </div>
 
       {etapas.length === 0 && itensSemEtapa.length === 0 ? (
-        <div className="text-center p-10 text-[13px] text-text-muted italic border border-dashed border-border rounded-lg bg-white">
+        <div className="gp-card" style={{ textAlign: "center", padding: 40, fontSize: 14, color: "#475569", border: "1px dashed #CBD5E1" }}>
           Nenhuma etapa adicionada. Clique em &quot;Nova Etapa&quot; para começar.
         </div>
       ) : (
@@ -630,21 +576,14 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
 
           {/* Itens sem etapa */}
           {itensSemEtapa.length > 0 && (
-            <div className="relative p-6 bg-white border border-border rounded-lg shadow-sm opacity-80">
-              <div className="text-[10px] font-bold text-text-muted uppercase tracking-wide mb-2">OUTROS INSUMOS</div>
-              <h4 className="text-lg font-bold text-text-main mb-4 border-b border-border pb-2 w-[80%]">Itens sem etapa vinculada</h4>
+            <div className="gp-card relative" style={{ padding: 24 }}>
+              <div className="gp-ml" style={{ marginBottom: 6 }}>Outros insumos</div>
+              <h3 className="gp-h2" style={{ marginBottom: 16 }}>Itens sem etapa vinculada</h3>
               
               {renderItemTable(itensSemEtapa, "")}
 
               <div className="flex justify-between items-center mt-4">
-                <button 
-                  onClick={() => openModalToCreate("")} 
-                  className="px-4 py-2 bg-[#F1F5F9] border border-[#CBD5E1] border-solid rounded text-[12px] font-bold text-text-main hover:bg-[#E2E8F0] transition-colors flex items-center gap-2 cursor-pointer"
-                >
-                  <Plus size={14} /> VINCULAR NOVO ITEM
-                </button>
-                <div className="font-bold text-text-main text-sm">
-                  Subtotal: <span className="ml-2 text-base text-brand-primary">{formatarReal(itensSemEtapa.reduce((acc, curr) => acc + (curr.preco_total || 0), 0))}</span>
+                <button type="button" onClick={() => openModalToCreate("")} className="gp-btn gp-bs gp-sm"><Plus size={14} weight="bold" aria-hidden="true" /> Vincular novo item</button><div className="font-bold text-text-main text-sm">Subtotal: <span className="gp-mono ml-2 text-base">{formatarReal(itensSemEtapa.reduce((acc, curr) => acc + (curr.preco_total || 0), 0))}</span>
                 </div>
               </div>
             </div>

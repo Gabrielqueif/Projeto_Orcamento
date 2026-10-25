@@ -3,15 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { 
-  ArrowLeft, 
-  FileText, 
-  Database, 
-  User, 
-  Coins,
-  CircleNotch,
-  ArrowRight
-} from "@phosphor-icons/react";
+import { CircleNotch, ArrowRight } from "@phosphor-icons/react";
 import { createOrcamento, getSinapiBases, SinapiBase } from "@/lib/api/orcamentos";
 
 const ESTADOS = [
@@ -181,415 +173,254 @@ export default function NovoOrcamentoPage() {
     }
   };
 
-  return (
-    <div className="flex flex-col gap-6 max-w-[1200px] mx-auto pb-16">
-      {/* Breadcrumb & Navigation */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2 text-xs font-semibold text-[#44474e] font-['Hanken_Grotesk'] tracking-wider uppercase">
-          <Link href="/orcamentos" className="hover:text-black transition-colors flex items-center gap-1">
-            <ArrowLeft size={12} weight="bold" /> Orçamentos
-          </Link>
-          <span className="text-[#c4c6cf]">&gt;</span>
-          <span className="text-black">Novo Orçamento</span>
-        </div>
+  const legend = (n: number, titulo: string) => (
+    <legend style={{ float: "left", width: "100%", padding: 0, marginBottom: 4, gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 10, fontSize: 18, fontWeight: 800 }}>
+      <span aria-hidden="true" style={{ width: 30, height: 30, borderRadius: 10, background: "#001b3d", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{n}</span>
+      {titulo}
+    </legend>
+  );
+  const fieldset: React.CSSProperties = { margin: 0, padding: 24, border: 0, minWidth: 0 };
+  const req = <span className="gp-req"> (obrigatório)</span>;
 
-          <div className="flex flex-col gap-1">
-            <h1 className="font-['Inter'] font-bold text-3xl text-black tracking-tight">
-              Novo Orçamento
-            </h1>
-          </div>
+  return (
+    <>
+      <div>
+        <nav aria-label="Trilha" className="gp-crumb">
+          <Link href="/orcamentos">Orçamentos</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Novo orçamento</span>
+        </nav>
+        <h1 className="gp-h1">Novo orçamento</h1>
+        <p className="gp-sub">
+          Campos com <span className="gp-req" style={{ fontWeight: 700 }}>(obrigatório)</span> precisam ser preenchidos para criar.
+        </p>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+        <div role="alert" style={{ padding: "12px 16px", borderRadius: 14, background: "#FEE2E2", color: "#B91C1C", fontSize: 14, fontWeight: 700 }}>
           {error}
         </div>
       )}
 
-      {/* Main Content Layout */}
-      <div className="grid grid-cols-12 gap-6 items-start">
-        {/* Left Side: Form */}
-        <form onSubmit={(e) => handleSubmit(e)} className="col-span-12 lg:col-span-8 flex flex-col gap-6">
-          
-          {/* Section 1: Informações da Obra */}
-          <div className="bg-white border border-[#c4c6cf]/30 rounded-[12px] p-6 shadow-xs relative overflow-hidden">
-            <div className="absolute bg-[#b9f61d] left-0 top-0 bottom-0 w-[4px]" />
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-[#f1f4f6] rounded-lg text-[#001b3d]">
-                <FileText size={20} weight="bold" />
-              </div>
-              <h2 className="font-['Inter'] font-semibold text-lg text-black">
-                Informações da Obra
-              </h2>
+      <div className="gp-split" style={{ gap: 24 }}>
+        <form onSubmit={(e) => handleSubmit(e)} className="gp-main" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <fieldset className="gp-card" style={{ ...fieldset, display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 16 }}>
+            {legend(1, "Obra")}
+            <div className="gp-fld" style={{ gridColumn: "span 4" }}>
+              <label htmlFor="n-nome" className="gp-lb">Nome do orçamento{req}</label>
+              <input id="n-nome" className="gp-in" type="text" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Residencial Vila Verde — etapa 1" required aria-required="true" />
             </div>
-
-            <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-12 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Nome do Orçamento / Projeto *
-                </label>
-                <input 
-                  type="text" 
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Ex: Orçamento Inicial - Edifício Horizonte"
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
-                  required
-                />
-              </div>
-
-              <div className="col-span-12 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Endereço Completo
-                </label>
-                <input 
-                  type="text" 
-                  value={endereco}
-                  onChange={(e) => setEndereco(e.target.value)}
-                  placeholder="Rua, Número, Bairro, Cidade - UF"
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
-                />
-              </div>
-
-              <div className="col-span-12 sm:col-span-6 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Tipo de Construção
-                </label>
-                <select 
-                  value={tipoConstrucao}
-                  onChange={(e) => setTipoConstrucao(e.target.value)}
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all cursor-pointer"
-                >
-                  <option value="Residencial">Residencial</option>
-                  <option value="Comercial">Comercial</option>
-                  <option value="Industrial">Industrial</option>
-                  <option value="Infraestrutura">Infraestrutura</option>
-                  <option value="Outro">Outro</option>
-                </select>
-              </div>
-
-              <div className="col-span-6 sm:col-span-3 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Estado (UF)
-                </label>
-                <select 
-                  value={estado}
-                  onChange={(e) => handleEstadoChange(e.target.value)}
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all cursor-pointer"
-                >
-                  {ESTADOS.map((est) => (
-                    <option key={est.value} value={est.value}>
-                      {est.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-span-6 sm:col-span-3 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Área Total (M²)
-                </label>
-                <input 
-                  type="number" 
-                  step="any"
-                  value={areaTotal || ""}
-                  onChange={(e) => setAreaTotal(Number(e.target.value))}
-                  placeholder="0,00"
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
-                />
+            <div className="gp-fld" style={{ gridColumn: "span 2" }}>
+              <label htmlFor="n-tipo" className="gp-lb">Tipo de construção</label>
+              <select id="n-tipo" className="gp-in" value={tipoConstrucao} onChange={(e) => setTipoConstrucao(e.target.value)}>
+                <option value="Residencial">Residencial</option>
+                <option value="Comercial">Comercial</option>
+                <option value="Industrial">Industrial</option>
+                <option value="Infraestrutura">Infraestrutura</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+            <div className="gp-fld" style={{ gridColumn: "span 3" }}>
+              <label htmlFor="n-end" className="gp-lb">Endereço da obra</label>
+              <input id="n-end" className="gp-in" type="text" autoComplete="street-address" value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua, número, bairro, cidade" />
+            </div>
+            <div className="gp-fld" style={{ gridColumn: "span 2" }}>
+              <label htmlFor="n-uf" className="gp-lb">Estado (UF)</label>
+              <select id="n-uf" className="gp-in" value={estado} onChange={(e) => handleEstadoChange(e.target.value)}>
+                {ESTADOS.map((est) => (
+                  <option key={est.value} value={est.value}>{est.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="gp-fld" style={{ gridColumn: "span 1" }}>
+              <label htmlFor="n-area" className="gp-lb">Área</label>
+              <div className="gp-affix">
+                <input id="n-area" type="number" step="any" inputMode="decimal" value={areaTotal || ""} onChange={(e) => setAreaTotal(Number(e.target.value))} placeholder="0" />
+                <span>m²</span>
               </div>
             </div>
-          </div>
+          </fieldset>
 
-          {/* Section 2: Bases e Referências */}
-          <div className="bg-white border border-[#c4c6cf]/30 rounded-[12px] p-6 shadow-xs relative overflow-hidden">
-            <div className="absolute bg-[#b9f61d] left-0 top-0 bottom-0 w-[4px]" />
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-[#f1f4f6] rounded-lg text-[#001b3d]">
-                <Database size={20} weight="bold" />
-              </div>
-              <h2 className="font-['Inter'] font-semibold text-lg text-black">
-                Bases e Referências
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-12 sm:col-span-6 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Bases de Referência
-                </label>
-                <select 
-                  value={baseReferencia}
-                  onChange={(e) => setBaseReferencia(e.target.value)}
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all cursor-pointer"
-                >
+          <fieldset className="gp-card" style={{ ...fieldset, display: "flex", flexDirection: "column", gap: 16 }}>
+            {legend(2, "Bases e referência")}
+            <div className="gp-grid">
+              <div className="gp-fld">
+                <label htmlFor="n-base" className="gp-lb">Base de referência</label>
+                <select id="n-base" className="gp-in" value={baseReferencia} onChange={(e) => setBaseReferencia(e.target.value)}>
                   <option value="SINAPI">SINAPI</option>
                   <option value="SEINFRA" disabled={!seinfraHabilitada}>
                     {seinfraHabilitada ? "SEINFRA" : "SEINFRA (disponível apenas para CE)"}
                   </option>
                 </select>
               </div>
-
-              <div className="col-span-12 sm:col-span-6 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Desoneração (SINAPI)
-                </label>
-                <select 
-                  value={tipoComposicao}
-                  onChange={(e) => setTipoComposicao(e.target.value)}
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all cursor-pointer"
-                >
+              <div className="gp-fld">
+                <label htmlFor="n-des" className="gp-lb">Desoneração (SINAPI)</label>
+                <select id="n-des" className="gp-in" value={tipoComposicao} onChange={(e) => setTipoComposicao(e.target.value)}>
                   <option value="Sem Desoneração">Com Encargos (Sem Desoneração)</option>
                   <option value="Com Desoneração">Desonerado (Com Desoneração)</option>
                 </select>
               </div>
+            </div>
 
-              <div className="col-span-12 flex flex-col gap-2">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Meses de Referência
-                </label>
-                {loadingBases ? (
-                  <p className="text-sm text-[#44474e]">Carregando meses disponíveis...</p>
-                ) : erroBases ? (
-                  <p className="text-sm text-red-600">
-                    Não foi possível carregar os meses de referência. Verifique se o servidor da API está ativo e configurado.
-                  </p>
-                ) : (
-                  <div className="flex flex-col gap-8">
-                    {gruposMeses.map(({ fonte, meses }) => {
-                      const selecionados = selecionadosDe(fonte, meses);
-                      return (
-                        <div key={fonte} className="flex flex-col gap-3">
-                          <h3 className="font-['Hanken_Grotesk'] font-bold text-[12px] text-black tracking-wider uppercase">
-                            {fonte}
-                            {fonte === baseReferencia && (
-                              <span className="ml-2 font-medium normal-case text-[11px] text-[#44474e]">
-                                (base do orçamento)
-                              </span>
-                            )}
-                          </h3>
-                          {meses.length === 0 ? (
-                            <p className="text-sm text-[#44474e]">Nenhuma tabela importada para a base {fonte}.</p>
-                          ) : (
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                              {meses.map((mes) => {
-                                const checked = selecionados.includes(mes);
-                                return (
-                                  <label
-                                    key={mes}
-                                    className={`flex items-center gap-2 px-3 py-2 rounded-[8px] border text-sm cursor-pointer transition-all ${
-                                      checked
-                                        ? "border-[#b9f61d] bg-[#b9f61d]/10 text-black"
-                                        : "border-[#c4c6cf]/40 bg-[#f1f4f6] text-[#44474e]"
-                                    }`}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={checked}
-                                      onChange={() => toggleMes(fonte, mes)}
-                                      className="accent-[#4b6700] cursor-pointer"
-                                    />
-                                    {mes}
-                                  </label>
-                                );
-                              })}
-                            </div>
+            <div className="gp-fld">
+              <span className="gp-lb" id="n-meses">Meses de referência</span>
+              {loadingBases ? (
+                <p className="gp-hint" style={{ margin: 0 }}>Carregando meses disponíveis...</p>
+              ) : erroBases ? (
+                <p role="alert" style={{ margin: 0, fontSize: 14, color: "#B91C1C" }}>
+                  Não foi possível carregar os meses de referência. Verifique se o servidor da API está ativo e configurado.
+                </p>
+              ) : (
+                <div role="group" aria-labelledby="n-meses" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  {gruposMeses.map(({ fonte, meses }) => {
+                    const selecionados = selecionadosDe(fonte, meses);
+                    return (
+                      <div key={fonte} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>
+                          {fonte}
+                          {fonte === baseReferencia && (
+                            <span className="gp-hint" style={{ marginLeft: 8, fontWeight: 600 }}>(base do orçamento)</span>
                           )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        </h3>
+                        {meses.length === 0 ? (
+                          <p className="gp-hint" style={{ margin: 0 }}>Nenhuma tabela importada para a base {fonte}.</p>
+                        ) : (
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+                            {meses.map((mes) => {
+                              const checked = selecionados.includes(mes);
+                              return (
+                                <label
+                                  key={mes}
+                                  className="gp-mono"
+                                  style={{
+                                    display: "flex", alignItems: "center", gap: 10, minHeight: 48, padding: "0 14px", borderRadius: 14, cursor: "pointer", fontSize: 14, fontWeight: 600, color: "#001b3d",
+                                    border: checked ? "2px solid #001b3d" : "1px solid #CBD5E1",
+                                    background: checked ? "#F7FCE9" : "#fff",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => toggleMes(fonte, mes)}
+                                    style={{ width: 18, height: 18, accentColor: "#001b3d", cursor: "pointer" }}
+                                  />
+                                  {mes}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </fieldset>
+
+          <fieldset className="gp-card" style={{ ...fieldset, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+            {legend(3, "Cliente e responsável")}
+            <div className="gp-fld">
+              <label htmlFor="n-cli" className="gp-lb">Cliente{req}</label>
+              <input id="n-cli" className="gp-in" type="text" autoComplete="organization" value={cliente} onChange={(e) => setCliente(e.target.value)} placeholder="Ex.: João da Silva Construções LTDA" required aria-required="true" />
+            </div>
+            <div className="gp-fld">
+              <label htmlFor="n-doc" className="gp-lb">CPF ou CNPJ</label>
+              <input id="n-doc" className="gp-in gp-mono" type="text" inputMode="numeric" value={cpfCnpj} onChange={(e) => setCpfCnpj(e.target.value)} placeholder="00.000.000/0000-00" />
+            </div>
+            <div className="gp-fld">
+              <label htmlFor="n-mail" className="gp-lb">E-mail do cliente</label>
+              <input id="n-mail" className="gp-in" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="cliente@email.com" />
+            </div>
+            <div className="gp-fld">
+              <label htmlFor="n-tel" className="gp-lb">Telefone</label>
+              <input id="n-tel" className="gp-in" type="tel" autoComplete="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(11) 98888-7777" />
+            </div>
+            <div className="gp-fld">
+              <label htmlFor="n-rt" className="gp-lb">Responsável técnico</label>
+              <input id="n-rt" className="gp-in" type="text" value={responsavelTecnico} onChange={(e) => setResponsavelTecnico(e.target.value)} placeholder="Engenheiro ou arquiteto responsável" />
+            </div>
+            <div className="gp-fld">
+              <label htmlFor="n-crea" className="gp-lb">CREA / CAU</label>
+              <input id="n-crea" className="gp-in gp-mono" type="text" value={numeroConselho} onChange={(e) => setNumeroConselho(e.target.value)} placeholder="Ex.: 123456/D" />
+            </div>
+          </fieldset>
+
+          <fieldset className="gp-card" style={{ ...fieldset, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+            {legend(4, "Financeiro")}
+            <div className="gp-fld">
+              <label htmlFor="n-bdi" className="gp-lb">BDI</label>
+              <div className="gp-affix">
+                <input id="n-bdi" type="number" step="any" inputMode="decimal" value={bdi} onChange={(e) => setBdi(Number(e.target.value))} placeholder="0.00" aria-describedby="n-bdi-h" />
+                <span>%</span>
+              </div>
+              <span id="n-bdi-h" className="gp-hint">Detalhe o analítico depois, na planilha.</span>
+            </div>
+            <div className="gp-fld">
+              <label htmlFor="n-mg" className="gp-lb">Margem de negociação</label>
+              <div className="gp-affix">
+                <span>R$</span>
+                <input id="n-mg" type="number" step="any" min="0" inputMode="decimal" value={margem} onChange={(e) => setMargem(Number(e.target.value))} placeholder="0,00" />
               </div>
             </div>
-          </div>
-
-          {/* Section 3: Dados do Cliente */}
-          <div className="bg-white border border-[#c4c6cf]/30 rounded-[12px] p-6 shadow-xs relative overflow-hidden">
-            <div className="absolute bg-[#b9f61d] left-0 top-0 bottom-0 w-[4px]" />
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-[#f1f4f6] rounded-lg text-[#001b3d]">
-                <User size={20} weight="bold" />
-              </div>
-              <h2 className="font-['Inter'] font-semibold text-lg text-black">
-                Dados do Cliente
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-12 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Cliente / Proprietário *
-                </label>
-                <input 
-                  type="text" 
-                  value={cliente}
-                  onChange={(e) => setCliente(e.target.value)}
-                  placeholder="Ex: João da Silva Construções LTDA"
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
-                  required
-                />
-              </div>
-
-              <div className="col-span-12 sm:col-span-8 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Responsável Técnico
-                </label>
-                <input
-                  type="text"
-                  value={responsavelTecnico}
-                  onChange={(e) => setResponsavelTecnico(e.target.value)}
-                  placeholder="Nome do engenheiro / arquiteto responsável"
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
-                />
-              </div>
-
-              <div className="col-span-12 sm:col-span-4 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Nº do Conselho (CREA/CAU)
-                </label>
-                <input
-                  type="text"
-                  value={numeroConselho}
-                  onChange={(e) => setNumeroConselho(e.target.value)}
-                  placeholder="Ex: 123456/D"
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
-                />
-              </div>
-
-              <div className="col-span-12 sm:col-span-6 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  CPF / CNPJ
-                </label>
-                <input 
-                  type="text" 
-                  value={cpfCnpj}
-                  onChange={(e) => setCpfCnpj(e.target.value)}
-                  placeholder="00.000.000/0000-00"
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
-                />
-              </div>
-
-              <div className="col-span-12 sm:col-span-6 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Telefone
-                </label>
-                <input 
-                  type="text" 
-                  value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
-                  placeholder="(11) 98888-7777"
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
-                />
-              </div>
-
-              <div className="col-span-12 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  E-mail
-                </label>
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="cliente@email.com"
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Section 4: Configurações Financeiras */}
-          <div className="bg-white border border-[#c4c6cf]/30 rounded-[12px] p-6 shadow-xs relative overflow-hidden">
-            <div className="absolute bg-[#b9f61d] left-0 top-0 bottom-0 w-[4px]" />
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-[#f1f4f6] rounded-lg text-[#001b3d]">
-                <Coins size={20} weight="bold" />
-              </div>
-              <h2 className="font-['Inter'] font-semibold text-lg text-black">
-                Configurações Financeiras
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-6 sm:col-span-3 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  BDI Aplicado (%)
-                </label>
-                <input 
-                  type="number" 
-                  step="any"
-                  value={bdi}
-                  onChange={(e) => setBdi(Number(e.target.value))}
-                  placeholder="0.00"
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
-                />
-              </div>
-
-              <div className="col-span-6 sm:col-span-3 flex flex-col gap-1.5">
-                <label className="font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] tracking-wider uppercase">
-                  Margem (R$)
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  value={margem}
-                  onChange={(e) => setMargem(Number(e.target.value))}
-                  placeholder="0,00"
-                  className="bg-[#f1f4f6] border border-[#c4c6cf]/40 rounded-[8px] px-4 py-2.5 outline-none focus:border-[#b9f61d] focus:ring-1 focus:ring-[#b9f61d] text-sm transition-all"
-                />
-              </div>
-            </div>
-          </div>
+          </fieldset>
         </form>
 
-        {/* Right Side: Ações */}
-        <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
-          <div className="bg-white border border-[#c4c6cf]/30 rounded-[12px] p-6 shadow-md flex flex-col gap-3">
-            <div className="flex flex-col gap-3">
-              <button 
-                type="button"
-                onClick={(e) => handleSubmit(e)}
-                disabled={loading}
-                className="bg-[#b9f61d] hover:bg-[#a6de14] disabled:opacity-50 text-[#141f00] font-['Inter'] font-bold text-base py-4 rounded-[12px] transition-all flex items-center justify-center gap-2 shadow-[0px_4px_12px_rgba(185,246,29,0.2)] w-full cursor-pointer"
-              >
-                {loading ? (
-                  <>
-                    <CircleNotch size={18} className="animate-spin" />
-                    Criando...
-                  </>
-                ) : (
-                  <>
-                    Criar Orçamento
-                    <ArrowRight size={16} weight="bold" />
-                  </>
-                )}
-              </button>
-
-              <button 
-                type="button"
-                onClick={(e) => handleSubmit(e, "em_elaboracao")}
-                disabled={loading}
-                className="border border-[#c4c6cf] hover:bg-[#f1f4f6]/50 text-[#001b3d] font-semibold py-3.5 rounded-[12px] transition-all w-full text-sm cursor-pointer flex items-center justify-center"
-              >
-                Salvar como Rascunho
-              </button>
-            </div>
-          </div>
-
-          {/* Help Action Card */}
-          <div className="bg-white border border-[#c4c6cf]/30 rounded-[12px] px-6 py-4 flex items-center justify-between shadow-xs">
-            <span className="text-sm text-[#44474e]">Precisa de ajuda?</span>
-            <Link 
-              href="#"
-              className="font-semibold text-sm text-[#4b6700] hover:underline flex items-center gap-1.5"
+        <aside aria-labelledby="h-resumo" className="gp-side" style={{ position: "sticky", top: 24, display: "flex", flexDirection: "column", gap: 14 }}>
+          <section className="gp-card gp-dark gp-pad" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <h2 id="h-resumo" style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>Resumo</h2>
+            <dl style={{ margin: 0, display: "flex", flexDirection: "column", gap: 10, fontSize: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                <dt style={{ color: "#cbd5e1" }}>Base</dt>
+                <dd style={{ margin: 0, fontWeight: 700, textAlign: "right" }}>{baseReferencia}</dd>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                <dt style={{ color: "#cbd5e1" }}>UF / referência</dt>
+                <dd style={{ margin: 0, fontWeight: 700, textAlign: "right" }}>
+                  {estado.toUpperCase()}{mesesSelecionados.length > 0 ? ` · ${mesesSelecionados.join(", ")}` : ""}
+                </dd>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                <dt style={{ color: "#cbd5e1" }}>Encargos</dt>
+                <dd style={{ margin: 0, fontWeight: 700 }}>{tipoComposicao}</dd>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                <dt style={{ color: "#cbd5e1" }}>BDI</dt>
+                <dd className="gp-mono" style={{ margin: 0, fontWeight: 600 }}>{Number(bdi).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}%</dd>
+              </div>
+            </dl>
+            {seinfraHabilitada && (
+              <p style={{ margin: 0, padding: "10px 12px", borderRadius: 12, background: "rgba(159,211,0,0.14)", color: "#d9f99d", fontSize: 13, lineHeight: 1.45 }}>
+                SEINFRA liberada: a obra é no Ceará.
+              </p>
+            )}
+            <button type="button" onClick={(e) => handleSubmit(e)} disabled={loading} className="gp-btn gp-bp" style={{ minHeight: 52, opacity: loading ? 0.6 : 1 }}>
+              {loading ? (
+                <>
+                  <CircleNotch size={18} weight="bold" className="animate-spin" aria-hidden="true" />
+                  Criando...
+                </>
+              ) : (
+                <>
+                  Criar orçamento
+                  <ArrowRight size={16} weight="bold" aria-hidden="true" />
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e, "em_elaboracao")}
+              disabled={loading}
+              className="gp-btn"
+              style={{ border: "1px solid rgba(255,255,255,0.24)", background: "transparent", color: "#fff" }}
             >
-              Ver Guia Técnico
-              <ArrowRight size={14} weight="bold" />
-            </Link>
-          </div>
-        </div>
+              Salvar como rascunho
+            </button>
+          </section>
+          <Link href="#" className="gp-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "16px 18px", borderRadius: 16, color: "#001b3d", textDecoration: "none" }}>
+            <span style={{ fontSize: 14, fontWeight: 700 }}>Dúvidas sobre bases e BDI?</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#007a85" }}>Guia técnico</span>
+          </Link>
+        </aside>
       </div>
-    </div>
+    </>
   );
 }

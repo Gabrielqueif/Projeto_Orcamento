@@ -4,25 +4,31 @@ type DatabaseCardProps = {
   title: string;
   description: string;
   id?: string;
+  fonte?: string;
   children?: React.ReactNode;
 };
 
-export default function DatabaseCard({ title, description, id, children }: DatabaseCardProps) {
+export default function DatabaseCard({ title, description, id, fonte, children }: DatabaseCardProps) {
+  const sigla = (fonte ?? title).slice(0, 2).toUpperCase();
+  const seinfra = fonte === 'SEINFRA';
   return (
-    <div className="bg-white rounded-lg p-5 md:p-6 shadow-md border border-slate-100 h-full flex flex-col justify-between hover:shadow-lg transition-shadow">
-      <div className="mb-6 border-b pb-4">
-        <h2 className="text-xl font-bold text-slate-700">{title}</h2>
-        <p className="text-sm text-slate-500">{description}</p>
-        {children}
-      </div>
-      <div className="space-y-4">
-        <Link
-          href={`/bases/${id}`}
-          className="block w-full text-center bg-brand-primary text-white py-2 px-4 rounded hover:bg-brand-navy transition"
+    <article className="gp-card gp-pad" style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <span
+          aria-hidden="true"
+          style={{ width: 48, height: 48, borderRadius: 14, background: seinfra ? '#e0f5f7' : '#E6F6D0', color: seinfra ? '#00626b' : '#3F6604', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}
         >
-          ver detalhes
-        </Link>
+          {sigla}
+        </span>
+        <div style={{ flex: '1 1 auto' }}>
+          <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{title}</h3>
+          <p style={{ margin: '2px 0 0', fontSize: 14, color: '#475569' }}>{description}</p>
+        </div>
       </div>
-    </div>
+      {children}
+      <Link href={`/bases/${id}`} className="gp-btn gp-bd" style={{ alignSelf: 'flex-start', marginTop: 'auto' }}>
+        ver detalhes
+      </Link>
+    </article>
   );
 }

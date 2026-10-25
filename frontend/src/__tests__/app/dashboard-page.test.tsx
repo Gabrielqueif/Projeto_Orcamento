@@ -62,7 +62,7 @@ describe("painel sem obras", () => {
     mockGetDashboard.mockResolvedValue(painelZerado);
     render(<DashboardPage />);
 
-    await waitFor(() => expect(screen.getByText("PROGRESSO SEMANAL")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Progresso semanal")).toBeInTheDocument());
     expect(screen.getByText("Nenhuma obra em andamento.")).toBeInTheDocument();
     expect(screen.getByTestId("grafico-medidor")).toBeInTheDocument();
     expect(screen.getByText(/nenhum risco identificado/i)).toBeInTheDocument();

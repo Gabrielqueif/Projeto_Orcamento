@@ -176,7 +176,9 @@ class DiarioRepository:
         return resultado.data or []
 
     def itens_do_orcamento(self, orcamento_id: str) -> List[Dict[str, Any]]:
-        resultado = self.supabase.table("orcamento_itens").select(COLUNAS_ITEM).eq("orcamento_id", orcamento_id).execute()
+        resultado = (
+            self.supabase.table("orcamento_itens").select(COLUNAS_ITEM).eq("orcamento_id", orcamento_id).execute()
+        )
         return resultado.data or []
 
     def servicos_dos_diarios(self, diario_ids: List[str]) -> List[Dict[str, Any]]:

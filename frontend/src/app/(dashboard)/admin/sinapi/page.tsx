@@ -1,23 +1,21 @@
+import Link from "next/link";
 import AdminGuard from "@/components/auth/admin-guard";
 import { ImportUpload } from "@/components/admin/ImportUpload";
 
 export default function ImportAdminPage() {
     return (
         <AdminGuard>
-            <div className="container mx-auto py-10">
-                <h1 className="text-3xl font-bold mb-8 text-brand-primary">Importação de Preços e Composições</h1>
-
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-                    <h2 className="text-xl font-semibold mb-4 text-slate-700">Importar Planilhas de Referência</h2>
-                    <p className="text-slate-500 mb-6">
-                        Faça upload das planilhas (SINAPI ou SEINFRA) para atualizar a base de dados.
-                        O sistema extrairá automaticamente a data base e processará os encargos conforme a fonte selecionada.
-                    </p>
-
-                    <ImportUpload />
+            <div>
+                <nav aria-label="Trilha" className="gp-crumb">
+                    <Link href="/bases">Bases de dados</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Importação oficial</span>
+                </nav>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4, flexWrap: "wrap" }}>
+                    <h1 className="gp-h1" style={{ margin: 0 }}>Importar SINAPI e SEINFRA</h1>
+                    <span className="gp-bg" style={{ background: "#9fd300", color: "#001b3d" }}>Só administradores</span>
                 </div>
+                <p className="gp-sub">Os dados importados ficam disponíveis para todas as contas.</p>
             </div>
+            <ImportUpload />
         </AdminGuard>
     );
 }
-

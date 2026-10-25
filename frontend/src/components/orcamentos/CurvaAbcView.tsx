@@ -1,22 +1,26 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { 
-  TrendUp, 
-  Warning, 
-  Circle, 
-  ChartPieSlice,
-  Spinner
-} from "@phosphor-icons/react";
-import { getOrcamentoCurvaABC, type CurvaABCResponse, type CurvaABCInsumo } from "@/lib/api/orcamentos";
+import { Spinner } from "@phosphor-icons/react";
+import { getOrcamentoCurvaABC, type CurvaABCResponse } from "@/lib/api/orcamentos";
 
 interface CurvaAbcViewProps {
   orcamentoId: string;
 }
 
+// [cor da barra/letra, cor do texto sobre ela, estilo do selo]
+const CLASSES: Record<string, { cor: string; texto: string; selo: React.CSSProperties }> = {
+  A: { cor: "#001b3d", texto: "#fff", selo: { background: "#001b3d", color: "#fff" } },
+  B: { cor: "#00a3b1", texto: "#001b3d", selo: { background: "#e0f5f7", color: "#00626b" } },
+  C: { cor: "#9fd300", texto: "#001b3d", selo: { background: "#E6F6D0", color: "#3F6604" } },
+};
+
+const fmtPct = (v: number) => `${v.toFixed(1).replace(".", ",")}%`;
+
 export function CurvaAbcView({ orcamentoId }: CurvaAbcViewProps) {
   const [data, setData] = useState<CurvaABCResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filtro, setFiltro] = useState<string>("todas");
 
   useEffect(() => {
     async function fetchABC() {
@@ -41,323 +45,121 @@ export function CurvaAbcView({ orcamentoId }: CurvaAbcViewProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12">
-        <div className="flex items-center gap-2 font-['Inter'] text-[14px] text-[#64748b]">
-          <Spinner size={16} className="animate-spin text-[#4b6700]" />
-          <span>Calculando Curva ABC...</span>
-        </div>
+      <div role="status" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 48, fontSize: 14, color: "#475569" }}>
+        <Spinner size={16} weight="bold" className="animate-spin" aria-hidden="true" />
+        <span>Calculando Curva ABC...</span>
       </div>
     );
   }
 
   if (!data || data.insumos.length === 0) {
     return (
-      <div className="flex items-center justify-center p-12 bg-white border border-[#c4c6cf] rounded-[12px] shadow-sm">
-        <span className="font-['Inter'] text-[14px] text-[#64748b]">
-          Nenhum insumo disponível para gerar a Curva ABC. Adicione composições à planilha orçamentária.
-        </span>
+      <div className="gp-card" style={{ padding: 48, textAlign: "center", fontSize: 14, color: "#475569" }}>
+        Nenhum insumo disponível para gerar a Curva ABC. Adicione composições à planilha orçamentária.
       </div>
     );
   }
 
-  // Obter insumos Classe A para tabela de detalhes
-  const insumosClasseA = data.insumos.filter((ins) => ins.classe === "A");
-  
-  // Dados para o Gráfico (Mostrar no máximo as 6 principais categorias/insumos)
-  const chartInsumos = data.insumos.slice(0, 6);
-  const categories = chartInsumos.map(ins => ins.descricao.substring(0, 15) + (ins.descricao.length > 15 ? "..." : ""));
-  const costs = chartInsumos.map(ins => ins.total);
-  const cumulative = chartInsumos.map(ins => ins.acumulado);
-
-  // SVG Pareto Chart Dimensions
-  const chartHeight = 220;
-  const chartWidth = 520;
-  const paddingLeft = 45;
-  const paddingRight = 45;
-  const paddingTop = 20;
-  const paddingBottom = 40;
-
-  const chartInnerWidth = chartWidth - paddingLeft - paddingRight;
-  const chartInnerHeight = chartHeight - paddingTop - paddingBottom;
-
-  // X coords for columns
-  const getX = (index: number) => {
-    if (categories.length <= 1) return paddingLeft + chartInnerWidth / 2;
-    const spacing = chartInnerWidth / (categories.length - 1);
-    return paddingLeft + index * spacing;
-  };
-
-  // Y coords for cost bars (max cost = max of the displayed costs)
-  const maxCost = Math.max(...costs, 1);
-  const getBarY = (value: number) => {
-    const ratio = value / maxCost;
-    return chartHeight - paddingBottom - ratio * chartInnerHeight;
-  };
-
-  const getBarHeight = (value: number) => {
-    const ratio = value / maxCost;
-    return ratio * chartInnerHeight;
-  };
-
-  // Y coords for cumulative percentage line (0 to 100%)
-  const getLineY = (percentage: number) => {
-    const ratio = percentage / 100;
-    return chartHeight - paddingBottom - ratio * chartInnerHeight;
-  };
-
-  // Generate SVG path for cumulative line
-  const linePath = cumulative.length > 0 
-    ? cumulative.map((pct, idx) => {
-        const x = getX(idx);
-        const y = getLineY(pct);
-        return `${idx === 0 ? "M" : "L"} ${x} ${y}`;
-      }).join(" ")
-    : "";
-
-  const totalClasseA = data.resumo_classes["A"] || 0.0;
-  const pctClasseA = data.valor_total > 0 ? (totalClasseA / data.valor_total) * 100.0 : 0.0;
+  const total = data.valor_total;
+  const visiveis = data.insumos.filter((i) => filtro === "todas" || i.classe === filtro);
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* ABC Information Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Card 1: ORÇAMENTO TOTAL */}
-        <div className="bg-white border border-[#c4c6cf] border-l-4 border-l-black rounded-[12px] p-6 flex flex-col justify-between shadow-sm relative overflow-hidden">
-          <div>
-            <span className="font-['Hanken_Grotesk'] font-bold text-[11px] text-[#44474e] uppercase tracking-[0.5px]">
-              CUSTO DIRETO TOTAL (ABC)
-            </span>
-            <h2 className="font-['Inter'] font-bold text-[28px] text-[#181c1e] mt-2">
-              {formatCurrency(data.valor_total)}
-            </h2>
-          </div>
-          <div className="flex items-center gap-2 mt-4">
-            <span className="bg-[#e8f5e9] text-[#2e7d32] font-['Inter'] font-bold text-[11px] px-2 py-0.5 rounded flex items-center gap-1">
-              {data.insumos.length} Insumos
-            </span>
-            <span className="font-['Inter'] font-normal text-[12px] text-[#44474e]">
-              analisados no total
-            </span>
-          </div>
-        </div>
-
-        {/* Card 2: ITENS CLASSE A */}
-        <div className="bg-white border border-[#c4c6cf] border-l-4 border-l-[#4b6700] rounded-[12px] p-6 flex flex-col justify-between shadow-sm relative overflow-hidden">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="font-['Hanken_Grotesk'] font-bold text-[11px] text-[#44474e] uppercase tracking-[0.5px]">
-                ITENS CLASSE A
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Filtro por classe */}
+      <div role="group" aria-label="Filtrar por classe" className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        {["A", "B", "C"].map((k) => {
+          const ativo = filtro === k;
+          const itens = data.insumos.filter((i) => i.classe === k).length;
+          const valor = data.resumo_classes[k] || 0;
+          return (
+            <button
+              key={k}
+              type="button"
+              aria-pressed={ativo}
+              onClick={() => setFiltro(ativo ? "todas" : k)}
+              className="gp-card"
+              style={{
+                display: "flex", alignItems: "center", gap: 16, padding: "18px 20px", cursor: "pointer", color: "#001b3d",
+                border: ativo ? "2px solid #001b3d" : "1px solid #E6EBF2",
+              }}
+            >
+              <span
+                style={{
+                  width: 52, height: 52, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 24, fontWeight: 800, background: CLASSES[k].cor, color: CLASSES[k].texto,
+                }}
+              >
+                {k}
               </span>
-              <span className="bg-[#b9f61d] text-[#506e00] font-['Inter'] font-bold text-[10px] px-2 py-0.5 rounded uppercase">
-                CRÍTICO
+              <span style={{ textAlign: "left" }}>
+                <strong className="gp-mono" style={{ display: "block", fontSize: 24 }}>
+                  {total > 0 ? fmtPct((valor / total) * 100) : "0,0%"}
+                </strong>
+                <span style={{ fontSize: 14 }}>do custo · {itens} itens</span>
+                <span className="gp-hint" style={{ display: "block" }}>{formatCurrency(valor)}</span>
               </span>
-            </div>
-            <div className="flex items-baseline gap-1.5 mt-2">
-              <span className="font-['Inter'] font-bold text-[28px] text-[#181c1e]">
-                {insumosClasseA.length}
-              </span>
-              <span className="font-['Inter'] font-normal text-[13px] text-[#44474e]">
-                de {data.insumos.length} insumos
-              </span>
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="bg-[#e5e9eb] h-[8px] rounded-[9999px] w-full overflow-hidden mb-1.5">
-              <div className="bg-[#4b6700] h-full" style={{ width: `${Math.min(100, pctClasseA)}%` }} />
-            </div>
-            <p className="font-['Inter'] font-normal text-[11px] text-[#44474e]">
-              Representam {pctClasseA.toFixed(1)}% do custo total da planilha.
-            </p>
-          </div>
-        </div>
-
-        {/* Card 3: RESUMO DE CLASSES */}
-        <div className="bg-white border border-[#c4c6cf] border-l-4 border-l-[#44d8f1] rounded-[12px] p-6 flex flex-col justify-between shadow-sm relative overflow-hidden">
-          <div className="flex items-start justify-between">
-            <div className="w-full">
-              <span className="font-['Hanken_Grotesk'] font-bold text-[11px] text-[#44474e] uppercase tracking-[0.5px]">
-                DESDOBRAMENTO DE CURVA
-              </span>
-              <div className="flex flex-col gap-1 mt-2.5 text-xs">
-                <div className="flex justify-between items-center text-[#1e293b]">
-                  <span className="font-bold">Classe A:</span>
-                  <span>{formatCurrency(totalClasseA)} ({pctClasseA.toFixed(1)}%)</span>
-                </div>
-                <div className="flex justify-between items-center text-[#475569]">
-                  <span>Classe B:</span>
-                  <span>{formatCurrency(data.resumo_classes["B"] || 0.0)} ({((data.resumo_classes["B"] || 0) / data.valor_total * 100).toFixed(1)}%)</span>
-                </div>
-                <div className="flex justify-between items-center text-[#475569]">
-                  <span>Classe C:</span>
-                  <span>{formatCurrency(data.resumo_classes["C"] || 0.0)} ({((data.resumo_classes["C"] || 0) / data.valor_total * 100).toFixed(1)}%)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Pareto Diagram & Detailed List */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Pareto Diagram Box */}
-        <div className="lg:col-span-2 bg-white border border-[#c4c6cf] rounded-[12px] p-6 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between border-b border-[#f1f5f9] pb-4 mb-4">
-            <h3 className="font-['Inter'] font-semibold text-[18px] text-black">
-              Diagrama de Pareto (Top Insumos)
-            </h3>
-            <div className="flex gap-4">
-              <div className="flex items-center gap-1.5">
-                <div className="bg-[#001b3d] w-[12px] h-[12px] rounded-[2px]" />
-                <span className="font-['Inter'] font-medium text-[11px] text-[#44474e]">
-                  Custo Unitário Acumulado
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="bg-[#4b6700] w-[16px] h-[2px]" />
-                <span className="font-['Inter'] font-medium text-[11px] text-[#44474e]">
-                  % Acumulado
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Native SVG Chart */}
-          <div className="w-full">
-            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto">
-              {/* Grid Lines */}
-              {[0, 20, 40, 60, 80, 100].map((tick) => {
-                const y = getLineY(tick);
-                return (
-                  <g key={tick}>
-                    <line 
-                      x1={paddingLeft} 
-                      y1={y} 
-                      x2={chartWidth - paddingRight} 
-                      y2={y} 
-                      stroke="#ebeef0" 
-                      strokeDasharray="3 3"
-                    />
-                    {/* Left Y Axis Label */}
-                    <text 
-                      x={paddingLeft - 10} 
-                      y={y + 3} 
-                      className="font-['Inter'] text-[9px] text-[#44474e] text-right" 
-                      textAnchor="end"
-                    >
-                      {tick}%
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* Bars */}
-              {costs.map((val, idx) => {
-                const x = getX(idx);
-                const barWidth = 24;
-                const y = getBarY(val);
-                const height = getBarHeight(val);
-                return (
-                  <rect
-                    key={idx}
-                    x={x - barWidth / 2}
-                    y={y}
-                    width={barWidth}
-                    height={height}
-                    fill="#001b3d"
-                    rx="2"
-                  />
-                );
-              })}
-
-              {/* Cumulative Line Path */}
-              {linePath && (
-                <path
-                  d={linePath}
-                  fill="none"
-                  stroke="#4b6700"
-                  strokeWidth="2"
-                />
-              )}
-
-              {/* Cumulative Dots */}
-              {cumulative.map((pct, idx) => {
-                const x = getX(idx);
-                const y = getLineY(pct);
-                return (
-                  <g key={idx}>
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="3.5"
-                      fill="#b9f61d"
-                      stroke="#4b6700"
-                      strokeWidth="1.5"
-                    />
-                  </g>
-                );
-              })}
-
-              {/* X Axis Labels */}
-              {categories.map((cat, idx) => {
-                const x = getX(idx);
-                const y = chartHeight - paddingBottom + 18;
-                return (
-                  <text
-                    key={idx}
-                    x={x}
-                    y={y}
-                    className="font-['Inter'] font-semibold text-[8px] text-[#64748b]"
-                    textAnchor="middle"
-                  >
-                    {cat}
-                  </text>
-                );
-              })}
-            </svg>
-          </div>
+      <section className="gp-card" aria-labelledby="h-rk" style={{ overflow: "hidden" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "16px 22px", borderBottom: "1px solid #E6EBF2" }}>
+          <h2 id="h-rk" className="gp-h2">
+            {filtro === "todas" ? "Itens por custo" : `Itens da classe ${filtro}`}
+          </h2>
+          <span className="gp-hint" aria-live="polite">
+            {visiveis.length} itens mostrados · custo direto total {formatCurrency(total)}
+          </span>
         </div>
-
-        {/* Detailed List Table */}
-        <div className="bg-white border border-[#c4c6cf] rounded-[12px] p-6 shadow-sm flex flex-col justify-between overflow-hidden">
-          <div className="h-full flex flex-col">
-            <h3 className="font-['Inter'] font-semibold text-[18px] text-black border-b border-[#f1f5f9] pb-4 mb-4">
-              Detalhamento Classe A
-            </h3>
-            <div className="overflow-y-auto max-h-[300px] flex-1">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-[#c4c6cf]">
-                    <th className="pb-3 font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] uppercase tracking-[0.5px]">
-                      Código
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}>
+            <caption className="gp-sr">Ranking da curva ABC</caption>
+            <thead>
+              <tr>
+                <th scope="col" className="gp-th" style={{ paddingLeft: 22, width: 40 }}>#</th>
+                <th scope="col" className="gp-th">Insumo</th>
+                <th scope="col" className="gp-th">Classe</th>
+                <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Valor</th>
+                <th scope="col" className="gp-th" style={{ width: 240 }}>% do total</th>
+                <th scope="col" className="gp-th" style={{ textAlign: "right", paddingRight: 22 }}>% acumulado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visiveis.map((item) => {
+                const pos = data.insumos.indexOf(item) + 1;
+                const cl = CLASSES[item.classe] ?? CLASSES.C;
+                return (
+                  <tr key={item.codigo_insumo} className="gp-row">
+                    <td className="gp-td gp-mono" style={{ paddingLeft: 22, color: "#475569" }}>{pos}</td>
+                    <th scope="row" className="gp-td" style={{ textAlign: "left", fontWeight: 700 }}>
+                      {item.descricao}
+                      <span className="gp-hint gp-mono" style={{ display: "block", fontWeight: 500 }}>
+                        {item.codigo_insumo} · {item.unidade}
+                      </span>
                     </th>
-                    <th className="pb-3 font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] uppercase tracking-[0.5px]">
-                      Descrição Insumo
-                    </th>
-                    <th className="pb-3 font-['Hanken_Grotesk'] font-bold text-[10px] text-[#44474e] uppercase tracking-[0.5px] text-right">
-                      Part. (%)
-                    </th>
+                    <td className="gp-td">
+                      <span className="gp-bg" style={cl.selo}>{item.classe}</span>
+                    </td>
+                    <td className="gp-td gp-mono" style={{ textAlign: "right" }}>{formatCurrency(item.total)}</td>
+                    <td className="gp-td">
+                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span className="gp-bar" style={{ flex: "1 1 auto" }}>
+                          <span style={{ width: `${Math.min(100, Math.max(item.porcentagem, 0) * 4)}%`, background: cl.cor }} />
+                        </span>
+                        <span className="gp-mono" style={{ minWidth: 50, textAlign: "right" }}>{fmtPct(item.porcentagem)}</span>
+                      </span>
+                    </td>
+                    <td className="gp-td gp-mono" style={{ textAlign: "right", paddingRight: 22, fontWeight: 600 }}>
+                      {fmtPct(item.acumulado)}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-[#ebeef0]">
-                  {insumosClasseA.map((item) => (
-                    <tr key={item.codigo_insumo} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-2.5 font-['Inter'] text-[12px] text-[#64748b]">
-                        {item.codigo_insumo}
-                      </td>
-                      <td className="py-2.5 font-['Inter'] font-semibold text-[12px] text-black truncate max-w-[120px]" title={item.descricao}>
-                        {item.descricao}
-                      </td>
-                      <td className="py-2.5 font-['Inter'] font-bold text-[12px] text-[#4b6700] text-right">
-                        {item.porcentagem.toFixed(1)}%
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

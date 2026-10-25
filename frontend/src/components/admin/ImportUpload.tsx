@@ -2,10 +2,6 @@
 
 import { useState } from 'react';
 import { importWorksheet } from '@/lib/api/importacao';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 export function ImportUpload() {
     const [files, setFiles] = useState<File[]>([]);
@@ -14,6 +10,11 @@ export function ImportUpload() {
     const [source, setSource] = useState('SINAPI');
     const [error, setError] = useState<string | null>(null);
     const [importResult, setImportResult] = useState<any>(null);
+
+    const limparArquivo = () => {
+        const el = document.getElementById('file_complete') as HTMLInputElement | null;
+        if (el) el.value = '';
+    };
 
     const handleImport = async () => {
         if (files.length === 0) {
@@ -40,95 +41,95 @@ export function ImportUpload() {
         }
     };
 
+    const semArquivo = importing || files.length === 0;
+
     return (
-        <Card className="w-full max-w-2xl mx-auto">
-            <CardHeader>
-                <CardTitle>Importar Tabela de Preços</CardTitle>
-                <CardDescription>
-                    Selecione a fonte e o arquivo Excel correspondente para importar composições e preços para o banco de dados.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="source" className="text-gray-700 font-medium">Fonte de Dados</Label>
-                    <select 
-                      id="source"
-                      value={source} 
-                      onChange={(e) => { setSource(e.target.value); setFiles([]); const el = document.getElementById('file_complete') as HTMLInputElement | null; if (el) el.value = ''; }}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        <div className="gp-split">
+            <section className="gp-card gp-pad gp-main" aria-labelledby="h-nv" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <h2 id="h-nv" className="gp-h2">Nova importação</h2>
+                <div className="gp-fld">
+                    <label htmlFor="source" className="gp-lb">Fonte</label>
+                    <select
+                        id="source"
+                        value={source}
+                        onChange={(e) => { setSource(e.target.value); setFiles([]); limparArquivo(); }}
+                        className="gp-in"
                     >
-                      <option value="SINAPI">SINAPI (Nacional)</option>
-                      <option value="SEINFRA">SEINFRA (Ceará)</option>
+                        <option value="SINAPI">SINAPI (Nacional)</option>
+                        <option value="SEINFRA">SEINFRA (Ceará)</option>
                     </select>
                 </div>
 
-                <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="file_complete" className="text-gray-700 font-medium">{source === 'SEINFRA' ? 'Arquivos Excel (.xls) — Insumos e Composições' : 'Arquivo Excel (.xlsx)'}</Label>
-                    <Input
+                <div className="gp-fld">
+                    <label htmlFor="file_complete" className="gp-lb">{source === 'SEINFRA' ? 'Arquivos Excel (.xls) — Insumos e Composições' : 'Arquivo Excel (.xlsx)'}</label>
+                    <input
                         id="file_complete"
                         type="file"
                         accept=".xls,.xlsx"
                         multiple={source === 'SEINFRA'}
                         onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
                         disabled={importing}
+                        style={{ padding: 28, border: '2px dashed #7B8AA0', borderRadius: 16, background: '#F4F6FA', color: '#001b3d', fontSize: 15, width: '100%', boxSizing: 'border-box' }}
                     />
-                    <p className="text-xs text-muted-foreground">
-                        {source === 'SINAPI' 
+                    <span className="gp-hint">
+                        {source === 'SINAPI'
                             ? 'O sistema buscará automaticamente as abas CSD, CCD e CSE neste arquivo.'
                             : 'Selecione juntos o arquivo de Insumos e o de Composições da mesma tabela (mesmos encargos sociais).'}
-                    </p>
+                    </span>
                 </div>
 
                 {error && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+                    <p role="alert" className="gp-bg gp-da" style={{ margin: 0, whiteSpace: 'normal', borderRadius: 14, padding: '10px 14px' }}>
                         {error}
-                    </div>
+                    </p>
                 )}
 
-                <div className="flex justify-end pt-4">
-                    <Button
-                        className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
-                        onClick={handleImport}
-                        disabled={importing || files.length === 0}
-                    >
-                        {importing ? 'Processando (Isso pode demorar)...' : 'Importar Tabela Completa'}
-                    </Button>
-                </div>
+                <button
+                    type="button"
+                    className="gp-btn gp-bp"
+                    onClick={handleImport}
+                    disabled={semArquivo}
+                    style={semArquivo ? { alignSelf: 'flex-start', background: '#E6EBF2', color: '#475569', cursor: 'not-allowed' } : { alignSelf: 'flex-start' }}
+                >
+                    {importing ? 'Processando (Isso pode demorar)...' : 'Importar Tabela Completa'}
+                </button>
 
                 {importResult && (
-                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md animate-in fade-in duration-500">
-                        <h3 className="font-semibold text-blue-800 mb-2">
+                    <div role="status" style={{ padding: 16, borderRadius: 14, background: '#F4F6FA', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>
                             {importResult.status === 'parcial' ? 'Importação Concluída com Falhas' : 'Importação Concluída com Sucesso!'}
                         </h3>
                         {importResult.falhas?.length > 0 && (
-                            <ul className="list-disc list-inside text-sm text-red-700 mb-2">
+                            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14, color: '#B91C1C' }}>
                                 {importResult.falhas.map((f: { arquivo: string; motivo: string }) => (
                                     <li key={f.arquivo}>{f.arquivo}: {f.motivo}</li>
                                 ))}
                             </ul>
                         )}
-                        <p className="text-sm text-blue-700">
-                            Resumo do processamento:
-                        </p>
-                        <ul className="list-disc list-inside text-sm text-blue-700 mt-2">
+                        <p style={{ margin: 0, fontSize: 14, color: '#334155' }}>Resumo do processamento:</p>
+                        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14 }}>
                             <li><strong>{importResult.imported_items}</strong> Composições cadastradas/atualizadas</li>
                             <li><strong>{importResult.imported_prices}</strong> Preços de composições atualizados</li>
                             <li><strong>{importResult.imported_analitico ?? 0}</strong> Itens analíticos (composição → insumo)</li>
                             <li><strong>{importResult.imported_insumo_prices ?? 0}</strong> Preços de insumos atualizados</li>
                         </ul>
-                        <div className="mt-4 flex justify-end">
-                            <Button variant="outline" onClick={() => {
-                                setFiles([]);
-                                setImportResult(null);
-                                const el = document.getElementById('file_complete') as HTMLInputElement;
-                                if (el) el.value = '';
-                            }}>
-                                Nova Importação
-                            </Button>
-                        </div>
+                        <button
+                            type="button"
+                            className="gp-btn gp-bs gp-sm"
+                            style={{ alignSelf: 'flex-end' }}
+                            onClick={() => { setFiles([]); setImportResult(null); limparArquivo(); }}
+                        >
+                            Nova Importação
+                        </button>
                     </div>
                 )}
-            </CardContent>
-        </Card>
+            </section>
+            <aside className="gp-card gp-pad gp-dark gp-side" aria-labelledby="h-info" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <h2 id="h-info" className="gp-h2" style={{ color: '#fff' }}>Como funciona</h2>
+                <p style={{ margin: 0, fontSize: 14, color: '#cbd5e1', lineHeight: 1.5 }}>
+                    Faça upload das planilhas (SINAPI ou SEINFRA) para atualizar a base de dados. O sistema extrai automaticamente a data base e processa os encargos conforme a fonte selecionada.
+                </p>
+            </aside>
+        </div>
     );
 }

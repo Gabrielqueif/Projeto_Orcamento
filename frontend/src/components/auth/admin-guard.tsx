@@ -18,8 +18,8 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
 
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            <div role="status" aria-label="Carregando" style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
+                <div className="animate-spin" style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid #E6EBF2', borderTopColor: '#9fd300' }} />
             </div>
         );
     }
