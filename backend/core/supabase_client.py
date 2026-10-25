@@ -1,14 +1,19 @@
-from functools import lru_cache
+import threading
 
 from supabase import Client, create_client
 
 from core.config import settings
 
 
-@lru_cache(maxsize=1)
+_local = threading.local()
+
+
 def get_supabase_client() -> Client:
     """
-    Retorna uma instância singleton do cliente Supabase.
+    Retorna o cliente Supabase da thread atual.
+
+    Um cliente por thread: o httpx compartilhado entre as threads do FastAPI falha
+    sob requisições paralelas (WinError 10035 no Windows).
 
     Usa, por padrão, a SUPABASE_SERVICE_ROLE_KEY (mais permissiva) para uso no backend.
     Se não estiver definida, tenta usar a SUPABASE_ANON_KEY.
@@ -19,4 +24,6 @@ def get_supabase_client() -> Client:
             "Chave do Supabase não configurada. Defina SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_ANON_KEY no .env."
         )
 
-    return create_client(settings.SUPABASE_URL, api_key)
+    if not hasattr(_local, "client"):
+        _local.client = create_client(settings.SUPABASE_URL, api_key)
+    return _local.client
