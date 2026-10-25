@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Info, Coins } from "@phosphor-icons/react";
+import { Calendar, Info, Coins } from "@phosphor-icons/react";
 import { getOrcamento, getEtapas, updateEtapa, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
 import { useToast } from "@/components/common/toast";
 
@@ -50,11 +50,11 @@ export default function PrazosPage() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-text-muted">Carregando cronograma...</div>;
+    return <div className="gp-card gp-pad" role="status" style={{ textAlign: "center", color: "#475569" }}>Carregando cronograma…</div>;
   }
 
   if (!orcamento) {
-    return <div className="p-8 text-center text-text-muted">Obra não encontrada.</div>;
+    return <div className="gp-card gp-pad" role="alert" style={{ textAlign: "center", color: "#475569" }}>Obra não encontrada.</div>;
   }
 
   // --- Lógica do Gráfico de Gantt ---
@@ -82,131 +82,88 @@ export default function PrazosPage() {
     atual.setMonth(atual.getMonth() + 1);
   }
 
+  const fmt = (ms: number) => new Date(ms).toLocaleDateString("pt-BR");
+  const grade = { backgroundImage: "linear-gradient(to right, #E6EBF2 1px, transparent 1px)", backgroundSize: "10% 100%" };
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Top Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
         <div>
-          <Link href={`/orcamentos/${id}`} className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-[13px] font-semibold text-text-main shadow-sm mb-6 transition-all hover:bg-bg-light hover:-translate-x-0.5">
-            <ArrowLeft size={16} className="text-text-muted" /> Voltar para o Orçamento
-          </Link>
-          <p className="text-[12px] font-semibold tracking-wide text-[#06B6D4] uppercase mb-1">PLANEJAMENTO / CRONOGRAMA</p>
-          <h1 className="text-[28px] font-bold text-text-main">Prazos e Etapas</h1>
-          <p className="text-[15px] text-text-muted mt-2">Defina as datas de início e fim das etapas de <strong>{orcamento.nome}</strong>.</p>
+          <nav aria-label="Trilha" className="gp-crumb">
+            <Link href="/orcamentos">Orçamentos</Link> / <Link href={`/orcamentos/${id}`}>{orcamento.nome}</Link> /{" "}
+            <span aria-current="page" style={{ color: "#001b3d" }}>Prazos</span>
+          </nav>
+          <h1 className="gp-h1">Prazos e etapas</h1>
+          <p className="gp-sub">Defina as datas de início e fim das etapas de <strong>{orcamento.nome}</strong>.</p>
         </div>
-        <div>
-          <Link href={`/orcamentos/${id}`} className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-primary hover:bg-brand-primary/95 text-white rounded-lg text-[13px] font-semibold shadow-sm transition-all hover:-translate-y-0.5">
-            <Coins size={16} /> Ver Planilha de Orçamento
-          </Link>
-        </div>
+        <Link href={`/orcamentos/${id}`} className="gp-btn gp-bs"><Coins size={16} weight="bold" aria-hidden="true" />Ver planilha do orçamento</Link>
       </div>
 
-      <div className="bg-[#E0F2FE] border border-[#BAE6FD] text-[#0369A1] p-4 rounded-lg mb-6 flex items-start gap-3 text-sm">
-        <Info size={20} className="shrink-0 mt-0.5" />
-        <div>
-          <strong>Gráfico de Gantt Dinâmico</strong>
-          <p>Preencha as datas na tabela à esquerda. O gráfico à direita será montado automaticamente. O salvamento é automático ao sair do campo.</p>
-        </div>
+      <div role="note" style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 18px", borderRadius: 16, background: "#e0f5f7", color: "#00626b", fontSize: 14 }}>
+        <Info size={20} weight="bold" aria-hidden="true" style={{ flex: "0 0 20px" }} />
+        <span><strong>Gráfico de Gantt dinâmico.</strong> Preencha as datas na tabela; o gráfico é montado automaticamente e o salvamento é feito ao sair do campo.</span>
       </div>
 
       {etapas.length === 0 ? (
-        <div className="bg-white p-10 text-center rounded-lg border border-border text-text-muted shadow-sm">
-          Nenhuma etapa encontrada. Vá até a <Link href={`/orcamentos/${id}`} className="text-brand-primary underline">Planilha Orçamentária</Link> para criar as etapas do projeto.
+        <div className="gp-card gp-pad" style={{ textAlign: "center", color: "#475569" }}>
+          Nenhuma etapa encontrada. Crie as etapas na <Link href={`/orcamentos/${id}`}>planilha orçamentária</Link>.
         </div>
       ) : (
-        <div className="bg-white border border-border rounded-lg shadow-sm flex flex-col lg:flex-row overflow-hidden">
-          
-          {/* Tabela de Datas (Esquerda) */}
-          <div className="w-full lg:w-[450px] border-r border-border flex flex-col">
-            <div className="p-4 px-6 border-b border-border bg-bg-light flex items-center gap-2">
-              <Calendar size={18} className="text-text-muted" />
-              <h2 className="text-sm font-bold text-text-main uppercase tracking-wide">Definição de Prazos</h2>
+        <div className="gp-card" style={{ display: "flex", flexWrap: "wrap", overflow: "hidden" }}>
+          <section aria-labelledby="h-dp" style={{ flex: "1 1 380px", maxWidth: 460, borderRight: "1px solid #E6EBF2" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, height: 53, padding: "0 22px", background: "#F8FAFC", borderBottom: "1px solid #E6EBF2" }}>
+              <Calendar size={18} weight="bold" aria-hidden="true" />
+              <h2 id="h-dp" className="gp-h2" style={{ fontSize: 15 }}>Definição de prazos</h2>
             </div>
-            <div className="overflow-y-auto flex-1">
-              {etapas.map(etapa => (
-                <div key={etapa.id} className="p-4 px-6 border-b border-border hover:bg-bg-light transition-colors">
-                  <h3 className="font-semibold text-text-main text-sm mb-3 truncate" title={etapa.nome}>{etapa.nome}</h3>
-                  <div className="flex gap-4">
-                    <div className="flex-1">
-                      <label className="block text-[10px] font-bold text-text-muted uppercase mb-1">Início</label>
-                      <input 
-                        type="date" 
-                        value={etapa.data_inicio || ""} 
-                        onChange={(e) => handleDateChange(etapa.id, 'data_inicio', e.target.value)}
-                        className="w-full px-2 py-1.5 border border-border rounded text-sm text-text-main focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-[10px] font-bold text-text-muted uppercase mb-1">Fim</label>
-                      <input 
-                        type="date" 
-                        value={etapa.data_fim || ""} 
-                        onChange={(e) => handleDateChange(etapa.id, 'data_fim', e.target.value)}
-                        className="w-full px-2 py-1.5 border border-border rounded text-sm text-text-main focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
+            {etapas.map((etapa) => (
+              <div key={etapa.id} style={{ height: 96, boxSizing: "border-box", padding: "10px 22px", borderBottom: "1px solid #E6EBF2", display: "flex", flexDirection: "column", justifyContent: "center", gap: 8 }}>
+                <h3 title={etapa.nome} style={{ margin: 0, fontSize: 15, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{etapa.nome}</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+                  <div className="gp-fld" style={{ gap: 2 }}>
+                    <label htmlFor={`ini-${etapa.id}`} className="gp-hint">Início</label>
+                    <input id={`ini-${etapa.id}`} type="date" className="gp-in" style={{ height: 36, fontSize: 14 }} value={etapa.data_inicio || ""} onChange={(e) => handleDateChange(etapa.id, "data_inicio", e.target.value)} />
+                  </div>
+                  <div className="gp-fld" style={{ gap: 2 }}>
+                    <label htmlFor={`fim-${etapa.id}`} className="gp-hint">Fim</label>
+                    <input id={`fim-${etapa.id}`} type="date" className="gp-in" style={{ height: 36, fontSize: 14 }} value={etapa.data_fim || ""} onChange={(e) => handleDateChange(etapa.id, "data_fim", e.target.value)} />
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
+          </section>
+
+          <section aria-label="Gráfico de Gantt" style={{ flex: "999 1 420px", minWidth: 0, overflowX: "auto", background: "#F8FAFC" }}>
+            <div style={{ minWidth: 600 }}>
+              <div style={{ position: "relative", height: 53, boxSizing: "border-box", background: "#fff", borderBottom: "1px solid #E6EBF2", ...grade }}>
+                <div className="gp-mono" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", fontSize: 12, color: "#475569" }}>
+                  <span>{fmt(escalaMinima)}</span><span>{fmt(escalaMaxima)}</span>
+                </div>
+              </div>
+              <div style={{ position: "relative", ...grade }}>
+                {etapas.map((etapa) => {
+                  if (!etapa.data_inicio || !etapa.data_fim) {
+                    return <div key={etapa.id} style={{ height: 96, boxSizing: "border-box", borderBottom: "1px dashed #CBD5E1", display: "flex", alignItems: "center", padding: "0 22px", fontSize: 13, color: "#475569" }}>Aguardando definição de datas</div>;
+                  }
+                  const inicioMs = new Date(etapa.data_inicio).getTime();
+                  const fimMs = new Date(etapa.data_fim).getTime();
+                  const left = ((inicioMs - escalaMinima) / duracaoTotalMs) * 100;
+                  const width = Math.max(((fimMs - inicioMs) / duracaoTotalMs) * 100, 1); // ao menos 1% para ficar visível
+                  return (
+                    <div key={etapa.id} style={{ position: "relative", height: 96, boxSizing: "border-box", borderBottom: "1px dashed #CBD5E1" }}>
+                      <div
+                        title={`${etapa.nome}: ${fmt(inicioMs)} até ${fmt(fimMs)}`}
+                        style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", left: `${left}%`, width: `${width}%`, height: 32, borderRadius: 10, background: "#00a3b1", color: "#001b3d", display: "flex", alignItems: "center", padding: "0 10px", fontSize: 12, fontWeight: 800, boxSizing: "border-box", overflow: "hidden", whiteSpace: "nowrap" }}
+                      >
+                        {etapa.nome}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-
-          {/* Gráfico Visual (Direita) */}
-          <div className="flex-1 overflow-x-auto bg-bg-light relative">
-             <div className="min-w-[600px] h-full flex flex-col">
-               {/* Régua de Tempo */}
-               <div className="h-[53px] border-b border-border bg-white sticky top-0 z-10 flex relative">
-                  {/* Fundo listrado para guiar */}
-                  <div className="absolute inset-0 pointer-events-none w-full" style={{
-                    backgroundImage: 'linear-gradient(to right, #e2e8f0 1px, transparent 1px)',
-                    backgroundSize: '10% 100%'
-                  }}></div>
-                  <div className="absolute inset-0 flex items-center justify-between px-4 text-[10px] font-bold text-text-muted uppercase">
-                    <span>{new Date(escalaMinima).toLocaleDateString('pt-BR')}</span>
-                    <span>{new Date(escalaMaxima).toLocaleDateString('pt-BR')}</span>
-                  </div>
-               </div>
-
-               {/* Linhas do Gráfico */}
-               <div className="flex-1 relative pb-8">
-                 {/* Grades verticais */}
-                  <div className="absolute inset-0 pointer-events-none w-full h-full" style={{
-                    backgroundImage: 'linear-gradient(to right, #e2e8f0 1px, transparent 1px)',
-                    backgroundSize: '10% 100%'
-                  }}></div>
-
-                 {etapas.map((etapa, idx) => {
-                   if (!etapa.data_inicio || !etapa.data_fim) {
-                     return (
-                       <div key={etapa.id} className="h-[96px] border-b border-border border-dashed flex items-center px-6 relative text-[11px] text-text-muted italic">
-                         Aguardando definição de datas
-                       </div>
-                     );
-                   }
-
-                   const inicioMs = new Date(etapa.data_inicio).getTime();
-                   const fimMs = new Date(etapa.data_fim).getTime();
-                   
-                   const left = ((inicioMs - escalaMinima) / duracaoTotalMs) * 100;
-                   const width = Math.max(((fimMs - inicioMs) / duracaoTotalMs) * 100, 1); // Pelo menos 1% para ser visível
-
-                   return (
-                     <div key={etapa.id} className="h-[96px] border-b border-border border-dashed relative group">
-                        <div 
-                          className="absolute top-1/2 -translate-y-1/2 h-8 rounded-md bg-brand-primary/90 shadow-sm border border-brand-primary flex items-center px-3 text-[10px] font-bold text-white uppercase truncate cursor-pointer hover:bg-brand-primary transition-colors"
-                          style={{ left: `${left}%`, width: `${width}%` }}
-                          title={`${etapa.nome}: ${new Date(etapa.data_inicio).toLocaleDateString('pt-BR')} até ${new Date(etapa.data_fim).toLocaleDateString('pt-BR')}`}
-                        >
-                          <span className="truncate">{etapa.nome}</span>
-                        </div>
-                     </div>
-                   );
-                 })}
-               </div>
-             </div>
-          </div>
+          </section>
         </div>
       )}
-    </div>
+    </>
   );
 }
