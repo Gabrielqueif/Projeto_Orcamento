@@ -4,13 +4,15 @@ export interface MembroEquipe {
   id: string;
   user_id?: string;
   nome: string;
-  cpf: string;
+  cpf?: string | null;
   cargo: string;
-  data_inicio: string;
-  descricao?: string;
+  cargo_id?: string | null;
+  dados_extras?: Record<string, unknown>;
+  data_inicio?: string | null;
+  descricao?: string | null;
   orcamento_id?: string | null;
   equipe_id?: string | null;
-  remuneracao: number;
+  remuneracao?: number | null;
   status: "ATIVO" | "INATIVO";
   code: string;
   created_at?: string;
@@ -19,20 +21,22 @@ export interface MembroEquipe {
 
 export interface MembroEquipeCreate {
   nome: string;
-  cpf: string;
-  cargo: string;
-  data_inicio: string;
+  cpf?: string;
+  cargo_id: string;
+  dados_extras?: Record<string, unknown>;
+  data_inicio?: string;
   descricao?: string;
   orcamento_id?: string | null;
   equipe_id?: string | null;
-  remuneracao: number;
+  remuneracao?: number;
   status?: string;
 }
 
 export interface MembroEquipeUpdate {
   nome?: string;
   cpf?: string;
-  cargo?: string;
+  cargo_id?: string;
+  dados_extras?: Record<string, unknown>;
   data_inicio?: string;
   descricao?: string;
   orcamento_id?: string | null;

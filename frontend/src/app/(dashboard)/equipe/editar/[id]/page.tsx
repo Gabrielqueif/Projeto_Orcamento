@@ -15,6 +15,8 @@ import {
 import { getMembroEquipe, updateMembroEquipe } from "@/lib/api/membros_equipe";
 import { getOrcamentos, type Orcamento } from "@/lib/api/orcamentos";
 import { useToast } from "@/components/common/toast";
+import { getCargos, type Cargo, type CampoBase } from "@/lib/api/cargos";
+import { CamposExtras } from "@/components/equipe/CamposExtras";
 
 interface FileAttachment {
   name: string;
@@ -30,7 +32,11 @@ export default function EditarMembroPage() {
   // Form states
   const [nome, setNome] = useState("");
   const [cpf, setCpf] = useState("");
-  const [cargo, setCargo] = useState("");
+  const [cargoId, setCargoId] = useState("");
+  const [cargos, setCargos] = useState<Cargo[]>([]);
+  const [dadosExtras, setDadosExtras] = useState<Record<string, unknown>>({});
+  const cargo = cargos.find((c) => c.id === cargoId);
+  const oculto = (campo: CampoBase) => cargo?.campos_ocultos.includes(campo) ?? false;
   const [dataInicio, setDataInicio] = useState("");
   const [descricao, setDescricao] = useState("");
   const [orcamentoId, setOrcamentoId] = useState<string>("—");
@@ -49,24 +55,32 @@ export default function EditarMembroPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [membro, orcamentosData] = await Promise.all([
+        const [membro, orcamentosData, cargosData] = await Promise.all([
           getMembroEquipe(id),
           getOrcamentos(),
+          getCargos(),
         ]);
+        setCargos(cargosData);
         
         setOrcamentos(orcamentosData);
         
         if (membro) {
           setNome(membro.nome);
-          setCpf(membro.cpf);
-          setCargo(membro.cargo);
-          setDataInicio(membro.data_inicio);
+          setCpf(membro.cpf || "");
+          // Membros antigos só têm o nome do cargo: casa pelo nome.
+          setCargoId(
+            membro.cargo_id ||
+              cargosData.find((c) => c.nome.toLowerCase() === membro.cargo.toLowerCase())?.id ||
+              ""
+          );
+          setDadosExtras(membro.dados_extras || {});
+          setDataInicio(membro.data_inicio || "");
           setDescricao(membro.descricao || "");
           setOrcamentoId(membro.orcamento_id || "—");
           setStatus(membro.status);
           
           // Format salary for the input
-          const formattedVal = membro.remuneracao.toLocaleString("pt-BR", {
+          const formattedVal = (membro.remuneracao ?? 0).toLocaleString("pt-BR", {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           });
@@ -155,7 +169,7 @@ export default function EditarMembroPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!nome || !cpf || !cargo || !dataInicio || !remuneracao) {
+    if (!nome || !cargo || (!oculto("cpf") && !cpf) || (!oculto("data_inicio") && !dataInicio) || (!oculto("remuneracao") && !remuneracao)) {
       showToast("Por favor, preencha todos os campos obrigatórios.", undefined, "warning");
       return;
     }
@@ -166,12 +180,13 @@ export default function EditarMembroPage() {
     try {
       await updateMembroEquipe(id, {
         nome,
-        cpf,
-        cargo,
-        data_inicio: dataInicio,
-        descricao,
+        cpf: oculto("cpf") ? undefined : cpf,
+        cargo_id: cargoId,
+        dados_extras: dadosExtras,
+        data_inicio: oculto("data_inicio") ? undefined : dataInicio,
+        descricao: oculto("descricao") ? undefined : descricao,
         orcamento_id: orcamentoId === "—" ? null : orcamentoId,
-        remuneracao: numRemuneracao,
+        remuneracao: oculto("remuneracao") ? undefined : numRemuneracao,
         status,
       });
       router.push("/equipe");
@@ -246,7 +261,8 @@ export default function EditarMembroPage() {
                 />
               </div>
 
-              <div className="flex flex-col gap-2">
+              {!oculto("cpf") && (
+<div className="flex flex-col gap-2">
                 <label
                   htmlFor="cpf"
                   className="font-['JetBrains_Mono'] text-[10px] font-medium text-[#94a3b8] uppercase tracking-[0.5px]"
@@ -263,6 +279,7 @@ export default function EditarMembroPage() {
                   className="w-full bg-[#f8fafc] border border-[#e2e8f0] focus:border-[#9fd300] rounded-[8px] px-4 py-3 font-['Manrope'] text-[14px] text-[#0f172a] placeholder:text-[#94a3b8] outline-none transition-colors"
                 />
               </div>
+)}
 
               <div className="flex flex-col gap-2">
                 <label
@@ -274,22 +291,20 @@ export default function EditarMembroPage() {
                 <select
                   id="cargo"
                   required
-                  value={cargo}
-                  onChange={(e) => setCargo(e.target.value)}
+                  value={cargoId}
+                  onChange={(e) => setCargoId(e.target.value)}
                   className="w-full bg-[#f8fafc] border border-[#e2e8f0] focus:border-[#9fd300] rounded-[8px] px-4 py-3 font-['Manrope'] text-[14px] text-[#0f172a] placeholder:text-[#94a3b8] outline-none transition-colors cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_16px_center] bg-no-repeat pr-10"
                 >
                   <option value="" disabled>Selecione uma função</option>
-                  <option value="Engenheiro Civil Sênior">Engenheiro Civil Sênior</option>
-                  <option value="Engenheira Civil">Engenheira Civil</option>
-                  <option value="Gerente de Projetos">Gerente de Projetos</option>
-                  <option value="Mestre de Obras">Mestre de Obras</option>
-                  <option value="Pedreiro Especialista">Pedreiro Especialista</option>
-                  <option value="Pedreiro">Pedreiro</option>
-                  <option value="Auxiliar Administrativo">Auxiliar Administrativo</option>
+                  {cargos.map((c) => (
+                    <option key={c.id} value={c.id}>{c.nome}</option>
+                  ))}
                 </select>
               </div>
+              <CamposExtras campos={cargo?.campos_extras ?? []} valores={dadosExtras} onChange={(k, v) => setDadosExtras((d) => ({ ...d, [k]: v }))} />
 
-              <div className="flex flex-col gap-2">
+              {!oculto("data_inicio") && (
+<div className="flex flex-col gap-2">
                 <label
                   htmlFor="dataInicio"
                   className="font-['JetBrains_Mono'] text-[10px] font-medium text-[#94a3b8] uppercase tracking-[0.5px]"
@@ -305,6 +320,7 @@ export default function EditarMembroPage() {
                   className="w-full bg-[#f8fafc] border border-[#e2e8f0] focus:border-[#9fd300] rounded-[8px] px-4 py-3 font-['Manrope'] text-[14px] text-[#0f172a] placeholder:text-[#94a3b8] outline-none transition-colors"
                 />
               </div>
+)}
             </div>
           </div>
 
@@ -318,7 +334,8 @@ export default function EditarMembroPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2 flex flex-col gap-2">
+              {!oculto("descricao") && (
+<div className="md:col-span-2 flex flex-col gap-2">
                 <label
                   htmlFor="descricao"
                   className="font-['JetBrains_Mono'] text-[10px] font-medium text-[#94a3b8] uppercase tracking-[0.5px]"
@@ -334,6 +351,7 @@ export default function EditarMembroPage() {
                   className="w-full bg-[#f8fafc] border border-[#e2e8f0] focus:border-[#9fd300] rounded-[8px] px-4 py-3 font-['Manrope'] text-[14px] text-[#0f172a] placeholder:text-[#94a3b8] outline-none transition-colors resize-none"
                 />
               </div>
+)}
 
               <div className="flex flex-col gap-2">
                 <label
@@ -357,7 +375,8 @@ export default function EditarMembroPage() {
                 </select>
               </div>
 
-              <div className="flex flex-col gap-2">
+              {!oculto("remuneracao") && (
+<div className="flex flex-col gap-2">
                 <label
                   htmlFor="remuneracao"
                   className="font-['JetBrains_Mono'] text-[10px] font-medium text-[#94a3b8] uppercase tracking-[0.5px]"
@@ -379,6 +398,7 @@ export default function EditarMembroPage() {
                   />
                 </div>
               </div>
+)}
 
               <div className="flex flex-col gap-2">
                 <label

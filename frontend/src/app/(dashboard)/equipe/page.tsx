@@ -97,7 +97,7 @@ export default function EquipePage() {
   const activeMembers = members.filter((m) => m.status === "ATIVO");
   
   const totalCost = activeMembers.reduce(
-    (sum, m) => sum + m.remuneracao,
+    (sum, m) => sum + (m.remuneracao ?? 0),
     0
   );
   
@@ -109,7 +109,7 @@ export default function EquipePage() {
 
   const averageSalary =
     members.length > 0
-      ? members.reduce((sum, m) => sum + m.remuneracao, 0) / members.length
+      ? members.reduce((sum, m) => sum + (m.remuneracao ?? 0), 0) / members.length
       : 0;
 
   // Pagination helper
@@ -142,6 +142,12 @@ export default function EquipePage() {
           </p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Link
+            href="/equipe/cargos"
+            className="flex items-center gap-2 px-5 py-3 bg-white border border-[#e2e8f0] text-[#001b3d] rounded-[8px] text-sm font-bold transition-all"
+          >
+            Cargos
+          </Link>
           <Link
             href="/equipe/novo"
             className="flex items-center gap-2 px-5 py-3 bg-[#9fd300] hover:bg-[#9fd300]/90 text-[#001b3d] rounded-[8px] text-sm font-extrabold shadow-[0px_10px_15px_-3px_rgba(159,211,0,0.15)] transition-all"
@@ -409,7 +415,7 @@ export default function EquipePage() {
                           )}
                         </td>
                         <td className="p-4 px-6 font-['Manrope'] font-extrabold text-[14px] text-[#001b3d]">
-                          {member.remuneracao.toLocaleString("pt-BR", {
+                          {(member.remuneracao ?? 0).toLocaleString("pt-BR", {
                             style: "currency",
                             currency: "BRL",
                           })}
@@ -532,7 +538,7 @@ export default function EquipePage() {
                         Remuneração
                       </span>
                       <span className="font-['Manrope'] font-extrabold text-[13px] text-[#001b3d]">
-                        {member.remuneracao.toLocaleString("pt-BR", {
+                        {(member.remuneracao ?? 0).toLocaleString("pt-BR", {
                           style: "currency",
                           currency: "BRL",
                         })}

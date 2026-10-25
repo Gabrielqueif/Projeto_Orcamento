@@ -6,6 +6,7 @@ logger = logging.getLogger("projeto_orcamento")
 
 TABELA_EQUIPES = "equipes"
 TABELA_MEMBROS = "membros_equipe"
+TABELA_CARGOS = "cargos"
 
 
 class EquipeRepository:
@@ -73,6 +74,48 @@ class EquipeRepository:
         except Exception as e:
             logger.error(f"Erro ao deletar equipe {equipe_id}: {e}")
             raise e
+
+
+class CargoRepository:
+    def __init__(self, supabase_client):
+        self.supabase = supabase_client
+
+    def listar(self, user_id: str) -> List[Dict[str, Any]]:
+        resultado = (
+            self.supabase.table(TABELA_CARGOS)
+            .select("*")
+            .or_(f"user_id.is.null,user_id.eq.{user_id}")
+            .order("nome")
+            .execute()
+        )
+        return resultado.data or []
+
+    def buscar_por_id(self, cargo_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+        """Pré-montados (user_id nulo) e próprios do usuário."""
+        resultado = (
+            self.supabase.table(TABELA_CARGOS)
+            .select("*")
+            .eq("id", cargo_id)
+            .or_(f"user_id.is.null,user_id.eq.{user_id}")
+            .execute()
+        )
+        return resultado.data[0] if resultado.data else None
+
+    def criar(self, dados: Dict[str, Any], user_id: str) -> Dict[str, Any]:
+        dados["user_id"] = user_id
+        resultado = self.supabase.table(TABELA_CARGOS).insert(dados).execute()
+        if not resultado.data:
+            raise Exception("Falha ao inserir cargo")
+        return resultado.data[0]
+
+    def atualizar(self, cargo_id: str, dados: Dict[str, Any], user_id: str) -> Optional[Dict[str, Any]]:
+        dados["updated_at"] = datetime.now().isoformat()
+        resultado = self.supabase.table(TABELA_CARGOS).update(dados).eq("id", cargo_id).eq("user_id", user_id).execute()
+        return resultado.data[0] if resultado.data else None
+
+    def deletar(self, cargo_id: str, user_id: str) -> bool:
+        resultado = self.supabase.table(TABELA_CARGOS).delete().eq("id", cargo_id).eq("user_id", user_id).execute()
+        return bool(resultado.data)
 
 
 class MembroEquipeRepository:

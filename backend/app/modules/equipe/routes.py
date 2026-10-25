@@ -3,9 +3,12 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, status
 
 from app.dependencies import get_supabase
-from app.modules.equipe.repositories import EquipeRepository, MembroEquipeRepository
+from app.modules.equipe.repositories import CargoRepository, EquipeRepository, MembroEquipeRepository
 from app.modules.equipe.schemas import (
     AlocacaoRequest,
+    CargoCreate,
+    CargoResponse,
+    CargoUpdate,
     EquipeCreate,
     EquipeResponse,
     EquipeUpdate,
@@ -13,7 +16,7 @@ from app.modules.equipe.schemas import (
     MembroEquipeResponse,
     MembroEquipeUpdate,
 )
-from app.modules.equipe.services import EquipeService, MembroEquipeService
+from app.modules.equipe.services import CargoService, EquipeService, MembroEquipeService
 from core.security import get_current_user
 
 # Router para Equipes
@@ -29,6 +32,11 @@ router_membros = APIRouter(
     redirect_slashes=False,
 )
 
+# Router para Cargos
+router_cargos = APIRouter(
+    prefix="/cargos", tags=["Cargos"], dependencies=[Depends(get_current_user)], redirect_slashes=False
+)
+
 # --- Dependências locais ---
 
 
@@ -38,8 +46,11 @@ def get_equipe_service(supabase=Depends(get_supabase)) -> EquipeService:
 
 
 def get_membro_equipe_service(supabase=Depends(get_supabase)) -> MembroEquipeService:
-    repo = MembroEquipeRepository(supabase)
-    return MembroEquipeService(repo)
+    return MembroEquipeService(MembroEquipeRepository(supabase), CargoRepository(supabase))
+
+
+def get_cargo_service(supabase=Depends(get_supabase)) -> CargoService:
+    return CargoService(CargoRepository(supabase))
 
 
 # --- Rotas de Equipes ---
@@ -174,3 +185,40 @@ async def registrar_apontamento(dados: dict, supabase=Depends(get_supabase)):
     except Exception:
         # Fallback de mock seguro caso a tabela opcional não esteja sincronizada
         return {**dados, "id": "apt-mock-1"}
+
+
+# --- Rotas de Cargos ---
+
+
+@router_cargos.get("/", response_model=List[CargoResponse], summary="Listar cargos pré-montados e próprios")
+async def listar_cargos(
+    current_user: dict = Depends(get_current_user), service: CargoService = Depends(get_cargo_service)
+):
+    return service.listar_cargos(current_user.get("id"))
+
+
+@router_cargos.post("/", response_model=CargoResponse, status_code=status.HTTP_201_CREATED, summary="Criar cargo")
+async def criar_cargo(
+    cargo: CargoCreate,
+    current_user: dict = Depends(get_current_user),
+    service: CargoService = Depends(get_cargo_service),
+):
+    return service.criar_cargo(cargo, current_user.get("id"))
+
+
+@router_cargos.put("/{cargo_id}", response_model=CargoResponse, summary="Atualizar cargo próprio")
+async def atualizar_cargo(
+    cargo_id: str,
+    cargo: CargoUpdate,
+    current_user: dict = Depends(get_current_user),
+    service: CargoService = Depends(get_cargo_service),
+):
+    return service.atualizar_cargo(cargo_id, cargo, current_user.get("id"))
+
+
+@router_cargos.delete("/{cargo_id}", summary="Deletar cargo próprio")
+async def deletar_cargo(
+    cargo_id: str, current_user: dict = Depends(get_current_user), service: CargoService = Depends(get_cargo_service)
+):
+    service.deletar_cargo(cargo_id, current_user.get("id"))
+    return {"message": "Cargo deletado com sucesso", "id": cargo_id}

@@ -10,7 +10,7 @@ from app.modules.composicao import router as item_router
 from app.modules.dashboard import router as dashboard_router
 from app.modules.diario import router as diario_router
 from app.modules.diario import router_resumo as diario_resumo_router
-from app.modules.equipe import router_equipes, router_membros
+from app.modules.equipe import router_cargos, router_equipes, router_membros
 from app.modules.etapa import router as etapa_router
 from app.modules.financeiro import router as financeiro_router
 from app.modules.financeiro import router_portfolio as financeiro_portfolio_router
@@ -82,6 +82,7 @@ app.include_router(etapa_router)
 app.include_router(importacao_router)
 app.include_router(router_equipes)
 app.include_router(router_membros)
+app.include_router(router_cargos)
 app.include_router(obra_router)
 app.include_router(almoxarifado_router)
 app.include_router(financeiro_router)
