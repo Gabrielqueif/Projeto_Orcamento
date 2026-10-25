@@ -57,13 +57,14 @@ export default function DashboardPage() {
     );
   }
 
-  const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const hojeLongo = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const hoje = hojeLongo.charAt(0).toUpperCase() + hojeLongo.slice(1);
 
   return (
     <>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
         <div>
-          <p className="gp-crumb" style={{ margin: 0, textTransform: 'capitalize' }}>{hoje}</p>
+          <p className="gp-crumb" style={{ margin: 0 }}>{hoje}</p>
           <h1 className="gp-h1">Visão geral</h1>
           <p className="gp-sub">Métricas de desempenho das suas obras em andamento.</p>
         </div>
