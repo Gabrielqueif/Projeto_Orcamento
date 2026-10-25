@@ -4,7 +4,6 @@ from supabase import Client, create_client
 
 from core.config import settings
 
-
 _local = threading.local()
 
 

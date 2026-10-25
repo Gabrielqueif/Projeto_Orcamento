@@ -5,6 +5,8 @@ allowBuilds:
 # next fixa postcss antigo (vulnerável); força a versão corrigida
 overrides:
   "next>postcss": "^8.5.28"
+  # zod <4.6.6 (GHSA-mrhx-c7xc-m3w5): entra via eslint-config-next > eslint-plugin-react-hooks
+  "zod": "^4.6.6"
 
 # braces <=3.0.3 (GHSA-vfj7-8cjw-p6xm): sem versão corrigida publicada no npm; só entra por
 # dependências de desenvolvimento (jest, eslint, fast-glob), nunca no bundle. Remover quando sair a 3.0.4+.
