@@ -140,3 +140,10 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
 .gp-split{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
 .gp-split>.gp-main{flex:999 1 600px;min-width:0}
 .gp-split>.gp-side{flex:1 1 320px;min-width:0}
+
+/* Estados de carregamento e avisos (artefato: EstadoCarregando / Confirmacoes) */
+.gp-sk{display:block;border-radius:8px;background:linear-gradient(90deg,#E6EBF2 0%,#F4F6FA 40%,#E6EBF2 80%);background-size:300% 100%;animation:gp-sk 1.4s ease-in-out infinite}
+@keyframes gp-sk{0%{background-position:100% 0}100%{background-position:0 0}}
+.gp-toast{animation:gp-up .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes gp-up{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){.gp-sk,.gp-toast{animation:none}}

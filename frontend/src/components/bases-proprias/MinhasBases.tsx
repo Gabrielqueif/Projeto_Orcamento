@@ -8,8 +8,6 @@ import { useToast } from "@/components/common/toast";
 import { criarBase, listarBases, type BasePropria } from "@/lib/api/basesProprias";
 import { UFS } from "@/lib/basesPropriasUtils";
 
-const campo = "w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 bg-white";
-
 export function MinhasBases() {
   const { showToast } = useToast();
   const [bases, setBases] = useState<BasePropria[]>([]);
@@ -62,47 +60,44 @@ export function MinhasBases() {
   }
 
   return (
-    <section className="space-y-4" aria-labelledby="minhas-bases-titulo">
-      <div className="flex items-center justify-between gap-4">
-        <h2 id="minhas-bases-titulo" className="text-xl font-bold text-slate-800">
+    <section aria-labelledby="minhas-bases-titulo" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h2 id="minhas-bases-titulo" className="gp-h2">
           Minhas bases
         </h2>
-        <button
-          type="button"
-          onClick={() => setModalAberto(true)}
-          className="inline-flex items-center gap-2 bg-brand-primary text-white px-4 py-2 rounded text-sm font-bold hover:bg-brand-navy transition"
-        >
-          <Plus size={16} weight="bold" /> Nova base
+        <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp gp-sm">
+          <Plus size={16} weight="bold" aria-hidden="true" /> Nova base
         </button>
       </div>
 
-      {loading && <p className="text-sm text-slate-500">Carregando suas bases...</p>}
-      {erro && <p className="text-sm text-red-600">{erro}</p>}
+      {loading && <p className="gp-sub">Carregando suas bases...</p>}
+      {erro && <p style={{ color: "#B91C1C", margin: 0 }}>{erro}</p>}
 
       {!loading && !erro && bases.length === 0 && (
-        <div className="bg-white rounded-lg border border-dashed border-slate-300 p-6 text-center" data-testid="minhas-bases-vazio">
-          <p className="text-slate-700 font-medium">Você ainda não tem bases próprias.</p>
-          <p className="text-sm text-slate-500 mt-1">
+        <div className="gp-card gp-pad" style={{ textAlign: "center" }} data-testid="minhas-bases-vazio">
+          <p style={{ margin: 0, fontWeight: 700 }}>Você ainda não tem bases próprias.</p>
+          <p className="gp-hint" style={{ margin: "4px 0 0" }}>
             Crie uma base para cadastrar insumos e composições com preços seus.
           </p>
         </div>
       )}
 
       {bases.length > 0 && (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <ul className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", listStyle: "none", margin: 0, padding: 0 }}>
           {bases.map((b) => (
             <li key={b.id}>
               <Link
                 href={`/bases/propria/${b.id}`}
-                className="block bg-white rounded-lg border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow h-full"
+                className="gp-card gp-pad"
+                style={{ display: "flex", flexDirection: "column", gap: 10, color: "#001b3d", textDecoration: "none", height: "100%", boxSizing: "border-box" }}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-bold text-slate-800">{b.nome}</h3>
-                  {b.uf && (
-                    <span className="text-[11px] font-bold bg-slate-100 text-slate-600 rounded px-2 py-0.5">{b.uf}</span>
-                  )}
-                </div>
-                {b.descricao && <p className="text-sm text-slate-500 mt-1 line-clamp-2">{b.descricao}</p>}
+                <strong style={{ fontSize: 17 }}>{b.nome}</strong>
+                {b.descricao && <span style={{ fontSize: 14, color: "#475569" }}>{b.descricao}</span>}
+                {b.uf && (
+                  <span style={{ display: "flex", gap: 8 }}>
+                    <span className="gp-bg gp-ne">{b.uf}</span>
+                  </span>
+                )}
               </Link>
             </li>
           ))}
@@ -110,54 +105,27 @@ export function MinhasBases() {
       )}
 
       <Modal isOpen={modalAberto} onClose={fechar} title="Nova base">
-        <form onSubmit={salvar} className="space-y-4">
-          <div>
-            <label htmlFor="base-nome" className="block text-sm font-medium text-slate-700 mb-1">
-              Nome
-            </label>
-            <input
-              id="base-nome"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              maxLength={150}
-              required
-              className={campo}
-            />
+        <form onSubmit={salvar} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="gp-fld">
+            <label htmlFor="base-nome" className="gp-lb">Nome</label>
+            <input id="base-nome" value={nome} onChange={(e) => setNome(e.target.value)} maxLength={150} required aria-required="true" placeholder="Ex.: Preços de Fortaleza" className="gp-in" />
           </div>
-          <div>
-            <label htmlFor="base-descricao" className="block text-sm font-medium text-slate-700 mb-1">
-              Descrição
-            </label>
-            <textarea
-              id="base-descricao"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              rows={3}
-              className={campo}
-            />
+          <div className="gp-fld">
+            <label htmlFor="base-descricao" className="gp-lb">Descrição</label>
+            <textarea id="base-descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} rows={3} className="gp-in" style={{ height: "auto", padding: 14 }} />
           </div>
-          <div>
-            <label htmlFor="base-uf" className="block text-sm font-medium text-slate-700 mb-1">
-              UF
-            </label>
-            <select id="base-uf" value={uf} onChange={(e) => setUf(e.target.value)} className={campo}>
+          <div className="gp-fld">
+            <label htmlFor="base-uf" className="gp-lb">UF</label>
+            <select id="base-uf" value={uf} onChange={(e) => setUf(e.target.value)} className="gp-in">
               <option value="">Não informada</option>
               {UFS.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
+                <option key={u} value={u}>{u}</option>
               ))}
             </select>
           </div>
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={fechar} className="px-4 py-2 text-sm text-slate-600 rounded hover:bg-slate-100">
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={salvando || !nome.trim()}
-              className="px-4 py-2 text-sm font-bold text-white bg-brand-primary rounded hover:bg-brand-navy disabled:opacity-50"
-            >
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <button type="button" onClick={fechar} className="gp-btn gp-bs">Cancelar</button>
+            <button type="submit" disabled={salvando || !nome.trim()} className="gp-btn gp-bp" style={salvando || !nome.trim() ? { opacity: 0.5 } : undefined}>
               {salvando ? "Criando..." : "Criar base"}
             </button>
           </div>

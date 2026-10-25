@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trash, Lock } from "@phosphor-icons/react";
+import { Plus, Trash, Lock } from "@phosphor-icons/react";
 import {
   CAMPOS_BASE,
   createCargo,
@@ -14,10 +14,6 @@ import {
   type CampoExtra,
 } from "@/lib/api/cargos";
 import { useToast } from "@/components/common/toast";
-
-const inputCls =
-  "w-full bg-[#f8fafc] border border-[#e2e8f0] focus:border-[#9fd300] rounded-[8px] px-3 py-2 font-['Manrope'] text-[14px] text-[#0f172a] outline-none transition-colors";
-const labelCls = "font-['JetBrains_Mono'] text-[10px] font-medium text-[#94a3b8] uppercase tracking-[0.5px]";
 
 // A chave do campo vira o nome salvo nos dados do membro; gerada do rótulo.
 const chaveDe = (rotulo: string) =>
@@ -105,51 +101,50 @@ export default function CargosPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-[1024px] mx-auto pb-12">
-      <div className="flex items-center gap-4">
-        <Link
-          href="/equipe"
-          className="flex items-center justify-center w-9 h-9 border border-[#e2e8f0] bg-white text-[#64748b] rounded-[8px] hover:text-[#001b3d] transition-colors"
-        >
-          <ArrowLeft size={18} />
-        </Link>
-        <h1 className="font-['Manrope'] font-extrabold text-[28px] text-[#001b3d] tracking-[-0.6px]">Cargos</h1>
-        <button
-          onClick={() => setRascunho(vazio)}
-          className="ml-auto flex items-center gap-2 px-5 py-3 bg-[#9fd300] text-[#001b3d] rounded-[8px] text-sm font-extrabold"
-        >
-          <Plus size={16} weight="bold" /> Novo Cargo
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
+        <div>
+          <nav aria-label="Trilha" className="gp-crumb">
+            Operação / <Link href="/equipe">Equipe</Link> /{" "}
+            <span aria-current="page" style={{ color: "#001b3d" }}>Cargos</span>
+          </nav>
+          <h1 className="gp-h1">Cargos</h1>
+          <p className="gp-sub">Funções da equipe e os campos pedidos no cadastro de cada uma.</p>
+        </div>
+        <button type="button" onClick={() => setRascunho(vazio)} className="gp-btn gp-bp">
+          <Plus size={16} weight="bold" aria-hidden="true" /> Novo cargo
         </button>
       </div>
 
       {rascunho && (
-        <form
-          onSubmit={salvar}
-          className="bg-white border border-[#f1f5f9] rounded-[8px] shadow-sm p-6 flex flex-col gap-5"
-        >
-          <div className="flex flex-col gap-2">
-            <label htmlFor="cargo-nome" className={labelCls}>
-              Nome do cargo <span className="text-red-500">*</span>
+        <form onSubmit={salvar} className="gp-card gp-pad" style={{ maxWidth: 720, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="gp-fld">
+            <label htmlFor="cargo-nome" className="gp-lb">
+              Nome do cargo <span className="gp-req">(obrigatório)</span>
             </label>
             <input
               id="cargo-nome"
               required
+              aria-required="true"
               maxLength={100}
               value={rascunho.nome}
               onChange={(e) => setRascunho({ ...rascunho, nome: e.target.value })}
-              className={inputCls}
+              className="gp-in"
             />
           </div>
 
-          <fieldset className="flex flex-col gap-2">
-            <legend className={labelCls}>Campos pedidos no cadastro (Nome e Cargo são sempre pedidos)</legend>
-            <div className="flex flex-wrap gap-4">
+          <fieldset className="gp-fld" style={{ border: 0, padding: 0, margin: 0 }}>
+            <legend className="gp-lb" style={{ marginBottom: 8 }}>
+              Campos pedidos no cadastro (Nome e Cargo são sempre pedidos)
+            </legend>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
               {CAMPOS_BASE.map((c) => (
-                <label key={c.chave} className="flex items-center gap-2 font-['Manrope'] text-[14px] text-[#001b3d]">
+                <label key={c.chave} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15 }}>
                   <input
                     type="checkbox"
                     checked={!rascunho.campos_ocultos.includes(c.chave)}
                     onChange={() => alternarBase(c.chave)}
+                    style={{ width: 18, height: 18 }}
                   />
                   {c.rotulo}
                 </label>
@@ -157,10 +152,10 @@ export default function CargosPage() {
             </div>
           </fieldset>
 
-          <div className="flex flex-col gap-3">
-            <span className={labelCls}>Campos extras deste cargo</span>
+          <div className="gp-fld">
+            <span className="gp-lb">Campos extras deste cargo</span>
             {rascunho.campos_extras.map((c, i) => (
-              <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_140px_auto_auto] gap-3 items-center">
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, alignItems: "center" }}>
                 <input
                   aria-label="Rótulo do campo"
                   placeholder="Ex: Registro CREA"
@@ -168,23 +163,24 @@ export default function CargosPage() {
                   maxLength={60}
                   value={c.rotulo}
                   onChange={(e) => mudarExtra(i, { rotulo: e.target.value })}
-                  className={inputCls}
+                  className="gp-in"
                 />
                 <select
                   aria-label="Tipo do campo"
                   value={c.tipo}
                   onChange={(e) => mudarExtra(i, { tipo: e.target.value as CampoExtra["tipo"] })}
-                  className={inputCls}
+                  className="gp-in"
                 >
                   <option value="texto">Texto</option>
                   <option value="numero">Número</option>
                   <option value="data">Data</option>
                 </select>
-                <label className="flex items-center gap-2 font-['Manrope'] text-[13px] text-[#64748b]">
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
                   <input
                     type="checkbox"
                     checked={c.obrigatorio}
                     onChange={(e) => mudarExtra(i, { obrigatorio: e.target.checked })}
+                    style={{ width: 18, height: 18 }}
                   />
                   Obrigatório
                 </label>
@@ -194,9 +190,10 @@ export default function CargosPage() {
                   onClick={() =>
                     setRascunho({ ...rascunho, campos_extras: rascunho.campos_extras.filter((_, j) => j !== i) })
                   }
-                  className="text-[#64748b] hover:text-red-500 p-1"
+                  className="gp-ib"
+                  style={{ width: 40, height: 40, color: "#B91C1C" }}
                 >
-                  <Trash size={18} />
+                  <Trash size={18} aria-hidden="true" />
                 </button>
               </div>
             ))}
@@ -208,58 +205,51 @@ export default function CargosPage() {
                   campos_extras: [...rascunho.campos_extras, { chave: "", rotulo: "", tipo: "texto", obrigatorio: false }],
                 })
               }
-              className="self-start text-[13px] font-bold text-[#00a3b1] hover:underline"
+              className="gp-btn gp-bs gp-sm"
+              style={{ alignSelf: "flex-start" }}
             >
               + Adicionar campo extra
             </button>
           </div>
 
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setRascunho(null)}
-              className="px-6 py-2 border border-[#e2e8f0] rounded-[8px] font-bold text-[14px] text-[#001b3d]"
-            >
-              Cancelar
-            </button>
-            <button type="submit" className="px-6 py-2 bg-[#9fd300] rounded-[8px] font-extrabold text-[14px] text-[#001b3d]">
-              Salvar Cargo
-            </button>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <button type="button" onClick={() => setRascunho(null)} className="gp-btn gp-bs">Cancelar</button>
+            <button type="submit" className="gp-btn gp-bp">Salvar cargo</button>
           </div>
         </form>
       )}
 
-      <div className="bg-white border border-[#f1f5f9] rounded-[8px] shadow-sm divide-y divide-[#f1f5f9]">
-        {cargos.map((c) => (
-          <div key={c.id} className="p-4 flex flex-wrap items-center gap-3">
-            <div className="flex flex-col">
-              <span className="font-['Manrope'] font-bold text-[14px] text-[#001b3d] flex items-center gap-2">
-                {c.nome}
-                {c.user_id === null && <Lock size={12} className="text-[#94a3b8]" aria-label="Pré-montado" />}
-              </span>
-              <span className="font-['JetBrains_Mono'] text-[10px] text-[#94a3b8]">
-                {c.campos_ocultos.length > 0 && `Sem: ${c.campos_ocultos.join(", ")}. `}
-                {c.campos_extras.length > 0 && `Extras: ${c.campos_extras.map((e) => e.rotulo).join(", ")}`}
-              </span>
-            </div>
-            <div className="ml-auto flex gap-3 text-[13px] font-bold">
-              {c.user_id !== null && (
-                <button onClick={() => editar(c)} className="text-[#00a3b1] hover:underline">
-                  Editar
-                </button>
-              )}
-              <button onClick={() => editar(c, true)} className="text-[#00a3b1] hover:underline">
-                Duplicar
-              </button>
-              {c.user_id !== null && (
-                <button onClick={() => remover(c)} className="text-red-500 hover:underline">
-                  Excluir
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+      <section className="gp-card" aria-labelledby="h-cg" style={{ overflow: "hidden" }}>
+        <h2 id="h-cg" className="gp-sr">Cargos cadastrados</h2>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {cargos.map((c, i) => (
+            <li
+              key={c.id}
+              style={{ padding: "14px 22px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, borderTop: i === 0 ? 0 : "1px solid #E6EBF2" }}
+            >
+              <div>
+                <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 800 }}>
+                  {c.nome}
+                  {c.user_id === null && <Lock size={14} color="#475569" aria-label="Pré-montado" />}
+                </span>
+                <span className="gp-hint">
+                  {c.campos_ocultos.length > 0 && `Sem: ${c.campos_ocultos.join(", ")}. `}
+                  {c.campos_extras.length > 0 && `Extras: ${c.campos_extras.map((e) => e.rotulo).join(", ")}`}
+                </span>
+              </div>
+              <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+                {c.user_id !== null && (
+                  <button onClick={() => editar(c)} className="gp-btn gp-bs gp-sm">Editar</button>
+                )}
+                <button onClick={() => editar(c, true)} className="gp-btn gp-bs gp-sm">Duplicar</button>
+                {c.user_id !== null && (
+                  <button onClick={() => remover(c)} className="gp-btn gp-bs gp-sm" style={{ color: "#B91C1C" }}>Excluir</button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>
   );
 }

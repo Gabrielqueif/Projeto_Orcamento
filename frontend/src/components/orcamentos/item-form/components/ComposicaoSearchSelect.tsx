@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { MagnifyingGlass, X } from "@phosphor-icons/react";
 import { buscarComposicoes as apiBuscarComposicoes, type ContextoPreco } from "@/lib/api/composicoes";
 import { buscarComposicoesProprias } from "@/lib/api/orcamentos";
 import type { ItemComposicao } from "../types";
@@ -19,18 +20,20 @@ interface ComposicaoSearchSelectProps {
 }
 
 function BadgeFonte({ item }: { item: ItemComposicao }) {
-  const classe =
+  const estilo =
     item.fonte === "PROPRIA"
-      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+      ? { background: "#e0f5f7", color: "#00626b" }
       : item.fonte === "SEINFRA"
-        ? "bg-orange-100 text-orange-700 border border-orange-200"
-        : "bg-blue-100 text-blue-700 border border-blue-200";
+        ? { background: "#EDF1F6", color: "#001b3d" }
+        : { background: "#E6F6D0", color: "#3F6604" };
   const rotulo =
     item.fonte === "PROPRIA"
       ? `Própria${item.base_propria_nome ? `: ${item.base_propria_nome}` : ""}`
       : item.fonte;
   return (
-    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${classe}`}>
+    <span
+      style={{ ...estilo, alignSelf: "flex-start", fontSize: 12, fontWeight: 800, padding: "2px 8px", borderRadius: 6 }}
+    >
       {rotulo}
     </span>
   );
@@ -108,112 +111,119 @@ export function ComposicaoSearchSelect({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex justify-between items-center">
-        <label className="block text-sm font-bold" htmlFor="busca">
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+        <label className="gp-lb" htmlFor="busca" style={{ marginRight: "auto" }}>
           Buscar Composição
         </label>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => onBaseBuscaChange("SINAPI")}
-            className={`text-[10px] px-3 py-1 rounded-full font-bold transition-all cursor-pointer ${
-              baseBusca === "SINAPI"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-            }`}
-          >
-            SINAPI
-          </button>
-          <button
-            type="button"
-            onClick={() => onBaseBuscaChange("SEINFRA")}
-            className={`text-[10px] px-3 py-1 rounded-full font-bold transition-all cursor-pointer ${
-              baseBusca === "SEINFRA"
-                ? "bg-orange-600 text-white shadow-sm"
-                : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-            }`}
-          >
-            SEINFRA
-          </button>
+        <div role="group" aria-label="Filtrar por base" style={{ display: "flex", gap: 6 }}>
+          {["SINAPI", "SEINFRA"].map((base) => (
+            <button
+              key={base}
+              type="button"
+              className="gp-chip"
+              aria-pressed={baseBusca === base}
+              onClick={() => onBaseBuscaChange(base)}
+            >
+              {base}
+            </button>
+          ))}
         </div>
       </div>
 
       {error && (
-        <p className="text-xs text-red-500 font-medium">{error}</p>
+        <p role="alert" style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#B91C1C" }}>
+          {error}
+        </p>
       )}
 
       {composicaoSelecionada ? (
-        <div className="border border-green-300 bg-green-50 p-3 rounded-md">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-semibold text-slate-800 flex items-center gap-2">
-                <BadgeFonte item={composicaoSelecionada} />
-                {composicaoSelecionada.codigo_composicao} - {composicaoSelecionada.descricao}
-              </p>
-              <p className="text-sm text-slate-600">
-                Unidade: {composicaoSelecionada.unidade}
-                {composicaoSelecionada.preco != null && (
-                  <span className="ml-3 font-bold text-emerald-700">
-                    {formatarPreco(composicaoSelecionada.preco)}
-                  </span>
-                )}
-              </p>
-            </div>
-            {!isEditing ? (
-              <button
-                type="button"
-                onClick={onClearComposicao}
-                className="text-red-600 hover:text-red-800 cursor-pointer p-1"
-                title="Remover seleção"
-              >
-                ✕
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onClearComposicao}
-                className="text-brand-primary hover:text-brand-navy text-sm underline ml-4 cursor-pointer"
-              >
-                Trocar Serviço
-              </button>
-            )}
+        <div
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+            padding: "14px 16px", borderRadius: 14, background: "#F7FCE9", boxShadow: "inset 4px 0 0 #9fd300",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+            <BadgeFonte item={composicaoSelecionada} />
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 700, lineHeight: 1.4 }}>
+              <span className="gp-mono" style={{ fontWeight: 600 }}>{composicaoSelecionada.codigo_composicao}</span>
+              {" - "}
+              {composicaoSelecionada.descricao}
+            </p>
+            <p className="gp-hint" style={{ margin: 0 }}>
+              Unidade: {composicaoSelecionada.unidade}
+              {composicaoSelecionada.preco != null && (
+                <span className="gp-mono" style={{ marginLeft: 12, fontWeight: 600, color: "#001b3d" }}>
+                  {formatarPreco(composicaoSelecionada.preco)}
+                </span>
+              )}
+            </p>
           </div>
+          {!isEditing ? (
+            <button
+              type="button"
+              onClick={onClearComposicao}
+              className="gp-ib"
+              aria-label="Remover seleção"
+              title="Remover seleção"
+            >
+              <X size={18} weight="bold" aria-hidden="true" />
+            </button>
+          ) : (
+            <button type="button" onClick={onClearComposicao} className="gp-btn gp-bs gp-sm">
+              Trocar Serviço
+            </button>
+          )}
         </div>
       ) : (
         <>
-          <input
-            type="text"
-            id="busca"
-            value={termo}
-            onChange={(e) => setTermo(e.target.value)}
-            placeholder="Digite código ou descrição da composição"
-            className="border border-gray-300 p-2 w-full rounded-md outline-none focus:ring-2 focus:ring-brand-primary"
-          />
-          {loading && (
-            <p className="text-sm text-slate-500 mt-1">Buscando...</p>
-          )}
+          <div className="gp-srch" style={{ height: 50 }}>
+            <MagnifyingGlass size={18} weight="bold" aria-hidden="true" />
+            <input
+              type="search"
+              id="busca"
+              value={termo}
+              onChange={(e) => setTermo(e.target.value)}
+              placeholder="Digite código ou descrição da composição"
+              style={{ fontSize: 16 }}
+            />
+          </div>
+          {loading && <p className="gp-hint" style={{ margin: 0 }}>Buscando...</p>}
           {resultados.length > 0 && (
-            <div className="mt-2 border border-gray-200 rounded-md max-h-48 overflow-y-auto bg-white shadow-sm">
+            <ul
+              aria-live="polite"
+              style={{ listStyle: "none", margin: 0, padding: 0, maxHeight: 288, overflowY: "auto", border: "1px solid #E6EBF2", borderRadius: 14 }}
+            >
               {resultados.map((item) => (
-                <div
+                <li
                   key={`${item.fonte}-${item.base_propria_id ?? ""}-${item.codigo_composicao}`}
-                  onClick={() => handleSelect(item)}
-                  className="p-3 hover:bg-slate-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                  style={{ borderTop: "1px solid #E6EBF2" }}
                 >
-                  <p className="font-semibold text-slate-800 flex items-center gap-2">
-                    <BadgeFonte item={item} />
-                    {item.codigo_composicao} - {item.descricao}
-                  </p>
-                  <p className="text-sm text-slate-600 flex items-center justify-between gap-3">
-                    <span>Unidade: {item.unidade}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleSelect(item)}
+                    className="gp-row"
+                    style={{
+                      width: "100%", display: "flex", alignItems: "center", gap: 16, padding: "14px 18px",
+                      border: 0, background: "#fff", color: "#001b3d", cursor: "pointer", textAlign: "left",
+                    }}
+                  >
+                    <span style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 96 }}>
+                      <span className="gp-mono" style={{ fontSize: 14, fontWeight: 600 }}>{item.codigo_composicao}</span>
+                      <BadgeFonte item={item} />
+                    </span>
+                    <span style={{ flex: "1 1 auto" }}>
+                      <span style={{ display: "block", fontSize: 15, fontWeight: 700, lineHeight: 1.4 }}>{item.descricao}</span>
+                      <span style={{ fontSize: 13, color: "#475569" }}>Unidade: {item.unidade}</span>
+                    </span>
                     {(estadoPreco || item.fonte === "PROPRIA") && (
-                      <span className="font-bold text-emerald-700">{formatarPreco(item.preco)}</span>
+                      <span className="gp-mono" style={{ fontSize: 15, fontWeight: 600 }}>{formatarPreco(item.preco)}</span>
                     )}
-                  </p>
-                </div>
+                  </button>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </>
       )}

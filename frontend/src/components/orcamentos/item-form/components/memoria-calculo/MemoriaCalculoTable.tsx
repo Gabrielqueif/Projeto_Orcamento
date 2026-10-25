@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Trash, X } from "@phosphor-icons/react";
 import type { VariableConfig, MemoriaCalculoElemento } from "../../types";
 
 interface MemoriaCalculoTableProps {
@@ -28,47 +29,52 @@ export function MemoriaCalculoTable({
   onRemoveVariableColumn,
   getElementVariableValue,
 }: MemoriaCalculoTableProps) {
+  const campo = {
+    height: 36, border: "1px solid #7B8AA0", borderRadius: 10, padding: "0 8px",
+    fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: "#001b3d", background: "#fff",
+  } as const;
+
   return (
-    <div className="shrink-0 border border-[#c4c6cf] rounded-[12px] overflow-hidden bg-white shadow-sm">
-      <div className="overflow-x-auto overflow-y-auto min-h-[140px] max-h-60 sm:max-h-72">
-        <table className="w-full text-left border-collapse">
-          <thead className="sticky top-0 z-10 bg-[#f1f4f6] shadow-sm">
-            <tr className="bg-[#f1f4f6] text-[#44474e] font-bold text-xs uppercase border-b border-[#c4c6cf]">
-              <th className="px-4 py-4 w-1/3">ELEMENTO / LOCAL</th>
+    <section className="gp-card" style={{ overflow: "hidden" }}>
+      <div style={{ overflow: "auto", minHeight: 140, maxHeight: 288 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <caption className="gp-sr">Elementos da memória de cálculo</caption>
+          <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
+            <tr>
+              <th scope="col" className="gp-th" style={{ paddingLeft: 22 }}>Elemento / Local</th>
               {variableConfigs.map((cfg) => (
-                <th key={cfg.id} className="px-4 py-4 text-center whitespace-nowrap">
-                  <div className="flex items-center justify-center gap-1">
-                    <input  
+                <th key={cfg.id} scope="col" className="gp-th" style={{ whiteSpace: "nowrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                    <input
                       type="text"
                       value={cfg.label}
                       onChange={(e) => onUpdateColumnLabel(cfg.key, e.target.value)}
-                      className="bg-transparent border-b border-transparent hover:border-slate-400 focus:border-brand-primary text-center font-bold text-xs uppercase outline-none max-w-[140px]"
+                      aria-label={`Nome da variável ${cfg.label}`}
+                      style={{ background: "transparent", border: 0, borderBottom: "1px solid #CBD5E1", textAlign: "center", fontWeight: 800, fontSize: 12, textTransform: "uppercase", color: "#334155", maxWidth: 140 }}
                       title="Clique para editar o nome da variável"
                     />
                     {variableConfigs.length > 1 && (
                       <button
                         type="button"
                         onClick={() => onRemoveVariableColumn(cfg.key)}
-                        className="text-slate-400 hover:text-red-500 text-xs p-0.5 rounded transition-colors cursor-pointer"
+                        aria-label={`Remover variável ${cfg.label}`}
                         title="Remover esta variável"
+                        style={{ border: 0, background: "transparent", color: "#475569", cursor: "pointer", display: "inline-flex", padding: 2 }}
                       >
-                        ✕
+                        <X size={14} weight="bold" aria-hidden="true" />
                       </button>
                     )}
                   </div>
                 </th>
               ))}
-              <th className="px-4 py-4 text-right">SUBTOTAL</th>
-              <th className="px-4 py-4 text-center w-20">AÇÕES</th>
+              <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Subtotal</th>
+              <th scope="col" className="gp-th" style={{ textAlign: "center", width: 80, paddingRight: 22 }}>Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#c4c6cf]">
+          <tbody>
             {elementos.length === 0 ? (
               <tr>
-                <td
-                  colSpan={variableConfigs.length + 3}
-                  className="text-center py-8 text-slate-400 italic text-sm"
-                >
+                <td colSpan={variableConfigs.length + 3} className="gp-td" style={{ textAlign: "center", padding: 32, color: "#475569" }}>
                   Nenhum elemento adicionado. Clique em &quot;Adicionar Elemento&quot; para começar.
                 </td>
               </tr>
@@ -76,40 +82,30 @@ export function MemoriaCalculoTable({
               elementos.map((el, index) => {
                 const isDiscount = el.quantidade < 0;
                 return (
-                  <tr
-                    key={el.id}
-                    className={`transition-colors ${
-                      isDiscount
-                        ? "bg-[rgba(255,218,214,0.15)] hover:bg-[rgba(255,218,214,0.25)]"
-                        : "hover:bg-slate-50"
-                    }`}
-                  >
+                  <tr key={el.id} className="gp-row" style={isDiscount ? { background: "#FEF2F2" } : undefined}>
                     {/* ELEMENTO / DESCRIÇÃO */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="text-xs text-slate-500 font-bold bg-slate-100 rounded px-1.5 py-0.5"
-                          title={`Código da variável: E${index + 1}`}
-                        >
+                    <td className="gp-td" style={{ paddingLeft: 22 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span className="gp-bg gp-ne gp-mono" title={`Código da variável: E${index + 1}`}>
                           E{index + 1}
                         </span>
                         <input
                           type="text"
                           value={el.descricao}
                           onChange={(e) => onUpdateElementoDescricao(el.id, e.target.value)}
-                          className={`w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-brand-primary outline-none py-1 text-sm ${
-                            isDiscount ? "text-[#ba1a1a] font-semibold" : "text-[#181c1e]"
-                          }`}
+                          aria-label={`Descrição do elemento E${index + 1}`}
+                          style={{ ...campo, fontFamily: "inherit", fontWeight: 700, width: "100%", color: isDiscount ? "#B91C1C" : "#001b3d" }}
                           placeholder="Descrição do elemento"
                         />
                         {locais && locais.length > 0 && (
                           <select
+                            aria-label={`Local do elemento E${index + 1}`}
                             onChange={(e) => {
                               if (e.target.value) {
                                 onUpdateElementoDescricao(el.id, e.target.value);
                               }
                             }}
-                            className="text-[11px] border border-slate-200 rounded px-1.5 py-0.5 bg-white text-slate-600 cursor-pointer max-w-[120px]"
+                            style={{ ...campo, fontFamily: "inherit", fontSize: 13, maxWidth: 130, cursor: "pointer" }}
                           >
                             <option value="">Locais...</option>
                             {locais.map((loc, idx) => {
@@ -130,18 +126,18 @@ export function MemoriaCalculoTable({
                       const val = getElementVariableValue(el, cfg.key);
                       const isQtdKey = cfg.key === "quantidade";
                       return (
-                        <td key={cfg.id} className="px-4 py-3 text-center">
+                        <td key={cfg.id} className="gp-td" style={{ textAlign: "center" }}>
                           <input
                             type="number"
                             value={val}
+                            aria-label={`${cfg.label} do elemento E${index + 1}`}
                             onChange={(e) =>
                               onUpdateElementoVariable(el.id, cfg.key, e.target.value)
                             }
-                            className={`w-20 mx-auto text-center border rounded-md py-1 text-sm outline-none transition-all ${
-                              isDiscount && isQtdKey
-                                ? "bg-[rgba(255,218,214,0.3)] border-[rgba(186,26,26,0.4)] text-[#ba1a1a] font-bold focus:ring-1 focus:ring-red-500"
-                                : "border-slate-300 text-[#181c1e] focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
-                            }`}
+                            style={{
+                              ...campo, width: 84, textAlign: "center",
+                              ...(isDiscount && isQtdKey ? { borderColor: "#B91C1C", color: "#B91C1C", fontWeight: 600 } : null),
+                            }}
                             step="any"
                           />
                         </td>
@@ -150,9 +146,8 @@ export function MemoriaCalculoTable({
 
                     {/* SUBTOTAL */}
                     <td
-                      className={`px-4 py-3 text-right text-sm font-bold whitespace-nowrap ${
-                        isDiscount ? "text-[#ba1a1a]" : "text-[#181c1e]"
-                      }`}
+                      className="gp-td gp-mono"
+                      style={{ textAlign: "right", fontWeight: 600, whiteSpace: "nowrap", color: isDiscount ? "#B91C1C" : "#001b3d" }}
                     >
                       {el.subtotal.toLocaleString("pt-BR", {
                         minimumFractionDigits: 2,
@@ -162,29 +157,16 @@ export function MemoriaCalculoTable({
                     </td>
 
                     {/* AÇÕES */}
-                    <td className="px-4 py-3 text-center">
+                    <td className="gp-td" style={{ textAlign: "center", paddingRight: 22 }}>
                       <button
                         type="button"
                         onClick={() => onRemoveElemento(el.id)}
-                        className="text-slate-400 hover:text-red-500 p-1.5 rounded-full hover:bg-slate-100 transition-all active:scale-90 cursor-pointer"
+                        className="gp-ib"
+                        style={{ width: 40, height: 40, margin: "0 auto" }}
+                        aria-label={`Remover elemento E${index + 1}`}
                         title="Remover Elemento"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <polyline points="3 6 5 6 21 6"></polyline>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                          <line x1="10" y1="11" x2="10" y2="17"></line>
-                          <line x1="14" y1="11" x2="14" y2="17"></line>
-                        </svg>
+                        <Trash size={18} weight="bold" aria-hidden="true" />
                       </button>
                     </td>
                   </tr>
@@ -194,6 +176,6 @@ export function MemoriaCalculoTable({
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }

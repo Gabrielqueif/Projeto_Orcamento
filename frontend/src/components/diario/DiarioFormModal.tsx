@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Cloud, CloudRain, Sun, X } from "@phosphor-icons/react";
-import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/common/toast";
 import {
   atualizarDiario,
@@ -48,24 +47,37 @@ interface Props {
   onSaved: () => void;
 }
 
-const campo =
-  "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-[14px] text-[#001b3c] bg-white focus:outline-none focus:border-[#4c6700]";
-const rotulo = "block text-[11px] font-bold text-[#747a62] uppercase tracking-[1px] mb-1.5";
 
 export function DiarioFormModal({ isOpen, onClose, obraId, registro, responsavelPadrao, servicos, onSaved }: Props) {
-  // O Modal desmonta o conteúdo ao fechar; a chave refaz o estado ao trocar de registro.
+  useEffect(() => {
+    if (!isOpen) return;
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", esc);
+    return () => document.removeEventListener("keydown", esc);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+  // Drawer lateral do artefato. A chave refaz o estado do formulário ao trocar de registro.
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={registro ? "Editar registro" : "Novo registro"} maxWidth="max-w-2xl">
-      <FormularioDiario
-        key={registro?.id ?? "novo"}
-        onClose={onClose}
-        obraId={obraId}
-        registro={registro}
-        responsavelPadrao={responsavelPadrao}
-        servicos={servicos}
-        onSaved={onSaved}
-      />
-    </Modal>
+    <div className="gp-ov" style={{ justifyContent: "flex-end", padding: 0 }}>
+      <div className="gp-drw" role="dialog" aria-modal="true" aria-labelledby="diario-form-t" style={{ width: "min(560px, 100%)" }}>
+        <div className="gp-dh">
+          <h2 id="diario-form-t" className="gp-h2">{registro ? "Editar registro" : "Novo registro"}</h2>
+          <button type="button" className="gp-ib" aria-label="Fechar" onClick={onClose}>
+            <X size={18} weight="bold" aria-hidden="true" />
+          </button>
+        </div>
+        <FormularioDiario
+          key={registro?.id ?? "novo"}
+          onClose={onClose}
+          obraId={obraId}
+          registro={registro}
+          responsavelPadrao={responsavelPadrao}
+          servicos={servicos}
+          onSaved={onSaved}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -203,80 +215,74 @@ function FormularioDiario({ onClose, obraId, registro, responsavelPadrao, servic
   };
 
   return (
-    <>
-      <form onSubmit={salvar} className="flex flex-col gap-4 font-manrope">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className={rotulo} htmlFor="diario-data">Data</label>
-            <input id="diario-data" type="date" required max={hojeLocal()} value={data}
-              onChange={(e) => setData(e.target.value)} className={campo} />
-          </div>
-          <div className="sm:col-span-2">
-            <label className={rotulo} htmlFor="diario-titulo">Título</label>
-            <input id="diario-titulo" required maxLength={255} value={titulo}
-              onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Concretagem da laje L2" className={campo} />
-          </div>
+    <form onSubmit={salvar} style={{ display: "contents" }}>
+      <div className="gp-db">
+        <div className="gp-fld">
+          <label className="gp-lb" htmlFor="diario-data">Data</label>
+          <input id="diario-data" type="date" required max={hojeLocal()} value={data}
+            onChange={(e) => setData(e.target.value)} className="gp-in" />
+        </div>
+        <div className="gp-fld">
+          <label className="gp-lb" htmlFor="diario-titulo">Título</label>
+          <input id="diario-titulo" required maxLength={255} value={titulo}
+            onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Concretagem da laje L2" className="gp-in" />
         </div>
 
-        <div>
-          <span className={rotulo}>Clima</span>
-          <div className="flex gap-2">
+        <div className="gp-fld">
+          <span className="gp-lb" id="diario-clima">Clima</span>
+          <div role="group" aria-labelledby="diario-clima" className="gp-seg">
             {CLIMAS.map(({ valor, rotulo: nome, Icone }) => (
               <button key={valor} type="button" onClick={() => setClima(valor)} aria-pressed={clima === valor}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-[8px] border text-[13px] font-bold transition-colors ${
-                  clima === valor
-                    ? "border-[#4c6700] bg-[rgba(159,211,0,0.15)] text-[#405700]"
-                    : "border-[#e2e8f0] text-[#64748b] hover:bg-slate-50"
-                }`}>
-                <Icone size={18} weight="fill" /> {nome}
+                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <Icone size={18} weight="fill" aria-hidden="true" /> {nome}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className={rotulo} htmlFor="diario-temp">Temperatura (°C)</label>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12 }}>
+          <div className="gp-fld">
+            <label className="gp-lb" htmlFor="diario-temp">Temperatura (°C)</label>
             <input id="diario-temp" inputMode="decimal" value={temperatura}
-              onChange={(e) => setTemperatura(e.target.value)} placeholder="28" className={campo} />
+              onChange={(e) => setTemperatura(e.target.value)} placeholder="28" className="gp-in" />
           </div>
-          <div>
-            <label className={rotulo} htmlFor="diario-equipe">Equipe presente</label>
+          <div className="gp-fld">
+            <label className="gp-lb" htmlFor="diario-equipe">Equipe presente</label>
             <input id="diario-equipe" type="number" min={0} max={10000} value={equipe}
-              onChange={(e) => setEquipe(e.target.value)} className={campo} />
+              onChange={(e) => setEquipe(e.target.value)} className="gp-in" />
           </div>
-          <div>
-            <label className={rotulo} htmlFor="diario-resp">Responsável</label>
+          <div className="gp-fld">
+            <label className="gp-lb" htmlFor="diario-resp">Responsável</label>
             <input id="diario-resp" maxLength={150} value={responsavel}
-              onChange={(e) => setResponsavel(e.target.value)} className={campo} />
+              onChange={(e) => setResponsavel(e.target.value)} className="gp-in" />
           </div>
         </div>
 
-        <div>
-          <label className={rotulo} htmlFor="diario-atividades">Atividades executadas</label>
+        <div className="gp-fld">
+          <label className="gp-lb" htmlFor="diario-atividades">Atividades executadas</label>
           <textarea id="diario-atividades" required rows={4} value={atividades}
-            onChange={(e) => setAtividades(e.target.value)} className={campo} />
+            onChange={(e) => setAtividades(e.target.value)} className="gp-in" />
         </div>
 
-        <div>
-          <label className={rotulo} htmlFor="diario-ocorrencias">Ocorrências (opcional)</label>
+        <div className="gp-fld">
+          <label className="gp-lb" htmlFor="diario-ocorrencias">Ocorrências (opcional)</label>
           <textarea id="diario-ocorrencias" rows={3} value={ocorrencias}
             onChange={(e) => setOcorrencias(e.target.value)}
-            placeholder="Paralisações, acidentes, falta de material…" className={campo} />
+            placeholder="Paralisações, acidentes, falta de material…" className="gp-in" />
         </div>
 
         {servicos.length > 0 && (
-          <div>
-            <span className={rotulo}>Serviços executados ({Object.keys(feitos).length} marcados)</span>
+          <div className="gp-fld">
+            <span className="gp-lb">Serviços executados ({Object.keys(feitos).length} marcados)</span>
             <input
               type="search"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar serviço por código, nome ou etapa"
               aria-label="Buscar serviço"
-              className={`${campo} mb-2`}
+              className="gp-in"
             />
-            <ul className="flex flex-col gap-1.5 max-h-72 overflow-y-auto">
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, maxHeight: 288, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
               {visiveis.map((servico) => {
                 const feito = feitos[servico.id];
                 const restante = restanteDe(servico);
@@ -284,25 +290,26 @@ function FormularioDiario({ onClose, obraId, registro, responsavelPadrao, servic
                 return (
                   <li
                     key={servico.id}
-                    className={`border rounded-[8px] px-3 py-2 ${
-                      concluido ? "border-[#9fd300] bg-[rgba(159,211,0,0.15)]" : "border-[#e2e8f0]"
-                    }`}
+                    style={{
+                      border: `1px solid ${concluido ? "#65A30D" : "#E6EBF2"}`,
+                      background: concluido ? "#E6F6D0" : "#fff",
+                      borderRadius: 12,
+                      padding: "10px 12px",
+                    }}
                   >
                     <label
-                      className={`flex items-start gap-2 text-[13px] ${
-                        concluido ? "text-[#405700] cursor-default" : "text-[#001b3c] cursor-pointer"
-                      }`}
+                      style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 14, color: concluido ? "#3F6604" : "#001b3d", cursor: concluido ? "default" : "pointer" }}
                     >
                       <input
                         type="checkbox"
                         checked={!!feito}
                         disabled={concluido}
                         onChange={(e) => marcar(servico.id, e.target.checked)}
-                        className="mt-0.5"
+                        style={{ marginTop: 3, width: 16, height: 16 }}
                       />
-                      <span className="flex-1">
+                      <span style={{ flex: 1 }}>
                         {servico.descricao}
-                        <span className={`block text-[11px] ${concluido ? "text-[#4c6700]" : "text-[#94a3b8]"}`}>
+                        <span className="gp-hint" style={{ display: "block", color: concluido ? "#3F6604" : undefined }}>
                           {[servico.codigo, servico.etapa_nome].filter(Boolean).join(" · ")}
                           {" · "}
                           {concluido
@@ -312,92 +319,93 @@ function FormularioDiario({ onClose, obraId, registro, responsavelPadrao, servic
                       </span>
                     </label>
                     {feito && (
-                      <div className="flex items-center gap-2 mt-2 pl-6">
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, paddingLeft: 24 }}>
                         <input
                           inputMode="decimal"
                           aria-label={`Quantidade de ${servico.descricao}`}
                           value={feito.qtd}
                           placeholder="0"
                           onChange={(e) => digitarQuantidade(servico, e.target.value)}
-                          className="w-24 border border-[#e2e8f0] rounded-[6px] px-2 py-1 text-right text-[13px]"
+                          className="gp-in gp-mono"
+                          style={{ width: 96, height: 40, textAlign: "right", fontSize: 14 }}
                         />
-                        <span className="text-[12px] text-[#64748b]">{servico.unidade}</span>
+                        <span className="gp-hint">{servico.unidade}</span>
                         <input
                           inputMode="decimal"
                           aria-label={`Percentual de ${servico.descricao}`}
                           value={feito.pct}
                           placeholder="0"
                           onChange={(e) => digitarPercentual(servico, e.target.value)}
-                          className="w-20 border border-[#e2e8f0] rounded-[6px] px-2 py-1 text-right text-[13px]"
+                          className="gp-in gp-mono"
+                          style={{ width: 80, height: 40, textAlign: "right", fontSize: 14 }}
                         />
-                        <span className="text-[12px] text-[#64748b]">%</span>
+                        <span className="gp-hint">%</span>
                       </div>
                     )}
                   </li>
                 );
               })}
-              {visiveis.length === 0 && <li className="text-[12px] text-[#94a3b8] px-1">Nenhum serviço encontrado.</li>}
+              {visiveis.length === 0 && <li className="gp-hint">Nenhum serviço encontrado.</li>}
             </ul>
-            <p className="text-[11px] text-[#94a3b8] mt-1.5">
+            <p className="gp-hint" style={{ margin: 0 }}>
               Marque o que foi feito no dia e informe a quantidade ou o percentual do serviço: um calcula o outro.
             </p>
           </div>
         )}
 
-        <div>
-          <span className={rotulo}>Fotos ({fotosAtuais.length + arquivos.length}/{MAX_FOTOS})</span>
-          <div className="flex flex-wrap gap-3">
+        <div className="gp-fld">
+          <span className="gp-lb">Fotos ({fotosAtuais.length + arquivos.length}/{MAX_FOTOS})</span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
             {fotosAtuais.map((foto) => (
-              <div key={foto.id} className="relative w-20 h-20 rounded-[8px] overflow-hidden border border-[#e2e8f0]">
+              <div key={foto.id} style={{ position: "relative", width: 80, height: 80, borderRadius: 12, overflow: "hidden", border: "1px solid #E6EBF2" }}>
                 {foto.url && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={foto.url} alt={foto.legenda ?? "Foto do diário"} className="object-cover w-full h-full" />
+                  <img src={foto.url} alt={foto.legenda ?? "Foto do diário"} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
                 )}
-                <button type="button" onClick={() => removerFotoSalva(foto)} aria-label="Remover foto"
-                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center">
+                <button type="button" onClick={() => removerFotoSalva(foto)} aria-label="Remover foto" style={botaoX}>
                   <X size={12} weight="bold" />
                 </button>
               </div>
             ))}
             {arquivos.map((arquivo, i) => (
               <div key={`${arquivo.name}-${i}`}
-                className="relative w-20 h-20 rounded-[8px] border border-dashed border-[#9fd300] bg-[rgba(159,211,0,0.08)] p-1.5 text-[10px] text-[#405700] break-all overflow-hidden">
+                style={{ position: "relative", width: 80, height: 80, borderRadius: 12, border: "2px dashed #00a3b1", background: "#e0f5f7", padding: 6, fontSize: 10, color: "#00626b", wordBreak: "break-all", overflow: "hidden", boxSizing: "border-box" }}>
                 {arquivo.name}
                 <button type="button" onClick={() => setArquivos((a) => a.filter((_, j) => j !== i))}
-                  aria-label={`Descartar ${arquivo.name}`}
-                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center">
+                  aria-label={`Descartar ${arquivo.name}`} style={botaoX}>
                   <X size={12} weight="bold" />
                 </button>
               </div>
             ))}
             {fotosAtuais.length + arquivos.length < MAX_FOTOS && (
-              <label className="w-20 h-20 rounded-[8px] border border-dashed border-[#cbd5e1] flex items-center justify-center text-[24px] text-[#94a3b8] cursor-pointer hover:bg-slate-50">
+              <label style={{ width: 80, height: 80, borderRadius: 12, border: "2px dashed #7B8AA0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: "#475569", cursor: "pointer", boxSizing: "border-box" }}>
                 +
-                <input type="file" accept={TIPOS_ACEITOS.join(",")} multiple className="sr-only"
+                <input type="file" accept={TIPOS_ACEITOS.join(",")} multiple className="gp-sr"
                   onChange={(e) => { escolherArquivos(e.target.files); e.target.value = ""; }} />
               </label>
             )}
           </div>
-          <p className="text-[11px] text-[#94a3b8] mt-1.5">JPG, PNG ou WEBP, até 5 MB cada.</p>
+          <p className="gp-hint" style={{ margin: 0 }}>JPG, PNG ou WEBP, até 5 MB cada.</p>
         </div>
 
         {erro && (
-          <p role="alert" className="text-[13px] font-medium text-[#93000a] bg-[#ffdad6] rounded-[8px] px-3 py-2">
+          <p role="alert" style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#B91C1C", background: "#FEE2E2", borderRadius: 12, padding: "10px 14px" }}>
             {erro}
           </p>
         )}
+      </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-[#f1f5f9]">
-          <button type="button" onClick={onClose}
-            className="px-4 py-2 rounded-[8px] text-[13px] font-bold text-[#434935] bg-[#f0f3ff] hover:bg-slate-200">
-            Cancelar
-          </button>
-          <button type="submit" disabled={salvando}
-            className="px-5 py-2 rounded-[8px] text-[13px] font-bold text-white bg-gradient-to-r from-[#4c6700] to-[#9fd300] disabled:opacity-60">
-            {salvando ? "Salvando…" : "Salvar"}
-          </button>
-        </div>
-      </form>
-    </>
+      <div className="gp-df">
+        <button type="button" onClick={onClose} className="gp-btn gp-bs">Cancelar</button>
+        <button type="submit" disabled={salvando} className="gp-btn gp-bp" style={{ opacity: salvando ? 0.6 : 1 }}>
+          {salvando ? "Salvando…" : "Salvar"}
+        </button>
+      </div>
+    </form>
   );
 }
+
+const botaoX: React.CSSProperties = {
+  position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", border: 0,
+  background: "rgba(0,27,61,.7)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+};

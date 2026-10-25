@@ -5,20 +5,22 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Plus, 
-  DownloadSimple,
-  MagnifyingGlass,
-  Clock,
-  ArrowRight,
-  Trash
-} from "@phosphor-icons/react";
+import { Plus, DownloadSimple, MagnifyingGlass, Trash } from "@phosphor-icons/react";
 import { getOrcamentos, getOrcamentoStats, deleteOrcamento, type Orcamento, type OrcamentoStats } from "@/lib/api/orcamentos";
 
 import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus, type OrcamentoStatus } from "@/lib/orcamentoStatus";
 import { useToast } from "@/components/common/toast";
 
 type FilterStatus = "todos" | OrcamentoStatus;
+
+// Cor do selo de status no design system do artefato.
+const BADGE: Record<OrcamentoStatus, string> = {
+  em_elaboracao: "gp-te",
+  pendente: "gp-wa",
+  aprovado: "gp-ok",
+  recusado: "gp-da",
+  cancelado: "gp-ne",
+};
 
 const FILTERS: FilterStatus[] = ["todos", ...STATUS_ORDER];
 
@@ -110,283 +112,178 @@ export default function OrcamentosPage() {
     }
   };
 
+  const contagem = `${filteredOrcamentos.length} ${filteredOrcamentos.length === 1 ? "orçamento" : "orçamentos"}`;
+  const contagemPorFiltro = (f: FilterStatus) =>
+    f === "todos" ? orcamentos.length : orcamentos.filter((o) => normalizeStatus(o.status) === f).length;
+  const compact = (v: number | null | undefined) =>
+    new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 2, style: "currency", currency: "BRL" }).format(v ?? 0);
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Page Header */}
-      <div className="flex items-end justify-between">
-        <div className="flex flex-col gap-1">
-          <p className="font-['JetBrains_Mono'] text-[10px] font-medium text-[#00a3b1] uppercase tracking-[0.5px] leading-[15px]">
-            Workspace / Comercial
-          </p>
-          <h1 className="font-['Manrope'] font-extrabold text-[36px] text-[#001b3d] tracking-[-0.9px] leading-[40px]">
-            Gestão de Orçamentos
-          </h1>
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
+        <div>
+          <nav aria-label="Trilha" className="gp-crumb">
+            Comercial / <span aria-current="page" style={{ color: "#001b3d" }}>Orçamentos</span>
+          </nav>
+          <h1 className="gp-h1">Orçamentos</h1>
+          <p className="gp-sub">Propostas com SINAPI, SEINFRA e as suas bases próprias.</p>
         </div>
-
-        <div className="flex gap-3">
-          <button className="flex items-center gap-2 bg-white border border-[#f1f5f9] text-[#001b3d] font-['Manrope'] font-bold text-[14px] px-5 py-3 rounded-[8px] transition-all hover:bg-[#f8fafc] shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-pointer">
-            <DownloadSimple size={16} weight="bold" className="text-[#00a3b1]" />
-            Exportar Relatório
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <button type="button" className="gp-btn gp-bs">
+            <DownloadSimple size={18} weight="bold" aria-hidden="true" />
+            Exportar lista
           </button>
-          
-          <button 
-            onClick={() => router.push("/orcamentos/novo")}
-            className="flex items-center gap-2 bg-[#001b3d] text-white font-['Manrope'] font-bold text-[16px] px-6 py-3 rounded-[8px] no-underline shadow-[0_10px_15px_-3px_rgba(0,27,61,0.1),0_4px_6px_-4px_rgba(0,27,61,0.1)] transition-all hover:bg-[#00102a] border-none cursor-pointer"
+          <button type="button" onClick={() => router.push("/orcamentos/novo")} className="gp-btn gp-bp">
+            <Plus size={18} weight="bold" aria-hidden="true" />
+            Novo orçamento
+          </button>
+        </div>
+      </div>
+
+      <section aria-label="Indicadores" className="gp-grid">
+        <div className="gp-card gp-met gp-dark">
+          <span className="gp-ml">Total orçado</span>
+          <span className="gp-mv" title={formatCurrency(stats?.valor_total)}>{stats ? compact(stats.valor_total) : "—"}</span>
+          <span className="gp-ms">{stats ? `${stats.total_orcamentos} ${stats.total_orcamentos === 1 ? "orçamento" : "orçamentos"}` : "—"}</span>
+        </div>
+        <div className="gp-card gp-met">
+          <span className="gp-ml">Taxa de aprovação</span>
+          <span className="gp-mv">{stats ? `${stats.taxa_aprovacao}%` : "—"}</span>
+          <div
+            role="progressbar"
+            aria-label={`Taxa de aprovação ${stats ? stats.taxa_aprovacao : 0}%, meta 75%`}
+            aria-valuenow={stats ? stats.taxa_aprovacao : 0}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            style={{ position: "relative", height: 8, borderRadius: 999, background: "#EDF1F6" }}
           >
-            <Plus size={17} weight="bold" />
-            Novo Orçamento
-          </button>
+            <div style={{ width: `${Math.min(stats?.taxa_aprovacao ?? 0, 100)}%`, height: "100%", borderRadius: 999, background: "#00a3b1" }} />
+            <span aria-hidden="true" style={{ position: "absolute", left: "75%", top: -4, width: 2, height: 16, background: "#001b3d" }} />
+          </div>
+          <span className="gp-ms">Meta: 75%</span>
         </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* KPI 1: TOTAL EM ORÇAMENTOS */}
-        <div className="bg-white border border-[#f1f5f9] rounded-[8px] p-5 flex flex-col justify-between shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-          <span className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-            TOTAL EM ORÇAMENTOS
-          </span>
-          <div className="flex items-baseline justify-between mt-2">
-            <h2 className="font-['Manrope'] font-extrabold text-[24px] lg:text-[28px] text-[#001b3d] truncate" title={formatCurrency(stats?.valor_total)}>
-              {formatCurrency(stats?.valor_total)}
-            </h2>
-            <span className="font-['JetBrains_Mono'] font-semibold text-[11px] text-[#00a3b1]">
-              {stats ? `${stats.total_orcamentos} un` : "—"}
-            </span>
-          </div>
-          <div className="bg-[#f1f5f9] h-[4px] rounded-full w-full overflow-hidden mt-3">
-            <div className="bg-[#00a3b1] h-full rounded-full" style={{ width: "100%" }} />
-          </div>
+        <div className="gp-card gp-met">
+          <span className="gp-ml">Ticket médio</span>
+          <span className="gp-mv" title={formatCurrency(stats?.ticket_medio)}>{stats ? compact(stats.ticket_medio) : "—"}</span>
+          <span className="gp-ms">Com BDI</span>
         </div>
-
-        {/* KPI 2: TAXA DE APROVAÇÃO */}
-        <div className="bg-white border border-[#f1f5f9] rounded-[8px] p-5 flex flex-col justify-between shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-          <span className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-            TAXA DE APROVAÇÃO
-          </span>
-          <div className="flex items-baseline justify-between mt-2">
-            <h2 className="font-['Manrope'] font-extrabold text-[28px] text-[#001b3d]">
-              {stats ? `${stats.taxa_aprovacao}%` : "—"}
-            </h2>
-            <span className="font-['JetBrains_Mono'] font-normal text-[11px] text-[#94a3b8]">
-              Meta: 75%
-            </span>
-          </div>
-          <div className="bg-[#f1f5f9] h-[4px] rounded-full w-full overflow-hidden mt-3">
-            <div className="bg-[#9fd300] h-full rounded-full" style={{ width: stats ? `${stats.taxa_aprovacao}%` : "0%" }} />
-          </div>
+        <div className="gp-card gp-met">
+          <span className="gp-ml">Tempo até aprovação</span>
+          <span className="gp-mv">{stats ? `${stats.tempo_resposta_medio} dias` : "—"}</span>
+          <span className="gp-ms">Média dos aprovados</span>
         </div>
+      </section>
 
-        {/* KPI 3: TICKET MÉDIO */}
-        <div className="bg-white border border-[#f1f5f9] rounded-[8px] p-5 flex flex-col justify-between shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-          <span className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-            TICKET MÉDIO
-          </span>
-          <div className="flex items-end justify-between mt-2">
-            <h2 className="font-['Manrope'] font-extrabold text-[24px] lg:text-[28px] text-[#001b3d] truncate" title={formatCurrency(stats?.ticket_medio)}>
-              {formatCurrency(stats?.ticket_medio)}
-            </h2>
-            <div className="flex gap-[4px] items-end h-[28px] pb-[2px]">
-              <div className="bg-[rgba(0,163,177,0.2)] w-[5px] h-[14px] rounded-[2px]" />
-              <div className="bg-[rgba(0,163,177,0.5)] w-[5px] h-[20px] rounded-[2px]" />
-              <div className="bg-[#00a3b1] w-[5px] h-[28px] rounded-[2px]" />
-            </div>
-          </div>
-          <div className="bg-[#f1f5f9] h-[4px] rounded-full w-full overflow-hidden mt-3">
-            <div className="bg-[#00a3b1] h-full rounded-full" style={{ width: "100%" }} />
-          </div>
-        </div>
-
-        {/* KPI 4: ELABORAÇÃO MÉDIA */}
-        <div className="bg-white border border-[#f1f5f9] rounded-[8px] p-5 flex flex-col justify-between shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-          <span className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-            ELABORAÇÃO MÉDIA
-          </span>
-          <div className="flex items-baseline justify-between mt-2">
-            <h2 className="font-['Manrope'] font-extrabold text-[28px] text-[#001b3d]">
-              {stats ? `${stats.tempo_resposta_medio} Dias` : "—"}
-            </h2>
-            <span className="font-['JetBrains_Mono'] font-semibold text-[11px] text-[#00a3b1]">
-              médio
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 mt-3 font-['Manrope'] text-[11px] text-[#64748b]">
-            <Clock size={14} className="text-[#00a3b1]" />
-            <span>Tempo médio até aprovação</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters Bar */}
-      <div className="bg-white border border-[#f1f5f9] rounded-[8px] shadow-[0_1px_1px_rgba(0,0,0,0.05)] px-5 py-4 flex items-center justify-between flex-wrap gap-4">
-        {/* Status tabs */}
-        <div className="flex items-center gap-4">
-          <span className="font-['JetBrains_Mono'] font-normal text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
-            Status:
-          </span>
-          <div className="bg-[#f8fafc] flex items-center p-1 rounded-[8px] gap-0.5">
+      <section aria-labelledby="h-lista" className="gp-card" style={{ overflow: "hidden" }}>
+        <h2 id="h-lista" className="gp-sr">Lista de orçamentos</h2>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid #E6EBF2" }}>
+          <div role="group" aria-label="Filtrar por status" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {FILTERS.map((filter) => (
               <button
                 key={filter}
+                type="button"
+                className="gp-chip"
+                aria-pressed={activeFilter === filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-5 py-[6px] rounded-[6px] font-['Manrope'] text-[12px] transition-all whitespace-nowrap border-none cursor-pointer ${
-                  activeFilter === filter
-                    ? "bg-white text-[#001b3d] font-bold shadow-[0_1px_1px_rgba(0,0,0,0.05)]"
-                    : "bg-transparent text-[#64748b] font-semibold hover:text-[#001b3d]"
-                }`}
               >
                 {filter === "todos" ? "Todos" : STATUS_INFO[filter].filterLabel}
+                <span className="gp-cnt">{contagemPorFiltro(filter)}</span>
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Right: Period + Search */}
-        <div className="flex items-center gap-4">
-          <div className="h-[32px] w-px bg-[#f1f5f9]" />
-
-          {/* Search */}
-          <div className="relative">
-            <div className="absolute left-[14px] top-1/2 -translate-y-1/2 pointer-events-none">
-              <MagnifyingGlass size={14} className="text-[#94a3b8]" />
-            </div>
+          <div className="gp-srch" style={{ marginLeft: "auto", flex: "0 1 300px" }}>
+            <MagnifyingGlass size={18} weight="bold" color="#475569" aria-hidden="true" />
+            <label htmlFor="busca-orc" className="gp-sr">Buscar orçamento</label>
             <input
-              type="text"
-              placeholder="Buscar orçamentos..."
+              id="busca-orc"
+              type="search"
+              placeholder="Nome ou cliente"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-[#f8fafc] border border-[#f1f5f9] rounded-[8px] pl-[36px] pr-4 py-[9px] font-['Manrope'] text-[14px] text-[#001b3d] placeholder:text-[#94a3b8] outline-none focus:border-[#00a3b1] transition-colors w-[240px]"
             />
           </div>
         </div>
-      </div>
-
-      {/* Budgets Table */}
-      <div className="bg-white border border-[#f1f5f9] rounded-[8px] overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-[#f8fafc] border-b border-[#f1f5f9]">
-              <th className="px-6 py-4 font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-                Nome do Orçamento
-              </th>
-              <th className="px-6 py-4 font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-                Cliente
-              </th>
-              <th className="px-6 py-4 font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-                Data de Emissão
-              </th>
-              <th className="px-6 py-4 font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-                Valor Total
-              </th>
-              <th className="px-6 py-4 font-['JetBrains_Mono'] font-medium text-[10px] text-[#64748b] uppercase tracking-[0.5px]">
-                Status
-              </th>
-              <th className="px-6 py-4 w-[72px]" />
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", minWidth: 900, borderCollapse: "collapse", fontSize: 14 }}>
+            <caption className="gp-sr">Orçamentos, {contagem}</caption>
+            <thead>
               <tr>
-                <td colSpan={6} className="py-12 text-center font-['Manrope'] text-[14px] text-[#94a3b8]">
-                  Carregando orçamentos...
-                </td>
+                <th scope="col" className="gp-th" style={{ padding: "12px 20px" }}>Orçamento</th>
+                <th scope="col" className="gp-th">Cliente</th>
+                <th scope="col" className="gp-th">Emissão</th>
+                <th scope="col" className="gp-th">Status</th>
+                <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Valor com BDI</th>
+                <th scope="col" className="gp-th" style={{ padding: "12px 20px", textAlign: "right" }}><span className="gp-sr">Ações</span></th>
               </tr>
-            ) : filteredOrcamentos.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-12 text-center font-['Manrope'] text-[14px] text-[#94a3b8]">
-                  Nenhum orçamento encontrado.
-                </td>
-              </tr>
-            ) : (
-              filteredOrcamentos.map((o, idx) => {
-                const statusDisplay = getStatusDisplay(o.status);
-                return (
-                  <tr
-                    key={o.id}
-                    onClick={() => handleRowClick(o.id)}
-                    className={`group cursor-pointer transition-colors hover:bg-[#f8fafc] ${
-                      idx < filteredOrcamentos.length - 1 ? "border-b border-[#f8fafc]" : ""
-                    }`}
-                  >
-                    {/* Nome */}
-                    <td className="px-6 py-[20px] align-middle">
-                      <div className="font-['Manrope'] font-bold text-[16px] text-[#001b3d] leading-tight group-hover:text-[#00a3b1] transition-colors">
-                        {o.nome}
-                      </div>
-                      <div className="font-['JetBrains_Mono'] font-normal text-[10px] text-[#94a3b8] mt-0.5">
-                        #{`ORC-${o.id.substring(0, 8).toUpperCase()}`}
-                      </div>
-                    </td>
-
-                    {/* Cliente */}
-                    <td className="px-6 py-[20px] align-middle">
-                      <span className="font-['Manrope'] font-medium text-[14px] text-[#475569]">
-                        {o.cliente || "—"}
-                      </span>
-                    </td>
-
-                    {/* Data */}
-                    <td className="px-6 py-[20px] align-middle">
-                      <span className="font-['Manrope'] font-medium text-[14px] text-[#475569]">
-                        {formatDate(o.data)}
-                      </span>
-                    </td>
-
-                    {/* Valor */}
-                    <td className="px-6 py-[20px] align-middle">
-                      <span className="font-['Manrope'] font-bold text-[16px] text-[#001b3d]">
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="gp-td" style={{ padding: 40, textAlign: "center", color: "#475569" }}>
+                    Carregando orçamentos...
+                  </td>
+                </tr>
+              ) : filteredOrcamentos.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="gp-td" style={{ padding: "40px 20px", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Nenhum orçamento encontrado.</p>
+                    <p style={{ margin: "6px 0 0", fontSize: 14, color: "#475569" }}>Escolha outro filtro ou crie um novo orçamento.</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredOrcamentos.map((o) => {
+                  const statusDisplay = getStatusDisplay(o.status);
+                  const norm = normalizeStatus(o.status);
+                  return (
+                    <tr key={o.id} onClick={() => handleRowClick(o.id)} className="gp-row" style={{ cursor: "pointer" }}>
+                      <th scope="row" className="gp-td" style={{ padding: "14px 20px", textAlign: "left", fontWeight: 400 }}>
+                        <Link
+                          href={`/orcamentos/${o.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ display: "block", fontSize: 15, fontWeight: 800, color: "#001b3d", textDecoration: "none" }}
+                        >
+                          {o.nome}
+                        </Link>
+                        <span className="gp-mono" style={{ fontSize: 12, color: "#475569" }}>
+                          {`ORC-${o.id.substring(0, 8).toUpperCase()}`}
+                        </span>
+                      </th>
+                      <td className="gp-td" style={{ color: "#334155" }}>{o.cliente || "—"}</td>
+                      <td className="gp-td" style={{ color: "#334155" }}>{formatDate(o.data)}</td>
+                      <td className="gp-td">
+                        <span className={`gp-bg ${norm ? BADGE[norm] : "gp-ne"}`}>
+                          <span aria-hidden="true" className="gp-dot"></span>
+                          {statusDisplay.label}
+                        </span>
+                      </td>
+                      <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>
                         {formatCurrency(o.valor_total)}
-                      </span>
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-6 py-[20px] align-middle">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-[8px] font-['JetBrains_Mono'] font-semibold text-[10px] uppercase tracking-[0.5px] ${statusDisplay.style}`}
-                      >
-                        {statusDisplay.label}
-                      </span>
-                    </td>
-
-                    {/* Action */}
-                    <td className="px-6 py-4 align-middle text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        title="Excluir orçamento"
-                        aria-label={`Excluir orçamento ${o.nome}`}
-                        onClick={() => handleDelete(o)}
-                        disabled={deletingId === o.id}
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] text-[#94a3b8] hover:text-[#dc2626] hover:bg-[#fef2f2] transition-colors border-none bg-transparent cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Trash size={16} weight="bold" />
-                      </button>
-                      <Link
-                        href={`/orcamentos/${o.id}`}
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] text-[#94a3b8] hover:text-[#001b3d] hover:bg-[#f1f5f9] transition-colors no-underline"
-                      >
-                        <ArrowRight size={16} weight="bold" />
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-
-        {/* Footer */}
-        <div className="px-6 py-4 flex items-center justify-between border-t border-[#f1f5f9] bg-white">
-          <span className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
-            Mostrando {filteredOrcamentos.length} orçamentos
-          </span>
-          <div className="flex gap-1">
-            <button className="w-7 h-7 flex items-center justify-center rounded-[6px] font-['Manrope'] font-bold text-[12px] bg-[#001b3d] text-white cursor-pointer border-none">
-              1
-            </button>
-          </div>
+                      </td>
+                      <td className="gp-td" style={{ padding: "14px 20px", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          title="Excluir orçamento"
+                          aria-label={`Excluir orçamento ${o.nome}`}
+                          onClick={() => handleDelete(o)}
+                          disabled={deletingId === o.id}
+                          className="gp-ib"
+                          style={{ width: 40, height: 40, borderRadius: 10, opacity: deletingId === o.id ? 0.5 : 1 }}
+                        >
+                          <Trash size={18} weight="bold" aria-hidden="true" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
-      </div>
-    </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderTop: "1px solid #E6EBF2", fontSize: 14, color: "#475569" }}>
+          <span aria-live="polite">{contagem}</span>
+          <span>Página 1 de 1</span>
+        </div>
+      </section>
+    </>
   );
 }
-

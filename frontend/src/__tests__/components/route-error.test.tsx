@@ -7,8 +7,8 @@ describe("error.tsx do dashboard", () => {
     const reset = jest.fn();
     render(<DashboardError error={new Error("boom")} reset={reset} />);
 
-    expect(screen.getByRole("alert")).toHaveTextContent("Algo deu errado");
-    fireEvent.click(screen.getByRole("button", { name: /tentar novamente/i }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Não conseguimos carregar esta página");
+    fireEvent.click(screen.getByRole("button", { name: /tentar de novo/i }));
     expect(reset).toHaveBeenCalledTimes(1);
   });
 });

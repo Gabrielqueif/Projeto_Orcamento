@@ -1,20 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import {
-  CurrencyDollar,
-  Wallet,
-  SlidersHorizontal,
-  ArrowLeft,
-  Rocket,
-} from "@phosphor-icons/react";
 import { useState } from "react";
 import { useWizard } from "@/contexts/WizardContext";
 import { criarObra } from "@/lib/api/obras";
 import { alocarMembrosAoOrcamento } from "@/lib/api/membros_equipe";
 import { useRouter } from "next/navigation";
 
-import { ObraWizardStepper } from "@/components/obras/ObraWizardStepper";
+import { ObraWizardStepper, ObraWizardResumo, resumoBase } from "@/components/obras/ObraWizardStepper";
 import { useToast } from "@/components/common/toast";
 
 export default function NovaObraEtapa3Page() {
@@ -85,214 +78,102 @@ export default function NovaObraEtapa3Page() {
     }
   };
 
-  const steps = [
-    { num: 1, label: "Informações Básicas", done: true, active: false },
-    { num: 2, label: "Equipe & Acessos", done: true, active: false },
-    { num: 3, label: "Financeiro Inicial", done: false, active: true },
+  const FATS = [
+    { k: "monthly", titulo: "Medição mensal", desc: "Fatura o executado no mês, com boletim." },
+    { k: "milestone", titulo: "Por marco de entrega", desc: "Fatura quando cada marco ou etapa é entregue." },
+    { k: "fixed", titulo: "Preço global", desc: "Valor fechado para a obra inteira." },
   ];
+  const fatAtual = FATS.find((f) => f.k === metodoFaturamento);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f4f7f9] -mx-8 -mb-8 -mt-8 font-['Inter']">
-      {/* Header / Stepper Progress Header */}
-      <ObraWizardStepper currentStep={3} nextStepLabel="Revisão Financeira" />
+    <>
+      <ObraWizardStepper currentStep={3} />
 
-      {/* Main Content Area */}
-      <div className="flex-1 px-8 lg:px-16 py-8">
-        <div className="max-w-[1152px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Card 1: Orçamento Estimado (Span 8) */}
-          <div className="lg:col-span-8 bg-white rounded-lg border border-[#d1d5db] shadow-[0_1px_1px_rgba(0,0,0,0.05)] p-6 lg:p-8 flex flex-col gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-9 flex items-center justify-center bg-[#9fd300]/20 rounded-md text-[#001b3c]">
-                <CurrencyDollar size={22} weight="bold" />
-              </div>
-              <h3 className="font-['Manrope'] font-extrabold text-[20px] text-[#001b3c] leading-[28px]">
-                Orçamento Estimado
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Custo Total Estimado */}
-              <div className="md:col-span-2 flex flex-col gap-2">
-                <label className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
-                  CUSTO TOTAL ESTIMADO (R$)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-[#64748b]">
-                    R$
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="0,00"
-                    value={custoEstimado}
-                    onChange={(e) => setCustoEstimado(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 bg-[#f8fafc] border border-[#d1d5db] rounded-lg font-['Inter'] text-[18px] font-bold text-[#001b3c] outline-none transition-all focus:border-[#9fd300] focus:bg-white"
-                  />
+      <div className="gp-split">
+        <div className="gp-main" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <section className="gp-card gp-pad" aria-label="Financeiro" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+              <div className="gp-fld">
+                <label htmlFor="o-vc" className="gp-lb">Custo total estimado</label>
+                <div className="gp-affix">
+                  <span>R$</span>
+                  <input id="o-vc" placeholder="0,00" aria-describedby="o-vc-h" value={custoEstimado} onChange={(e) => setCustoEstimado(e.target.value)} />
                 </div>
-                <p className="text-[12px] text-[#64748b] italic">
-                  Valor bruto aproximado para o fechamento do contrato inicial.
-                </p>
+                <span id="o-vc-h" className="gp-hint">Valor bruto aproximado para o fechamento do contrato inicial.</span>
               </div>
-
-              {/* BDI */}
-              <div className="flex flex-col gap-2">
-                <label className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
-                  BDI (%)
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={data.bdi || 0}
-                    onChange={(e) => updateData({ bdi: parseFloat(e.target.value) || 0 })}
-                    className="flex-1 px-4 py-3.5 bg-[#f8fafc] border border-[#d1d5db] rounded-lg font-['Inter'] font-bold text-[#001b3c] outline-none focus:border-[#9fd300]"
-                  />
-                  <div className="px-4 py-3.5 bg-[#e2e8f0] rounded-lg font-bold text-[#475569]">
-                    %
-                  </div>
+              <div className="gp-fld">
+                <label htmlFor="o-bdi" className="gp-lb">BDI</label>
+                <div className="gp-affix">
+                  <input id="o-bdi" type="number" step="0.01" placeholder="0,00" value={data.bdi || 0} onChange={(e) => updateData({ bdi: parseFloat(e.target.value) || 0 })} />
+                  <span>%</span>
                 </div>
               </div>
-
-              {/* Margem de Lucro Esperada */}
-              <div className="flex flex-col gap-2">
-                <label className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
-                  MARGEM DE LUCRO ESPERADA (%)
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="15.0"
-                    value={margemLucro}
-                    onChange={(e) => setMargemLucro(parseFloat(e.target.value) || 0)}
-                    className="flex-1 px-4 py-3.5 bg-[#f8fafc] border border-[#d1d5db] rounded-lg font-['Inter'] font-bold text-[#001b3c] outline-none focus:border-[#9fd300]"
-                  />
-                  <div className="px-4 py-3.5 bg-[#e2e8f0] rounded-lg font-bold text-[#475569]">
-                    %
-                  </div>
+              <div className="gp-fld">
+                <label htmlFor="o-mg" className="gp-lb">Margem de lucro esperada</label>
+                <div className="gp-affix">
+                  <input id="o-mg" type="number" step="0.1" placeholder="15,0" value={margemLucro} onChange={(e) => setMargemLucro(parseFloat(e.target.value) || 0)} />
+                  <span>%</span>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Card 2: Faturamento & Centro de Custo (Span 4) */}
-          <div className="lg:col-span-4 bg-white rounded-lg border border-[#d1d5db] shadow-[0_1px_1px_rgba(0,0,0,0.05)] p-6 lg:p-8 flex flex-col gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-9 flex items-center justify-center bg-[#9fd300]/20 rounded-md text-[#001b3c]">
-                <Wallet size={22} weight="bold" />
-              </div>
-              <h3 className="font-['Manrope'] font-extrabold text-[20px] text-[#001b3c] leading-[28px]">
-                Faturamento
-              </h3>
-            </div>
-
-            <div className="flex flex-col gap-5">
-              <div>
-                <label className="block font-['JetBrains_Mono'] font-medium text-[10px] text-[#94a3b8] uppercase tracking-[0.5px] mb-2">
-                  CÓDIGO CENTRO DE CUSTO
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: OBRA-2024-001"
-                  value={centroCusto}
-                  onChange={(e) => setCentroCusto(e.target.value)}
-                  className="w-full px-4 py-3.5 bg-[#f8fafc] border border-[#d1d5db] rounded-lg font-mono text-[13px] text-[#001b3c] outline-none focus:border-[#9fd300]"
-                />
-              </div>
-
-              <div>
-                <label className="block font-['JetBrains_Mono'] font-medium text-[10px] text-[#94a3b8] uppercase tracking-[0.5px] mb-2">
-                  MÉTODO DE FATURAMENTO
-                </label>
-                <select
-                  value={metodoFaturamento}
-                  onChange={(e) => setMetodoFaturamento(e.target.value)}
-                  className="w-full px-4 py-3.5 bg-[#f8fafc] border border-[#d1d5db] rounded-lg font-['Inter'] text-[14px] text-[#001b3c] outline-none cursor-pointer focus:border-[#9fd300]"
-                >
-                  <option value="monthly">Faturamento Mensal (Medição)</option>
-                  <option value="milestone">Por Marco de Entrega (Milestones)</option>
-                  <option value="fixed">Preço Global</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: Regras de Pagamento (Span 12) */}
-          <div className="lg:col-span-12 bg-white rounded-lg border border-[#d1d5db] shadow-[0_1px_1px_rgba(0,0,0,0.05)] p-6 lg:p-8 flex flex-col gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-9 flex items-center justify-center bg-[#9fd300]/20 rounded-md text-[#001b3c]">
-                <SlidersHorizontal size={22} weight="bold" />
-              </div>
-              <h3 className="font-['Manrope'] font-extrabold text-[20px] text-[#001b3c] leading-[28px]">
-                Regras de Pagamento
-              </h3>
-            </div>
-
-            <div className="max-w-3xl flex flex-col gap-3">
-              <label className="font-['JetBrains_Mono'] font-medium text-[10px] text-[#94a3b8] uppercase tracking-[0.5px]">
-                PRAZOS PADRÃO PARA FORNECEDORES (DIAS)
-              </label>
-              <div className="flex flex-wrap gap-4 items-center">
-                {[15, 28, 45].map((dias) => (
-                  <label
-                    key={dias}
-                    className="flex items-center gap-3 px-5 py-3.5 bg-[#f8fafc] border border-[#d1d5db] rounded-lg cursor-pointer hover:border-[#9fd300] transition-colors"
+            <div role="radiogroup" aria-label="Forma de faturamento" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+              {FATS.map((f) => {
+                const on = f.k === metodoFaturamento;
+                return (
+                  <button
+                    key={f.k}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => setMetodoFaturamento(f.k)}
+                    style={{
+                      display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, minHeight: 92, padding: 14, borderRadius: 14,
+                      color: "#001b3d", textAlign: "left", cursor: "pointer", fontFamily: "inherit",
+                      ...(on ? { border: "2px solid #001b3d", background: "#F7FCE9" } : { border: "1px solid #CBD5E1", background: "#fff" }),
+                    }}
                   >
-                    <input
-                      type="checkbox"
-                      checked={prazosFornecedores.includes(dias)}
-                      onChange={() => togglePrazo(dias)}
-                      className="w-4 h-4 accent-[#9fd300] cursor-pointer"
-                    />
-                    <span className="font-['Inter'] text-[14px] font-semibold text-[#001b3c]">
-                      {dias} Dias
-                    </span>
+                    <strong style={{ fontSize: 15 }}>{f.titulo}</strong>
+                    <span style={{ fontSize: 13, color: "#475569", lineHeight: 1.4 }}>{f.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="gp-fld" style={{ maxWidth: 320 }}>
+              <label htmlFor="o-cc" className="gp-lb">Código do centro de custo</label>
+              <input id="o-cc" className="gp-in gp-mono" placeholder="Ex: OBRA-2024-001" value={centroCusto} onChange={(e) => setCentroCusto(e.target.value)} />
+            </div>
+
+            <h2 className="gp-h2" style={{ fontSize: 16 }}>Regras de pagamento</h2>
+            <fieldset style={{ margin: 0, padding: 0, border: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+              <legend className="gp-lb" style={{ marginBottom: 8, padding: 0 }}>Prazos padrão para fornecedores (dias)</legend>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+                {[15, 28, 45].map((dias) => (
+                  <label key={dias} className="gp-chip" style={{ gap: 10 }}>
+                    <input type="checkbox" checked={prazosFornecedores.includes(dias)} onChange={() => togglePrazo(dias)} style={{ width: 18, height: 18, accentColor: "#001b3d" }} />
+                    {dias} dias
                   </label>
                 ))}
-                <div className="flex-1 min-w-[200px]">
-                  <input
-                    type="text"
-                    placeholder="Outro prazo (ex: 30, 60...)"
-                    value={outroPrazo}
-                    onChange={(e) => setOutroPrazo(e.target.value)}
-                    className="w-full px-4 py-3.5 bg-[#f8fafc] border border-[#d1d5db] rounded-lg font-['Inter'] text-[14px] text-[#001b3c] outline-none focus:border-[#9fd300]"
-                  />
+                <div style={{ flex: "1 1 200px", maxWidth: 280 }}>
+                  <label htmlFor="o-outro" className="gp-sr">Outro prazo em dias</label>
+                  <input id="o-outro" className="gp-in" style={{ height: 44 }} placeholder="Outro prazo (ex: 30, 60...)" value={outroPrazo} onChange={(e) => setOutroPrazo(e.target.value)} />
                 </div>
               </div>
-              <p className="text-[12px] text-[#64748b] italic mt-1">
-                Estas regras serão sugeridas automaticamente em novos pedidos de compra vinculados a esta obra.
-              </p>
-            </div>
+              <span className="gp-hint">Estas regras serão sugeridas automaticamente em novos pedidos de compra vinculados a esta obra.</span>
+            </fieldset>
+          </section>
+
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+            <Link href="/obras/novo/etapa-2" className="gp-btn gp-bs">Voltar</Link>
+            <button type="button" className="gp-btn gp-bp" onClick={handleFinish} disabled={isSubmitting} style={isSubmitting ? { opacity: 0.6 } : undefined}>
+              {isSubmitting ? "Criando projeto..." : "Criar obra"}
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Sticky Footer */}
-      <div className="px-8 lg:px-16 py-5 bg-white border-t border-[#d1d5db] sticky bottom-0 shadow-lg">
-        <div className="max-w-[1152px] mx-auto flex justify-between items-center">
-          <Link
-            href="/obras/novo/etapa-2"
-            className="font-['Manrope'] font-bold text-[14px] text-[#001b3c] flex items-center gap-2 no-underline hover:underline"
-          >
-            <ArrowLeft size={14} weight="bold" />
-            Anterior: Equipe & Acessos
-          </Link>
-          <button
-            onClick={handleFinish}
-            disabled={isSubmitting}
-            className="flex items-center gap-2 px-8 py-3.5 bg-[#9fd300] text-[#001b3d] rounded-lg font-['Manrope'] font-bold text-[14px] transition-all hover:opacity-90 disabled:opacity-50 border-none cursor-pointer shadow-[0_10px_15px_-3px_rgba(159,211,0,0.2)] hover:-translate-y-0.5"
-          >
-            {isSubmitting ? (
-              "Criando projeto..."
-            ) : (
-              <>
-                <Rocket size={18} weight="bold" />
-                FINALIZAR E CRIAR PROJETO
-              </>
-            )}
-          </button>
-        </div>
+        <ObraWizardResumo itens={[...resumoBase(data), { label: "Faturamento", valor: fatAtual?.titulo ?? "—" }]} />
       </div>
-    </div>
+    </>
   );
 }

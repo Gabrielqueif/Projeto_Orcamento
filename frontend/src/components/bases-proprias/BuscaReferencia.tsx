@@ -14,8 +14,6 @@ export interface ReferenciaEscolhida {
   unidade: string;
 }
 
-const campo = "border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 bg-white";
-
 /** Busca insumos/composições na base própria, SINAPI ou SEINFRA e devolve a referência escolhida. */
 export function BuscaReferencia({
   baseId,
@@ -90,15 +88,17 @@ export function BuscaReferencia({
     }
   }
 
+  const sel = { height: 44, width: "auto" } as const;
+  const bloqueado = buscando || termo.trim().length < 2;
   return (
-    <div className="space-y-2">
-      <form onSubmit={buscar} className="flex flex-wrap gap-2">
-        <select aria-label="Fonte" value={fonte} onChange={(e) => setFonte(e.target.value as RefFonte)} className={campo}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <form onSubmit={buscar} style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <select aria-label="Fonte" value={fonte} onChange={(e) => setFonte(e.target.value as RefFonte)} className="gp-in" style={sel}>
           {FONTES_REF.map((f) => (
             <option key={f.valor} value={f.valor}>{f.rotulo}</option>
           ))}
         </select>
-        <select aria-label="Tipo de referência" value={tipo} onChange={(e) => setTipo(e.target.value as RefTipo)} className={campo}>
+        <select aria-label="Tipo de referência" value={tipo} onChange={(e) => setTipo(e.target.value as RefTipo)} className="gp-in" style={sel}>
           {TIPOS_REF.map((t) => (
             <option key={t.valor} value={t.valor}>{t.rotulo}</option>
           ))}
@@ -108,24 +108,19 @@ export function BuscaReferencia({
           placeholder="Código ou descrição (mín. 2 letras)"
           value={termo}
           onChange={(e) => setTermo(e.target.value)}
-          className={`${campo} flex-1 min-w-[180px]`}
+          className="gp-in"
+          style={{ ...sel, flex: "1 1 180px" }}
         />
-        <button
-          type="submit"
-          disabled={buscando || termo.trim().length < 2}
-          className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-50"
-        >
-          <MagnifyingGlass size={16} /> {buscando ? "Buscando..." : "Buscar"}
+        <button type="submit" disabled={bloqueado} className="gp-btn gp-bs" style={bloqueado ? { opacity: 0.5 } : undefined}>
+          <MagnifyingGlass size={16} weight="bold" aria-hidden="true" /> {buscando ? "Buscando..." : "Buscar"}
         </button>
       </form>
-      {erro && <p className="text-sm text-red-600">{erro}</p>}
-      {buscou && resultados.length === 0 && !erro && (
-        <p className="text-sm text-slate-500">Nada encontrado.</p>
-      )}
+      {erro && <p style={{ margin: 0, fontSize: 14, color: "#B91C1C" }}>{erro}</p>}
+      {buscou && resultados.length === 0 && !erro && <p className="gp-hint" style={{ margin: 0 }}>Nada encontrado.</p>}
       {resultados.length > 0 && (
-        <ul className="max-h-48 overflow-y-auto border border-slate-200 rounded divide-y divide-slate-100">
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, maxHeight: 192, overflowY: "auto", border: "1px solid #E6EBF2", borderRadius: 12 }}>
           {resultados.map((r) => (
-            <li key={`${r.ref_fonte}-${r.ref_tipo}-${r.ref_codigo}`}>
+            <li key={`${r.ref_fonte}-${r.ref_tipo}-${r.ref_codigo}`} style={{ borderTop: "1px solid #E6EBF2" }}>
               <button
                 type="button"
                 onClick={() => {
@@ -134,11 +129,11 @@ export function BuscaReferencia({
                   setTermo("");
                   setBuscou(false);
                 }}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50"
+                style={{ width: "100%", textAlign: "left", padding: "10px 14px", border: 0, background: "transparent", cursor: "pointer", fontSize: 14, color: "#001b3d" }}
               >
-                <span className="font-mono text-xs text-slate-500 mr-2">{r.ref_codigo}</span>
+                <span className="gp-mono" style={{ fontSize: 12, color: "#475569", marginRight: 8 }}>{r.ref_codigo}</span>
                 {r.descricao}
-                <span className="text-slate-400"> · {r.unidade}</span>
+                <span style={{ color: "#475569" }}> · {r.unidade}</span>
               </button>
             </li>
           ))}

@@ -34,21 +34,24 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex flex-col items-center justify-center p-8 bg-color-bg-soft rounded-xl border border-color-border my-4 text-center">
-          <div className="w-12 h-12 rounded-full bg-color-danger-bg flex items-center justify-center mb-3">
-            <Warning size={24} className="text-color-danger" />
-          </div>
-          <h3 className="text-[16px] font-bold text-color-heading mb-1">
-            Algo deu errado neste componente
-          </h3>
-          <p className="text-[12px] text-color-text-muted max-w-[400px] mb-4">
+        <div
+          role="alert"
+          className="gp-card"
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: 32, margin: "16px 0", gap: 12 }}
+        >
+          <span aria-hidden="true" style={{ width: 64, height: 64, borderRadius: 20, background: "#FEE2E2", color: "#B91C1C", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Warning size={30} weight="bold" />
+          </span>
+          <h3 className="gp-h2" style={{ margin: 0 }}>Algo deu errado neste componente</h3>
+          <p className="gp-sub" style={{ margin: 0, maxWidth: 400 }}>
             {this.state.error?.message || "Ocorreu um erro inesperado ao carregar esta seção."}
           </p>
           <button
+            type="button"
             onClick={() => this.setState({ hasError: false, error: null })}
-            className="flex items-center gap-2 px-4 py-2 bg-color-primary-dark text-white rounded-lg text-[12px] font-semibold hover:opacity-90 transition-all cursor-pointer border-none"
+            className="gp-btn gp-bp"
           >
-            <ArrowClockwise size={14} />
+            <ArrowClockwise size={16} weight="bold" />
             Tentar Novamente
           </button>
         </div>

@@ -3,26 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  Wallet,
-  ChartBar,
-  PiggyBank,
-  Warning,
-  Plus,
-  Funnel,
-  CaretRight,
-  CircleNotch,
-  ArrowLeft,
-  Trash,
-  CheckCircle,
-  Clock,
-  XCircle,
-  X,
-  FileText,
-  MagnifyingGlass,
-  ArrowUpRight,
-  ArrowDownRight,
-} from "@phosphor-icons/react";
+import { Plus, Trash, X, MagnifyingGlass } from "@phosphor-icons/react";
 import {
   getConsolidadoFinanceiro,
   getDespesas,
@@ -33,7 +14,20 @@ import {
   Despesa,
   DespesaCreate,
 } from "@/lib/api/financeiro";
+import { getObra } from "@/lib/api/obras";
+import { getOrcamento } from "@/lib/api/orcamentos";
+import { ObraTabs } from "@/components/obras/ObraTabs";
 import { useToast } from "@/components/common/toast";
+
+// O nome da obra é o do orçamento de origem; falha aqui não deve derrubar a tela.
+async function buscarNomeObra(obraId: string): Promise<string | null> {
+  try {
+    const obra = await getObra(obraId);
+    return obra.orcamento_id ? (await getOrcamento(obra.orcamento_id)).nome : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function GestaoCustosObraPage() {
   const { showToast } = useToast();
@@ -44,6 +38,7 @@ export default function GestaoCustosObraPage() {
   const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nomeObra, setNomeObra] = useState<string | null>(null);
 
   // Filtros
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("TODAS");
@@ -70,10 +65,12 @@ export default function GestaoCustosObraPage() {
     try {
       setLoading(true);
       setError(null);
-      const [consData, despData] = await Promise.all([
+      const [consData, despData, obra] = await Promise.all([
         getConsolidadoFinanceiro(obraId),
         getDespesas(obraId),
+        buscarNomeObra(obraId),
       ]);
+      setNomeObra(obra);
       setConsolidado(consData);
       setDespesas(despData);
     } catch (err: any) {
@@ -142,32 +139,14 @@ export default function GestaoCustosObraPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "PAGO":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <CheckCircle size={12} weight="fill" /> Pago
-          </span>
-        );
-      case "APROVADO":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-            <CheckCircle size={12} /> Aprovado
-          </span>
-        );
-      case "RECUSADO":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-            <XCircle size={12} weight="fill" /> Recusado
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-            <Clock size={12} /> Em Análise
-          </span>
-        );
-    }
+    const [classe, rotulo] =
+      status === "PAGO" ? ["gp-ok", "Pago"] : status === "APROVADO" ? ["gp-te", "Aprovado"] : status === "RECUSADO" ? ["gp-da", "Recusado"] : ["gp-wa", "Em Análise"];
+    return (
+      <span className={`gp-bg ${classe}`}>
+        <span className="gp-dot" aria-hidden="true"></span>
+        {rotulo}
+      </span>
+    );
   };
 
   const despesasFiltradas = despesas.filter((d) => {
@@ -181,330 +160,191 @@ export default function GestaoCustosObraPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-3 text-color-text-muted">
-        <CircleNotch size={32} className="animate-spin text-color-brand-accent" />
-        <p className="text-[13px] font-semibold">Carregando gestão de custos da obra...</p>
-      </div>
+      <p role="status" style={{ padding: 48, textAlign: "center", color: "#475569" }}>
+        Carregando gestão de custos da obra...
+      </p>
     );
   }
 
   if (error || !consolidado) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-3 text-color-danger">
-        <Warning size={36} />
-        <p className="text-[14px] font-bold">{error || "Não foi possível carregar os dados"}</p>
-        <button
-          onClick={() => carregarDados()}
-          className="px-4 py-2 bg-color-primary-dark text-white rounded-lg text-xs font-semibold hover:opacity-90 transition-opacity"
-        >
+      <div role="alert" style={{ padding: 48, textAlign: "center" }}>
+        <p style={{ color: "#B91C1C", margin: 0, fontWeight: 700 }}>{error || "Não foi possível carregar os dados"}</p>
+        <button onClick={() => carregarDados()} className="gp-btn gp-bs gp-sm" style={{ marginTop: 16 }}>
           Tentar Novamente
         </button>
       </div>
     );
   }
 
-  const { total_orcado, total_realizado, saldo_restante, desvio_percentual, gasto_por_categoria } =
-    consolidado;
+  const { total_orcado, total_realizado, saldo_restante, desvio_percentual, gasto_por_categoria } = consolidado;
 
-  const percentualUtilizado =
-    total_orcado > 0 ? Math.round((total_realizado / total_orcado) * 100) : 0;
+  const percentualUtilizado = total_orcado > 0 ? Math.round((total_realizado / total_orcado) * 100) : 0;
+  const somaFiltradas = despesasFiltradas.reduce((a, d) => a + d.valor, 0);
+  const CATEGORIAS = ["Materiais", "Mão de Obra", "Equipamentos", "Administrativo", "Outros"];
 
   return (
-    <div className="flex flex-col h-full bg-color-bg-soft p-6 gap-6">
-      {/* ── Top Bar / Header ── */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
         <div>
-          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-color-text-muted mb-1">
-            <Link
-              href="/financeiro"
-              className="hover:text-color-heading transition-colors flex items-center gap-1"
-            >
-              <ArrowLeft size={12} />
-              Financeiro
-            </Link>
-            <CaretRight size={10} />
-            <span>Gestão de Custos</span>
-          </div>
-          <h1 className="text-[24px] font-bold text-color-heading leading-tight">
-            Detalhamento de Custos da Obra
-          </h1>
+          <nav aria-label="Trilha" className="gp-crumb">
+            <Link href="/financeiro">Financeiro</Link> /{" "}
+            <span aria-current="page" style={{ color: "#001b3d" }}>{nomeObra ?? "Gestão de custos"}</span>
+          </nav>
+          <h1 className="gp-h1">{nomeObra ?? "Detalhamento de Custos da Obra"}</h1>
+          <p className="gp-sub">Despesas lançadas e consumo da verba por categoria.</p>
         </div>
-
-        <button
-          onClick={() => setModalAberto(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-color-brand-accent text-white rounded-xl text-xs font-bold shadow-sm hover:opacity-90 transition-opacity"
-        >
-          <Plus size={16} weight="bold" />
-          Lançar Nova Despesa
+        <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp">
+          <Plus size={16} weight="bold" aria-hidden="true" /> Nova despesa
         </button>
       </div>
 
-      {/* ── Cards de KPI ── */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Total Orçado */}
-        <div className="bg-color-surface border border-color-border-subtle rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-color-text-muted mb-2">
-            <span className="text-xs font-semibold">Total Orçado</span>
-            <div className="p-2 rounded-xl bg-color-primary-dark/5 text-color-primary-dark">
-              <Wallet size={20} />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold text-color-heading">
-              {formatCurrency(total_orcado)}
-            </h3>
-            <p className="text-[11px] text-color-text-muted mt-1">Orçamento aprovado</p>
-          </div>
-        </div>
+      <ObraTabs id={obraId} atual="financeiro" />
 
-        {/* Total Realizado */}
-        <div className="bg-color-surface border border-color-border-subtle rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-color-text-muted mb-2">
-            <span className="text-xs font-semibold">Total Realizado</span>
-            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <ChartBar size={20} />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold text-color-heading">
-              {formatCurrency(total_realizado)}
-            </h3>
-            <p className="text-[11px] text-color-text-muted mt-1 flex items-center gap-1">
-              <span>{percentualUtilizado}% do orçamento executado</span>
-            </p>
-          </div>
+      <section aria-label="Indicadores" className="gp-grid">
+        <div className="gp-card gp-met gp-dark">
+          <span className="gp-ml">Total orçado</span>
+          <span className="gp-mv">{formatCurrency(total_orcado)}</span>
+          <span className="gp-ms">Orçamento aprovado</span>
         </div>
-
-        {/* Saldo Restante */}
-        <div className="bg-color-surface border border-color-border-subtle rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-color-text-muted mb-2">
-            <span className="text-xs font-semibold">Saldo Restante</span>
-            <div
-              className={`p-2 rounded-xl ${
-                saldo_restante >= 0
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-              }`}
-            >
-              <PiggyBank size={20} />
-            </div>
-          </div>
-          <div>
-            <h3
-              className={`text-2xl font-bold ${
-                saldo_restante >= 0 ? "text-color-heading" : "text-rose-600 dark:text-rose-400"
-              }`}
-            >
-              {formatCurrency(saldo_restante)}
-            </h3>
-            <p className="text-[11px] text-color-text-muted mt-1">
-              {saldo_restante >= 0 ? "Margem disponível" : "Orçamento estourado"}
-            </p>
-          </div>
+        <div className="gp-card gp-met">
+          <span className="gp-ml">Total realizado</span>
+          <span className="gp-mv">{formatCurrency(total_realizado)}</span>
+          <span
+            className="gp-bar"
+            role="progressbar"
+            aria-label={`${percentualUtilizado}% do orçamento executado`}
+            aria-valuenow={Math.min(percentualUtilizado, 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <span style={{ width: `${Math.min(percentualUtilizado, 100)}%`, background: "#00a3b1" }}></span>
+          </span>
+          <span className="gp-ms">{percentualUtilizado}% do orçamento executado</span>
         </div>
-
-        {/* Desvio Orçamentário */}
-        <div className="bg-color-surface border border-color-border-subtle rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-color-text-muted mb-2">
-            <span className="text-xs font-semibold">Desvio Orçamentário</span>
-            <div
-              className={`p-2 rounded-xl ${
-                desvio_percentual <= 0
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-              }`}
-            >
-              {desvio_percentual > 0 ? (
-                <ArrowUpRight size={20} className="text-amber-500" />
-              ) : (
-                <ArrowDownRight size={20} className="text-emerald-500" />
-              )}
-            </div>
-          </div>
-          <div>
-            <h3
-              className={`text-2xl font-bold ${
-                desvio_percentual > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
-              }`}
-            >
-              {desvio_percentual > 0 ? `+${desvio_percentual.toFixed(1)}%` : `${desvio_percentual.toFixed(1)}%`}
-            </h3>
-            <p className="text-[11px] text-color-text-muted mt-1">Variação frente ao planejado</p>
-          </div>
+        <div className="gp-card gp-met">
+          <span className="gp-ml">Saldo restante</span>
+          <span className="gp-mv" style={{ color: saldo_restante >= 0 ? undefined : "#B91C1C" }}>
+            {formatCurrency(saldo_restante)}
+          </span>
+          <span className="gp-ms">{saldo_restante >= 0 ? "Margem disponível" : "Orçamento estourado"}</span>
         </div>
-      </div>
+        <div className="gp-card gp-met">
+          <span className="gp-ml">Desvio orçamentário</span>
+          <span className="gp-mv" style={{ color: desvio_percentual > 0 ? "#9A3412" : "#3F6604" }}>
+            {desvio_percentual > 0 ? `+${desvio_percentual.toFixed(1)}%` : `${desvio_percentual.toFixed(1)}%`}
+          </span>
+          <span className="gp-ms">Variação frente ao planejado</span>
+        </div>
+      </section>
 
-      {/* ── Distribuição de Gastos por Categoria ── */}
-      <div className="bg-color-surface border border-color-border-subtle rounded-2xl p-5 shadow-xs">
-        <h2 className="text-base font-bold text-color-heading mb-4">
-          Comparativo por Categoria (Orçado vs Realizado)
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <section className="gp-card gp-pad" aria-labelledby="h-cat" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <h2 id="h-cat" className="gp-h2">Comparativo por categoria (orçado vs realizado)</h2>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
           {gasto_por_categoria.map((cat) => {
-            const pctCat =
-              cat.orcado > 0 ? Math.min(Math.round((cat.realizado / cat.orcado) * 100), 100) : 0;
-            const sobreAviso = cat.realizado > cat.orcado && cat.orcado > 0;
-
+            const pctCat = cat.orcado > 0 ? Math.round((cat.realizado / cat.orcado) * 100) : 0;
+            const acima = cat.realizado > cat.orcado && cat.orcado > 0;
             return (
-              <div
-                key={cat.categoria}
-                className="bg-color-bg-soft border border-color-border-subtle p-4 rounded-xl flex flex-col justify-between gap-3"
-              >
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs font-bold text-color-heading">{cat.categoria}</span>
-                    {sobreAviso && (
-                      <span className="text-[10px] font-bold text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded">
-                        Acima
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-color-text-muted flex flex-col gap-0.5 mt-2">
-                    <div className="flex justify-between">
-                      <span>Orçado:</span>
-                      <span className="font-semibold text-color-heading">
-                        {formatCurrency(cat.orcado)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Realizado:</span>
-                      <span className="font-semibold text-color-heading">
-                        {formatCurrency(cat.realizado)}
-                      </span>
-                    </div>
-                  </div>
+              <li key={cat.categoria} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 14 }}>
+                  <strong>{cat.categoria}</strong>
+                  {acima && <span className="gp-bg gp-wa">Acima</span>}
                 </div>
-
-                <div>
-                  <div className="flex justify-between items-center text-[10px] text-color-text-muted mb-1">
-                    <span>Progresso</span>
-                    <span className="font-bold">{pctCat}%</span>
-                  </div>
-                  <div className="w-full h-2 bg-color-border-subtle rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        sobreAviso
-                          ? "bg-rose-500"
-                          : pctCat > 80
-                          ? "bg-amber-500"
-                          : "bg-emerald-500"
-                      }`}
-                      style={{ width: `${pctCat}%` }}
-                    />
-                  </div>
+                <div className="gp-mono" style={{ fontSize: 13, color: "#475569" }}>
+                  {formatCurrency(cat.realizado)} / {formatCurrency(cat.orcado)}
                 </div>
-              </div>
+                <span
+                  className="gp-bar"
+                  role="img"
+                  aria-label={`${cat.categoria}: ${pctCat}% do orçado${acima ? ", acima do previsto" : ""}`}
+                  style={{ height: 10 }}
+                >
+                  <span style={{ width: `${Math.min(pctCat, 100)}%`, background: acima ? "#F97316" : "#001b3d" }}></span>
+                </span>
+              </li>
             );
           })}
-        </div>
-      </div>
+        </ul>
+      </section>
 
-      {/* ── Tabela e Filtros de Despesas ── */}
-      <div className="bg-color-surface border border-color-border-subtle rounded-2xl p-5 shadow-xs flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <h2 className="text-base font-bold text-color-heading flex items-center gap-2">
-            <FileText size={18} />
-            Lançamentos de Despesas
-          </h2>
-
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            {/* Campo Busca */}
-            <div className="relative flex-1 sm:w-64">
-              <MagnifyingGlass
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-color-text-muted"
-              />
-              <input
-                type="text"
-                placeholder="Buscar despesa ou responsável..."
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-color-bg-soft border border-color-border-subtle rounded-xl text-xs text-color-heading placeholder:text-color-text-muted focus:outline-none focus:border-color-brand-accent"
-              />
-            </div>
-
-            {/* Filtro Categoria */}
-            <div className="flex items-center gap-1.5 bg-color-bg-soft border border-color-border-subtle px-3 py-1.5 rounded-xl text-xs">
-              <Funnel size={14} className="text-color-text-muted" />
-              <select
-                value={categoriaFiltro}
-                onChange={(e) => setCategoriaFiltro(e.target.value)}
-                className="bg-transparent text-color-heading focus:outline-none cursor-pointer text-xs"
-              >
-                <option value="TODAS">Todas Categorias</option>
-                <option value="Materiais">Materiais</option>
-                <option value="Mão de Obra">Mão de Obra</option>
-                <option value="Equipamentos">Equipamentos</option>
-                <option value="Administrativo">Administrativo</option>
-                <option value="Outros">Outros</option>
-              </select>
-            </div>
+      <section className="gp-card" aria-labelledby="h-de" style={{ overflow: "hidden" }}>
+        <h2 id="h-de" className="gp-sr">Despesas</h2>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "16px 22px", borderBottom: "1px solid #E6EBF2" }}>
+          <div role="group" aria-label="Filtrar por categoria" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {["TODAS", ...CATEGORIAS].map((c) => (
+              <button key={c} type="button" className="gp-chip" aria-pressed={categoriaFiltro === c} onClick={() => setCategoriaFiltro(c)}>
+                {c === "TODAS" ? "Todas" : c}
+              </button>
+            ))}
+          </div>
+          <div className="gp-srch" style={{ marginLeft: "auto", flex: "0 1 280px" }}>
+            <MagnifyingGlass size={16} aria-hidden="true" />
+            <label htmlFor="bd" className="gp-sr">Buscar despesa</label>
+            <input id="bd" type="search" placeholder="Descrição ou responsável" value={busca} onChange={(e) => setBusca(e.target.value)} />
           </div>
         </div>
-
-        {/* Tabela */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-color-heading">
-            <thead className="bg-color-bg-soft border-b border-color-border-subtle uppercase text-[10px] text-color-text-muted font-bold tracking-wider">
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", minWidth: 800, borderCollapse: "collapse" }}>
+            <caption className="gp-sr">Despesas da obra</caption>
+            <thead>
               <tr>
-                <th className="py-3 px-4">Data Competência</th>
-                <th className="py-3 px-4">Descrição</th>
-                <th className="py-3 px-4">Categoria</th>
-                <th className="py-3 px-4">Responsável</th>
-                <th className="py-3 px-4">Valor</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">Ações</th>
+                <th scope="col" className="gp-th" style={{ paddingLeft: 22 }}>Data</th>
+                <th scope="col" className="gp-th">Descrição</th>
+                <th scope="col" className="gp-th">Categoria</th>
+                <th scope="col" className="gp-th">Responsável</th>
+                <th scope="col" className="gp-th">Status</th>
+                <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Valor</th>
+                <th scope="col" className="gp-th" style={{ paddingRight: 22 }}><span className="gp-sr">Ações</span></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-color-border-subtle">
+            <tbody>
               {despesasFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-color-text-muted text-xs">
+                  <td colSpan={7} className="gp-td" style={{ textAlign: "center", padding: 32, color: "#475569" }}>
                     Nenhuma despesa encontrada para os filtros selecionados.
                   </td>
                 </tr>
               ) : (
                 despesasFiltradas.map((despesa) => (
-                  <tr
-                    key={despesa.id}
-                    className="hover:bg-color-bg-soft/50 transition-colors"
-                  >
-                    <td className="py-3 px-4 font-mono text-color-text-muted">
-                      {despesa.data_competencia}
+                  <tr key={despesa.id} className="gp-row">
+                    <td className="gp-td gp-mono" style={{ paddingLeft: 22 }}>{despesa.data_competencia}</td>
+                    <th scope="row" className="gp-td" style={{ textAlign: "left", fontWeight: 700 }}>{despesa.descricao}</th>
+                    <td className="gp-td">
+                      <span className="gp-bg gp-ne">{despesa.categoria}</span>
                     </td>
-                    <td className="py-3 px-4 font-semibold">{despesa.descricao}</td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded bg-color-bg-soft border border-color-border-subtle text-[11px]">
-                        {despesa.categoria}
-                      </span>
+                    <td className="gp-td" style={{ color: "#475569" }}>{despesa.responsavel}</td>
+                    <td className="gp-td">
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
+                        {getStatusBadge(despesa.status)}
+                        <select
+                          aria-label={`Status da despesa ${despesa.descricao}`}
+                          value={despesa.status}
+                          onChange={(e) =>
+                            handleAtualizarStatus(despesa.id, e.target.value as "EM_ANALISE" | "APROVADO" | "PAGO" | "RECUSADO")
+                          }
+                          className="gp-in"
+                          style={{ height: 36, fontSize: 13, width: "auto" }}
+                        >
+                          <option value="EM_ANALISE">Em Análise</option>
+                          <option value="APROVADO">Aprovado</option>
+                          <option value="PAGO">Pago</option>
+                          <option value="RECUSADO">Recusado</option>
+                        </select>
+                      </div>
                     </td>
-                    <td className="py-3 px-4 text-color-text-muted">{despesa.responsavel}</td>
-                    <td className="py-3 px-4 font-bold">{formatCurrency(despesa.valor)}</td>
-                    <td className="py-3 px-4">
-                      <select
-                        value={despesa.status}
-                        onChange={(e) =>
-                          handleAtualizarStatus(
-                            despesa.id,
-                            e.target.value as "EM_ANALISE" | "APROVADO" | "PAGO" | "RECUSADO"
-                          )
-                        }
-                        className="bg-transparent cursor-pointer focus:outline-none"
-                      >
-                        <option value="EM_ANALISE">Em Análise</option>
-                        <option value="APROVADO">Aprovado</option>
-                        <option value="PAGO">Pago</option>
-                        <option value="RECUSADO">Recusado</option>
-                      </select>
-                      <div className="mt-1">{getStatusBadge(despesa.status)}</div>
+                    <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>
+                      {formatCurrency(despesa.valor)}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="gp-td" style={{ paddingRight: 22, textAlign: "right" }}>
                       <button
+                        type="button"
                         onClick={() => setDespesaParaExcluir(despesa.id)}
-                        className="p-1.5 rounded-lg text-color-text-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                        className="gp-ib"
+                        style={{ width: 40, height: 40, color: "#B91C1C" }}
                         title="Excluir despesa"
+                        aria-label={`Excluir despesa ${despesa.descricao}`}
                       >
-                        <Trash size={16} />
+                        <Trash size={16} aria-hidden="true" />
                       </button>
                     </td>
                   </tr>
@@ -513,168 +353,110 @@ export default function GestaoCustosObraPage() {
             </tbody>
           </table>
         </div>
-      </div>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 22px", borderTop: "1px solid #E6EBF2", fontSize: 14 }}>
+          <span aria-live="polite" style={{ color: "#475569" }}>
+            {despesasFiltradas.length} {despesasFiltradas.length === 1 ? "despesa" : "despesas"}
+          </span>
+          <strong className="gp-mono">Total: {formatCurrency(somaFiltradas)}</strong>
+        </div>
+      </section>
 
-      {/* ── Modal Nova Despesa (Modelo Padrão do Projeto) ── */}
       {modalAberto && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-fade-in"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setModalAberto(false);
-          }}
-        >
-          <div className="bg-white border border-color-border-subtle rounded-2xl w-full max-w-md p-6 shadow-xl flex flex-col gap-4 relative animate-in fade-in zoom-in-95 duration-150">
-            {/* Close Button */}
-            <button
-              onClick={() => setModalAberto(false)}
-              className="absolute top-5 right-5 text-color-text-muted hover:text-color-heading p-1 rounded-lg hover:bg-color-bg-soft transition-colors cursor-pointer"
-              title="Fechar"
-            >
-              <X size={20} />
-            </button>
-
-            {/* Header */}
-            <div className="border-b border-color-border-subtle pb-3">
-              <h3 className="font-extrabold text-[18px] text-color-heading flex items-center gap-2 tracking-tight">
-                <Plus size={18} className="text-color-brand-accent" weight="bold" />
-                <span>Nova Despesa Financeira</span>
-              </h3>
-              <p className="text-[13px] text-color-text-muted mt-0.5">
-                Preencha os dados do lançamento para integrar aos custos da obra
-              </p>
+        <div className="gp-ov" style={{ justifyContent: "flex-end", padding: 0 }} onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false); }}>
+          <div className="gp-drw" role="dialog" aria-modal="true" aria-labelledby="nd-t">
+            <div className="gp-dh">
+              <h2 id="nd-t" className="gp-h2">Nova despesa</h2>
+              <button type="button" className="gp-ib" aria-label="Fechar" onClick={() => setModalAberto(false)}>
+                <X size={18} weight="bold" aria-hidden="true" />
+              </button>
             </div>
-
-            {/* Form Body */}
-            <form onSubmit={handleCriarDespesa} className="flex flex-col gap-3.5">
-              {/* Descrição */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-color-text-muted uppercase tracking-wider">
-                  Descrição da Despesa
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Compra de cimento e agregados"
-                  value={novaDespesa.descricao}
-                  onChange={(e) => setNovaDespesa({ ...novaDespesa, descricao: e.target.value })}
-                  className="w-full border border-color-border-subtle rounded-xl px-3.5 py-2.5 text-xs text-color-heading bg-color-bg-soft outline-none focus:border-color-brand-accent transition-colors"
-                />
-              </div>
-
-              {/* Valor & Categoria */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-color-text-muted uppercase tracking-wider">
-                    Valor (R$)
-                  </label>
+            <form onSubmit={handleCriarDespesa} style={{ display: "contents" }}>
+              <div className="gp-db">
+                <div className="gp-fld">
+                  <label htmlFor="nd-d" className="gp-lb">Descrição <span className="gp-req">(obrigatório)</span></label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
+                    id="nd-d"
+                    type="text"
                     required
-                    placeholder="0.00"
-                    value={novaDespesa.valor || ""}
-                    onChange={(e) =>
-                      setNovaDespesa({ ...novaDespesa, valor: parseFloat(e.target.value) || 0 })
-                    }
-                    className="w-full border border-color-border-subtle rounded-xl px-3.5 py-2.5 text-xs text-color-heading bg-color-bg-soft outline-none focus:border-color-brand-accent transition-colors font-bold"
+                    aria-required="true"
+                    placeholder="Ex.: Compra de cimento e agregados"
+                    value={novaDespesa.descricao}
+                    onChange={(e) => setNovaDespesa({ ...novaDespesa, descricao: e.target.value })}
+                    className="gp-in"
                   />
                 </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-color-text-muted uppercase tracking-wider">
-                    Categoria
-                  </label>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+                  <div className="gp-fld">
+                    <label htmlFor="nd-v" className="gp-lb">Valor</label>
+                    <div className="gp-affix">
+                      <span>R$</span>
+                      <input
+                        id="nd-v"
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        required
+                        placeholder="0,00"
+                        value={novaDespesa.valor || ""}
+                        onChange={(e) => setNovaDespesa({ ...novaDespesa, valor: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
+                  <div className="gp-fld">
+                    <label htmlFor="nd-dt" className="gp-lb">Data de competência</label>
+                    <input
+                      id="nd-dt"
+                      type="date"
+                      required
+                      value={novaDespesa.data_competencia}
+                      onChange={(e) => setNovaDespesa({ ...novaDespesa, data_competencia: e.target.value })}
+                      className="gp-in"
+                    />
+                  </div>
+                </div>
+                <div className="gp-fld">
+                  <label htmlFor="nd-c" className="gp-lb">Categoria</label>
                   <select
+                    id="nd-c"
                     value={novaDespesa.categoria}
-                    onChange={(e) =>
-                      setNovaDespesa({
-                        ...novaDespesa,
-                        categoria: e.target.value as any,
-                      })
-                    }
-                    className="w-full border border-color-border-subtle rounded-xl px-3.5 py-2.5 text-xs text-color-heading bg-color-bg-soft outline-none focus:border-color-brand-accent cursor-pointer transition-colors"
+                    onChange={(e) => setNovaDespesa({ ...novaDespesa, categoria: e.target.value as any })}
+                    className="gp-in"
                   >
-                    <option value="Materiais">Materiais</option>
-                    <option value="Mão de Obra">Mão de Obra</option>
-                    <option value="Equipamentos">Equipamentos</option>
-                    <option value="Administrativo">Administrativo</option>
-                    <option value="Outros">Outros</option>
+                    {CATEGORIAS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
                   </select>
                 </div>
-              </div>
-
-              {/* Data & Responsável */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-color-text-muted uppercase tracking-wider">
-                    Data Competência
-                  </label>
+                <div className="gp-fld">
+                  <label htmlFor="nd-r" className="gp-lb">Responsável</label>
                   <input
-                    type="date"
-                    required
-                    value={novaDespesa.data_competencia}
-                    onChange={(e) =>
-                      setNovaDespesa({ ...novaDespesa, data_competencia: e.target.value })
-                    }
-                    className="w-full border border-color-border-subtle rounded-xl px-3.5 py-2.5 text-xs text-color-heading bg-color-bg-soft outline-none focus:border-color-brand-accent transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-color-text-muted uppercase tracking-wider">
-                    Responsável
-                  </label>
-                  <input
+                    id="nd-r"
                     type="text"
                     required
                     placeholder="Nome do responsável"
                     value={novaDespesa.responsavel}
-                    onChange={(e) =>
-                      setNovaDespesa({ ...novaDespesa, responsavel: e.target.value })
-                    }
-                    className="w-full border border-color-border-subtle rounded-xl px-3.5 py-2.5 text-xs text-color-heading bg-color-bg-soft outline-none focus:border-color-brand-accent transition-colors"
+                    onChange={(e) => setNovaDespesa({ ...novaDespesa, responsavel: e.target.value })}
+                    className="gp-in"
                   />
                 </div>
+                <div className="gp-fld">
+                  <label htmlFor="nd-s" className="gp-lb">Status inicial</label>
+                  <select
+                    id="nd-s"
+                    value={novaDespesa.status}
+                    onChange={(e) => setNovaDespesa({ ...novaDespesa, status: e.target.value as any })}
+                    className="gp-in"
+                  >
+                    <option value="EM_ANALISE">Em Análise</option>
+                    <option value="APROVADO">Aprovado</option>
+                    <option value="PAGO">Pago</option>
+                  </select>
+                </div>
               </div>
-
-              {/* Status Inicial */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-color-text-muted uppercase tracking-wider">
-                  Status Inicial
-                </label>
-                <select
-                  value={novaDespesa.status}
-                  onChange={(e) =>
-                    setNovaDespesa({
-                      ...novaDespesa,
-                      status: e.target.value as any,
-                    })
-                  }
-                  className="w-full border border-color-border-subtle rounded-xl px-3.5 py-2.5 text-xs text-color-heading bg-color-bg-soft outline-none focus:border-color-brand-accent cursor-pointer transition-colors"
-                >
-                  <option value="EM_ANALISE">Em Análise</option>
-                  <option value="APROVADO">Aprovado</option>
-                  <option value="PAGO">Pago</option>
-                </select>
-              </div>
-
-              {/* Footer Actions */}
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-color-border-subtle mt-2">
-                <button
-                  type="button"
-                  onClick={() => setModalAberto(false)}
-                  className="px-4 py-2 bg-color-bg-soft text-color-heading border border-color-border-subtle rounded-xl text-xs font-bold hover:bg-color-border-subtle transition-colors cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={salvando}
-                  className="flex items-center gap-1.5 px-5 py-2 bg-color-brand-accent text-white rounded-xl text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer shadow-xs"
-                >
-                  {salvando && <CircleNotch size={14} className="animate-spin" />}
-                  Salvar Despesa
+              <div className="gp-df">
+                <button type="button" onClick={() => setModalAberto(false)} className="gp-btn gp-bs">Cancelar</button>
+                <button type="submit" disabled={salvando} className="gp-btn gp-bp" style={{ opacity: salvando ? 0.6 : 1 }}>
+                  {salvando ? "Salvando…" : "Salvar despesa"}
                 </button>
               </div>
             </form>
@@ -682,31 +464,20 @@ export default function GestaoCustosObraPage() {
         </div>
       )}
 
-      {/* ── Modal Confirmação Exclusão ── */}
       {despesaParaExcluir && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="bg-color-surface border border-color-border-subtle rounded-2xl w-full max-w-sm p-5 shadow-xl flex flex-col gap-4">
-            <h3 className="text-base font-bold text-color-heading">Confirmar Exclusão</h3>
-            <p className="text-xs text-color-text-muted">
+        <div className="gp-ov">
+          <div className="gp-dlg" role="alertdialog" aria-modal="true" aria-labelledby="ex-t" style={{ maxWidth: 440 }}>
+            <h2 id="ex-t" className="gp-h2">Confirmar exclusão</h2>
+            <p style={{ margin: 0, color: "#475569", fontSize: 15 }}>
               Tem certeza que deseja excluir esta despesa? Esta ação atualizará os consolidados da obra e não pode ser desfeita.
             </p>
-            <div className="flex justify-end gap-2 mt-2">
-              <button
-                onClick={() => setDespesaParaExcluir(null)}
-                className="px-4 py-2 bg-color-bg-soft text-color-heading rounded-xl text-xs font-semibold hover:bg-color-border-subtle"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => handleDeletarDespesa(despesaParaExcluir)}
-                className="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-700"
-              >
-                Excluir
-              </button>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button type="button" onClick={() => setDespesaParaExcluir(null)} className="gp-btn gp-bs">Cancelar</button>
+              <button type="button" onClick={() => handleDeletarDespesa(despesaParaExcluir)} className="gp-btn gp-bx">Excluir</button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

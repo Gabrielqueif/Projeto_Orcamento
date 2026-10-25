@@ -108,7 +108,7 @@ export default function DocsPage() {
   const strokeDashoffset = circumference - (pct / 100) * circumference;
 
   return (
-    <div className="flex flex-col h-full bg-[#f8f9fb]">
+    <div className="flex flex-col h-full">
       {/* Top Header Section */}
       <div className="flex justify-between items-end mb-8">
         <div>

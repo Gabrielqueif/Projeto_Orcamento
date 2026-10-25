@@ -42,67 +42,64 @@ export function AtualizarPrecosPropriaModal({
       maxWidth="max-w-3xl"
     >
       {loading || !previa ? (
-        <p className="text-sm text-slate-500 py-6 text-center">Calculando prévia...</p>
+        <p className="gp-sub" style={{ textAlign: "center", padding: "24px 0", margin: 0 }}>Calculando prévia...</p>
       ) : (
-        <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-slate-50 border border-slate-200 rounded-md p-3">
-              <p className="text-[10px] uppercase font-bold text-slate-500">Itens verificados</p>
-              <p className="text-lg font-bold text-slate-800">{previa.total_itens}</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
+            <div style={{ padding: "12px 14px", borderRadius: 12, background: "#F4F6FA" }}>
+              <dt className="gp-ml">Itens verificados</dt>
+              <dd className="gp-mono" style={{ margin: "2px 0 0", fontSize: 22, fontWeight: 600 }}>{previa.total_itens}</dd>
             </div>
-            <div className="bg-slate-50 border border-slate-200 rounded-md p-3">
-              <p className="text-[10px] uppercase font-bold text-slate-500">Itens alterados</p>
-              <p className="text-lg font-bold text-slate-800">{previa.itens_alterados}</p>
+            <div style={{ padding: "12px 14px", borderRadius: 12, background: "#FFEDD5", color: "#9A3412" }}>
+              <dt style={{ fontSize: 13, fontWeight: 700 }}>Itens alterados</dt>
+              <dd className="gp-mono" style={{ margin: "2px 0 0", fontSize: 22, fontWeight: 600 }}>{previa.itens_alterados}</dd>
             </div>
-            <div className="bg-slate-50 border border-slate-200 rounded-md p-3">
-              <p className="text-[10px] uppercase font-bold text-slate-500">Diferença no custo direto</p>
-              <p
-                className={`text-lg font-bold ${
-                  previa.diferenca_custo_direto > 0
-                    ? "text-red-600"
-                    : previa.diferenca_custo_direto < 0
-                      ? "text-emerald-600"
-                      : "text-slate-800"
-                }`}
+            <div style={{ padding: "12px 14px", borderRadius: 12, background: "#F4F6FA" }}>
+              <dt className="gp-ml">Diferença no custo direto</dt>
+              <dd
+                className="gp-mono"
+                style={{
+                  margin: "2px 0 0",
+                  fontSize: 22,
+                  fontWeight: 600,
+                  color: previa.diferenca_custo_direto > 0 ? "#9A3412" : previa.diferenca_custo_direto < 0 ? "#3F6604" : "#001b3d",
+                }}
               >
                 {moeda(previa.diferenca_custo_direto)}
-              </p>
+              </dd>
             </div>
-          </div>
+          </dl>
 
           {semMudancas ? (
-            <p className="text-sm text-slate-600 text-center py-4">
+            <p className="gp-sub" style={{ textAlign: "center", padding: "16px 0", margin: 0 }}>
               Os preços dos itens de bases próprias já estão atualizados.
             </p>
           ) : (
-            <div className="overflow-x-auto border border-slate-200 rounded-md">
-              <table className="w-full text-xs">
-                <thead className="bg-slate-50 text-slate-500 uppercase text-[10px]">
+            <div style={{ overflowX: "auto", border: "1px solid #E6EBF2", borderRadius: 14 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <caption className="gp-sr">Itens com diferença de preço</caption>
+                <thead>
                   <tr>
-                    <th className="text-left p-2">Código</th>
-                    <th className="text-left p-2">Descrição</th>
-                    <th className="text-right p-2">Preço atual</th>
-                    <th className="text-right p-2">Preço novo</th>
-                    <th className="text-right p-2">Diferença</th>
-                    <th className="text-right p-2">Variação</th>
+                    <th scope="col" className="gp-th">Código</th>
+                    <th scope="col" className="gp-th">Descrição</th>
+                    <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Preço atual</th>
+                    <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Preço novo</th>
+                    <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Diferença</th>
+                    <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Variação</th>
                   </tr>
                 </thead>
                 <tbody>
                   {alterados.map((item) => (
-                    <tr key={item.item_id} className="border-t border-slate-100">
-                      <td className="p-2 font-semibold whitespace-nowrap">{item.codigo_composicao}</td>
-                      <td className="p-2">{item.descricao}</td>
-                      <td className="p-2 text-right whitespace-nowrap">{moeda(item.preco_atual)}</td>
-                      <td className="p-2 text-right whitespace-nowrap">{moeda(item.preco_novo)}</td>
-                      <td
-                        className={`p-2 text-right whitespace-nowrap font-semibold ${
-                          item.diferenca > 0 ? "text-red-600" : "text-emerald-600"
-                        }`}
-                      >
+                    <tr key={item.item_id} className="gp-row">
+                      <td className="gp-td gp-mono" style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{item.codigo_composicao}</td>
+                      <th scope="row" className="gp-td" style={{ textAlign: "left", fontWeight: 700 }}>{item.descricao}</th>
+                      <td className="gp-td gp-mono" style={{ textAlign: "right", whiteSpace: "nowrap" }}>{moeda(item.preco_atual)}</td>
+                      <td className="gp-td gp-mono" style={{ textAlign: "right", whiteSpace: "nowrap", fontWeight: 600 }}>{moeda(item.preco_novo)}</td>
+                      <td className="gp-td gp-mono" style={{ textAlign: "right", whiteSpace: "nowrap", fontWeight: 600, color: item.diferenca > 0 ? "#9A3412" : "#3F6604" }}>
                         {moeda(item.diferenca)}
                       </td>
-                      <td className="p-2 text-right whitespace-nowrap">
-                        {percentual(item.variacao_percentual)}
+                      <td className="gp-td" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                        <span className={`gp-bg ${item.diferenca > 0 ? "gp-wa" : "gp-ok"}`}>{percentual(item.variacao_percentual)}</span>
                       </td>
                     </tr>
                   ))}
@@ -112,34 +109,28 @@ export function AtualizarPrecosPropriaModal({
           )}
 
           {ignorados.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
-              <p className="text-xs font-bold text-amber-800 mb-2">
-                Itens ignorados ({ignorados.length})
-              </p>
-              <ul className="text-xs text-amber-900 space-y-1">
+            <div style={{ padding: 14, borderRadius: 14, background: "#FFEDD5", color: "#7C2D12" }}>
+              <p style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 800 }}>Itens ignorados ({ignorados.length})</p>
+              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14 }}>
                 {ignorados.map((ig) => (
                   <li key={ig.item_id}>
-                    <span className="font-semibold">{ig.codigo_composicao}</span>: {ig.motivo}
+                    <strong>{ig.codigo_composicao}</strong>: {ig.motivo}
                   </li>
                 ))}
               </ul>
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={confirmando}
-              className="px-4 py-2 rounded-md bg-slate-200 hover:bg-slate-300 text-slate-800 text-sm cursor-pointer disabled:opacity-50"
-            >
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <button type="button" onClick={onClose} disabled={confirmando} className="gp-btn gp-bs" style={confirmando ? { opacity: 0.5 } : undefined}>
               Cancelar
             </button>
             <button
               type="button"
               onClick={onConfirmar}
               disabled={confirmando || alterados.length === 0}
-              className="px-4 py-2 rounded-md bg-brand-primary hover:bg-brand-navy text-white text-sm font-bold cursor-pointer disabled:opacity-50"
+              className="gp-btn gp-bp"
+              style={confirmando || alterados.length === 0 ? { opacity: 0.5 } : undefined}
             >
               {confirmando ? "Aplicando..." : "Confirmar atualização"}
             </button>

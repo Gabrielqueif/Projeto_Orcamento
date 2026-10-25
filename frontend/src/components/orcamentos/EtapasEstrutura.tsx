@@ -118,7 +118,7 @@ export function EtapasEstrutura({
     const alvo = dropTarget?.id === etapa.id ? dropTarget.pos : null;
     const dropStyle =
       alvo === "inside"
-        ? "bg-brand-primary/10 ring-2 ring-brand-primary"
+        ? "bg-[#e0f5f7] ring-2 ring-[#00a3b1]"
         : alvo === "before"
           ? "shadow-[0_-2px_0_0_var(--color-brand-primary,#00a3b1)]"
           : alvo === "after"
@@ -170,7 +170,7 @@ export function EtapasEstrutura({
           >
             {isCollapsed ? <CaretRight size={12} weight="bold" /> : <CaretDown size={12} weight="bold" />}
           </button>
-          <FolderIcon size={18} weight="fill" className="text-brand-primary shrink-0" />
+          <FolderIcon size={18} weight="fill" className="shrink-0" color="#00a3b1" />
           <span className="text-[11px] font-bold text-text-muted tabular-nums shrink-0">{prefix}</span>
 
           {isEditing ? (
@@ -189,14 +189,14 @@ export function EtapasEstrutura({
             <button
               type="button"
               onClick={() => onSelect(etapa.id)}
-              className="flex-1 min-w-0 text-left text-[13px] font-semibold text-text-main truncate border-none bg-transparent cursor-pointer p-0 hover:text-brand-primary"
+              className="flex-1 min-w-0 text-left text-[14px] font-bold text-[#001b3d] truncate border-none bg-transparent cursor-pointer p-0 hover:text-[#007a85]"
               title="Ir para esta etapa na planilha"
             >
               {etapa.nome}
             </button>
           )}
 
-          <span className="text-[11px] font-bold text-brand-primary tabular-nums shrink-0">
+          <span className="gp-mono text-[12px] font-semibold text-[#001b3d] tabular-nums shrink-0">
             {formatarValor(totais[etapa.id] || 0)}
           </span>
 
@@ -231,7 +231,7 @@ export function EtapasEstrutura({
         </div>
 
         {subs.length > 0 && !isCollapsed && (
-          <ul className="ml-4 pl-3 border-l border-slate-200 list-none m-0 p-0 pl-3">
+          <ul className="ml-4 pl-3 border-l border-[#E6EBF2] list-none m-0 p-0 pl-3">
             {subs.map((s, i) => renderNode(s, `${prefix}.${i + 1}`, nivel + 1))}
           </ul>
         )}
@@ -242,7 +242,7 @@ export function EtapasEstrutura({
   const raizes = filhos(null);
 
   return (
-    <div className="mb-6 p-4 bg-white border border-border rounded-lg shadow-sm">
+    <section className="gp-card mb-6" style={{ padding: 20 }} aria-labelledby="h-estrutura">
       <div className={`flex items-center justify-between gap-3 ${painelAberto ? "mb-2" : ""}`}>
         <button
           type="button"
@@ -254,9 +254,9 @@ export function EtapasEstrutura({
             {painelAberto ? <CaretDown size={14} weight="bold" /> : <CaretRight size={14} weight="bold" />}
           </span>
           <span>
-            <span className="block text-sm font-bold text-text-main">Estrutura de Etapas</span>
+            <span id="h-estrutura" className="block gp-h2" style={{ fontSize: 16 }}>Estrutura de etapas</span>
             {painelAberto && (
-              <span className="block text-[11px] text-text-muted font-normal">
+              <span className="block gp-ms" style={{ fontWeight: 400 }}>
                 Organize em pastas de até {MAX_NIVEL_ETAPAS} níveis: Etapa 1, Etapa 1.1 e Etapa 1.1.1. Arraste para reordenar ou soltar no meio de outra pasta para aninhar.
               </span>
             )}
@@ -266,9 +266,9 @@ export function EtapasEstrutura({
           <button
             type="button"
             onClick={() => onAdd(null)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-border rounded text-[11px] font-bold text-text-main hover:bg-bg-light cursor-pointer shadow-sm shrink-0"
+            className="gp-btn gp-bs gp-sm shrink-0"
           >
-            <FolderPlus size={14} /> NOVA PASTA
+            <FolderPlus size={14} weight="bold" aria-hidden="true" /> Nova pasta
           </button>
         )}
       </div>
@@ -300,6 +300,6 @@ export function EtapasEstrutura({
           Solte aqui para mover para o nível principal
         </div>
       )}
-    </div>
+    </section>
   );
 }

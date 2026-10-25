@@ -1,24 +1,13 @@
 "use client";
 
+import { ObraTabs } from "@/components/obras/ObraTabs";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft,
   MagnifyingGlass,
-  Funnel,
-  Download,
-  ShoppingCart,
-  Cube,
   Warning,
-  ArrowsHorizontal,
-  Warehouse,
   Plus,
-  Minus,
-  QrCode,
-  Wrench,
-  Coins,
-  TrendUp,
   X,
   CheckCircle,
   Trash,
@@ -58,6 +47,7 @@ export default function AlmoxarifadoPage() {
   const [importError, setImportError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("TODOS");
+  const [aba, setAba] = useState<"est" | "loc">("est");
 
   // Estados para Modal de Movimentação de Estoque
   const [modalTipo, setModalTipo] = useState<"ENTRADA" | "SAIDA" | null>(null);
@@ -219,24 +209,17 @@ export default function AlmoxarifadoPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12 min-h-[500px]">
-        <span className="font-manrope text-[14px] text-text-muted animate-pulse">
-          Carregando informações do almoxarifado...
-        </span>
-      </div>
+      <p role="status" className="gp-sub" style={{ padding: 48, textAlign: "center" }}>
+        Carregando informações do almoxarifado...
+      </p>
     );
   }
 
   if (!orcamento) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 min-h-[500px] gap-4">
-        <span className="font-manrope text-[14px] text-text-muted">
-          Obra não encontrada.
-        </span>
-        <button
-          onClick={() => router.push("/obras")}
-          className="px-4 py-2 bg-bg-dark text-white rounded-lg font-manrope text-[14px] font-bold cursor-pointer"
-        >
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: 48 }}>
+        <span className="gp-sub">Obra não encontrada.</span>
+        <button type="button" onClick={() => router.push("/obras")} className="gp-btn gp-bd">
           Voltar para Obras
         </button>
       </div>
@@ -256,19 +239,6 @@ export default function AlmoxarifadoPage() {
         : insumo.categoria === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-
-  // KPIs dinâmicos baseados no banco
-  const totalPatrimonio = insumos.reduce(
-    (acc, insumo) => acc + Number(insumo.quantidade_atual) * Number(insumo.preco_unitario),
-    0
-  );
-  const valorEstoqueExibido = totalPatrimonio.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-
-  const totalInsumos = insumos.length;
-  const totalCriticos = insumos.filter((i) => i.status === "Crítico").length;
 
   // Lógica para submissão de movimentações (Dar Baixa / Entrada)
   const handleMovimentacaoSubmit = async (e: React.FormEvent) => {
@@ -366,512 +336,327 @@ export default function AlmoxarifadoPage() {
     }
   };
 
+  const criticos = insumos.filter((i) => i.status === "Crítico");
+  const fmt = (n: number | string) => Number(n).toLocaleString("pt-BR");
+  const locBadge = (s: string) =>
+    s === "EM_USO" ? "gp-bg gp-te" : s === "AGUARDANDO_RETIRADA" ? "gp-bg gp-wa" : "gp-bg gp-ne";
+  const locLabel = (s: string) =>
+    s === "EM_USO" ? "Em uso" : s === "AGUARDANDO_RETIRADA" ? "Aguardando retirada" : "Finalizado";
+  const abas = [
+    { k: "est" as const, label: "Estoque", n: insumos.length },
+    { k: "loc" as const, label: "Locações", n: locacoes.length },
+  ];
+  const fecharMov = () => {
+    setModalTipo(null);
+    setMovError(null);
+  };
+  const fecharLoc = () => {
+    setShowLocacaoModal(false);
+    setLocError(null);
+  };
+  const fecharMat = () => {
+    setShowAddMaterialModal(false);
+    setAddMatError(null);
+  };
+  const insumoSel = insumos.find((i) => i.id === selectedInsumoId);
+  const erroBox = { margin: 0, padding: "10px 14px", borderRadius: 12, background: "#FEE2E2", color: "#991B1B", fontSize: 14 } as const;
+  const vazio = { textAlign: "center", padding: 32, color: "#475569" } as const;
+
   return (
-    <div className="flex flex-col gap-8">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <Link
-            href={`/obras/${id}`}
-            className="inline-flex items-center gap-2 text-text-muted no-underline hover:text-text-main transition-colors mb-2 font-manrope text-[13px] font-medium"
-          >
-            <ArrowLeft size={14} weight="bold" />
-            Voltar para Cronograma
-          </Link>
-          <p className="font-mono text-[10px] font-medium text-teal uppercase tracking-[0.5px] leading-[15px]">
-            Projetos / {orcamento.cliente || "Cliente"} / {orcamento.nome}
-          </p>
-          <h1 className="font-manrope font-extrabold text-[36px] text-text-main tracking-[-0.9px] leading-[40px]">
-            Inventário & Almoxarifado
-          </h1>
-          <p className="font-manrope font-medium text-[14px] text-text-muted leading-[20px] max-w-[545px] mt-1">
-            Gestão em tempo real do estoque físico e insumos em trânsito no canteiro.
-          </p>
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
+        <div>
+          <nav aria-label="Trilha" className="gp-crumb">
+            <Link href="/obras">Obras</Link> / <Link href={`/obras/${id}`}>{orcamento.nome}</Link> /{" "}
+            <span aria-current="page" style={{ color: "#001b3d" }}>Almoxarifado</span>
+          </nav>
+          <h1 className="gp-h1">{orcamento.nome}</h1>
+          <p className="gp-sub">Estoque do canteiro e equipamentos locados.</p>
         </div>
-
-        {/* Header Actions */}
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            onClick={() => setModalTipo("SAIDA")}
-            className="flex items-center gap-2 bg-bg-dark text-white px-6 py-[13px] rounded-[8px] font-manrope font-bold text-[14px] hover:bg-bg-darker transition-colors border-none cursor-pointer"
-          >
-            <Minus size={16} weight="bold" />
-            <span>Dar Baixa / Consumo</span>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button type="button" className="gp-btn gp-bd" onClick={() => setModalTipo("SAIDA")}>
+            Registrar saída
           </button>
-          <button
-            onClick={() => setModalTipo("ENTRADA")}
-            className="flex items-center gap-2 bg-brand-primary text-text-main px-6 py-[13px] rounded-[8px] font-manrope font-bold text-[14px] hover:bg-brand-primaryHover transition-colors border-none cursor-pointer"
-          >
-            <Plus size={16} weight="bold" />
-            <span>Entrada de NF / Material</span>
+          <button type="button" className="gp-btn gp-bp" onClick={() => setModalTipo("ENTRADA")}>
+            Registrar entrada
           </button>
         </div>
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* KPI 1 - Valor total */}
-        <div className="bg-surface border border-border rounded-[8px] shadow-[0_1px_1px_rgba(0,0,0,0.05)] p-6 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="font-mono font-medium text-[10px] text-text-muted uppercase tracking-[0.5px]">
-              VALOR TOTAL EM ESTOQUE
-            </span>
-            <Coins size={20} className="text-brand-primary" weight="fill" />
-          </div>
-          <p className="font-manrope font-extrabold text-[28px] text-text-main leading-tight">
-            {valorEstoqueExibido}
-          </p>
-          <p className="font-manrope font-bold text-[11px] text-brand-primary flex items-center gap-1 mt-1">
-            <TrendUp size={14} weight="bold" />
-            Patrimônio no canteiro
-          </p>
-        </div>
+      <ObraTabs id={id} atual="almoxarifado" />
 
-        {/* KPI 2 - Itens Cadastrados */}
-        <div className="bg-surface border border-border rounded-[8px] shadow-[0_1px_1px_rgba(0,0,0,0.05)] p-6 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="font-mono font-medium text-[10px] text-text-muted uppercase tracking-[0.5px]">
-              MATERIAIS CADASTRADOS
-            </span>
-            <Cube size={20} className="text-teal" />
-          </div>
-          <p className="font-manrope font-extrabold text-[28px] text-text-main leading-tight">
-            {totalInsumos < 10 ? `0${totalInsumos}` : totalInsumos} Materiais
-          </p>
-          <p className="font-manrope font-medium text-[11px] text-text-muted mt-1">
-            Listagem SINAPI e Própria
-          </p>
-        </div>
-
-        {/* KPI 3 - Nível Crítico */}
-        <div className="bg-surface border border-border rounded-[8px] shadow-[0_1px_1px_rgba(0,0,0,0.05)] p-6 flex flex-col gap-2 relative overflow-hidden">
-          {totalCriticos > 0 && (
-            <div className="absolute left-0 top-0 h-full w-1 bg-status-danger" />
-          )}
-          <div className="flex items-center justify-between">
-            <span className="font-mono font-medium text-[10px] text-text-muted uppercase tracking-[0.5px]">
-              MATERIAIS EM NÍVEL CRÍTICO
-            </span>
-            <Warning size={20} className={totalCriticos > 0 ? "text-status-danger" : "text-text-muted"} weight="fill" />
-          </div>
-          <p className={`font-manrope font-extrabold text-[28px] leading-tight ${totalCriticos > 0 ? "text-status-danger" : "text-text-main"}`}>
-            {totalCriticos < 10 ? `0${totalCriticos}` : totalCriticos} Materiais
-          </p>
-          <p className="font-manrope font-medium text-[11px] text-text-muted mt-1">
-            Requer atenção imediata
-          </p>
-        </div>
-
-        {/* KPI 4 - Movimentações */}
-        <div className="bg-surface border border-border rounded-[8px] shadow-[0_1px_1px_rgba(0,0,0,0.05)] p-6 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="font-mono font-medium text-[10px] text-text-muted uppercase tracking-[0.5px]">
-              MOVIMENTAÇÕES HOJE
-            </span>
-            <ArrowsHorizontal size={20} className="text-brand-primary" />
-          </div>
-          <p className="font-manrope font-extrabold text-[28px] text-text-main leading-tight">
-            18 Entradas/Saídas
-          </p>
-          <p className="font-manrope font-medium text-[11px] text-text-muted mt-1">
-            Última há 22 min
-          </p>
-        </div>
-      </div>
-
-      {/* Main Section - Tabela de Materiais */}
-      <div className="bg-surface border border-border rounded-[8px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] overflow-hidden">
-        {/* Table Controls */}
-        <div className="p-6 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h3 className="font-manrope font-extrabold text-[18px] text-text-main">
-            Tabela de Materiais
-          </h3>
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            {/* Search Input */}
-            <div className="relative flex-1 md:w-[280px]">
-              <div className="absolute left-[12px] top-1/2 -translate-y-1/2 pointer-events-none">
-                <MagnifyingGlass size={16} className="text-text-muted" />
-              </div>
-              <input
-                type="text"
-                placeholder="Buscar material, código ou localização..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#f8fafc] border border-border rounded-[6px] pl-[36px] pr-4 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-surface border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main outline-none focus:border-brand-primary cursor-pointer"
-            >
-              <option value="TODOS">Todas as Categorias</option>
-              <option value="CRITICO">⚠️ Apenas Críticos / Reposição</option>
-              <option value="ESTRUTURA">Estrutura</option>
-              <option value="EPI">EPI</option>
-              <option value="ELÉTRICA">Elétrica</option>
-              <option value="HIDRÁULICA">Hidráulica</option>
-              <option value="ACABAMENTO">Acabamento</option>
-              <option value="FERRAMENTAS">Ferramentas</option>
-            </select>
-
-            <button className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-[6px] font-manrope text-[13px] font-bold text-text-main hover:bg-[#f8fafc] transition-colors cursor-pointer bg-white">
-              <Funnel size={14} />
-              Filtrar
-            </button>
-
-            <button className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-[6px] font-manrope text-[13px] font-bold text-text-main hover:bg-[#f8fafc] transition-colors cursor-pointer bg-white">
-              <Download size={14} />
-              Exportar CSV
-            </button>
-
-            <button
-              onClick={() => setShowAddMaterialModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-brand-primary hover:bg-brand-primaryHover text-text-main rounded-[6px] font-manrope text-[13px] font-bold transition-colors cursor-pointer border-none"
-            >
-              <Plus size={14} weight="bold" />
-              <span>Adicionar Material</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Table Content */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left font-manrope">
-            <thead className="bg-[#f8fafc] text-text-muted border-b border-border">
-              <tr>
-                <th className="px-6 py-3.5 font-mono font-medium text-[10px] uppercase tracking-[0.5px]">
-                  MATERIAL / DESCRIÇÃO
-                </th>
-                <th className="px-4 py-3.5 font-mono font-medium text-[10px] uppercase tracking-[0.5px]">
-                  CATEGORIA
-                </th>
-                <th className="px-4 py-3.5 font-mono font-medium text-[10px] uppercase tracking-[0.5px] text-right">
-                  QTD. ATUAL
-                </th>
-                <th className="px-4 py-3.5 font-mono font-medium text-[10px] uppercase tracking-[0.5px] text-right">
-                  MIN. ESTOQUE
-                </th>
-                <th className="px-4 py-3.5 font-mono font-medium text-[10px] uppercase tracking-[0.5px] text-center">
-                  STATUS
-                </th>
-                <th className="px-6 py-3.5 font-mono font-medium text-[10px] uppercase tracking-[0.5px] text-right">
-                  AÇÕES
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#f1f5f9]">
-              {insumos.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-text-muted font-manrope text-[14px]">
-                    <p>O estoque desta obra está vazio.</p>
-                    {itens.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleImportarInsumosDoOrcamento}
-                        disabled={importando}
-                        className="mt-3 bg-brand-primary text-white px-4 py-2 rounded-[6px] font-bold text-[13px] hover:bg-brand-navy transition disabled:opacity-60"
-                      >
-                        {importando ? "Importando..." : "Importar insumos do orçamento"}
-                      </button>
-                    )}
-                    {importError && <p className="mt-2 text-status-danger text-[12px]">{importError}</p>}
-                  </td>
-                </tr>
-              ) : insumosFiltrados.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-text-muted font-manrope text-[14px]">
-                    Nenhum material encontrado com os filtros selecionados.
-                  </td>
-                </tr>
-              ) : (
-                insumosFiltrados.map((insumo) => (
-                  <tr key={insumo.id} className="hover:bg-[#f8fafc] transition-colors">
-                    {/* Descrição */}
-                    <td className="px-6 py-4.5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded bg-[#f1f5f9] flex items-center justify-center shrink-0 text-text-main">
-                          {insumo.categoria === "EPI" ? (
-                            <Warehouse size={20} />
-                          ) : insumo.categoria === "FERRAMENTAS" ? (
-                            <Wrench size={20} />
-                          ) : (
-                            <Cube size={20} />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-bold text-[14px] text-text-main leading-tight">
-                            {insumo.descricao}
-                          </p>
-                          <p className="font-mono text-[10px] text-text-muted mt-0.5">
-                            Cód: {insumo.codigo_insumo} ({insumo.fonte || "Próprio"})
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Categoria */}
-                    <td className="px-4 py-4.5">
-                      <span className="inline-block bg-[#e2e8f0] text-text-main px-2 py-0.5 rounded-[4px] font-mono font-bold text-[9px]">
-                        {insumo.categoria}
-                      </span>
-                    </td>
-
-                    {/* Quantidade Atual */}
-                    <td
-                      className={`px-4 py-4.5 font-bold text-[13px] text-right ${
-                        insumo.status === "Crítico" ? "text-status-danger" : "text-text-main"
-                      }`}
-                    >
-                      {Number(insumo.quantidade_atual)} {insumo.unidade}
-                    </td>
-
-                    {/* Estoque Mínimo */}
-                    <td className="px-4 py-4.5 text-text-muted text-[13px] text-right">
-                      {Number(insumo.quantidade_minima)}
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-4 py-4.5 text-center">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-[0.5px] border ${
-                          insumo.status === "Crítico"
-                            ? "bg-red-50 text-status-danger border-red-200"
-                            : "bg-green-50 text-brand-primary border-green-200"
-                        }`}
-                      >
-                        {insumo.status}
-                      </span>
-                    </td>
-
-                    {/* Ações */}
-                    <td className="px-6 py-4.5 text-right">
-                      <button
-                        onClick={() => handleDeleteInsumo(insumo.id)}
-                        className="text-status-danger hover:text-red-700 transition-colors p-1.5 cursor-pointer bg-transparent border-none hover:bg-red-50 rounded-[4px] inline-flex items-center justify-center"
-                        title="Remover material do estoque"
-                      >
-                        <Trash size={16} weight="bold" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Paginação */}
-        <div className="px-6 py-4 bg-[#f8fafc] border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-text-muted text-[13px]">
-          <span>
-            Exibindo 1-{insumosFiltrados.length} de {insumosFiltrados.length} materiais
+      {criticos.length > 0 && (
+        <div
+          role="alert"
+          style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", borderRadius: 16, background: "#FFEDD5", color: "#7C2D12" }}
+        >
+          <span
+            aria-hidden="true"
+            style={{ width: 34, height: 34, flex: "0 0 34px", borderRadius: 10, background: "#fff", color: "#9A3412", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <Warning size={20} weight="bold" />
           </span>
-          <div className="flex items-center gap-1.5">
-            <button
-              className="w-8 h-8 flex items-center justify-center rounded border border-border bg-white hover:bg-[#f8fafc] transition-colors disabled:opacity-50"
-              disabled
-            >
-              &lt;
-            </button>
-            <button className="w-8 h-8 bg-bg-dark text-white flex items-center justify-center rounded font-bold">
-              1
-            </button>
-            <button
-              className="w-8 h-8 flex items-center justify-center rounded border border-border bg-white hover:bg-[#f8fafc] transition-colors disabled:opacity-50"
-              disabled
-            >
-              &gt;
-            </button>
-          </div>
+          <span style={{ flex: "1 1 auto", fontSize: 15 }}>
+            <strong>
+              {criticos.length} {criticos.length === 1 ? "item abaixo" : "itens abaixo"} do estoque mínimo:
+            </strong>{" "}
+            {criticos.map((c) => c.descricao).join(", ")}.
+          </span>
         </div>
-      </div>
+      )}
 
-      {/* Widgets Inferiores */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Consumo vs Estoque */}
-        <div className="bg-surface border border-border rounded-[8px] p-6 shadow-[0_1px_1px_rgba(0,0,0,0.05)] flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h4 className="font-manrope font-extrabold text-[16px] text-text-main">
-                Consumo Previsto vs. Estoque Atual
-              </h4>
-              <Cube size={18} className="text-text-muted" />
-            </div>
-
-            <div className="space-y-6">
-              {/* Progresso Aço */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between font-manrope text-[13px]">
-                  <span className="font-bold text-text-main">Aço CA-50 10mm</span>
-                  <span className="text-status-danger font-bold">Faltam 3t</span>
-                </div>
-                <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden">
-                  <div className="bg-status-danger h-full" style={{ width: "80%" }} />
-                </div>
-                <div className="flex justify-between text-[11px] text-text-muted font-mono">
-                  <span>Estoque: 12t</span>
-                  <span>Necessário: 15t</span>
-                </div>
-              </div>
-
-              {/* Progresso Cimento */}
-              <div className="space-y-2 pt-4 border-t border-[#f1f5f9]">
-                <div className="flex items-center justify-between font-manrope text-[13px]">
-                  <span className="font-bold text-text-main">Cimento CP-II</span>
-                  <span className="text-brand-primary font-bold">Em Excesso (+350)</span>
-                </div>
-                <div className="w-full bg-[#f1f5f9] h-2 rounded-full overflow-hidden">
-                  <div className="bg-brand-primary h-full" style={{ width: "100%" }} />
-                </div>
-                <div className="flex justify-between text-[11px] text-text-muted font-mono">
-                  <span>Estoque: 450 sacos</span>
-                  <span>Necessário: 100 sacos</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 flex justify-end">
-            <button className="flex items-center gap-2 bg-brand-primary text-text-main px-4 py-2 rounded-[6px] font-manrope font-bold text-[12px] hover:bg-brand-primaryHover transition-colors border-none cursor-pointer">
-              <ShoppingCart size={15} />
-              Gerar Pedido de Compra
-            </button>
-          </div>
-        </div>
-
-        {/* Equipamentos Alugados */}
-        <div className="bg-surface border border-border rounded-[8px] p-6 shadow-[0_1px_1px_rgba(0,0,0,0.05)]">
-          <div className="flex items-center justify-between mb-6">
-            <h4 className="font-manrope font-extrabold text-[16px] text-text-main">
-              Equipamentos &amp; Ferramentas Alugadas
-            </h4>
-            <Wrench size={18} className="text-text-muted" />
-          </div>
-
-          <div className="space-y-3">
-            {locacoes.map((eq) => (
-              <div
-                key={eq.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-[6px] bg-[#f8fafc] border border-border/50 gap-2"
+      <section className="gp-card" style={{ overflow: "hidden" }}>
+        <div role="tablist" aria-label="Almoxarifado" style={{ display: "flex", gap: 4, padding: "12px 16px 0", borderBottom: "1px solid #E6EBF2" }}>
+          {abas.map((a) => {
+            const sel = a.k === aba;
+            return (
+              <button
+                key={a.k}
+                type="button"
+                role="tab"
+                id={`tab-${a.k}`}
+                aria-selected={sel}
+                aria-controls="painel-almox"
+                onClick={() => setAba(a.k)}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8, minHeight: 48, padding: "0 16px", border: 0, background: "transparent",
+                  fontSize: 15, cursor: "pointer", fontFamily: "inherit",
+                  ...(sel ? { color: "#001b3d", fontWeight: 800, boxShadow: "inset 0 -3px 0 #9fd300" } : { color: "#475569", fontWeight: 600 }),
+                }}
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-border shadow-sm text-text-muted">
-                    <Wrench size={14} />
-                  </div>
-                  <div>
-                    <p className="font-bold font-manrope text-[13px] text-text-main leading-tight">
-                      {eq.nome_equipamento}
-                    </p>
-                    <p className="font-manrope text-[11px] text-text-muted mt-0.5">
-                      Locadora: {eq.locadora}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-left sm:text-right shrink-0 flex items-center gap-3 sm:flex-col sm:items-end">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleToggleLocStatus(eq.id, eq.status)}
-                      className={`px-2 py-0.5 rounded text-[9px] font-bold font-mono border hover:scale-102 transition-transform cursor-pointer bg-white ${
-                        eq.status.startsWith("EM_USO")
-                          ? "text-brand-primary border-green-200 bg-green-50/50"
-                          : eq.status.startsWith("AGUARDANDO")
-                          ? "text-teal border-blue-100 bg-blue-50/50"
-                          : "text-text-muted border-gray-200 bg-gray-50"
-                      }`}
-                      title="Clique para alternar o status do equipamento"
-                    >
-                      {eq.status.replace("_", " ")}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteLocacao(eq.id)}
-                      className="text-status-danger hover:text-red-700 transition-colors p-1 cursor-pointer bg-transparent border-none hover:bg-red-50 rounded"
-                      title="Excluir locação"
-                    >
-                      <Trash size={14} weight="bold" />
-                    </button>
-                  </div>
-                  <p className="font-manrope text-[10px] text-text-muted">
-                    Devolução: {new Date(eq.devolucao_prevista).toLocaleDateString("pt-BR")}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setShowLocacaoModal(true)}
-            className="w-full mt-4 py-3 border border-dashed border-border rounded-[6px] font-manrope font-bold text-[13px] text-text-muted hover:bg-[#f8fafc] hover:text-text-main transition-all flex items-center justify-center gap-2 cursor-pointer bg-white"
-          >
-            <Plus size={14} weight="bold" />
-            Registrar Nova Locação
-          </button>
+                {a.label}
+                <span className="gp-cnt">{a.n}</span>
+              </button>
+            );
+          })}
         </div>
-      </div>
 
-      {/* Float Action Button (FAB) */}
-      <button className="fixed bottom-8 right-8 w-14 h-14 bg-brand-primary text-text-main rounded-full shadow-[0_4px_14px_rgba(159,211,0,0.4)] flex items-center justify-center hover:scale-105 hover:bg-brand-primaryHover transition-transform z-50 border-none cursor-pointer">
-        <QrCode size={24} weight="bold" />
-      </button>
+        <div id="painel-almox" role="tabpanel" aria-labelledby={`tab-${aba}`} style={{ overflowX: "auto" }}>
+          {aba === "est" && (
+            <>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, padding: "14px 22px" }}>
+                <label className="gp-srch" style={{ flex: "1 1 260px", maxWidth: 360 }}>
+                  <MagnifyingGlass size={18} weight="bold" aria-hidden="true" />
+                  <span className="gp-sr">Buscar material</span>
+                  <input
+                    type="search"
+                    placeholder="Buscar material ou código"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </label>
+                <label className="gp-sr" htmlFor="alm-cat">Categoria</label>
+                <select
+                  id="alm-cat"
+                  className="gp-in"
+                  style={{ width: "auto", height: 44 }}
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="TODOS">Todas as categorias</option>
+                  <option value="CRITICO">Apenas críticos / reposição</option>
+                  <option value="ESTRUTURA">Estrutura</option>
+                  <option value="EPI">EPI</option>
+                  <option value="ELÉTRICA">Elétrica</option>
+                  <option value="HIDRÁULICA">Hidráulica</option>
+                  <option value="ACABAMENTO">Acabamento</option>
+                  <option value="FERRAMENTAS">Ferramentas</option>
+                </select>
+                <button type="button" className="gp-btn gp-bs gp-sm" style={{ marginLeft: "auto" }} onClick={() => setShowAddMaterialModal(true)}>
+                  <Plus size={16} weight="bold" aria-hidden="true" />
+                  Adicionar material
+                </button>
+              </div>
+              <table style={{ width: "100%", minWidth: 820, borderCollapse: "collapse" }}>
+                <caption className="gp-sr">Estoque atual</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" className="gp-th" style={{ paddingLeft: 22 }}>Insumo</th>
+                    <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Saldo</th>
+                    <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Mínimo</th>
+                    <th scope="col" className="gp-th" style={{ width: 240 }}>Nível</th>
+                    <th scope="col" className="gp-th">Situação</th>
+                    <th scope="col" className="gp-th">Atualizado em</th>
+                    <th scope="col" className="gp-th" style={{ paddingRight: 22, textAlign: "right" }}>
+                      <span className="gp-sr">Ações</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {insumos.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="gp-td" style={vazio}>
+                        <p style={{ margin: 0 }}>O estoque desta obra está vazio.</p>
+                        {itens.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleImportarInsumosDoOrcamento}
+                            disabled={importando}
+                            className="gp-btn gp-bp gp-sm"
+                            style={{ marginTop: 12 }}
+                          >
+                            {importando ? "Importando..." : "Importar insumos do orçamento"}
+                          </button>
+                        )}
+                        {importError && <p style={{ margin: "8px 0 0", color: "#B91C1C", fontSize: 13 }}>{importError}</p>}
+                      </td>
+                    </tr>
+                  ) : insumosFiltrados.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="gp-td" style={vazio}>
+                        Nenhum material encontrado com os filtros selecionados.
+                      </td>
+                    </tr>
+                  ) : (
+                    insumosFiltrados.map((insumo) => {
+                      const baixo = insumo.status === "Crítico";
+                      const atual = Number(insumo.quantidade_atual);
+                      const min = Number(insumo.quantidade_minima);
+                      const max = Math.max(atual, min * 2, 1);
+                      return (
+                        <tr key={insumo.id} className="gp-row">
+                          <th scope="row" className="gp-td" style={{ paddingLeft: 22, textAlign: "left", fontWeight: 700 }}>
+                            <p style={{ margin: 0 }}>{insumo.descricao}</p>
+                            <p className="gp-mono" style={{ margin: "2px 0 0", fontSize: 12, fontWeight: 500, color: "#475569" }}>
+                              Cód: {insumo.codigo_insumo} ({insumo.fonte || "Próprio"})
+                            </p>
+                            <span className="gp-cnt" style={{ marginTop: 4, display: "inline-block" }}>{insumo.categoria}</span>
+                          </th>
+                          <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600 }}>
+                            {fmt(atual)} {insumo.unidade}
+                          </td>
+                          <td className="gp-td gp-mono" style={{ textAlign: "right", color: "#475569" }}>{fmt(min)}</td>
+                          <td className="gp-td">
+                            <span className="gp-bar" style={{ position: "relative", overflow: "visible" }}>
+                              <span style={{ width: `${Math.min(100, (atual / max) * 100)}%`, background: baixo ? "#F97316" : "#00a3b1" }} />
+                              <span
+                                aria-hidden="true"
+                                style={{ position: "absolute", top: -4, bottom: -4, width: 2, height: "auto", borderRadius: 0, background: "#001b3d", left: `${(min / max) * 100}%` }}
+                              />
+                            </span>
+                          </td>
+                          <td className="gp-td">
+                            <span className={baixo ? "gp-bg gp-wa" : "gp-bg gp-ok"}>
+                              <span className="gp-dot" aria-hidden="true" style={{ background: baixo ? "#F97316" : "#65A30D" }} />
+                              {baixo ? "Abaixo do mínimo" : "OK"}
+                            </span>
+                          </td>
+                          <td className="gp-td" style={{ color: "#475569" }}>
+                            {insumo.updated_at ? new Date(insumo.updated_at).toLocaleDateString("pt-BR") : "—"}
+                          </td>
+                          <td className="gp-td" style={{ paddingRight: 22, textAlign: "right" }}>
+                            <button
+                              type="button"
+                              className="gp-ib"
+                              style={{ width: 36, height: 36, color: "#B91C1C" }}
+                              aria-label={`Remover ${insumo.descricao} do estoque`}
+                              title="Remover material do estoque"
+                              onClick={() => handleDeleteInsumo(insumo.id)}
+                            >
+                              <Trash size={16} weight="bold" aria-hidden="true" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </>
+          )}
 
-      {/* Modal Interativo de Entrada / Baixa */}
+          {aba === "loc" && (
+            <>
+              <table style={{ width: "100%", minWidth: 820, borderCollapse: "collapse" }}>
+                <caption className="gp-sr">Locações</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" className="gp-th" style={{ paddingLeft: 22 }}>Equipamento</th>
+                    <th scope="col" className="gp-th">Fornecedor</th>
+                    <th scope="col" className="gp-th">Responsável</th>
+                    <th scope="col" className="gp-th">Devolução</th>
+                    <th scope="col" className="gp-th">Situação</th>
+                    <th scope="col" className="gp-th" style={{ paddingRight: 22, textAlign: "right" }}>
+                      <span className="gp-sr">Ações</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {locacoes.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="gp-td" style={vazio}>
+                        Nenhuma locação registrada.
+                      </td>
+                    </tr>
+                  ) : (
+                    locacoes.map((eq) => (
+                      <tr key={eq.id} className="gp-row">
+                        <th scope="row" className="gp-td" style={{ paddingLeft: 22, textAlign: "left", fontWeight: 700 }}>
+                          {eq.nome_equipamento}
+                        </th>
+                        <td className="gp-td">{eq.locadora}</td>
+                        <td className="gp-td" style={{ color: "#475569" }}>{eq.responsavel || "—"}</td>
+                        <td className="gp-td">{new Date(eq.devolucao_prevista).toLocaleDateString("pt-BR")}</td>
+                        <td className="gp-td">
+                          <button
+                            type="button"
+                            className={locBadge(eq.status)}
+                            style={{ border: 0, cursor: "pointer", fontFamily: "inherit" }}
+                            title="Clique para alternar o status do equipamento"
+                            onClick={() => handleToggleLocStatus(eq.id, eq.status)}
+                          >
+                            <span className="gp-dot" aria-hidden="true" style={{ background: "currentColor" }} />
+                            {locLabel(eq.status)}
+                          </button>
+                        </td>
+                        <td className="gp-td" style={{ paddingRight: 22, textAlign: "right" }}>
+                          <button
+                            type="button"
+                            className="gp-ib"
+                            style={{ width: 36, height: 36, color: "#B91C1C" }}
+                            aria-label={`Excluir locação de ${eq.nome_equipamento}`}
+                            title="Excluir locação"
+                            onClick={() => handleDeleteLocacao(eq.id)}
+                          >
+                            <Trash size={16} weight="bold" aria-hidden="true" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+              <div style={{ padding: "14px 22px", borderTop: "1px solid #E6EBF2" }}>
+                <button type="button" className="gp-btn gp-bs gp-sm" onClick={() => setShowLocacaoModal(true)}>
+                  Nova locação
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+
       {modalTipo && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-[12px] shadow-xl max-w-md w-full p-6 flex flex-col gap-4 relative">
-            <button
-              onClick={() => {
-                setModalTipo(null);
-                setMovError(null);
-              }}
-              className="absolute top-4 right-4 text-text-muted hover:text-text-main cursor-pointer bg-transparent border-none"
-            >
-              <X size={20} />
-            </button>
-
-            <h3 className="font-manrope font-extrabold text-[18px] text-text-main flex items-center gap-2 border-b border-[#f1f5f9] pb-3">
-              {modalTipo === "ENTRADA" ? (
-                <>
-                  <Plus size={18} className="text-brand-primary" weight="bold" />
-                  <span>Entrada de Material</span>
-                </>
-              ) : (
-                <>
-                  <Minus size={18} className="text-status-danger" weight="bold" />
-                  <span>Dar Baixa / Consumo</span>
-                </>
-              )}
-            </h3>
-
+        <div className="gp-ov">
+          <div className="gp-dlg" role="dialog" aria-modal="true" aria-labelledby="mv-t">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 id="mv-t" className="gp-h2">{modalTipo === "ENTRADA" ? "Registrar entrada" : "Registrar saída"}</h2>
+              <button type="button" className="gp-ib" aria-label="Fechar" onClick={fecharMov}>
+                <X size={18} weight="bold" aria-hidden="true" />
+              </button>
+            </div>
             {movSuccess ? (
-              <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
-                <CheckCircle size={48} className="text-brand-primary" weight="fill" />
-                <h4 className="font-manrope font-bold text-text-main text-[16px]">
-                  Movimentação registrada!
-                </h4>
-                <p className="font-manrope text-text-muted text-[13px]">
-                  O saldo de estoque foi atualizado com sucesso no banco de dados.
-                </p>
+              <div role="status" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "24px 0", textAlign: "center" }}>
+                <CheckCircle size={48} color="#65A30D" weight="fill" aria-hidden="true" />
+                <strong>Movimentação registrada!</strong>
+                <span className="gp-hint">O saldo de estoque foi atualizado.</span>
               </div>
             ) : (
-              <form onSubmit={handleMovimentacaoSubmit} className="flex flex-col gap-4">
-                {movError && (
-                  <div className="p-3 bg-red-50 border border-red-100 text-status-danger text-[12px] rounded-[6px] font-manrope">
-                    {movError}
-                  </div>
-                )}
-
-                {/* Seleção do Insumo */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-manrope text-[12px] font-bold text-text-main uppercase tracking-[0.5px]">
-                    Material / Insumo *
-                  </label>
-                  <select
-                    value={selectedInsumoId}
-                    onChange={(e) => setSelectedInsumoId(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main outline-none focus:border-brand-primary cursor-pointer"
-                  >
+              <form onSubmit={handleMovimentacaoSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {movError && <p role="alert" style={erroBox}>{movError}</p>}
+                <div className="gp-fld">
+                  <label htmlFor="mv-i" className="gp-lb">Insumo <span className="gp-req">(obrigatório)</span></label>
+                  <select id="mv-i" className="gp-in" value={selectedInsumoId} onChange={(e) => setSelectedInsumoId(e.target.value)}>
                     <option value="">Selecione um item do estoque...</option>
                     {insumos.map((i) => (
                       <option key={i.id} value={i.id}>
@@ -880,70 +665,33 @@ export default function AlmoxarifadoPage() {
                     ))}
                   </select>
                 </div>
-
-                {/* Quantidade */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-manrope text-[12px] font-bold text-text-main uppercase tracking-[0.5px]">
-                    Quantidade *
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="0.00"
-                    value={movQtd}
-                    onChange={(e) => setMovQtd(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary"
-                  />
+                <div className="gp-fld">
+                  <label htmlFor="mv-q" className="gp-lb">Quantidade <span className="gp-req">(obrigatório)</span></label>
+                  <div className="gp-affix">
+                    <input id="mv-q" type="number" step="any" inputMode="decimal" placeholder="0" value={movQtd} onChange={(e) => setMovQtd(e.target.value)} />
+                    {insumoSel && <span>{insumoSel.unidade}</span>}
+                  </div>
                 </div>
-
-                {/* Responsável */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-manrope text-[12px] font-bold text-text-main uppercase tracking-[0.5px]">
-                    Responsável *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Mestre de Obras, Almoxarife, etc."
-                    value={movResponsavel}
-                    onChange={(e) => setMovResponsavel(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary"
-                  />
+                <div className="gp-fld">
+                  <label htmlFor="mv-r" className="gp-lb">Responsável <span className="gp-req">(obrigatório)</span></label>
+                  <input id="mv-r" className="gp-in" placeholder="Mestre de obras, almoxarife, etc." value={movResponsavel} onChange={(e) => setMovResponsavel(e.target.value)} />
                 </div>
-
-                {/* Observações */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-manrope text-[12px] font-bold text-text-main uppercase tracking-[0.5px]">
-                    Observações
+                <div className="gp-fld">
+                  <label htmlFor="mv-o" className="gp-lb">
+                    {modalTipo === "ENTRADA" ? "Nota fiscal ou fornecedor" : "Destino (etapa)"}
                   </label>
                   <textarea
-                    placeholder="NF de entrada, finalidade da baixa, etc."
+                    id="mv-o"
+                    className="gp-in"
+                    rows={2}
+                    placeholder={modalTipo === "ENTRADA" ? "NF de entrada, fornecedor, etc." : "Etapa ou finalidade da baixa"}
                     value={movObs}
                     onChange={(e) => setMovObs(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary h-20 resize-none"
                   />
                 </div>
-
-                <div className="flex items-center justify-end gap-3 mt-2 border-t border-[#f1f5f9] pt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setModalTipo(null);
-                      setMovError(null);
-                    }}
-                    className="px-4 py-2 border border-border rounded-[6px] font-manrope text-[13px] font-bold text-text-muted hover:bg-[#f8fafc] transition-colors cursor-pointer bg-white"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className={`px-5 py-2 rounded-[6px] font-manrope font-bold text-[13px] transition-colors cursor-pointer border-none text-white ${
-                      modalTipo === "ENTRADA"
-                        ? "bg-brand-primary text-text-main hover:bg-brand-primaryHover"
-                        : "bg-bg-dark hover:bg-bg-darker"
-                    }`}
-                  >
-                    Confirmar
-                  </button>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                  <button type="button" className="gp-btn gp-bs" onClick={fecharMov}>Cancelar</button>
+                  <button type="submit" className="gp-btn gp-bp">Salvar</button>
                 </div>
               </form>
             )}
@@ -951,161 +699,61 @@ export default function AlmoxarifadoPage() {
         </div>
       )}
 
-      {/* Modal de Registro de Nova Locação */}
       {showLocacaoModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-[12px] shadow-xl max-w-md w-full p-6 flex flex-col gap-4 relative">
-            <button
-              onClick={() => {
-                setShowLocacaoModal(false);
-                setLocError(null);
-              }}
-              className="absolute top-4 right-4 text-text-muted hover:text-text-main cursor-pointer bg-transparent border-none"
-            >
-              <X size={20} />
-            </button>
-
-            <h3 className="font-manrope font-extrabold text-[18px] text-text-main flex items-center gap-2 border-b border-[#f1f5f9] pb-3">
-              <Wrench size={18} className="text-teal" />
-              <span>Registrar Nova Locação</span>
-            </h3>
-
-            <form onSubmit={handleLocacaoSubmit} className="flex flex-col gap-4">
-              {locError && (
-                <div className="p-3 bg-red-50 border border-red-100 text-status-danger text-[12px] rounded-[6px] font-manrope">
-                  {locError}
-                </div>
-              )}
-
-              {/* Nome do Equipamento */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-manrope text-[12px] font-bold text-text-main uppercase tracking-[0.5px]">
-                  Equipamento / Ferramenta *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Betoneira, Andaime, etc."
-                  value={locEquipamento}
-                  onChange={(e) => setLocEquipamento(e.target.value)}
-                  className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary"
-                />
+        <div className="gp-ov">
+          <div className="gp-dlg" role="dialog" aria-modal="true" aria-labelledby="loc-t">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 id="loc-t" className="gp-h2">Nova locação</h2>
+              <button type="button" className="gp-ib" aria-label="Fechar" onClick={fecharLoc}>
+                <X size={18} weight="bold" aria-hidden="true" />
+              </button>
+            </div>
+            <form onSubmit={handleLocacaoSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {locError && <p role="alert" style={erroBox}>{locError}</p>}
+              <div className="gp-fld">
+                <label htmlFor="loc-e" className="gp-lb">Equipamento <span className="gp-req">(obrigatório)</span></label>
+                <input id="loc-e" className="gp-in" placeholder="Betoneira, andaime, etc." value={locEquipamento} onChange={(e) => setLocEquipamento(e.target.value)} />
               </div>
-
-              {/* Locadora */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-manrope text-[12px] font-bold text-text-main uppercase tracking-[0.5px]">
-                  Locadora *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Rental Tech, Tools Express, etc."
-                  value={locLocadora}
-                  onChange={(e) => setLocLocadora(e.target.value)}
-                  className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary"
-                />
+              <div className="gp-fld">
+                <label htmlFor="loc-l" className="gp-lb">Fornecedor <span className="gp-req">(obrigatório)</span></label>
+                <input id="loc-l" className="gp-in" placeholder="Nome da locadora" value={locLocadora} onChange={(e) => setLocLocadora(e.target.value)} />
               </div>
-
-              {/* Devolução Prevista */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-manrope text-[12px] font-bold text-text-main uppercase tracking-[0.5px]">
-                  Data de Devolução Prevista *
-                </label>
-                <input
-                  type="date"
-                  value={locDevolucao}
-                  onChange={(e) => setLocDevolucao(e.target.value)}
-                  className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main outline-none focus:border-brand-primary"
-                />
+              <div className="gp-fld">
+                <label htmlFor="loc-d" className="gp-lb">Devolução prevista <span className="gp-req">(obrigatório)</span></label>
+                <input id="loc-d" type="date" className="gp-in" value={locDevolucao} onChange={(e) => setLocDevolucao(e.target.value)} />
               </div>
-
-              {/* Responsável */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-manrope text-[12px] font-bold text-text-main uppercase tracking-[0.5px]">
-                  Responsável
-                </label>
-                <input
-                  type="text"
-                  placeholder="Colaborador responsável pelo uso..."
-                  value={locResponsavel}
-                  onChange={(e) => setLocResponsavel(e.target.value)}
-                  className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary"
-                />
+              <div className="gp-fld">
+                <label htmlFor="loc-r" className="gp-lb">Responsável</label>
+                <input id="loc-r" className="gp-in" placeholder="Colaborador responsável pelo uso" value={locResponsavel} onChange={(e) => setLocResponsavel(e.target.value)} />
               </div>
-
-              <div className="flex items-center justify-end gap-3 mt-2 border-t border-[#f1f5f9] pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowLocacaoModal(false);
-                    setLocError(null);
-                  }}
-                  className="px-4 py-2 border border-border rounded-[6px] font-manrope text-[13px] font-bold text-text-muted hover:bg-[#f8fafc] transition-colors cursor-pointer bg-white"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-brand-primary text-text-main hover:bg-brand-primaryHover rounded-[6px] font-manrope font-bold text-[13px] transition-colors cursor-pointer border-none"
-                >
-                  Registrar
-                </button>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                <button type="button" className="gp-btn gp-bs" onClick={fecharLoc}>Cancelar</button>
+                <button type="submit" className="gp-btn gp-bp">Salvar</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Modal de Adicionar Material */}
       {showAddMaterialModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-[12px] shadow-xl max-w-md w-full p-6 flex flex-col gap-4 relative">
-            <button
-              onClick={() => {
-                setShowAddMaterialModal(false);
-                setAddMatError(null);
-              }}
-              className="absolute top-4 right-4 text-text-muted hover:text-text-main cursor-pointer bg-transparent border-none"
-            >
-              <X size={20} />
-            </button>
-
-            <h3 className="font-manrope font-extrabold text-[18px] text-text-main flex items-center gap-2 border-b border-[#f1f5f9] pb-3">
-              <Plus size={18} className="text-brand-primary" weight="bold" />
-              <span>Adicionar Novo Material</span>
-            </h3>
-
-            <form onSubmit={handleAddMaterialSubmit} className="flex flex-col gap-4">
-              {addMatError && (
-                <div className="p-3 bg-red-50 border border-red-100 text-status-danger text-[12px] rounded-[6px] font-manrope">
-                  {addMatError}
+        <div className="gp-ov">
+          <div className="gp-dlg" role="dialog" aria-modal="true" aria-labelledby="mat-t">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 id="mat-t" className="gp-h2">Adicionar material</h2>
+              <button type="button" className="gp-ib" aria-label="Fechar" onClick={fecharMat}>
+                <X size={18} weight="bold" aria-hidden="true" />
+              </button>
+            </div>
+            <form onSubmit={handleAddMaterialSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {addMatError && <p role="alert" style={erroBox}>{addMatError}</p>}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+                <div className="gp-fld">
+                  <label htmlFor="mat-c" className="gp-lb">Código <span className="gp-req">(obrigatório)</span></label>
+                  <input id="mat-c" className="gp-in" placeholder="SINAPI-XXXX" value={newMatCodigo} onChange={(e) => setNewMatCodigo(e.target.value)} />
                 </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                {/* Código */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-manrope text-[11px] font-bold text-text-main uppercase tracking-[0.5px]">
-                    Código *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="SINAPI-XXXX"
-                    value={newMatCodigo}
-                    onChange={(e) => setNewMatCodigo(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary"
-                  />
-                </div>
-
-                {/* Categoria */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-manrope text-[11px] font-bold text-text-main uppercase tracking-[0.5px]">
-                    Categoria *
-                  </label>
-                  <select
-                    value={newMatCategoria}
-                    onChange={(e) => setNewMatCategoria(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main outline-none focus:border-brand-primary cursor-pointer"
-                  >
+                <div className="gp-fld">
+                  <label htmlFor="mat-k" className="gp-lb">Categoria</label>
+                  <select id="mat-k" className="gp-in" value={newMatCategoria} onChange={(e) => setNewMatCategoria(e.target.value)}>
                     <option value="ESTRUTURA">Estrutura</option>
                     <option value="EPI">EPI</option>
                     <option value="ELÉTRICA">Elétrica</option>
@@ -1115,102 +763,39 @@ export default function AlmoxarifadoPage() {
                   </select>
                 </div>
               </div>
-
-              {/* Descrição */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-manrope text-[11px] font-bold text-text-main uppercase tracking-[0.5px]">
-                  Descrição / Nome *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Cimento Portland, Barra de Ferro..."
-                  value={newMatDescricao}
-                  onChange={(e) => setNewMatDescricao(e.target.value)}
-                  className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary"
-                />
+              <div className="gp-fld">
+                <label htmlFor="mat-d" className="gp-lb">Descrição <span className="gp-req">(obrigatório)</span></label>
+                <input id="mat-d" className="gp-in" placeholder="Cimento Portland, barra de ferro..." value={newMatDescricao} onChange={(e) => setNewMatDescricao(e.target.value)} />
               </div>
-
-              {/* Unidade */}
-              <div className="flex flex-col gap-1.5">
-                <label className="font-manrope text-[11px] font-bold text-text-main uppercase tracking-[0.5px]">
-                  Unidade de Medida *
-                </label>
-                <input
-                  type="text"
-                  placeholder="sacos, kg, unid"
-                  value={newMatUnidade}
-                  onChange={(e) => setNewMatUnidade(e.target.value)}
-                  className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary"
-                />
+              <div className="gp-fld">
+                <label htmlFor="mat-u" className="gp-lb">Unidade de medida <span className="gp-req">(obrigatório)</span></label>
+                <input id="mat-u" className="gp-in" placeholder="sacos, kg, un" value={newMatUnidade} onChange={(e) => setNewMatUnidade(e.target.value)} />
               </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                {/* Qtd. Atual */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-manrope text-[11px] font-bold text-text-main uppercase tracking-[0.5px]">
-                    Qtd. Atual
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={newMatQtdAtual}
-                    onChange={(e) => setNewMatQtdAtual(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary"
-                  />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+                <div className="gp-fld">
+                  <label htmlFor="mat-qa" className="gp-lb">Saldo atual</label>
+                  <input id="mat-qa" type="number" className="gp-in gp-mono" placeholder="0" value={newMatQtdAtual} onChange={(e) => setNewMatQtdAtual(e.target.value)} />
                 </div>
-
-                {/* Qtd. Mínima */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-manrope text-[11px] font-bold text-text-main uppercase tracking-[0.5px]">
-                    Estoque Mín.
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={newMatQtdMinima}
-                    onChange={(e) => setNewMatQtdMinima(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary"
-                  />
+                <div className="gp-fld">
+                  <label htmlFor="mat-qm" className="gp-lb">Mínimo</label>
+                  <input id="mat-qm" type="number" className="gp-in gp-mono" placeholder="0" value={newMatQtdMinima} onChange={(e) => setNewMatQtdMinima(e.target.value)} />
                 </div>
-
-                {/* Preço Unitário */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-manrope text-[11px] font-bold text-text-main uppercase tracking-[0.5px]">
-                    Preço Unit. (R$)
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="0.00"
-                    value={newMatPrecoUnitario}
-                    onChange={(e) => setNewMatPrecoUnitario(e.target.value)}
-                    className="w-full bg-[#f8fafc] border border-border rounded-[6px] px-3 py-2 font-manrope text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-brand-primary"
-                  />
+                <div className="gp-fld">
+                  <label htmlFor="mat-p" className="gp-lb">Preço unit.</label>
+                  <div className="gp-affix">
+                    <span>R$</span>
+                    <input id="mat-p" type="number" step="any" placeholder="0,00" value={newMatPrecoUnitario} onChange={(e) => setNewMatPrecoUnitario(e.target.value)} />
+                  </div>
                 </div>
               </div>
-
-              <div className="flex items-center justify-end gap-3 mt-2 border-t border-[#f1f5f9] pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddMaterialModal(false);
-                    setAddMatError(null);
-                  }}
-                  className="px-4 py-2 border border-border rounded-[6px] font-manrope text-[13px] font-bold text-text-muted hover:bg-[#f8fafc] transition-colors cursor-pointer bg-white"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-brand-primary text-text-main hover:bg-brand-primaryHover rounded-[6px] font-manrope font-bold text-[13px] transition-colors cursor-pointer border-none"
-                >
-                  Adicionar
-                </button>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                <button type="button" className="gp-btn gp-bs" onClick={fecharMat}>Cancelar</button>
+                <button type="submit" className="gp-btn gp-bp">Adicionar</button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

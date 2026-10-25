@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, DownloadSimple, Coins, Buildings, ChartLineUp, MapPinLine } from "@phosphor-icons/react";
+import { DownloadSimple } from "@phosphor-icons/react";
 import { getOrcamento, type Orcamento } from "@/lib/api/orcamentos";
 
+import { ObraTabs } from "@/components/obras/ObraTabs";
 import { PlanilhaView } from "@/components/orcamentos/PlanilhaView";
 
 export default function PlanilhaOrcamentariaPage() {
@@ -32,11 +33,11 @@ export default function PlanilhaOrcamentariaPage() {
   }, [id]);
 
   if (loading && !orcamento) {
-    return <div className="p-8 text-center text-text-muted">Carregando planilha orçamentária...</div>;
+    return <p className="gp-sub" style={{ textAlign: "center", padding: 48 }}>Carregando planilha orçamentária...</p>;
   }
 
   if (!orcamento) {
-    return <div className="p-8 text-center text-text-muted">Orçamento não encontrado.</div>;
+    return <p className="gp-sub" style={{ textAlign: "center", padding: 48 }}>Orçamento não encontrado.</p>;
   }
 
   // Formatador de Moeda
@@ -46,58 +47,45 @@ export default function PlanilhaOrcamentariaPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Top Actions */}
-      <div className="flex justify-between items-end mb-6">
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
         <div>
-          <Link href={`/obras/${id}`} className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-lg text-[13px] font-semibold text-text-main shadow-sm mb-6 transition-all hover:bg-bg-light hover:-translate-x-0.5">
-            <ArrowLeft size={16} className="text-text-muted" /> Voltar para Obra
-          </Link>
-          <p className="text-[12px] font-semibold tracking-wide text-[#06B6D4] uppercase mb-1">FINANCEIRO / ORÇAMENTO</p>
-          <h1 className="text-[28px] font-bold text-text-main">Planilha Orçamentária</h1>
-          <p className="text-[15px] text-text-muted mt-2">Detalhamento financeiro, composições e insumos vinculados ao projeto <strong>{orcamento.nome}</strong>.</p>
+          <nav aria-label="Trilha" className="gp-crumb">
+            <Link href="/obras">Obras</Link> / <Link href={`/obras/${id}`}>{orcamento.nome}</Link> /{" "}
+            <span aria-current="page" style={{ color: "#001b3d" }}>Planilha</span>
+          </nav>
+          <h1 className="gp-h1">{orcamento.nome}</h1>
+          <p className="gp-sub">Detalhamento financeiro, composições e insumos vinculados ao projeto.</p>
         </div>
-        <div className="flex gap-3 h-11">
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-bg-dark text-white rounded-lg text-sm font-semibold transition-all hover:bg-[#050a15] shadow-sm">
-            <DownloadSimple size={20} /> Exportar Excel
-          </button>
-        </div>
+        <button type="button" className="gp-btn gp-bs">
+          <DownloadSimple size={18} weight="bold" aria-hidden="true" /> Exportar Excel
+        </button>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div className="bg-surface border border-border rounded-lg p-5 flex flex-col justify-between">
-          <div className="text-[10px] font-bold text-text-muted uppercase tracking-[1px] mb-2 flex items-center gap-1.5"><Coins size={14} className="text-brand-primary" /> Valor Total</div>
-          <div className="text-[28px] font-bold text-text-main mt-1">
-            {formatCurrency(orcamento.valor_total)}
-          </div>
-          <div className="mt-3 text-[11px] font-semibold text-[#4D7E05] bg-[#E6F6D0] w-fit px-2 py-0.5 rounded uppercase">CUSTO DIRETO + BDI</div>
-        </div>
+      <ObraTabs id={id} atual="planilha" />
 
-        <div className="bg-surface border border-border rounded-lg p-5 flex flex-col justify-between">
-          <div className="text-[10px] font-bold text-text-muted uppercase tracking-[1px] mb-2 flex items-center gap-1.5"><ChartLineUp size={14} className="text-[#06B6D4]" /> BDI Aplicado</div>
-          <div className="text-[28px] font-bold text-text-main mt-1">
-            {orcamento.bdi ? `${orcamento.bdi.toFixed(2)}%` : "0.00%"}
-          </div>
-          <div className="mt-3 text-[11px] font-semibold text-text-muted uppercase">TAXA DE LUCRO E DESPESAS</div>
+      <section aria-label="Totais" className="gp-grid">
+        <div className="gp-card gp-met">
+          <span className="gp-ml">Valor total</span>
+          <span className="gp-mv">{formatCurrency(orcamento.valor_total)}</span>
+          <span className="gp-ms">Custo direto + BDI</span>
         </div>
-
-        <div className="bg-surface border border-border rounded-lg p-5 flex flex-col justify-between">
-          <div className="text-[10px] font-bold text-text-muted uppercase tracking-[1px] mb-2 flex items-center gap-1.5"><Buildings size={14} className="text-[#F59E0B]" /> Base de Referência</div>
-          <div className="text-[20px] font-bold text-text-main mt-1 truncate">
-            {orcamento.base_referencia || "Não definida"}
-          </div>
-          <div className="mt-3 text-[11px] font-semibold text-text-muted uppercase">FONTE: {orcamento.fonte || "-"}</div>
+        <div className="gp-card gp-met">
+          <span className="gp-ml">BDI aplicado</span>
+          <span className="gp-mv">{orcamento.bdi ? `${orcamento.bdi.toFixed(2)}%` : "0.00%"}</span>
+          <span className="gp-ms">Taxa de lucro e despesas</span>
         </div>
-
-        <div className="bg-surface border border-border rounded-lg p-5 flex flex-col justify-between">
-          <div className="text-[10px] font-bold text-text-muted uppercase tracking-[1px] mb-2 flex items-center gap-1.5"><MapPinLine size={14} className="text-text-muted" /> Localidade</div>
-          <div className="text-[20px] font-bold text-text-main mt-1">
-            {orcamento.estado?.toUpperCase() || "Nacional"}
-          </div>
-          <div className="mt-3 text-[11px] font-semibold text-text-muted uppercase">TIPO: {orcamento.tipo_composicao || "Não definido"}</div>
+        <div className="gp-card gp-met">
+          <span className="gp-ml">Base de referência</span>
+          <span className="gp-mv" style={{ fontSize: 20 }}>{orcamento.base_referencia || "Não definida"}</span>
+          <span className="gp-ms">Fonte: {orcamento.fonte || "-"}</span>
         </div>
-      </div>
+        <div className="gp-card gp-met">
+          <span className="gp-ml">Localidade</span>
+          <span className="gp-mv" style={{ fontSize: 20 }}>{orcamento.estado?.toUpperCase() || "Nacional"}</span>
+          <span className="gp-ms">Tipo: {orcamento.tipo_composicao || "Não definido"}</span>
+        </div>
+      </section>
 
       {/* Planilha Dinâmica (Cartões) */}
       <PlanilhaView 
@@ -106,7 +94,6 @@ export default function PlanilhaOrcamentariaPage() {
         fonteOrcamento={orcamento.fonte}
         onTotalChanged={fetchOrcamento}
       />
-      
-    </div>
+    </>
   );
 }

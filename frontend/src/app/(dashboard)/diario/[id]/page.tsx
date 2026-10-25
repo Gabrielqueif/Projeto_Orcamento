@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Cloud, CloudRain, MapPin, Plus, Sun, User, Warning } from "@phosphor-icons/react";
+import { Cloud, CloudRain, Plus, Sun, User, Warning } from "@phosphor-icons/react";
 import { DiarioFormModal } from "@/components/diario/DiarioFormModal";
 import { useToast } from "@/components/common/toast";
 import {
@@ -16,6 +16,8 @@ import {
   type StatusDiario,
 } from "@/lib/api/diario";
 
+type FiltroStatus = "TODOS" | StatusDiario;
+
 const CLIMAS: Record<Clima, { rotulo: string; Icone: typeof Sun }> = {
   SOL: { rotulo: "Sol", Icone: Sun },
   NUBLADO: { rotulo: "Nublado", Icone: Cloud },
@@ -23,12 +25,17 @@ const CLIMAS: Record<Clima, { rotulo: string; Icone: typeof Sun }> = {
 };
 
 const STATUS_ESTILO: Record<StatusDiario, { rotulo: string; classe: string }> = {
-  RASCUNHO: { rotulo: "RASCUNHO", classe: "bg-[#f1f5f9] text-[#475569]" },
-  ENVIADO: { rotulo: "ENVIADO", classe: "bg-[rgba(161,196,255,0.3)] text-[#2a5085]" },
-  APROVADO: { rotulo: "APROVADO", classe: "bg-[rgba(159,211,0,0.2)] text-[#405700]" },
+  RASCUNHO: { rotulo: "Rascunho", classe: "gp-ne" },
+  ENVIADO: { rotulo: "Enviado", classe: "gp-te" },
+  APROVADO: { rotulo: "Aprovado", classe: "gp-ok" },
 };
 
-type FiltroStatus = "TODOS" | StatusDiario;
+const FILTROS: [FiltroStatus, string][] = [
+  ["TODOS", "Todos"],
+  ["RASCUNHO", "Rascunhos"],
+  ["ENVIADO", "Enviados"],
+  ["APROVADO", "Aprovados"],
+];
 
 function parseData(iso: string): Date {
   const [ano, mes, dia] = iso.split("-").map(Number);
@@ -109,14 +116,18 @@ export default function DiarioObraPage() {
   };
 
   if (carregando) {
-    return <p className="p-12 text-center text-[14px] text-[#94a3b8] font-manrope">Carregando diário da obra…</p>;
+    return (
+      <p role="status" style={{ padding: 48, textAlign: "center", color: "#475569" }}>
+        Carregando diário da obra…
+      </p>
+    );
   }
 
   if (erro || !dados) {
     return (
-      <div className="p-12 text-center font-manrope">
-        <p className="text-[14px] text-[#93000a]">{erro ?? "Obra não encontrada."}</p>
-        <Link href="/diario" className="inline-block mt-4 text-[13px] font-bold text-[#4c6700] hover:underline">
+      <div role="alert" style={{ padding: 48, textAlign: "center" }}>
+        <p style={{ color: "#B91C1C", margin: 0 }}>{erro ?? "Obra não encontrada."}</p>
+        <Link href="/diario" className="gp-btn gp-bs gp-sm" style={{ marginTop: 16 }}>
           Voltar ao diário
         </Link>
       </div>
@@ -125,266 +136,211 @@ export default function DiarioObraPage() {
 
   const { obra, registros } = dados;
   const visiveis = filtro === "TODOS" ? registros : registros.filter((r) => r.status === filtro);
+  const nOcorrencias = registros.filter((r) => r.tem_ocorrencia).length;
+  const sub = [
+    `${registros.length} ${registros.length === 1 ? "registro" : "registros"}`,
+    `${nOcorrencias} ${nOcorrencias === 1 ? "ocorrência" : "ocorrências"}`,
+    obra.local,
+    obra.responsavel ? `Responsável: ${obra.responsavel}` : null,
+    obra.prazo_dias != null ? `Prazo: ${obra.prazo_dias} dias` : null,
+    `Progresso: ${obra.progresso}%`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <div className="flex flex-col h-full font-manrope">
-      <div className="flex items-center gap-4 mb-8">
-        <Link
-          href="/diario"
-          aria-label="Voltar"
-          className="w-10 h-10 rounded-full bg-white border border-[#e2e8f0] flex items-center justify-center text-[#001b3c] hover:bg-slate-50"
-        >
-          <ArrowLeft size={18} weight="bold" />
-        </Link>
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
         <div>
-          <h1 className="text-[24px] font-extrabold text-[#001b3c] tracking-tight">Diário de Obra</h1>
-          <p className="text-sm text-[#64748b] mt-1">{obra.nome}</p>
+          <nav aria-label="Trilha" className="gp-crumb">
+            <Link href="/diario">Diário de obra</Link> /{" "}
+            <span aria-current="page" style={{ color: "#001b3d" }}>
+              {obra.nome}
+            </span>
+          </nav>
+          <h1 className="gp-h1">{obra.nome}</h1>
+          <p className="gp-sub">{sub}</p>
+          <p className="gp-hint" style={{ margin: "4px 0 0" }}>
+            Último registro alterado em {formatarAtualizacao(obra.ultima_atualizacao)}
+          </p>
         </div>
+        <button type="button" onClick={abrirNovo} className="gp-btn gp-bp">
+          <Plus size={16} weight="bold" aria-hidden="true" /> Novo registro
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-        <div className="lg:col-span-8 bg-white border border-[#e2e8f0] rounded-[12px] p-8 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] flex flex-col justify-between min-h-[220px]">
-          <div>
-            <h2 className="text-[32px] font-extrabold text-[#001b3c] tracking-tight">{obra.nome}</h2>
-            <p className="text-[15px] text-[#434935] mt-2 max-w-[500px] leading-[22px]">
-              Registros diários de atividades, clima, equipe e ocorrências do canteiro.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-x-12 gap-y-4 mt-6 border-t border-[#e2e8f0] pt-4">
-            {obra.prazo_dias != null && (
-              <div>
-                <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-[1px]">Prazo</span>
-                <div className="text-[20px] font-extrabold text-[#001b3c] mt-0.5">
-                  {obra.prazo_dias} <span className="text-sm font-semibold text-[#94a3b8]">dias</span>
-                </div>
-              </div>
-            )}
-            {obra.local && (
-              <div>
-                <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-[1px]">Localização</span>
-                <div className="text-[15px] font-bold text-[#001b3c] mt-1 flex items-center gap-1.5">
-                  <MapPin size={16} className="text-[#64748b]" weight="bold" />
-                  {obra.local}
-                </div>
-              </div>
-            )}
-            {obra.responsavel && (
-              <div>
-                <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-[1px]">Responsável</span>
-                <div className="text-[15px] font-bold text-[#001b3c] mt-1">{obra.responsavel}</div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="lg:col-span-4 bg-[#003061] text-white rounded-[12px] p-8 flex flex-col items-center justify-between shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] min-h-[220px]">
-          <span className="text-[12px] font-bold text-slate-300 uppercase tracking-[1px]">Progresso da Obra</span>
-          <div className="relative w-28 h-28 flex items-center justify-center my-3">
-            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-              <path
-                className="text-slate-500/30"
-                strokeWidth="3"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-              <path
-                className="text-[#9fd300]"
-                strokeWidth="3"
-                strokeDasharray={`${obra.progresso}, 100`}
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-            </svg>
-            <div className="absolute flex flex-col items-center leading-none">
-              <span className="text-[26px] font-extrabold">{obra.progresso}%</span>
-              <span className="text-[8px] font-bold text-slate-300 uppercase tracking-[0.8px] mt-0.5">Completo</span>
-            </div>
-          </div>
-          <span className="text-[10px] text-slate-300">Último registro alterado em {formatarAtualizacao(obra.ultima_atualizacao)}</span>
-        </div>
+      <div role="group" aria-label="Filtrar registros" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {FILTROS.map(([k, rotulo]) => (
+          <button key={k} type="button" className="gp-chip" aria-pressed={filtro === k} onClick={() => setFiltro(k)}>
+            {rotulo}
+            <span className="gp-cnt">{k === "TODOS" ? registros.length : registros.filter((r) => r.status === k).length}</span>
+          </button>
+        ))}
       </div>
 
-      <div className="mt-4">
-        <div className="flex flex-wrap justify-between items-center gap-3 mb-8 px-1">
-          <div className="flex items-center gap-3">
-            <div className="w-[8px] h-[32px] rounded-full bg-gradient-to-b from-[#4c6700] to-[#9fd300]" />
-            <h3 className="text-[20px] font-extrabold text-[#001b3c] tracking-tight">Linha do Tempo</h3>
-          </div>
-          <div className="flex gap-2">
-            <select
-              value={filtro}
-              onChange={(e) => setFiltro(e.target.value as FiltroStatus)}
-              aria-label="Filtrar por status"
-              className="bg-[#f0f3ff] text-[#434935] text-[12px] font-bold px-4 py-2.5 rounded-[12px] cursor-pointer"
-            >
-              <option value="TODOS">Todos os status</option>
-              <option value="RASCUNHO">Rascunhos</option>
-              <option value="ENVIADO">Enviados</option>
-              <option value="APROVADO">Aprovados</option>
-            </select>
-            <button
-              onClick={abrirNovo}
-              className="bg-gradient-to-r from-[#4c6700] to-[#9fd300] hover:opacity-95 text-white text-[12px] font-bold px-4 py-2.5 rounded-[12px] shadow-[0px_10px_15px_-3px_rgba(76,103,0,0.2)] cursor-pointer flex items-center gap-1.5"
-            >
-              <Plus size={14} weight="bold" /> Novo Registro
-            </button>
-          </div>
+      {visiveis.length === 0 ? (
+        <div className="gp-card" style={{ padding: 40, textAlign: "center" }}>
+          <p style={{ margin: 0, color: "#475569" }}>
+            {registros.length === 0 ? "Nenhum registro ainda. Comece pelo diário de hoje." : "Nenhum registro com esse status."}
+          </p>
         </div>
-
-        {visiveis.length === 0 ? (
-          <div className="bg-white rounded-[12px] border border-[#e2e8f0] p-12 text-center">
-            <p className="text-[15px] text-[#434935]">
-              {registros.length === 0 ? "Nenhum registro ainda. Comece pelo diário de hoje." : "Nenhum registro com esse status."}
-            </p>
-          </div>
-        ) : (
-          <div className="relative border-l-2 border-[#e2e8f0] ml-6 pl-8 flex flex-col gap-10">
-            {visiveis.map((registro, index) => {
-              const { rotulo, Icone } = CLIMAS[registro.clima];
-              const status = STATUS_ESTILO[registro.status];
-              const editavel = registro.status !== "APROVADO";
-              return (
-                <div key={registro.id} className="relative">
-                  <div
-                    className={`absolute left-[-41px] top-1.5 w-[20px] h-[20px] rounded-full border-4 border-[#f8fafc] ${
-                      index === 0 ? "bg-[#9fd300]" : "bg-[#94a3b8]"
-                    }`}
-                  />
-                  <div className="flex flex-col lg:flex-row gap-6 items-start">
-                    <div className="w-[128px] shrink-0 pt-1">
-                      <span className="block text-[12px] font-bold text-[#434935]">{formatarData(registro.data)}</span>
-                      <span className="block text-[10px] font-bold text-[#94a3b8] uppercase mt-0.5">
-                        {diaDaSemana(registro.data)}
+      ) : (
+        <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+          {visiveis.map((registro) => {
+            const { rotulo, Icone } = CLIMAS[registro.clima];
+            const status = STATUS_ESTILO[registro.status];
+            const editavel = registro.status !== "APROVADO";
+            const btn = "gp-btn gp-sm ";
+            return (
+              <li key={registro.id}>
+                <article
+                  className="gp-card"
+                  style={{ display: "flex", alignItems: "flex-start", gap: 16, padding: "18px 22px", flexWrap: "wrap" }}
+                >
+                  <span style={{ minWidth: 64 }}>
+                    <strong className="gp-mono" style={{ display: "block", fontSize: 22 }} aria-hidden="true">
+                      {String(parseData(registro.data).getDate()).padStart(2, "0")}
+                    </strong>
+                    <span
+                      aria-hidden="true"
+                      style={{ fontSize: 13, fontWeight: 700, color: "#475569", textTransform: "capitalize" }}
+                    >
+                      {diaDaSemana(registro.data).split("-")[0]}
+                    </span>
+                    <span className="gp-sr">
+                      {formatarData(registro.data)}, {diaDaSemana(registro.data)}
+                    </span>
+                  </span>
+                  <div style={{ flex: "1 1 300px", minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+                      <span className={`gp-bg ${status.classe}`}>
+                        <span className="gp-dot" aria-hidden="true"></span>
+                        {status.rotulo}
+                      </span>
+                      {registro.tem_ocorrencia && (
+                        <span className="gp-bg gp-da">
+                          <Warning size={12} weight="fill" aria-hidden="true" /> Ocorrência
+                        </span>
+                      )}
+                      <span style={{ fontSize: 13, color: "#475569", display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <Icone size={16} weight="bold" aria-hidden="true" /> {rotulo}
+                        {registro.temperatura != null && ` / ${registro.temperatura}°C`} ·{" "}
+                        <User size={16} weight="bold" aria-hidden="true" /> {registro.responsavel || "Sem responsável"} ·{" "}
+                        {registro.equipe_presente} na equipe
                       </span>
                     </div>
+                    <h2 className="gp-h2" style={{ fontSize: 16 }}>
+                      {registro.titulo}
+                    </h2>
+                    <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, whiteSpace: "pre-line" }}>{registro.atividades}</p>
 
-                    <div className="flex-1 bg-white border border-[#e2e8f0] rounded-[12px] p-6 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] w-full">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <h4 className="text-[18px] font-bold text-[#001b3c] tracking-tight">{registro.titulo}</h4>
-                          <p className="text-[14px] text-[#64748b] mt-1.5 leading-[20px] whitespace-pre-line">
-                            {registro.atividades}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1.5 shrink-0">
-                          <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.5px] ${status.classe}`}>
-                            {status.rotulo}
-                          </span>
-                          {registro.tem_ocorrencia && (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-[rgba(255,218,214,0.4)] text-[#93000a]">
-                              <Warning size={12} weight="fill" /> OCORRÊNCIA
+                    {registro.tem_ocorrencia && (
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 14,
+                          color: "#B91C1C",
+                          background: "#FEE2E2",
+                          borderRadius: 12,
+                          padding: "10px 14px",
+                          whiteSpace: "pre-line",
+                        }}
+                      >
+                        {registro.ocorrencias}
+                      </p>
+                    )}
+
+                    {registro.servicos.length > 0 && (
+                      <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                        {registro.servicos.map((servico) => (
+                          <li key={servico.item_id} className="gp-li" style={{ fontSize: 14 }}>
+                            <span>✓ {servico.descricao}</span>
+                            <span className="gp-mono" style={{ whiteSpace: "nowrap", fontWeight: 600 }}>
+                              {servico.quantidade} {servico.unidade} · {servico.percentual}%
                             </span>
-                          )}
-                        </div>
-                      </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
 
-                      {registro.tem_ocorrencia && (
-                        <p className="mt-4 text-[13px] text-[#93000a] bg-[rgba(255,218,214,0.25)] rounded-[8px] px-3 py-2 whitespace-pre-line">
-                          {registro.ocorrencias}
-                        </p>
-                      )}
-
-                      {registro.servicos.length > 0 && (
-                        <ul className="flex flex-col gap-1.5 mt-4">
-                          {registro.servicos.map((servico) => (
-                            <li
-                              key={servico.item_id}
-                              className="flex items-center justify-between gap-3 px-3 py-2 rounded-[8px] bg-[#f0f3ff] text-[13px] text-[#001b3c]"
+                    {registro.fotos.length > 0 && (
+                      <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }}>
+                        {registro.fotos.map((foto, i) =>
+                          foto.url ? (
+                            <a
+                              key={foto.id}
+                              href={foto.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ aspectRatio: "16/9", display: "block", borderRadius: 12, overflow: "hidden", border: "1px solid #E6EBF2" }}
                             >
-                              <span className="truncate">✓ {servico.descricao}</span>
-                              <span className="font-bold whitespace-nowrap">
-                                {servico.quantidade} {servico.unidade} · {servico.percentual}%
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-
-                      {registro.fotos.length > 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-                          {registro.fotos.map((foto, i) =>
-                            foto.url ? (
-                              <a
-                                key={foto.id}
-                                href={foto.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="aspect-video w-full rounded-[8px] overflow-hidden border border-[#e2e8f0] shadow-sm group"
-                              >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={foto.url}
-                                  alt={foto.legenda ?? `Foto ${i + 1} de ${registro.titulo}`}
-                                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-200"
-                                />
-                              </a>
-                            ) : (
-                              <div
-                                key={foto.id}
-                                className="aspect-video w-full rounded-[8px] bg-[#f1f5f9] flex items-center justify-center text-[11px] text-[#94a3b8]"
-                              >
-                                Foto indisponível
-                              </div>
-                            )
-                          )}
-                        </div>
-                      )}
-
-                      <div className="border-t border-[#f1f5f9] mt-6 pt-4 flex flex-wrap gap-x-6 gap-y-3 items-center justify-between">
-                        <div className="flex flex-wrap gap-6 items-center text-[#94a3b8]">
-                          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[1px]">
-                            <Icone size={16} weight="bold" /> {rotulo}
-                            {registro.temperatura != null && ` / ${registro.temperatura}°C`}
-                          </span>
-                          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[1px]">
-                            <User size={16} weight="bold" /> {registro.responsavel || "Sem responsável"} · {registro.equipe_presente} na equipe
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 text-[12px] font-bold">
-                          {registro.status === "RASCUNHO" && (
-                            <button onClick={() => mudarStatus(registro, "ENVIADO")} className="px-3 py-1.5 rounded-[8px] bg-[#001b3c] text-white">
-                              Enviar
-                            </button>
-                          )}
-                          {registro.status === "ENVIADO" && (
-                            <>
-                              <button onClick={() => mudarStatus(registro, "APROVADO")} className="px-3 py-1.5 rounded-[8px] bg-[#4c6700] text-white">
-                                Aprovar
-                              </button>
-                              <button onClick={() => mudarStatus(registro, "RASCUNHO")} className="px-3 py-1.5 rounded-[8px] bg-[#f0f3ff] text-[#434935]">
-                                Devolver
-                              </button>
-                            </>
-                          )}
-                          {registro.status === "APROVADO" && (
-                            <button onClick={() => mudarStatus(registro, "ENVIADO")} className="px-3 py-1.5 rounded-[8px] bg-[#f0f3ff] text-[#434935]">
-                              Reabrir
-                            </button>
-                          )}
-                          {editavel && (
-                            <>
-                              <button onClick={() => abrirEdicao(registro)} className="px-3 py-1.5 rounded-[8px] bg-[#f0f3ff] text-[#434935]">
-                                Editar
-                              </button>
-                              <button onClick={() => excluir(registro)} className="px-3 py-1.5 rounded-[8px] text-[#93000a] hover:bg-[#ffdad6]">
-                                Excluir
-                              </button>
-                            </>
-                          )}
-                        </div>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={foto.url}
+                                alt={foto.legenda ?? `Foto ${i + 1} de ${registro.titulo}`}
+                                style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                              />
+                            </a>
+                          ) : (
+                            <div
+                              key={foto.id}
+                              style={{
+                                aspectRatio: "16/9",
+                                borderRadius: 12,
+                                background: "#EDF1F6",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 12,
+                                color: "#475569",
+                              }}
+                            >
+                              Foto indisponível
+                            </div>
+                          )
+                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {registro.status === "RASCUNHO" && (
+                      <button onClick={() => mudarStatus(registro, "ENVIADO")} className={btn + "gp-bd"}>
+                        Enviar
+                      </button>
+                    )}
+                    {registro.status === "ENVIADO" && (
+                      <>
+                        <button onClick={() => mudarStatus(registro, "APROVADO")} className={btn + "gp-bp"}>
+                          Aprovar
+                        </button>
+                        <button onClick={() => mudarStatus(registro, "RASCUNHO")} className={btn + "gp-bs"}>
+                          Devolver
+                        </button>
+                      </>
+                    )}
+                    {registro.status === "APROVADO" && (
+                      <button onClick={() => mudarStatus(registro, "ENVIADO")} className={btn + "gp-bs"}>
+                        Reabrir
+                      </button>
+                    )}
+                    {editavel && (
+                      <>
+                        <button onClick={() => abrirEdicao(registro)} className={btn + "gp-bs"}>
+                          Editar
+                        </button>
+                        <button onClick={() => excluir(registro)} className={btn + "gp-bs"} style={{ color: "#B91C1C" }}>
+                          Excluir
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </article>
+              </li>
+            );
+          })}
+        </ol>
+      )}
 
       <DiarioFormModal
         isOpen={modalAberto}
@@ -395,6 +351,6 @@ export default function DiarioObraPage() {
         servicos={obra.servicos}
         onSaved={carregar}
       />
-    </div>
+    </>
   );
 }

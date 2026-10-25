@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import { X } from '@phosphor-icons/react';
 
 interface ModalProps {
     isOpen: boolean;
@@ -35,27 +36,24 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-md" 
     if (!mounted || !isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-all duration-200">
-            <div
-                className={`bg-white rounded-lg shadow-xl w-full ${maxWidth} transform transition-all duration-200 scale-100 opacity-100 border border-slate-200 flex flex-col max-h-[90vh]`}
-                role="dialog"
-                aria-modal="true"
-            >
-                <div className="flex items-center justify-between p-4 border-b border-slate-100 shrink-0">
-                    <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
-                    <button
-                        onClick={onClose}
-                        className="text-slate-400 hover:text-slate-600 transition-colors rounded-full p-1 hover:bg-slate-100"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
+        <div className="gp-ov">
+            {/* wrapper carrega o max-w-* do chamador; .gp-dlg tem max-width próprio que o sobrescreveria */}
+            <div className={`w-full ${maxWidth} flex max-h-full`}>
+                <div
+                    className="gp-dlg"
+                    style={{ maxWidth: 'none', flex: '1 1 auto', minWidth: 0 }}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={title}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexShrink: 0 }}>
+                        <h2 className="gp-h2" style={{ margin: 0, fontSize: 21 }}>{title}</h2>
+                        <button type="button" onClick={onClose} aria-label="Fechar" className="gp-ib" style={{ width: 40, height: 40 }}>
+                            <X size={18} weight="bold" />
+                        </button>
+                    </div>
 
-                <div className="p-4 overflow-y-auto">
-                    {children}
+                    <div style={{ overflowY: 'auto' }}>{children}</div>
                 </div>
             </div>
         </div>,

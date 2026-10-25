@@ -111,7 +111,7 @@ export default function ProjectDocsPage() {
     : "Residencial Aurora";
 
   return (
-    <div className="flex flex-col h-full bg-[#f0f2f5] -m-8 p-8 min-h-[calc(100vh-64px)] font-['Inter']">
+    <div className="flex flex-col h-full">
       {/* Breadcrumbs Nav */}
       <div className="flex items-center gap-2 mb-4">
         <Link

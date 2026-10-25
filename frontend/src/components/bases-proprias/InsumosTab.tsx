@@ -17,8 +17,6 @@ import {
 } from "@/lib/api/basesProprias";
 import { formatarMoeda, lerNumero, rotuloTipoInsumo } from "@/lib/basesPropriasUtils";
 
-const campo = "w-full border border-slate-300 rounded px-3 py-2 text-sm text-slate-800 bg-white";
-
 interface FormInsumo {
   codigo: string;
   descricao: string;
@@ -164,147 +162,121 @@ export function InsumosTab({ baseId }: { baseId: string }) {
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3 justify-between">
+    <div>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "14px 16px" }}>
         <form
+          role="search"
           onSubmit={(e) => {
             e.preventDefault();
             carregar(busca);
           }}
-          className="flex items-center gap-2 flex-1 min-w-[220px] max-w-md"
+          className="gp-srch"
+          style={{ flex: "1 1 240px", maxWidth: 360 }}
         >
+          <MagnifyingGlass size={18} weight="bold" aria-hidden="true" color="#475569" />
           <input
+            type="search"
             aria-label="Buscar insumos"
             placeholder="Buscar por código ou descrição"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className={campo}
           />
-          <button type="submit" aria-label="Buscar" className="p-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-600">
-            <MagnifyingGlass size={18} />
+          <button type="submit" aria-label="Buscar" className="gp-btn gp-bs gp-sm" style={{ minHeight: 32, padding: "0 10px" }}>
+            Buscar
           </button>
         </form>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={baixarModelo}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded border border-slate-300 text-slate-700 hover:bg-slate-50"
-          >
-            <DownloadSimple size={16} /> Baixar modelo
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginLeft: "auto" }}>
+          <button type="button" onClick={baixarModelo} className="gp-btn gp-bs gp-sm">
+            <DownloadSimple size={16} weight="bold" aria-hidden="true" /> Baixar modelo
           </button>
           <button
             type="button"
             disabled={importando}
             onClick={() => arquivoRef.current?.click()}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="gp-btn gp-bd gp-sm"
+            style={importando ? { opacity: 0.5 } : undefined}
           >
-            <UploadSimple size={16} /> {importando ? "Importando..." : "Importar .xlsx"}
+            <UploadSimple size={16} weight="bold" aria-hidden="true" /> {importando ? "Importando..." : "Importar .xlsx"}
           </button>
-          <input
-            ref={arquivoRef}
-            type="file"
-            accept=".xlsx"
-            className="hidden"
-            data-testid="input-importar"
-            onChange={importar}
-          />
-          <button
-            type="button"
-            onClick={abrirNovo}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-bold rounded bg-brand-primary text-white hover:bg-brand-navy"
-          >
-            <Plus size={16} weight="bold" /> Novo insumo
+          <input ref={arquivoRef} type="file" accept=".xlsx" className="gp-sr" tabIndex={-1} aria-hidden="true" data-testid="input-importar" onChange={importar} />
+          <button type="button" onClick={abrirNovo} className="gp-btn gp-bp gp-sm">
+            <Plus size={16} weight="bold" aria-hidden="true" /> Novo insumo
           </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs uppercase text-slate-500 border-b border-slate-200">
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse" }}>
+          <caption className="gp-sr">Insumos da base própria</caption>
+          <thead>
             <tr>
-              <th className="py-2 pr-3">Código</th>
-              <th className="py-2 pr-3">Descrição</th>
-              <th className="py-2 pr-3">Un.</th>
-              <th className="py-2 pr-3">Tipo</th>
-              <th className="py-2 pr-3 text-right">Preço</th>
-              <th className="py-2 w-20" />
+              <th scope="col" className="gp-th" style={{ paddingLeft: 22 }}>Código</th>
+              <th scope="col" className="gp-th">Descrição</th>
+              <th scope="col" className="gp-th">Un.</th>
+              <th scope="col" className="gp-th">Tipo</th>
+              <th scope="col" className="gp-th" style={{ textAlign: "right" }}>Preço</th>
+              <th scope="col" className="gp-th" style={{ paddingRight: 22 }}><span className="gp-sr">Ações</span></th>
             </tr>
           </thead>
           <tbody>
             {insumos.map((i) => (
-              <tr key={i.id} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="py-2 pr-3 font-mono text-xs">{i.codigo}</td>
-                <td className="py-2 pr-3">{i.descricao}</td>
-                <td className="py-2 pr-3">{i.unidade}</td>
-                <td className="py-2 pr-3">{rotuloTipoInsumo(i.tipo)}</td>
-                <td className="py-2 pr-3 text-right">{formatarMoeda(i.preco)}</td>
-                <td className="py-2 text-right whitespace-nowrap">
-                  <button
-                    type="button"
-                    aria-label={`Editar ${i.codigo}`}
-                    onClick={() => abrirEdicao(i)}
-                    className="p-1 text-slate-500 hover:text-brand-primary"
-                  >
-                    <PencilSimple size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Excluir ${i.codigo}`}
-                    onClick={() => excluir(i)}
-                    className="p-1 text-slate-500 hover:text-red-600"
-                  >
-                    <Trash size={16} />
+              <tr key={i.id} className="gp-row">
+                <td className="gp-td gp-mono" style={{ paddingLeft: 22, color: "#00626b", fontWeight: 600 }}>{i.codigo}</td>
+                <th scope="row" className="gp-td" style={{ textAlign: "left", fontWeight: 700 }}>{i.descricao}</th>
+                <td className="gp-td">{i.unidade}</td>
+                <td className="gp-td" style={{ color: "#475569" }}>{rotuloTipoInsumo(i.tipo)}</td>
+                <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600 }}>{formatarMoeda(i.preco)}</td>
+                <td className="gp-td" style={{ paddingRight: 22, textAlign: "right", whiteSpace: "nowrap" }}>
+                  <button type="button" aria-label={`Editar ${i.codigo}`} onClick={() => abrirEdicao(i)} className="gp-ib" style={{ width: 40, height: 40 }}>
+                    <PencilSimple size={18} weight="bold" aria-hidden="true" />
+                  </button>{" "}
+                  <button type="button" aria-label={`Excluir ${i.codigo}`} onClick={() => excluir(i)} className="gp-ib" style={{ width: 40, height: 40, color: "#B91C1C" }}>
+                    <Trash size={18} weight="bold" aria-hidden="true" />
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {loading && <p className="text-sm text-slate-500 py-4">Carregando insumos...</p>}
+        {loading && <p className="gp-sub" style={{ padding: 16, margin: 0 }}>Carregando insumos...</p>}
         {!loading && insumos.length === 0 && (
-          <p className="text-sm text-slate-500 py-6 text-center" data-testid="insumos-vazio">
+          <p className="gp-sub" style={{ padding: 24, margin: 0, textAlign: "center" }} data-testid="insumos-vazio">
             Nenhum insumo encontrado. Crie um ou importe uma planilha.
           </p>
         )}
       </div>
 
       <Modal isOpen={modalAberto} onClose={fechar} title={editando ? "Editar insumo" : "Novo insumo"}>
-        <form onSubmit={salvar} className="space-y-3">
-          <div>
-            <label htmlFor="ins-codigo" className="block text-sm font-medium text-slate-700 mb-1">Código</label>
-            <input id="ins-codigo" value={form.codigo} onChange={set("codigo")} required maxLength={50} disabled={!!editando} className={campo} />
+        <form onSubmit={salvar} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="gp-fld">
+            <label htmlFor="ins-codigo" className="gp-lb">Código</label>
+            <input id="ins-codigo" value={form.codigo} onChange={set("codigo")} required maxLength={50} disabled={!!editando} className="gp-in gp-mono" />
           </div>
-          <div>
-            <label htmlFor="ins-desc" className="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
-            <input id="ins-desc" value={form.descricao} onChange={set("descricao")} required className={campo} />
+          <div className="gp-fld">
+            <label htmlFor="ins-desc" className="gp-lb">Descrição</label>
+            <input id="ins-desc" value={form.descricao} onChange={set("descricao")} required className="gp-in" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="ins-un" className="block text-sm font-medium text-slate-700 mb-1">Unidade</label>
-              <input id="ins-un" value={form.unidade} onChange={set("unidade")} required maxLength={20} className={campo} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="gp-fld">
+              <label htmlFor="ins-un" className="gp-lb">Unidade</label>
+              <input id="ins-un" value={form.unidade} onChange={set("unidade")} required maxLength={20} className="gp-in" />
             </div>
-            <div>
-              <label htmlFor="ins-tipo" className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
-              <select id="ins-tipo" value={form.tipo} onChange={set("tipo")} className={campo}>
+            <div className="gp-fld">
+              <label htmlFor="ins-tipo" className="gp-lb">Tipo</label>
+              <select id="ins-tipo" value={form.tipo} onChange={set("tipo")} className="gp-in">
                 {TIPOS_INSUMO.map((t) => (
                   <option key={t.valor} value={t.valor}>{t.rotulo}</option>
                 ))}
               </select>
             </div>
           </div>
-          <div>
-            <label htmlFor="ins-preco" className="block text-sm font-medium text-slate-700 mb-1">Preço (R$)</label>
-            <input id="ins-preco" value={form.preco} onChange={set("preco")} inputMode="decimal" className={campo} />
+          <div className="gp-fld">
+            <label htmlFor="ins-preco" className="gp-lb">Preço (R$)</label>
+            <input id="ins-preco" value={form.preco} onChange={set("preco")} inputMode="decimal" className="gp-in gp-mono" />
           </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={fechar} className="px-4 py-2 text-sm text-slate-600 rounded hover:bg-slate-100">
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={salvando}
-              className="px-4 py-2 text-sm font-bold text-white bg-brand-primary rounded hover:bg-brand-navy disabled:opacity-50"
-            >
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <button type="button" onClick={fechar} className="gp-btn gp-bs">Cancelar</button>
+            <button type="submit" disabled={salvando} className="gp-btn gp-bp" style={salvando ? { opacity: 0.5 } : undefined}>
               {salvando ? "Salvando..." : "Salvar"}
             </button>
           </div>

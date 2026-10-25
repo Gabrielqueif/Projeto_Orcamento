@@ -151,6 +151,49 @@ export function BdiConfigModal({ isOpen, onClose, orcamento, onUpdated }: BdiCon
     }
   };
 
+  const setCampo = (k: keyof BDIConfig) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setBdiConfig({ ...bdiConfig, [k]: parseFloat(e.target.value) || 0 });
+
+  const campo = (
+    k: keyof BDIConfig,
+    label: string,
+    ref?: string,
+    opts: { limite?: boolean } = { limite: true }
+  ) => (
+    <div className="gp-fld">
+      <label className="gp-lb" htmlFor={`bdi-${k}`}>{label}</label>
+      <div className="gp-affix">
+        <input
+          id={`bdi-${k}`}
+          type="number"
+          step="0.01"
+          min={opts.limite === false ? undefined : "0"}
+          max={opts.limite === false ? undefined : "100"}
+          value={bdiConfig[k] as number}
+          onChange={setCampo(k)}
+        />
+        <span>%</span>
+      </div>
+      {ref && <span className="gp-hint">{ref}</span>}
+    </div>
+  );
+
+  const cartao = (titulo: string, soma: string | null, filhos: React.ReactNode) => (
+    <section className="gp-card gp-pad" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <h3 className="gp-h2" style={{ fontSize: 16 }}>{titulo}</h3>
+        {soma && <span className="gp-mono" style={{ fontWeight: 600 }}>{soma}</span>}
+      </div>
+      {filhos}
+    </section>
+  );
+
+  const tabBtn = (ativo: boolean, onClick: () => void, icone: React.ReactNode, rotulo: string) => (
+    <button type="button" role="tab" aria-selected={ativo} onClick={onClick} className="gp-tab">
+      {icone} {rotulo}
+    </button>
+  );
+
   return (
     <Modal
       isOpen={isOpen}
@@ -158,348 +201,162 @@ export function BdiConfigModal({ isOpen, onClose, orcamento, onUpdated }: BdiCon
       title="Configuração de BDI (Bonificação e Despesas Indiretas)"
       maxWidth="max-w-3xl"
     >
-      <div className="space-y-6">
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, color: "#001b3d" }}>
         {/* Toggle de Modo: Analítico TCU vs Sintético */}
-        <div className="flex border-b border-slate-200">
-          <button
-            type="button"
-            onClick={() => setTipoBdi("ANALITICO")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-              tipoBdi === "ANALITICO"
-                ? "border-blue-600 text-blue-700 bg-blue-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Calculator size={16} /> BDI Analítico (Fórmula Oficial TCU)
-          </button>
-          <button
-            type="button"
-            onClick={() => setTipoBdi("SINTETICO")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
-              tipoBdi === "SINTETICO"
-                ? "border-blue-600 text-blue-700 bg-blue-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Percent size={16} /> BDI Sintético (Taxa Fixa Direta)
-          </button>
+        <div role="tablist" aria-label="Modo do BDI" className="gp-tabs">
+          {tabBtn(tipoBdi === "ANALITICO", () => setTipoBdi("ANALITICO"), <Calculator size={16} weight="bold" aria-hidden="true" />, "BDI Analítico (Fórmula Oficial TCU)")}
+          {tabBtn(tipoBdi === "SINTETICO", () => setTipoBdi("SINTETICO"), <Percent size={16} weight="bold" aria-hidden="true" />, "BDI Sintético (Taxa Fixa Direta)")}
         </div>
 
         {tipoBdi === "ANALITICO" ? (
-          <div className="space-y-6">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Presets */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-              <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                <Sparkle size={14} className="text-amber-500" /> Presets Rápidos:
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+              <span className="gp-ml" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <Sparkle size={16} weight="bold" aria-hidden="true" /> Presets rápidos:
               </span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={aplicarPresetLucroPresumido}
-                  className="px-2.5 py-1 text-xs font-medium bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-700 rounded transition-colors shadow-2xs cursor-pointer"
-                >
-                  Lucro Presumido / Real (Padrão TCU)
-                </button>
-                <button
-                  type="button"
-                  onClick={aplicarPresetSimplesNacional}
-                  className="px-2.5 py-1 text-xs font-medium bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-700 rounded transition-colors shadow-2xs cursor-pointer"
-                >
-                  Simples Nacional (DAS)
-                </button>
-              </div>
+              <button type="button" onClick={aplicarPresetLucroPresumido} className="gp-btn gp-bs gp-sm">
+                Lucro Presumido / Real (Padrão TCU)
+              </button>
+              <button type="button" onClick={aplicarPresetSimplesNacional} className="gp-btn gp-bs gp-sm">
+                Simples Nacional (DAS)
+              </button>
             </div>
 
+            <p className="gp-mono" style={{ margin: 0, padding: "14px 16px", borderRadius: 14, background: "#F4F6FA", fontSize: 14 }}>
+              BDI = [(1+AC+SG+R)(1+DF)(1+L) ÷ (1−I)] − 1
+              <span className="gp-hint" style={{ display: "block", fontFamily: "Manrope, sans-serif", marginTop: 4 }}>
+                Fórmula TCU Acórdão 2622/2013
+              </span>
+            </p>
+
             {/* Grid de Configurações */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Coluna 1: Custos Indiretos */}
-              <div className="space-y-3 bg-white p-3.5 rounded-lg border border-slate-200">
-                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5 flex items-center gap-1.5">
-                  Custos Indiretos
-                </h4>
+            <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
+              {cartao(
+                "Despesas indiretas",
+                `${(bdiConfig.ac + bdiConfig.sg + bdiConfig.r).toFixed(2).replace(".", ",")}%`,
+                <>
+                  {campo("ac", "Administração Central (AC)", "Ref. TCU: 3,00% a 5,50%")}
+                  {campo("sg", "Seguros e Garantias (SG)", "Ref. TCU: 0,80% a 1,00%")}
+                  {campo("r", "Riscos e Imprevistos (R)", "Ref. TCU: 0,97% a 1,27%")}
+                </>
+              )}
 
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                    Administração Central (AC %)
-                  </label>
+              {cartao(
+                "Financeiras e lucro",
+                `${(bdiConfig.df + bdiConfig.lucro).toFixed(2).replace(".", ",")}%`,
+                <>
+                  {campo("df", "Despesas Financeiras (DF)", "Ref. TCU: 0,59% a 1,39%")}
+                  {campo("lucro", "Lucro Bruto / Remuneração (L)", "Ref. TCU: 6,16% a 8,96%")}
+                  {campo(
+                    "bdi_diferenciado",
+                    "BDI Diferenciado",
+                    "Aplicado automaticamente em aquisição de equipamentos e materiais relevantes (Ref. TCU: 11% a 16%)."
+                  )}
+                </>
+              )}
+
+              {cartao(
+                "Tributos (I)",
+                `${String(impostosCalculados).replace(".", ",")}%`,
+                <>
+                  <div className="gp-fld">
+                    <label className="gp-lb" htmlFor="bdi-regime">Regime Tributário</label>
+                    <select
+                      id="bdi-regime"
+                      value={bdiConfig.regime_tributario}
+                      onChange={(e) => setBdiConfig({ ...bdiConfig, regime_tributario: e.target.value as RegimeTributario })}
+                      className="gp-in"
+                    >
+                      <option value="LUCRO_PRESUMIDO_REAL">Lucro Presumido / Real</option>
+                      <option value="SIMPLES_NACIONAL">Simples Nacional</option>
+                    </select>
+                  </div>
+                  {bdiConfig.regime_tributario === "SIMPLES_NACIONAL" ? (
+                    campo("aliquota_simples", "Alíquota Efetiva DAS")
+                  ) : (
+                    <>
+                      {campo("pis", "PIS", undefined, { limite: false })}
+                      {campo("cofins", "COFINS", undefined, { limite: false })}
+                      {campo("iss", "ISS Municipal", undefined, { limite: false })}
+                      {campo("cprb", "CPRB (Deson.)", undefined, { limite: false })}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Painel de Resultado */}
+            <section className="gp-card gp-pad gp-dark" aria-labelledby="bdi-resultado" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+              <div>
+                <h3 id="bdi-resultado" className="gp-h2" style={{ color: "#fff" }}>BDI calculado</h3>
+                <p role="status" className="gp-mono" style={{ margin: "6px 0 0", fontSize: 40, fontWeight: 600 }}>
+                  {bdiCalculado}%
+                </p>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <span className="gp-ml">BDI Diferenciado</span>
+                <p className="gp-mono" style={{ margin: "4px 0 0", fontSize: 24, fontWeight: 600, color: "#9fd300" }}>
+                  {bdiConfig.bdi_diferenciado}%
+                </p>
+              </div>
+            </section>
+          </div>
+        ) : (
+          /* Modo Sintético */
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700 }}>
+              <Info size={18} weight="bold" aria-hidden="true" />
+              No modo sintético, você define diretamente as alíquotas fixas de BDI.
+            </p>
+            <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
+              <div className="gp-fld">
+                <label className="gp-lb" htmlFor="bdi-sintetico">BDI Padrão</label>
+                <div className="gp-affix">
                   <input
+                    id="bdi-sintetico"
                     type="number"
                     step="0.01"
                     min="0"
                     max="100"
-                    value={bdiConfig.ac}
-                    onChange={(e) => setBdiConfig({ ...bdiConfig, ac: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:border-blue-500 outline-none"
+                    value={bdiSintetico}
+                    onChange={(e) => setBdiSintetico(parseFloat(e.target.value) || 0)}
                   />
-                  <span className="text-[10px] text-slate-400">Ref. TCU: 3,00% a 5,50%</span>
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                    Seguros e Garantias (SG %)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={bdiConfig.sg}
-                    onChange={(e) => setBdiConfig({ ...bdiConfig, sg: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:border-blue-500 outline-none"
-                  />
-                  <span className="text-[10px] text-slate-400">Ref. TCU: 0,80% a 1,00%</span>
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                    Riscos e Imprevistos (R %)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={bdiConfig.r}
-                    onChange={(e) => setBdiConfig({ ...bdiConfig, r: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:border-blue-500 outline-none"
-                  />
-                  <span className="text-[10px] text-slate-400">Ref. TCU: 0,97% a 1,27%</span>
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                    Despesas Financeiras (DF %)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={bdiConfig.df}
-                    onChange={(e) => setBdiConfig({ ...bdiConfig, df: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:border-blue-500 outline-none"
-                  />
-                  <span className="text-[10px] text-slate-400">Ref. TCU: 0,59% a 1,39%</span>
+                  <span>%</span>
                 </div>
               </div>
-
-              {/* Coluna 2: Remuneração e BDI Diferenciado */}
-              <div className="space-y-3 bg-white p-3.5 rounded-lg border border-slate-200">
-                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">
-                  Lucro e Diferenciação
-                </h4>
-
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                    Lucro Bruto / Remuneração (L %)
-                  </label>
+              <div className="gp-fld">
+                <label className="gp-lb" htmlFor="bdi-dif-sint">BDI Diferenciado (Materiais/Equipamentos)</label>
+                <div className="gp-affix">
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={bdiConfig.lucro}
-                    onChange={(e) => setBdiConfig({ ...bdiConfig, lucro: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:border-blue-500 outline-none font-semibold text-slate-800"
-                  />
-                  <span className="text-[10px] text-slate-400">Ref. TCU: 6,16% a 8,96%</span>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100">
-                  <label className="text-[11px] font-bold text-indigo-700 block mb-1">
-                    BDI Diferenciado (%)
-                  </label>
-                  <input
+                    id="bdi-dif-sint"
                     type="number"
                     step="0.01"
                     min="0"
                     max="100"
                     value={bdiConfig.bdi_diferenciado}
-                    onChange={(e) => setBdiConfig({ ...bdiConfig, bdi_diferenciado: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-2.5 py-1.5 text-xs border border-indigo-200 bg-indigo-50/40 rounded focus:border-indigo-500 outline-none font-semibold text-indigo-900"
+                    onChange={setCampo("bdi_diferenciado")}
                   />
-                  <span className="text-[10px] text-indigo-600">
-                    Aplicado automaticamente em aquisição de equipamentos e materiais relevantes (Ref. TCU: 11% a 16%).
-                  </span>
+                  <span>%</span>
                 </div>
-              </div>
-
-              {/* Coluna 3: Tributos e Impostos */}
-              <div className="space-y-3 bg-white p-3.5 rounded-lg border border-slate-200">
-                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">
-                  Tributos e Impostos (I)
-                </h4>
-
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                    Regime Tributário
-                  </label>
-                  <select
-                    value={bdiConfig.regime_tributario}
-                    onChange={(e) => setBdiConfig({ ...bdiConfig, regime_tributario: e.target.value as RegimeTributario })}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded bg-white focus:border-blue-500 outline-none"
-                  >
-                    <option value="LUCRO_PRESUMIDO_REAL">Lucro Presumido / Real</option>
-                    <option value="SIMPLES_NACIONAL">Simples Nacional</option>
-                  </select>
-                </div>
-
-                {bdiConfig.regime_tributario === "SIMPLES_NACIONAL" ? (
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                      Alíquota Efetiva DAS (%)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      value={bdiConfig.aliquota_simples}
-                      onChange={(e) => setBdiConfig({ ...bdiConfig, aliquota_simples: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:border-blue-500 outline-none"
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">PIS (%)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={bdiConfig.pis}
-                          onChange={(e) => setBdiConfig({ ...bdiConfig, pis: parseFloat(e.target.value) || 0 })}
-                          className="w-full px-2 py-1 text-xs border border-slate-300 rounded outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">COFINS (%)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={bdiConfig.cofins}
-                          onChange={(e) => setBdiConfig({ ...bdiConfig, cofins: parseFloat(e.target.value) || 0 })}
-                          className="w-full px-2 py-1 text-xs border border-slate-300 rounded outline-none"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">ISS Municipal (%)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={bdiConfig.iss}
-                          onChange={(e) => setBdiConfig({ ...bdiConfig, iss: parseFloat(e.target.value) || 0 })}
-                          className="w-full px-2 py-1 text-xs border border-slate-300 rounded outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">CPRB (Deson.) (%)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={bdiConfig.cprb}
-                          onChange={(e) => setBdiConfig({ ...bdiConfig, cprb: parseFloat(e.target.value) || 0 })}
-                          className="w-full px-2 py-1 text-xs border border-slate-300 rounded outline-none"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                <div className="bg-slate-50 p-2 rounded text-[11px] font-bold text-slate-700 flex justify-between">
-                  <span>Total Impostos (I):</span>
-                  <span>{impostosCalculados}%</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Painel de Resultado e Fórmula */}
-            <div className="bg-linear-to-r from-blue-900 to-indigo-900 text-white p-4 rounded-xl shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="space-y-1">
-                <span className="text-[11px] text-blue-200 font-mono uppercase tracking-wider">
-                  Fórmula TCU Acórdão 2622/2013
-                </span>
-                <div className="text-xs font-mono text-blue-100">
-                  BDI = [ ((1 + AC + SG + R) × (1 + DF) × (1 + L)) / (1 - I) ] - 1
-                </div>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <span className="text-[10px] uppercase tracking-wider text-blue-200 block">BDI Diferenciado</span>
-                  <span className="text-lg font-bold text-amber-300">{bdiConfig.bdi_diferenciado}%</span>
-                </div>
-                <div className="text-right border-l border-blue-700/60 pl-6">
-                  <span className="text-[10px] uppercase tracking-wider text-blue-200 block">BDI Padrão Calculado</span>
-                  <span className="text-2xl font-black text-emerald-300">{bdiCalculado}%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Modo Sintético */
-          <div className="space-y-4 bg-slate-50 p-6 rounded-xl border border-slate-200">
-            <div className="flex items-center gap-2 text-slate-700 text-xs font-semibold">
-              <Info size={18} className="text-blue-600" />
-              <span>No modo sintético, você define diretamente as alíquotas fixas de BDI.</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
-                  BDI Padrão (%)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={bdiSintetico}
-                  onChange={(e) => setBdiSintetico(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:border-blue-500 outline-none font-bold text-slate-900"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-indigo-800 block mb-1">
-                  BDI Diferenciado (Materiais/Equipamentos) (%)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={bdiConfig.bdi_diferenciado}
-                  onChange={(e) => setBdiConfig({ ...bdiConfig, bdi_diferenciado: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 text-sm border border-indigo-200 rounded-lg bg-white focus:border-indigo-500 outline-none font-bold text-indigo-900"
-                />
               </div>
             </div>
           </div>
         )}
 
         {/* Rodapé / Ações */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-          >
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 10 }}>
+          <button type="button" onClick={onClose} disabled={saving} className="gp-btn gp-bs">
             Cancelar
           </button>
-          <button
-            type="button"
-            onClick={handleSalvar}
-            disabled={saving}
-            className="flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm cursor-pointer disabled:opacity-50"
-          >
+          <button type="button" onClick={handleSalvar} disabled={saving} className="gp-btn gp-bp disabled:opacity-50">
             {saving ? (
               <>
-                <Spinner size={16} className="animate-spin" /> Recalculando Orçamento...
+                <Spinner size={16} weight="bold" className="animate-spin" aria-hidden="true" /> Recalculando Orçamento...
               </>
             ) : (
               <>
-                <CheckCircle size={16} /> Salvar e Recalcular Orçamento
+                <CheckCircle size={16} weight="bold" aria-hidden="true" /> Salvar e Recalcular Orçamento
               </>
             )}
           </button>

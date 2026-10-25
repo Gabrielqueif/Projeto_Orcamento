@@ -18,11 +18,11 @@ const TIPO_ICONS: Record<string, React.ReactNode> = {
   EQUIPAMENTO: <Wrench size={14} weight="fill" className="text-[#A78BFA]" />,
 };
 
-const TIPO_COLORS: Record<string, string> = {
-  MATERIAL: "bg-[#E0F2FE] text-[#0369A1]",
-  "MÃO DE OBRA": "bg-[#FFF7ED] text-[#C2410C]",
-  SERVIÇOS: "bg-[#FFF7ED] text-[#C2410C]",
-  EQUIPAMENTO: "bg-[#EDE9FE] text-[#6D28D9]",
+const TIPO_COLORS: Record<string, React.CSSProperties> = {
+  MATERIAL: { background: "#e0f5f7", color: "#00626b" },
+  "MÃO DE OBRA": { background: "#FFEDD5", color: "#9A3412" },
+  SERVIÇOS: { background: "#FFEDD5", color: "#9A3412" },
+  EQUIPAMENTO: { background: "#EDF1F6", color: "#001b3d" },
 };
 
 function formatCurrency(v: number | null | undefined) {
@@ -71,120 +71,109 @@ export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate }: InsumosD
   return (
     <>
       {/* Overlay */}
-      <div
-        className="fixed inset-0 bg-black/30 z-40 transition-opacity"
-        onClick={onClose}
-      />
+      <div className="gp-ov" onClick={onClose} aria-hidden="true" style={{ justifyContent: "flex-end", padding: 0 }} />
 
       {/* Drawer Panel */}
-      <div className="fixed top-0 right-0 h-full w-full max-w-[580px] bg-white z-50 shadow-2xl flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-border bg-bg-dark text-white">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold text-[#8C9CAB] uppercase tracking-widest mb-1">
-                COMPOSIÇÃO · {item.codigo_composicao}
-              </p>
-              <h2 className="text-base font-bold leading-snug line-clamp-2" title={item.descricao}>
-                {item.descricao}
-              </h2>
-              <p className="text-sm text-[#8C9CAB] mt-1">
-                {item.quantidade} {item.unidade} · {formatCurrency(item.preco_total)}
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="shrink-0 w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
-            >
-              <X size={18} />
-            </button>
+      <aside className="gp-drw" role="dialog" aria-modal="true" aria-labelledby="ins-titulo" style={{ width: "min(580px, 100%)" }}>
+        <div className="gp-dh" style={{ alignItems: "flex-start" }}>
+          <div style={{ minWidth: 0 }}>
+            <p className="gp-ml gp-mono" style={{ margin: 0 }}>
+              Composição · {item.codigo_composicao}
+            </p>
+            <h2 id="ins-titulo" className="gp-h2" style={{ marginTop: 4, lineHeight: 1.35 }} title={item.descricao}>
+              {item.descricao}
+            </h2>
+            <p className="gp-hint" style={{ margin: "4px 0 0" }}>
+              {item.quantidade} {item.unidade} · {formatCurrency(item.preco_total)}
+            </p>
           </div>
+          <button type="button" onClick={onClose} className="gp-ib" aria-label="Fechar">
+            <X size={18} weight="bold" aria-hidden="true" />
+          </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="gp-db">
           {loading ? (
-            <div className="flex items-center justify-center h-48 gap-3 text-text-muted">
-              <Spinner size={20} className="animate-spin" />
+            <div role="status" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, height: 192, color: "#475569" }}>
+              <Spinner size={20} weight="bold" className="animate-spin" aria-hidden="true" />
               Carregando insumos...
             </div>
           ) : insumos.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-center px-8 text-text-muted">
-              <Package size={40} className="mb-3 opacity-30" />
-              <p className="font-semibold text-sm">Nenhum insumo encontrado.</p>
-              <p className="text-xs mt-1">
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 192, textAlign: "center", color: "#475569" }}>
+              <Package size={40} weight="bold" aria-hidden="true" style={{ marginBottom: 12, opacity: 0.4 }} />
+              <p style={{ margin: 0, fontWeight: 800 }}>Nenhum insumo encontrado.</p>
+              <p className="gp-hint" style={{ margin: "4px 0 0" }}>
                 Reimporte a planilha SINAPI para que os dados analíticos sejam carregados.
               </p>
             </div>
           ) : (
-            <div className="p-6 flex flex-col gap-6">
+            <>
               {/* Totalizador */}
-              <div className="bg-bg-light border border-border rounded-lg p-4 flex justify-between items-center">
-                <span className="text-sm font-semibold text-text-muted uppercase tracking-wide">
-                  Total dos Insumos
-                </span>
-                <span className="text-lg font-bold text-text-main">
-                  {formatCurrency(totalInsumos)}
-                </span>
+              <div className="gp-card gp-pad gp-dark" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span className="gp-ml">Total dos insumos</span>
+                <span className="gp-mono" style={{ fontSize: 22, fontWeight: 600 }}>{formatCurrency(totalInsumos)}</span>
               </div>
 
               {/* Grupos */}
               {Object.entries(grupos).map(([tipo, itens]) => {
                 const subtotal = itens.reduce((s, i) => s + (i.total || 0), 0);
                 return (
-                  <div key={tipo}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${TIPO_COLORS[tipo] || "bg-bg-light text-text-muted"}`}
-                      >
+                  <section key={tipo} aria-label={tipo}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <span className="gp-bg" style={TIPO_COLORS[tipo] || { background: "#EDF1F6", color: "#334155" }}>
                         {TIPO_ICONS[tipo] || null}
                         {tipo}
                       </span>
-                      <span className="text-xs text-text-muted font-semibold ml-auto">
+                      <span className="gp-mono" style={{ marginLeft: "auto", fontWeight: 600 }}>
                         {formatCurrency(subtotal)}
                       </span>
                     </div>
 
-                    <div className="border border-border rounded-lg overflow-hidden">
-                      <table className="w-full text-sm">
+                    <div className="gp-card" style={{ overflow: "hidden", border: "1px solid #E6EBF2" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <caption className="gp-sr">Insumos do grupo {tipo}</caption>
                         <thead>
-                          <tr className="bg-bg-light border-b border-border">
-                            <th className="text-left px-4 py-2 text-[10px] font-bold text-text-muted uppercase tracking-wide">Insumo</th>
-                            <th className="text-right px-4 py-2 text-[10px] font-bold text-text-muted uppercase tracking-wide w-20">Qtd</th>
-                            <th className="text-right px-4 py-2 text-[10px] font-bold text-text-muted uppercase tracking-wide w-24">P. Unit.</th>
-                            <th className="text-right px-4 py-2 text-[10px] font-bold text-text-muted uppercase tracking-wide w-24">Total</th>
+                          <tr>
+                            <th scope="col" className="gp-th">Insumo</th>
+                            <th scope="col" className="gp-th" style={{ textAlign: "right", width: 84 }}>Qtd</th>
+                            <th scope="col" className="gp-th" style={{ textAlign: "right", width: 104 }}>P. unit.</th>
+                            <th scope="col" className="gp-th" style={{ textAlign: "right", width: 96 }}>Total</th>
                           </tr>
                         </thead>
                         <tbody>
                           {itens.map((ins) => (
-                            <tr key={ins.id} className="border-b border-border last:border-0 hover:bg-bg-light transition-colors">
-                              <td className="px-4 py-3">
-                                <div className="text-xs font-semibold text-text-main leading-snug line-clamp-2" title={ins.descricao}>
+                            <tr key={ins.id} className="gp-row">
+                              <th scope="row" className="gp-td" style={{ textAlign: "left", fontWeight: 700 }}>
+                                <span style={{ display: "block", fontSize: 13, lineHeight: 1.35 }} title={ins.descricao}>
                                   {ins.descricao}
-                                </div>
-                                <div className="text-[10px] text-text-muted mt-0.5">
+                                </span>
+                                <span className="gp-hint gp-mono" style={{ fontWeight: 500 }}>
                                   {ins.codigo_insumo} · {ins.unidade}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 text-right text-xs text-text-muted font-medium">
-                                <input 
+                                </span>
+                              </th>
+                              <td className="gp-td" style={{ textAlign: "right" }}>
+                                <input
                                   type="number"
+                                  aria-label={`Quantidade de ${ins.descricao}`}
                                   defaultValue={(ins.quantidade_unitaria / item.quantidade).toFixed(6)}
-                                  className="w-full bg-transparent border-none text-right outline-none focus:ring-1 focus:ring-brand-primary rounded px-1"
+                                  className="gp-mono"
+                                  style={{ width: "100%", height: 34, border: "1px solid #CBD5E1", borderRadius: 8, textAlign: "right", fontSize: 13, padding: "0 6px" }}
                                   onBlur={(e) => {
                                     const val = parseFloat(e.target.value);
                                     if (!isNaN(val)) handleUpdateInsumo(ins.id, { quantidade_unitaria: val * item.quantidade });
                                   }}
                                 />
                               </td>
-                              <td className="px-4 py-3 text-right text-xs text-text-muted">
-                                <div className="flex items-center justify-end">
-                                  <span className="text-[10px] mr-1">R$</span>
-                                  <input 
+                              <td className="gp-td" style={{ textAlign: "right" }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+                                  <span className="gp-hint">R$</span>
+                                  <input
                                     type="number"
                                     step="0.01"
+                                    aria-label={`Preço unitário de ${ins.descricao}`}
                                     defaultValue={(ins.preco_unitario_custom ?? ins.preco_unitario_base ?? 0).toFixed(2)}
-                                    className="w-16 bg-transparent border-none text-right outline-none focus:ring-1 focus:ring-brand-primary rounded px-1"
+                                    className="gp-mono"
+                                    style={{ width: 72, height: 34, border: "1px solid #CBD5E1", borderRadius: 8, textAlign: "right", fontSize: 13, padding: "0 6px" }}
                                     onBlur={(e) => {
                                       const val = parseFloat(e.target.value);
                                       if (!isNaN(val)) handleUpdateInsumo(ins.id, { preco_unitario_custom: val });
@@ -192,7 +181,7 @@ export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate }: InsumosD
                                   />
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-right text-xs font-semibold text-text-main">
+                              <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600, fontSize: 13 }}>
                                 {formatCurrency(ins.total)}
                               </td>
                             </tr>
@@ -200,13 +189,13 @@ export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate }: InsumosD
                         </tbody>
                       </table>
                     </div>
-                  </div>
+                  </section>
                 );
               })}
-            </div>
+            </>
           )}
         </div>
-      </div>
+      </aside>
     </>
   );
 }

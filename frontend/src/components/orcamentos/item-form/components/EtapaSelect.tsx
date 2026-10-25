@@ -33,15 +33,15 @@ export function EtapaSelect({
   };
 
   return (
-    <div>
-      <label className="block text-sm font-bold mb-2" htmlFor="etapa">
+    <div className="gp-fld">
+      <label className="gp-lb" htmlFor="etapa">
         Etapa
       </label>
       <select
         id="etapa"
         value={etapaId}
         onChange={(e) => onChangeEtapaId(e.target.value)}
-        className="border border-gray-300 p-2 w-full rounded-md bg-white focus:ring-2 focus:ring-brand-primary outline-none shadow-sm"
+        className="gp-in"
       >
         <option value="">Sem etapa definida</option>
         {renderOptions()}

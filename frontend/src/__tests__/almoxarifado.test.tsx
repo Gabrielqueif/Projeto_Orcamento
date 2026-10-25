@@ -121,15 +121,12 @@ describe("AlmoxarifadoPage", () => {
     });
 
     // Verifica a renderização do cabeçalho
-    expect(screen.getByText("Inventário & Almoxarifado")).toBeInTheDocument();
-    expect(screen.getByText(/Projetos \/ Residencial Horizon \/ Horizon Teste/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Horizon Teste" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Trilha")).toHaveTextContent("Obras / Horizon Teste / Almoxarifado");
 
-    // Verifica a renderização dos botões e KPIs
-    expect(screen.getByText("Dar Baixa / Consumo")).toBeInTheDocument();
-    expect(screen.getByText("Entrada de NF / Material")).toBeInTheDocument();
-    expect(screen.getByText("VALOR TOTAL EM ESTOQUE")).toBeInTheDocument();
-    expect(screen.getByText("MATERIAIS CADASTRADOS")).toBeInTheDocument();
-    expect(screen.getByText("MATERIAIS EM NÍVEL CRÍTICO")).toBeInTheDocument();
+    // Verifica a renderização dos botões
+    expect(screen.getByRole("button", { name: "Registrar saída" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Registrar entrada" })).toBeInTheDocument();
 
     // Verifica a renderização dos insumos na tabela
     expect(screen.getAllByText("Cimento CP-II")[0]).toBeInTheDocument();

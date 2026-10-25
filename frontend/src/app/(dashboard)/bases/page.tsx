@@ -25,29 +25,44 @@ export default function BasesPage() {
   const fontesComDados = FONTES.filter((f) => porFonte[f.fonte]?.length);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800">Bases de Dados</h1>
-      <div className="bg-brand-navy p-6 md:p-8 rounded-xl shadow-lg h-auto min-h-[400px]">
-        {loading && <p className="text-white/80">Carregando bases...</p>}
-        {error && <p className="text-red-300">{error}</p>}
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
+        <div>
+          <nav aria-label="Trilha" className="gp-crumb">
+            Comercial / <span aria-current="page" style={{ color: "#001b3d" }}>Bases de dados</span>
+          </nav>
+          <h1 className="gp-h1">Bases de dados</h1>
+          <p className="gp-sub">Referências oficiais e as suas bases com preços próprios.</p>
+        </div>
+        {role === "admin" && (
+          <Link href="/admin/sinapi" className="gp-btn gp-bs">
+            Importar referência (admin)
+          </Link>
+        )}
+      </div>
+
+      <section aria-labelledby="h-of" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <h2 id="h-of" className="gp-h2">Referências oficiais</h2>
+        {loading && <p className="gp-sub">Carregando bases...</p>}
+        {error && <p style={{ color: "#B91C1C" }}>{error}</p>}
 
         {!loading && !error && fontesComDados.length === 0 && (
-          <div className="bg-white rounded-lg p-6 text-center" data-testid="bases-vazio">
-            <p className="text-slate-700 font-medium">Nenhuma base de dados importada ainda.</p>
-            {role === 'admin' ? (
-              <Link href="/admin/sinapi" className="inline-block mt-3 text-brand-primary font-bold underline">
+          <div className="gp-card gp-pad" style={{ textAlign: "center" }} data-testid="bases-vazio">
+            <p style={{ margin: 0, fontWeight: 700 }}>Nenhuma base de dados importada ainda.</p>
+            {role === "admin" ? (
+              <Link href="/admin/sinapi" className="gp-btn gp-bp" style={{ marginTop: 12 }}>
                 Importar bases
               </Link>
             ) : (
-              <p className="text-sm text-slate-500 mt-1">Peça a um administrador para importar as bases.</p>
+              <p className="gp-hint" style={{ margin: "4px 0 0" }}>Peça a um administrador para importar as bases.</p>
             )}
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))" }}>
           {fontesComDados.map((f) => (
-            <DatabaseCard key={f.id} id={f.id} title={f.title} description={f.description}>
-              <ul className="mt-3 space-y-1 text-xs text-slate-600">
+            <DatabaseCard key={f.id} id={f.id} fonte={f.fonte} title={f.title} description={f.description}>
+              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4, fontSize: 14, color: "#334155" }}>
                 {porFonte[f.fonte].map((b) => (
                   <li key={`${b.mes_referencia}-${b.tipo_composicao}`}>
                     {b.mes_referencia} · {b.tipo_composicao}
@@ -58,9 +73,9 @@ export default function BasesPage() {
             </DatabaseCard>
           ))}
         </div>
-      </div>
+      </section>
 
       <MinhasBases />
-    </div>
+    </>
   );
 }

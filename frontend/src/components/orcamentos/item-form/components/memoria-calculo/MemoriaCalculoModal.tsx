@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Check, Plus } from "@phosphor-icons/react";
 import { Modal } from "@/components/ui/Modal";
 import type { VariableConfig, MemoriaCalculoElemento } from "../../types";
 import { DEFAULT_VARIABLE_CONFIGS } from "../../types";
@@ -300,6 +301,23 @@ export function MemoriaCalculoModal({
     }
   };
 
+  const modo = (
+    key: "PRESET_1" | "PRESET_2" | "PRESET_3",
+    label: string,
+    title: string,
+    ativo: boolean
+  ) => (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={ativo}
+      onClick={() => handleSelectPresetMode(key)}
+      title={title}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <Modal
       isOpen={isOpen}
@@ -307,99 +325,38 @@ export function MemoriaCalculoModal({
       title={`Memória de Cálculo — ${composicaoDescricao || "Item"}`}
       maxWidth="max-w-5xl"
     >
-      <div className="flex flex-col gap-6 text-slate-800">
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, color: "#001b3d" }}>
         {/* Barra Superior de Ações e Modos de Variáveis */}
-        <div className="shrink-0 flex flex-wrap items-center justify-between gap-4 bg-slate-50 p-3 rounded-xl border border-[#c4c6cf]">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#44474e] uppercase tracking-wider">
-              Modo de Variáveis:
-            </span>
-            <div className="flex bg-white rounded-lg p-1 border border-slate-200 shadow-sm gap-1">
-              <button
-                type="button"
-                onClick={() => handleSelectPresetMode("PRESET_1")}
-                className={`text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                  variableConfigs.length === 1 && variableConfigs[0].key === "Dim1"
-                    ? "bg-[#001b3d] text-white shadow"
-                    : "text-slate-600 hover:bg-slate-100"
-                }`}
-                title="1 Variável: Subtotal = Dimensão 1"
-              >
-                QUANT (1 var)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectPresetMode("PRESET_2")}
-                className={`text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                  variableConfigs.length === 2 &&
-                  variableConfigs[0].key === "quantidade" &&
-                  variableConfigs[1].key === "largura"
-                    ? "bg-[#001b3d] text-white shadow"
-                    : "text-slate-600 hover:bg-slate-100"
-                }`}
-                title="2 Variáveis: Subtotal = Qtd × Dimensão 1"
-              >
-                ÁREA (2 vars)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectPresetMode("PRESET_3")}
-                className={`text-xs px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                  variableConfigs.length === 3 &&
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span className="gp-ml">Modo de variáveis:</span>
+            <div role="radiogroup" aria-label="Modo de variáveis" className="gp-seg">
+              {modo("PRESET_1", "QUANT (1 var)", "1 Variável: Subtotal = Dimensão 1", variableConfigs.length === 1 && variableConfigs[0].key === "Dim1")}
+              {modo(
+                "PRESET_2",
+                "ÁREA (2 vars)",
+                "2 Variáveis: Subtotal = Qtd × Dimensão 1",
+                variableConfigs.length === 2 && variableConfigs[0].key === "quantidade" && variableConfigs[1].key === "largura"
+              )}
+              {modo(
+                "PRESET_3",
+                "VOL (3 vars)",
+                "3 Variáveis: Subtotal = Qtd × Dim1 × Dim2",
+                variableConfigs.length === 3 &&
                   variableConfigs[0].key === "quantidade" &&
                   variableConfigs[1].key === "largura" &&
                   variableConfigs[2].key === "altura"
-                    ? "bg-[#001b3d] text-white shadow"
-                    : "text-slate-600 hover:bg-slate-100"
-                }`}
-                title="3 Variáveis: Subtotal = Qtd × Dim1 × Dim2"
-              >
-                VOL (3 vars)
-              </button>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleAddCustomVariable}
-              className="text-xs font-bold text-brand-primary hover:text-brand-navy border border-brand-primary/30 hover:border-brand-primary bg-white px-3 py-1.5 rounded-lg transition-all shadow-sm flex items-center gap-1 cursor-pointer"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button type="button" onClick={handleAddCustomVariable} className="gp-btn gp-bs gp-sm">
+              <Plus size={16} weight="bold" aria-hidden="true" />
               Variável de Coluna
             </button>
-            <button
-              type="button"
-              onClick={addElemento}
-              className="border border-[#74777f] hover:bg-slate-100 text-[#44474e] flex gap-2 items-center px-4 py-1.5 rounded-lg font-bold transition-all shadow-sm active:scale-95 text-xs cursor-pointer"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
+            <button type="button" onClick={addElemento} className="gp-btn gp-bs gp-sm">
+              <Plus size={16} weight="bold" aria-hidden="true" />
               Adicionar Elemento
             </button>
           </div>
@@ -430,54 +387,35 @@ export function MemoriaCalculoModal({
           defaultFormulaString={generateDefaultFormula(variableConfigs)}
         />
 
-        {/* Barra de Resultado Total (Soma dos Subtotais) */}
-        <div className="shrink-0 bg-[#001b3d] rounded-lg p-5 flex justify-between items-center shadow-md">
-          <span className="text-[#6f84ac] text-xs font-bold tracking-widest uppercase font-sans">
-            RESULTADO TOTAL DO ITEM (SOMA DOS SUBTOTAIS)
-          </span>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black text-[#b9f61d] tracking-tight">
-              {previewResult !== null
-                ? previewResult.toLocaleString("pt-BR", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 4,
-                  })
-                : "---"}
-            </span>
-            <span className="text-xs font-bold text-[#b9f61d] uppercase ml-1">
-              {unidade}
-            </span>
+        {/* Resultado Total (Soma dos Subtotais) */}
+        <div className="gp-card gp-pad gp-dark" style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <div>
+            <h3 className="gp-h2" style={{ color: "#fff" }}>Quantidade calculada</h3>
+            <p style={{ margin: "4px 0 0", fontSize: 13, color: "#cbd5e1" }}>Soma dos subtotais dos elementos</p>
           </div>
+          <p role="status" className="gp-mono" style={{ margin: 0, fontSize: 34, fontWeight: 600 }}>
+            {previewResult !== null
+              ? previewResult.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 4,
+                })
+              : "---"}{" "}
+            <span style={{ fontFamily: "Manrope, sans-serif", fontSize: 16, color: "#cbd5e1" }}>{unidade}</span>
+          </p>
         </div>
 
         {/* Ações Finais do Modal */}
-        <div className="shrink-0 flex gap-3 justify-end pt-2 border-t border-[#c4c6cf]">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2.5 text-[#44474e] hover:bg-slate-100 rounded-lg font-bold transition-all text-sm cursor-pointer"
-          >
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "flex-end" }}>
+          <button type="button" onClick={onClose} className="gp-btn gp-bs">
             Cancelar
           </button>
           <button
             type="button"
             onClick={handleApply}
             disabled={previewResult === null || !formula.trim() || !!formulaError}
-            className="bg-[#b9f61d] text-[#141f00] flex gap-2 items-center px-6 py-2.5 rounded-xl font-bold hover:bg-[#a6de1a] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-sm active:scale-95 cursor-pointer"
+            className="gp-btn gp-bp disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
+            <Check size={18} weight="bold" aria-hidden="true" />
             Aplicar no Orçamento
           </button>
         </div>
