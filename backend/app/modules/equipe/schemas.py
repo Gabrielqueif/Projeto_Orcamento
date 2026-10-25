@@ -1,8 +1,8 @@
 from datetime import date, datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 # --- Schemas de Equipe ---
 
@@ -32,18 +32,54 @@ class EquipeResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# --- Schemas de Cargo ---
+
+CampoBase = Literal["cpf", "data_inicio", "descricao", "remuneracao"]
+
+
+class CampoExtra(BaseModel):
+    chave: str = Field(pattern=r"^[a-z][a-z0-9_]{0,39}$")
+    rotulo: str = Field(min_length=1, max_length=60)
+    tipo: Literal["texto", "numero", "data"] = "texto"
+    obrigatorio: bool = False
+
+
+class CargoCreate(BaseModel):
+    nome: str = Field(min_length=1, max_length=100)
+    campos_ocultos: List[CampoBase] = []
+    campos_extras: List[CampoExtra] = []
+
+
+class CargoUpdate(BaseModel):
+    nome: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    campos_ocultos: Optional[List[CampoBase]] = None
+    campos_extras: Optional[List[CampoExtra]] = None
+
+
+class CargoResponse(BaseModel):
+    id: UUID
+    user_id: Optional[UUID] = None  # None = cargo pré-montado
+    nome: str
+    campos_ocultos: List[str]
+    campos_extras: List[CampoExtra]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # --- Schemas de Membro de Equipe ---
 
 
 class MembroEquipeCreate(BaseModel):
     nome: str
-    cpf: str
-    cargo: str
-    data_inicio: date
+    cpf: Optional[str] = None
+    cargo: Optional[str] = None  # ignorado quando cargo_id é informado
+    cargo_id: Optional[UUID] = None
+    dados_extras: Dict[str, Any] = {}
+    data_inicio: Optional[date] = None
     descricao: Optional[str] = None
     orcamento_id: Optional[UUID] = None
     equipe_id: Optional[UUID] = None
-    remuneracao: float
+    remuneracao: Optional[float] = None
     status: Optional[str] = "ATIVO"
 
     model_config = ConfigDict(from_attributes=True)
@@ -53,6 +89,8 @@ class MembroEquipeUpdate(BaseModel):
     nome: Optional[str] = None
     cpf: Optional[str] = None
     cargo: Optional[str] = None
+    cargo_id: Optional[UUID] = None
+    dados_extras: Optional[Dict[str, Any]] = None
     data_inicio: Optional[date] = None
     descricao: Optional[str] = None
     orcamento_id: Optional[UUID] = None
@@ -67,13 +105,15 @@ class MembroEquipeResponse(BaseModel):
     id: UUID
     user_id: Optional[UUID] = None
     nome: str
-    cpf: str
+    cpf: Optional[str] = None
     cargo: str
-    data_inicio: date
+    cargo_id: Optional[UUID] = None
+    dados_extras: Dict[str, Any] = {}
+    data_inicio: Optional[date] = None
     descricao: Optional[str] = None
     orcamento_id: Optional[UUID] = None
     equipe_id: Optional[UUID] = None
-    remuneracao: float
+    remuneracao: Optional[float] = None
     status: str
     code: str
     created_at: Optional[datetime] = None
