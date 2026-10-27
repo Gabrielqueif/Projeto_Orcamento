@@ -56,7 +56,8 @@
   }
 }/* Design system do artefato GPObras (prefixo gp-). Fonte: artefato JKGY8ti4isXDRDXpECWDFS */
 :focus-visible{outline:3px solid #00a3b1;outline-offset:2px}
-.gp-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* left:0 evita que, dentro de tabelas largas com rolagem, o texto oculto estique a página */
+.gp-sr{position:absolute;left:0;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .gp-sd{flex:1 1 248px;box-sizing:border-box;background-color:#001b3d;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:22px 22px;color:#fff;padding:20px 14px;display:flex;flex-direction:column;gap:22px}
 .gp-sd-brand{display:flex;align-items:center;gap:10px;padding:0 6px;color:#fff;text-decoration:none;font-size:20px;font-weight:800;letter-spacing:-.4px}
 .gp-sd-brand:hover{color:#fff}
@@ -147,3 +148,92 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
 .gp-toast{animation:gp-up .28s cubic-bezier(.2,.8,.2,1)}
 @keyframes gp-up{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion: reduce){.gp-sk,.gp-toast{animation:none}}
+
+/* Container dos toasts */
+.gp-toasts{position:fixed;right:24px;bottom:24px;z-index:60;width:420px;max-width:calc(100% - 48px);display:flex;flex-direction:column;gap:8px;pointer-events:none}
+
+/* Cabeçalho de página (PageHeader). No desktop: trilha, título e ações à direita */
+.gp-ph{display:flex;flex-direction:column;gap:16px}
+.gp-ph-back,.gp-ph-eb{display:none}
+/* Sem trilha, o rótulo aparece no desktop no lugar dela */
+.gp-ph-eb:first-child{display:block;font-size:13px;font-weight:600;color:#475569}
+.gp-ph-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.gp-ph-txt{min-width:0}
+.gp-ph-title{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:4px}
+.gp-ph-title .gp-h1{margin:0}
+.gp-ph-act{display:flex;flex-wrap:wrap;gap:10px}
+
+/* Elementos que só existem no mobile */
+.gp-bn,.gp-fab,.gp-only-m{display:none}
+
+/* ===== Mobile (artefato "GPObras — App Mobile"), abaixo de 1024px ===== */
+@media (max-width: 1023px){
+  .gp-sd,.gp-tb,.gp-only-d{display:none}
+  .gp-mn{padding:calc(16px + env(safe-area-inset-top)) 16px calc(124px + env(safe-area-inset-bottom));gap:18px}
+  .gp-h1{font-size:26px;letter-spacing:-.5px}
+  .gp-h2{font-size:18px}
+  .gp-pad{padding:18px}
+  .gp-btn{min-height:48px}
+  .gp-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .gp-met{padding:16px}
+  .gp-mv{font-size:22px}
+  .gp-split>.gp-main,.gp-split>.gp-side{flex-basis:100%}
+  .gp-only-m{display:revert}
+
+  /* Abas e chips rolam para o lado em vez de quebrar linha */
+  .gp-tabs{flex-wrap:nowrap;overflow-x:auto;align-self:stretch;max-width:100%;scrollbar-width:none}
+  .gp-tabs::-webkit-scrollbar{display:none}
+  .gp-tab{flex:0 0 auto;white-space:nowrap}
+  .gp-chips{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;margin:0 -16px;padding:2px 16px;scrollbar-width:none}
+  .gp-chips::-webkit-scrollbar{display:none}
+  .gp-chips>.gp-chip{flex:0 0 auto;white-space:nowrap;min-height:44px}
+
+  /* Cabeçalho escuro */
+  .gp-ph{margin:calc(-16px - env(safe-area-inset-top)) -16px 0;padding:calc(14px + env(safe-area-inset-top)) 16px 22px;gap:14px;border-radius:0 0 28px 28px;background-color:#001b3d;background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:22px 22px;color:#fff}
+  .gp-ph[data-lift]{padding-bottom:62px}
+  .gp-ph[data-lift]+*{margin-top:-58px;position:relative}
+  .gp-ph-back{display:inline-flex;align-self:flex-start;align-items:center;justify-content:center;width:44px;height:44px;box-sizing:border-box;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff}
+  .gp-ph-back:hover{color:#fff}
+  .gp-ph .gp-crumb{display:none}
+  .gp-ph .gp-ph-eb{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#c8ec5a}
+  .gp-ph-row{align-items:flex-start;gap:14px}
+  .gp-ph-title{margin-top:2px}
+  .gp-ph .gp-h1{color:#fff;line-height:1.2}
+  .gp-ph .gp-sub{color:#cbd5e1;font-size:14px}
+  .gp-ph .gp-hint{color:#94A9C4}
+  .gp-ph .gp-req{color:#FCA5A5}
+  .gp-ph-act{width:100%;gap:8px}
+  .gp-ph .gp-bd{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16)}
+  .gp-ph .gp-bs{border-color:transparent}
+  .gp-ph .gp-srch{height:50px;border:0;border-radius:16px}
+
+  /* Barra inferior e botão flutuante */
+  .gp-bn{display:grid;position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:45;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:6px;border-radius:24px;background:#001b3d;box-shadow:0 18px 36px -14px rgba(0,16,42,.6)}
+  .gp-bn a{min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:18px;color:#cbd5e1;text-decoration:none;font-size:12px;font-weight:600;letter-spacing:-.2px}
+  .gp-bn a:hover{color:#fff}
+  .gp-bn a[aria-current=page]{background:#9fd300;color:#001b3d;font-weight:800}
+  .gp-fab{display:inline-flex;position:fixed;right:18px;bottom:calc(104px + env(safe-area-inset-bottom));z-index:44;min-width:56px;height:56px;padding:0 16px;box-sizing:border-box;border-radius:18px;background:#9fd300;color:#001b3d;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:800;text-decoration:none;box-shadow:0 12px 24px -8px rgba(77,126,5,.55)}
+  .gp-fab:hover{color:#001b3d;background:#b2e61a}
+
+  /* Diálogos viram folha inferior; gavetas ocupam a tela */
+  .gp-ov{align-items:flex-end;padding:0}
+  .gp-dlg{max-height:92dvh;border-radius:24px 24px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
+  .gp-dh{padding:16px}
+  .gp-db{padding:16px}
+  .gp-df{flex-wrap:wrap;padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+  .gp-df>.gp-btn{flex:1 1 140px}
+
+  .gp-toasts{left:16px;right:16px;bottom:calc(100px + env(safe-area-inset-bottom));width:auto;max-width:none}
+
+  /* Tabela empilhada: cada linha vira um cartão, cada célula mostra o rótulo de data-label */
+  table.gp-stack{min-width:0 !important;width:100%}
+  .gp-stack thead{display:none}
+  .gp-stack tbody{display:flex;flex-direction:column;gap:12px}
+  .gp-stack tr{display:block;padding:6px 16px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 10px 24px -18px rgba(0,27,61,.35)}
+  .gp-stack td{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #E6EBF2;text-align:right !important;width:auto !important}
+  .gp-stack td:first-child{display:block;border-top:0;text-align:left !important}
+  .gp-stack td[data-label]::before{content:attr(data-label);flex:0 0 auto;font-size:13px;font-weight:700;color:#475569;text-align:left}
+  .gp-stack td:empty{display:none}
+  /* Cartão que só serve de moldura para a tabela some no mobile */
+  .gp-m-flat{background:transparent !important;box-shadow:none !important;padding:0 !important;border-radius:0 !important;overflow:visible !important}
+}

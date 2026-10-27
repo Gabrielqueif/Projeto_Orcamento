@@ -14,6 +14,7 @@ import {
   type CampoExtra,
 } from "@/lib/api/cargos";
 import { useToast } from "@/components/common/toast";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 // A chave do campo vira o nome salvo nos dados do membro; gerada do rótulo.
 const chaveDe = (rotulo: string) =>
@@ -102,19 +103,19 @@ export default function CargosPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            Operação / <Link href="/equipe">Equipe</Link> /{" "}
-            <span aria-current="page" style={{ color: "#001b3d" }}>Cargos</span>
-          </nav>
-          <h1 className="gp-h1">Cargos</h1>
-          <p className="gp-sub">Funções da equipe e os campos pedidos no cadastro de cada uma.</p>
-        </div>
-        <button type="button" onClick={() => setRascunho(vazio)} className="gp-btn gp-bp">
-          <Plus size={16} weight="bold" aria-hidden="true" /> Novo cargo
-        </button>
-      </div>
+      <PageHeader
+        back="/equipe"
+        backLabel="Voltar para equipe"
+        crumb={<>Operação / <Link href="/equipe">Equipe</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Cargos</span></>}
+        eyebrow="Equipe"
+        title="Cargos"
+        subtitle="Funções da equipe e os campos pedidos no cadastro de cada uma."
+        actions={
+          <button type="button" onClick={() => setRascunho(vazio)} className="gp-btn gp-bp">
+            <Plus size={16} weight="bold" aria-hidden="true" /> Novo cargo
+          </button>
+        }
+      />
 
       {rascunho && (
         <form onSubmit={salvar} className="gp-card gp-pad" style={{ maxWidth: 720, display: "flex", flexDirection: "column", gap: 16 }}>

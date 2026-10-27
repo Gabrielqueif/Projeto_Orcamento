@@ -6,6 +6,8 @@ import { Plus, MagnifyingGlass, ArrowRight, Trash } from "@phosphor-icons/react"
 import { getOrcamentos, getEtapas, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
 import { excluirObra, getObras, type Obra } from "@/lib/api/obras";
 import { useToast } from "@/components/common/toast";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Fab } from "@/components/layout/Fab";
 
 interface ObraItemData {
   orcamento: Orcamento;
@@ -179,19 +181,19 @@ export default function ObrasPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            Operação / <span aria-current="page" style={{ color: "#001b3d" }}>Obras</span>
-          </nav>
-          <h1 className="gp-h1">Obras</h1>
-          <p className="gp-sub">Execução, prazos e custos de cada canteiro.</p>
-        </div>
-        <Link href="/obras/novo" className="gp-btn gp-bp">
-          <Plus size={18} weight="bold" aria-hidden="true" />
-          Nova obra
-        </Link>
-      </div>
+      <PageHeader
+        crumb={<>Operação / <span aria-current="page" style={{ color: "#001b3d" }}>Obras</span></>}
+        eyebrow="Operação"
+        title="Obras"
+        subtitle="Execução, prazos e custos de cada canteiro."
+        actions={
+          <Link href="/obras/novo" className="gp-btn gp-bp gp-only-d">
+            <Plus size={18} weight="bold" aria-hidden="true" />
+            Nova obra
+          </Link>
+        }
+      />
+      <Fab href="/obras/novo" label="Nova obra" />
 
       <section aria-label="Indicadores" className="gp-grid">
         <div className="gp-card gp-met gp-dark">

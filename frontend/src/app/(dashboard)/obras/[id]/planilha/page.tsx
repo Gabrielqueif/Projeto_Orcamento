@@ -8,6 +8,7 @@ import { getOrcamento, type Orcamento } from "@/lib/api/orcamentos";
 
 import { ObraTabs } from "@/components/obras/ObraTabs";
 import { PlanilhaView } from "@/components/orcamentos/PlanilhaView";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function PlanilhaOrcamentariaPage() {
   const params = useParams();
@@ -48,19 +49,24 @@ export default function PlanilhaOrcamentariaPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
+      <PageHeader
+        back={`/obras/${id}`}
+        backLabel="Voltar para a obra"
+        crumb={
+          <>
             <Link href="/obras">Obras</Link> / <Link href={`/obras/${id}`}>{orcamento.nome}</Link> /{" "}
             <span aria-current="page" style={{ color: "#001b3d" }}>Planilha</span>
-          </nav>
-          <h1 className="gp-h1">{orcamento.nome}</h1>
-          <p className="gp-sub">Detalhamento financeiro, composições e insumos vinculados ao projeto.</p>
-        </div>
-        <button type="button" className="gp-btn gp-bs">
-          <DownloadSimple size={18} weight="bold" aria-hidden="true" /> Exportar Excel
-        </button>
-      </div>
+          </>
+        }
+        eyebrow="Planilha"
+        title={orcamento.nome}
+        subtitle="Detalhamento financeiro, composições e insumos vinculados ao projeto."
+        actions={
+          <button type="button" className="gp-btn gp-bs">
+            <DownloadSimple size={18} weight="bold" aria-hidden="true" /> Exportar Excel
+          </button>
+        }
+      />
 
       <ObraTabs id={id} atual="planilha" />
 

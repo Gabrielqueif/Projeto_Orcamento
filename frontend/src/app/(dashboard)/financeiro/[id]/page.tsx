@@ -18,6 +18,7 @@ import { getObra } from "@/lib/api/obras";
 import { getOrcamento } from "@/lib/api/orcamentos";
 import { ObraTabs } from "@/components/obras/ObraTabs";
 import { useToast } from "@/components/common/toast";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 // O nome da obra é o do orçamento de origem; falha aqui não deve derrubar a tela.
 async function buscarNomeObra(obraId: string): Promise<string | null> {
@@ -185,19 +186,19 @@ export default function GestaoCustosObraPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            <Link href="/financeiro">Financeiro</Link> /{" "}
-            <span aria-current="page" style={{ color: "#001b3d" }}>{nomeObra ?? "Gestão de custos"}</span>
-          </nav>
-          <h1 className="gp-h1">{nomeObra ?? "Detalhamento de Custos da Obra"}</h1>
-          <p className="gp-sub">Despesas lançadas e consumo da verba por categoria.</p>
-        </div>
-        <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp">
-          <Plus size={16} weight="bold" aria-hidden="true" /> Nova despesa
-        </button>
-      </div>
+      <PageHeader
+        back="/financeiro"
+        backLabel="Voltar para o financeiro"
+        crumb={<><Link href="/financeiro">Financeiro</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{nomeObra ?? "Gestão de custos"}</span></>}
+        eyebrow="Financeiro da obra"
+        title={nomeObra ?? "Detalhamento de Custos da Obra"}
+        subtitle="Despesas lançadas e consumo da verba por categoria."
+        actions={
+          <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp">
+            <Plus size={16} weight="bold" aria-hidden="true" /> Nova despesa
+          </button>
+        }
+      />
 
       <ObraTabs id={obraId} atual="financeiro" />
 

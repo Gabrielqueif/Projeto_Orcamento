@@ -9,6 +9,7 @@ import { getOrcamentos, type Orcamento } from "@/lib/api/orcamentos";
 import { useToast } from "@/components/common/toast";
 import { getCargos, type Cargo, type CampoBase } from "@/lib/api/cargos";
 import { CamposExtras } from "@/components/equipe/CamposExtras";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 interface FileAttachment {
   name: string;
@@ -199,16 +200,14 @@ export default function EditarMembroPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            Operação / <Link href="/equipe">Equipe</Link> /{" "}
-            <span aria-current="page" style={{ color: "#001b3d" }}>Editar colaborador</span>
-          </nav>
-          <h1 className="gp-h1">Editar colaborador</h1>
-          <p className="gp-sub">Atualize os dados, a alocação e a situação do profissional.</p>
-        </div>
-      </div>
+      <PageHeader
+        back="/equipe"
+        backLabel="Voltar para equipe"
+        crumb={<>Operação / <Link href="/equipe">Equipe</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Editar colaborador</span></>}
+        eyebrow="Equipe"
+        title="Editar colaborador"
+        subtitle="Atualize os dados, a alocação e a situação do profissional."
+      />
 
       <form onSubmit={handleSave} className="gp-card" style={{ maxWidth: 720, width: "100%", overflow: "hidden" }}>
         <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>

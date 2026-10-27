@@ -26,6 +26,7 @@ import { BdiConfigModal } from "@/components/orcamentos/BdiConfigModal";
 import { Modal } from "@/components/ui/Modal";
 import { TransitionDrawer } from "@/components/orcamentos/TransitionDrawer";
 import { useToast } from "@/components/common/toast";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 type TabType = "planilha" | "abc" | "cronograma" | "anexos";
 
@@ -214,14 +215,18 @@ export default function OrcamentoDetalhePage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
+      <PageHeader
+        back="/orcamentos"
+        backLabel="Voltar para orçamentos"
+        crumb={
+          <>
             <Link href="/orcamentos">Orçamentos</Link> /{" "}
             <span aria-current="page" style={{ color: "#001b3d" }}>{`ORC-${orcamento.id.substring(0, 8).toUpperCase()}`}</span>
-          </nav>
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginTop: 4 }}>
-            <h1 className="gp-h1" style={{ margin: 0 }}>{orcamento.nome}</h1>
+          </>
+        }
+        eyebrow={`ORC-${orcamento.id.substring(0, 8).toUpperCase()}`}
+        title={orcamento.nome}
+        badge={
             <div className="relative">
               <button
                 type="button"
@@ -258,14 +263,15 @@ export default function OrcamentoDetalhePage() {
                 </>
               )}
             </div>
-          </div>
-          <p className="gp-ms" style={{ margin: "6px 0 0" }}>
+        }
+        subtitle={
+          <>
             {orcamento.cliente || "Cliente não informado"} · {orcamento.fonte}
             {orcamento.estado ? ` ${orcamento.estado.toUpperCase()}` : ""} {orcamento.base_referencia} · {orcamento.tipo_composicao}
-          </p>
-        </div>
-
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          </>
+        }
+        actions={
+          <>
           <button type="button" onClick={handleExportPDF} className="gp-btn gp-bs">
             <DownloadSimple size={16} weight="bold" aria-hidden="true" />
             Exportar PDF
@@ -300,8 +306,9 @@ export default function OrcamentoDetalhePage() {
               Gerar Contrato
             </button>
           )}
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <section
         aria-label="Totais"

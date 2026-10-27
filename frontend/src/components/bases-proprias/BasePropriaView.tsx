@@ -5,6 +5,7 @@ import Link from "next/link";
 import { obterBase, type BasePropria } from "@/lib/api/basesProprias";
 import { InsumosTab } from "./InsumosTab";
 import { ComposicoesTab } from "./ComposicoesTab";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 type Aba = "insumos" | "composicoes";
 
@@ -46,17 +47,23 @@ export function BasePropriaView({ baseId }: { baseId: string }) {
 
   return (
     <>
-      <div>
-        <nav aria-label="Trilha" className="gp-crumb">
-          <Link href="/bases">Bases de dados</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{nome}</span>
-        </nav>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
-          <h1 className="gp-h1" style={{ margin: 0 }}>{nome}</h1>
-          {base && <span className="gp-bg gp-te">Própria</span>}
-        </div>
-        {base?.descricao && <p className="gp-sub">{base.descricao}</p>}
-        {meta.length > 0 && <p className="gp-sub" style={{ marginTop: base?.descricao ? 2 : 4 }}>{meta.join(" · ")}</p>}
-      </div>
+      <PageHeader
+        back="/bases"
+        backLabel="Voltar para bases de dados"
+        crumb={<><Link href="/bases">Bases de dados</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{nome}</span></>}
+        eyebrow="Base própria"
+        title={nome}
+        badge={base && <span className="gp-bg gp-te">Própria</span>}
+        subtitle={
+          (base?.descricao || meta.length > 0) && (
+            <>
+              {base?.descricao}
+              {base?.descricao && meta.length > 0 && <br />}
+              {meta.join(" · ")}
+            </>
+          )
+        }
+      />
 
       {erro && <p style={{ margin: 0, color: "#B91C1C" }}>{erro}</p>}
 

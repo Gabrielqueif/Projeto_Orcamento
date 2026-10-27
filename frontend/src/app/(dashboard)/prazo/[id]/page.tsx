@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Calendar, Info, Coins } from "@phosphor-icons/react";
 import { getOrcamento, getEtapas, updateEtapa, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
 import { useToast } from "@/components/common/toast";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function PrazosPage() {
   const { showToast } = useToast();
@@ -87,17 +88,20 @@ export default function PrazosPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
+      <PageHeader
+        back={`/obras/${id}`}
+        backLabel="Voltar para a obra"
+        crumb={
+          <>
             <Link href="/orcamentos">Orçamentos</Link> / <Link href={`/orcamentos/${id}`}>{orcamento.nome}</Link> /{" "}
             <span aria-current="page" style={{ color: "#001b3d" }}>Prazos</span>
-          </nav>
-          <h1 className="gp-h1">Prazos e etapas</h1>
-          <p className="gp-sub">Defina as datas de início e fim das etapas de <strong>{orcamento.nome}</strong>.</p>
-        </div>
-        <Link href={`/orcamentos/${id}`} className="gp-btn gp-bs"><Coins size={16} weight="bold" aria-hidden="true" />Ver planilha do orçamento</Link>
-      </div>
+          </>
+        }
+        eyebrow={orcamento.nome}
+        title="Prazos e etapas"
+        subtitle={<>Defina as datas de início e fim das etapas de <strong>{orcamento.nome}</strong>.</>}
+        actions={<Link href={`/orcamentos/${id}`} className="gp-btn gp-bs"><Coins size={16} weight="bold" aria-hidden="true" />Ver planilha do orçamento</Link>}
+      />
 
       <div role="note" style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 18px", borderRadius: 16, background: "#e0f5f7", color: "#00626b", fontSize: 14 }}>
         <Info size={20} weight="bold" aria-hidden="true" style={{ flex: "0 0 20px" }} />

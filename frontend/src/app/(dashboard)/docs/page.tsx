@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FolderPlus, Folder, ArrowRight, FilePdf, FileText, DownloadSimple } from "@phosphor-icons/react";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 type Situacao = "conformidade" | "vencidos" | "pendencias";
 
@@ -39,16 +40,18 @@ const recentDocs = [
 export default function DocsPage() {
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">Gestão / <span aria-current="page" style={{ color: "#001b3d" }}>Documentos</span></nav>
-          <h1 className="gp-h1">Repositório de projetos</h1>
-          <p className="gp-sub">Conformidade técnica e legal das obras ativas.</p>
-        </div>
-        <button type="button" className="gp-btn gp-bp">
-          <FolderPlus size={18} weight="bold" aria-hidden="true" /> Novo repositório
-        </button>
-      </div>
+      <PageHeader
+        crumb={<>Gestão / <span aria-current="page" style={{ color: "#001b3d" }}>Documentos</span></>}
+        eyebrow="Gestão"
+        back="/mais"
+        title="Repositório de projetos"
+        subtitle="Conformidade técnica e legal das obras ativas."
+        actions={
+          <button type="button" className="gp-btn gp-bp">
+            <FolderPlus size={18} weight="bold" aria-hidden="true" /> Novo repositório
+          </button>
+        }
+      />
 
       <section aria-label="Indicadores" className="gp-grid">
         <div className="gp-card gp-met gp-dark"><span className="gp-ml">Total de arquivos</span><span className="gp-mv">2.842</span><span className="gp-ms">em 4 repositórios</span></div>

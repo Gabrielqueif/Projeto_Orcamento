@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getPortfolioConsolidado, PortfolioConsolidado } from "@/lib/api/financeiro";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 const formatCurrency = (val: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(val);
@@ -62,15 +63,13 @@ export default function FinanceiroVisaoPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            Gestão / <span aria-current="page" style={{ color: "#001b3d" }}>Financeiro</span>
-          </nav>
-          <h1 className="gp-h1">Financeiro</h1>
-          <p className="gp-sub">Verba, gasto e saldo de todas as obras ativas.</p>
-        </div>
-      </div>
+      <PageHeader
+        crumb={<>Gestão / <span aria-current="page" style={{ color: "#001b3d" }}>Financeiro</span></>}
+        eyebrow="Gestão"
+        back="/mais"
+        title="Financeiro"
+        subtitle="Verba, gasto e saldo de todas as obras ativas."
+      />
 
       <section aria-label="Indicadores" className="gp-grid">
         <div className="gp-card gp-met gp-dark">

@@ -8,6 +8,8 @@ import WeeklyProgressChart, { CORES_SERIES } from '../../components/dashboard/We
 import BudgetGauge from '../../components/dashboard/BudgetGauge';
 import { RiskItem } from '../../components/dashboard/RiskItem';
 import { getDashboard, type Dashboard, type TipoRisco } from '../../lib/api/dashboard';
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Fab } from "@/components/layout/Fab";
 
 const ICONES_RISCO: Record<TipoRisco, React.ReactNode> = {
   ATRASO: <Clock weight="bold" />,
@@ -62,17 +64,18 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
-        <div>
-          <p className="gp-crumb" style={{ margin: 0 }}>{hoje}</p>
-          <h1 className="gp-h1">Visão geral</h1>
-          <p className="gp-sub">Métricas de desempenho das suas obras em andamento.</p>
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          <Link href="/orcamentos/novo" className="gp-btn gp-bs">Novo orçamento</Link>
-          <Link href="/obras/novo" className="gp-btn gp-bd"><Plus size={18} weight="bold" aria-hidden="true" />Nova obra</Link>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow={hoje}
+        title="Visão geral"
+        subtitle="Métricas de desempenho das suas obras em andamento."
+        actions={
+          <>
+            <Link href="/orcamentos/novo" className="gp-btn gp-bs gp-only-d">Novo orçamento</Link>
+            <Link href="/obras/novo" className="gp-btn gp-bd gp-only-d"><Plus size={18} weight="bold" aria-hidden="true" />Nova obra</Link>
+          </>
+        }
+      />
+      <Fab href="/obras/novo" ariaLabel="Nova obra" />
 
       <section aria-label="Indicadores" className="gp-grid">
         <MetricCard dark title="Obras Ativas" value={painel.obras_ativas.toString().padStart(2, '0')} />

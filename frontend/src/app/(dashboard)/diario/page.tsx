@@ -10,6 +10,7 @@ import {
   type ResumoDiario,
   type SituacaoDiario,
 } from "@/lib/api/diario";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 const SITUACOES: Record<SituacaoDiario, { rotulo: string; classe: string }> = {
   ENVIADO: { rotulo: "Enviado", classe: "gp-ok" },
@@ -79,19 +80,16 @@ export default function DiarioVisaoPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            Operação / <span aria-current="page" style={{ color: "#001b3d" }}>Diário de obra</span>
-          </nav>
-          <h1 className="gp-h1">Diário de obra</h1>
-          <p className="gp-sub">
-            {resumo.total_obras === 0
-              ? "Nenhuma obra ativa no momento."
-              : `${resumo.enviados_hoje} de ${resumo.total_obras} obras ativas já enviaram o diário de hoje.`}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        crumb={<>Operação / <span aria-current="page" style={{ color: "#001b3d" }}>Diário de obra</span></>}
+        eyebrow="Operação"
+        title="Diário de obra"
+        subtitle={
+          resumo.total_obras === 0
+            ? "Nenhuma obra ativa no momento."
+            : `${resumo.enviados_hoje} de ${resumo.total_obras} obras ativas já enviaram o diário de hoje.`
+        }
+      />
 
       <section aria-label="Indicadores" className="gp-grid">
         <div className="gp-card gp-met gp-dark">

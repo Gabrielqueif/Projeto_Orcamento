@@ -10,6 +10,8 @@ import { getOrcamentos, getOrcamentoStats, deleteOrcamento, type Orcamento, type
 
 import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus, type OrcamentoStatus } from "@/lib/orcamentoStatus";
 import { useToast } from "@/components/common/toast";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Fab } from "@/components/layout/Fab";
 
 type FilterStatus = "todos" | OrcamentoStatus;
 
@@ -120,25 +122,25 @@ export default function OrcamentosPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            Comercial / <span aria-current="page" style={{ color: "#001b3d" }}>Orçamentos</span>
-          </nav>
-          <h1 className="gp-h1">Orçamentos</h1>
-          <p className="gp-sub">Propostas com SINAPI, SEINFRA e as suas bases próprias.</p>
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          <button type="button" className="gp-btn gp-bs">
-            <DownloadSimple size={18} weight="bold" aria-hidden="true" />
-            Exportar lista
-          </button>
-          <button type="button" onClick={() => router.push("/orcamentos/novo")} className="gp-btn gp-bp">
-            <Plus size={18} weight="bold" aria-hidden="true" />
-            Novo orçamento
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        crumb={<>Comercial / <span aria-current="page" style={{ color: "#001b3d" }}>Orçamentos</span></>}
+        eyebrow="Comercial"
+        title="Orçamentos"
+        subtitle="Propostas com SINAPI, SEINFRA e as suas bases próprias."
+        actions={
+          <>
+            <button type="button" className="gp-btn gp-bs gp-only-d">
+              <DownloadSimple size={18} weight="bold" aria-hidden="true" />
+              Exportar lista
+            </button>
+            <button type="button" onClick={() => router.push("/orcamentos/novo")} className="gp-btn gp-bp gp-only-d">
+              <Plus size={18} weight="bold" aria-hidden="true" />
+              Novo orçamento
+            </button>
+          </>
+        }
+      />
+      <Fab href="/orcamentos/novo" label="Novo orçamento" />
 
       <section aria-label="Indicadores" className="gp-grid">
         <div className="gp-card gp-met gp-dark">

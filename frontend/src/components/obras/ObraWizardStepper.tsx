@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export interface StepItem {
   num: number;
@@ -24,13 +25,13 @@ export function ObraWizardStepper({ currentStep }: ObraWizardStepperProps) {
   const atual = STEPS.find((s) => s.num === currentStep);
   return (
     <>
-      <div>
-        <nav aria-label="Trilha" className="gp-crumb">
-          <Link href="/obras">Obras</Link> /{" "}
-          <span aria-current="page" style={{ color: "#001b3d" }}>Nova obra</span>
-        </nav>
-        <h1 className="gp-h1">Nova obra</h1>
-      </div>
+      <PageHeader
+        back="/obras"
+        backLabel="Voltar para obras"
+        crumb={<><Link href="/obras">Obras</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Nova obra</span></>}
+        eyebrow={atual ? `Etapa ${currentStep} de ${STEPS.length}` : undefined}
+        title="Nova obra"
+      />
 
       <ol
         aria-label="Etapas"

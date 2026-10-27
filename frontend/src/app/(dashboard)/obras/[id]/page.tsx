@@ -18,6 +18,7 @@ import { getEstoqueInsumos, type InsumoAlmoxarifado } from "@/lib/api/almoxarifa
 import { CurvaSCard } from "@/components/obras/CurvaSCard";
 import { ObraTabs } from "@/components/obras/ObraTabs";
 import { useToast } from "@/components/common/toast";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function ObraDetalhePage() {
   const { showToast } = useToast();
@@ -206,28 +207,30 @@ export default function ObraDetalhePage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            <Link href="/obras">Obras</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{orcamento.nome}</span>
-          </nav>
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginTop: 4 }}>
-            <h1 className="gp-h1" style={{ margin: 0 }}>{orcamento.nome}</h1>
-            <span className={`gp-bg ${classeStatus}`}>
-              <span className="gp-dot" aria-hidden="true" />
-              {statusProjeto}
-            </span>
-          </div>
-          <p className="gp-sub">
+      <PageHeader
+        back="/obras"
+        backLabel="Voltar para obras"
+        crumb={<><Link href="/obras">Obras</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{orcamento.nome}</span></>}
+        title={orcamento.nome}
+        badge={
+          <span className={`gp-bg ${classeStatus}`}>
+            <span className="gp-dot" aria-hidden="true" />
+            {statusProjeto}
+          </span>
+        }
+        subtitle={
+          <>
             {orcamento.cliente || "Cliente não informado"}
             {orcamento.responsavel_tecnico ? ` · Resp. técnica: ${orcamento.responsavel_tecnico}` : ""} · Fase: {faseAtual}
-          </p>
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          <Link href={`/diario/${id}`} className="gp-btn gp-bs">Registrar diário</Link>
-          <Link href={`/prazo/${id}`} className="gp-btn gp-bd">Editar prazos</Link>
-        </div>
-      </div>
+          </>
+        }
+        actions={
+          <>
+            <Link href={`/diario/${id}`} className="gp-btn gp-bs">Registrar diário</Link>
+            <Link href={`/prazo/${id}`} className="gp-btn gp-bd">Editar prazos</Link>
+          </>
+        }
+      />
 
       <section aria-label="Resumo da obra" className="gp-grid">
         <div className="gp-card gp-met gp-dark">

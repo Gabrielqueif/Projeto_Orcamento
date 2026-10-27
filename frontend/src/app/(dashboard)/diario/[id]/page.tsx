@@ -15,6 +15,7 @@ import {
   type DiarioListagem,
   type StatusDiario,
 } from "@/lib/api/diario";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 type FiltroStatus = "TODOS" | StatusDiario;
 
@@ -150,24 +151,26 @@ export default function DiarioObraPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            <Link href="/diario">Diário de obra</Link> /{" "}
-            <span aria-current="page" style={{ color: "#001b3d" }}>
-              {obra.nome}
+      <PageHeader
+        back="/diario"
+        backLabel="Voltar para o diário de obra"
+        crumb={<><Link href="/diario">Diário de obra</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{obra.nome}</span></>}
+        eyebrow="Registros da obra"
+        title={obra.nome}
+        subtitle={
+          <>
+            {sub}
+            <span className="gp-hint" style={{ display: "block", marginTop: 4 }}>
+              Último registro alterado em {formatarAtualizacao(obra.ultima_atualizacao)}
             </span>
-          </nav>
-          <h1 className="gp-h1">{obra.nome}</h1>
-          <p className="gp-sub">{sub}</p>
-          <p className="gp-hint" style={{ margin: "4px 0 0" }}>
-            Último registro alterado em {formatarAtualizacao(obra.ultima_atualizacao)}
-          </p>
-        </div>
-        <button type="button" onClick={abrirNovo} className="gp-btn gp-bp">
-          <Plus size={16} weight="bold" aria-hidden="true" /> Novo registro
-        </button>
-      </div>
+          </>
+        }
+        actions={
+          <button type="button" onClick={abrirNovo} className="gp-btn gp-bp">
+            <Plus size={16} weight="bold" aria-hidden="true" /> Novo registro
+          </button>
+        }
+      />
 
       <div role="group" aria-label="Filtrar registros" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
         {FILTROS.map(([k, rotulo]) => (

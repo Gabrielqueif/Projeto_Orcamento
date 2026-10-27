@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CircleNotch, ArrowRight } from "@phosphor-icons/react";
 import { createOrcamento, getSinapiBases, SinapiBase } from "@/lib/api/orcamentos";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 const ESTADOS = [
   { value: "ac", label: "AC - Acre" },
@@ -184,15 +185,13 @@ export default function NovoOrcamentoPage() {
 
   return (
     <>
-      <div>
-        <nav aria-label="Trilha" className="gp-crumb">
-          <Link href="/orcamentos">Orçamentos</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Novo orçamento</span>
-        </nav>
-        <h1 className="gp-h1">Novo orçamento</h1>
-        <p className="gp-sub">
-          Campos com <span className="gp-req" style={{ fontWeight: 700 }}>(obrigatório)</span> precisam ser preenchidos para criar.
-        </p>
-      </div>
+      <PageHeader
+        back="/orcamentos"
+        backLabel="Voltar para orçamentos"
+        crumb={<><Link href="/orcamentos">Orçamentos</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Novo orçamento</span></>}
+        title="Novo orçamento"
+        subtitle={<>Campos com <span className="gp-req" style={{ fontWeight: 700 }}>(obrigatório)</span> precisam ser preenchidos para criar.</>}
+      />
 
       {error && (
         <div role="alert" style={{ padding: "12px 16px", borderRadius: 14, background: "#FEE2E2", color: "#B91C1C", fontSize: 14, fontWeight: 700 }}>

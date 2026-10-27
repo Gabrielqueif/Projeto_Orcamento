@@ -48,7 +48,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       <div
         role="status"
         aria-live="polite"
-        style={{ position: "fixed", right: 24, bottom: 24, zIndex: 60, width: 420, maxWidth: "calc(100% - 48px)", display: "flex", flexDirection: "column", gap: 8, pointerEvents: "none" }}
+        className="gp-toasts"
       >
         {toasts.map((toast) => {
           const { bg, fg, Icon } = ICONE[toast.type];

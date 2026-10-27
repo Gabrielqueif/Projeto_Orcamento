@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Funnel, UploadSimple, FilePdf, File, DotsThreeVertical, Camera, FileText, ShieldCheck } from "@phosphor-icons/react";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 const NOMES: Record<string, string> = {
   aurora: "Residencial Aurora",
@@ -41,17 +42,20 @@ export default function ProjectDocsPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb"><Link href="/docs">Documentos</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{projectName}</span></nav>
-          <h1 className="gp-h1">{projectName}</h1>
-          <p className="gp-sub">Arquivo técnico centralizado · atualizado há 2 horas</p>
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button type="button" className="gp-btn gp-bs"><Funnel size={16} weight="bold" aria-hidden="true" />Filtrar</button>
-          <button type="button" className="gp-btn gp-bp"><UploadSimple size={16} weight="bold" aria-hidden="true" />Enviar arquivos</button>
-        </div>
-      </div>
+      <PageHeader
+        back="/docs"
+        backLabel="Voltar para documentos"
+        crumb={<><Link href="/docs">Documentos</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{projectName}</span></>}
+        eyebrow="Pasta do projeto"
+        title={projectName}
+        subtitle="Arquivo técnico centralizado · atualizado há 2 horas"
+        actions={
+          <>
+            <button type="button" className="gp-btn gp-bs"><Funnel size={16} weight="bold" aria-hidden="true" />Filtrar</button>
+            <button type="button" className="gp-btn gp-bp"><UploadSimple size={16} weight="bold" aria-hidden="true" />Enviar arquivos</button>
+          </>
+        }
+      />
 
       <div className="gp-split">
         <section className="gp-card gp-main" aria-labelledby="h-pl" style={{ overflow: "hidden" }}>

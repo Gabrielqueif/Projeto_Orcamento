@@ -6,6 +6,8 @@ import { Trash, MagnifyingGlass } from "@phosphor-icons/react";
 import { getMembrosEquipe, deleteMembroEquipe, type MembroEquipe } from "@/lib/api/membros_equipe";
 import { getOrcamentos, type Orcamento } from "@/lib/api/orcamentos";
 import { useToast } from "@/components/common/toast";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Fab } from "@/components/layout/Fab";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const iniciais = (nome: string) =>
@@ -89,19 +91,20 @@ export default function EquipePage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            Operação / <span aria-current="page" style={{ color: "#001b3d" }}>Equipe</span>
-          </nav>
-          <h1 className="gp-h1">Equipe</h1>
-          <p className="gp-sub">Profissionais, alocação por obra e custo mensal.</p>
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          <Link href="/equipe/cargos" className="gp-btn gp-bs">Cargos</Link>
-          <Link href="/equipe/novo" className="gp-btn gp-bp">Novo colaborador</Link>
-        </div>
-      </div>
+      <PageHeader
+        crumb={<>Operação / <span aria-current="page" style={{ color: "#001b3d" }}>Equipe</span></>}
+        eyebrow="Operação"
+        back="/mais"
+        title="Equipe"
+        subtitle="Profissionais, alocação por obra e custo mensal."
+        actions={
+          <>
+            <Link href="/equipe/cargos" className="gp-btn gp-bs">Cargos</Link>
+            <Link href="/equipe/novo" className="gp-btn gp-bp gp-only-d">Novo colaborador</Link>
+          </>
+        }
+      />
+      <Fab href="/equipe/novo" label="Novo colaborador" />
 
       <section aria-label="Indicadores" className="gp-grid">
         <div className="gp-card gp-met gp-dark">

@@ -31,6 +31,7 @@ import {
   type Locacao,
 } from "@/lib/api/almoxarifado";
 import { useToast } from "@/components/common/toast";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function AlmoxarifadoPage() {
   const { showToast } = useToast();
@@ -364,24 +365,29 @@ export default function AlmoxarifadoPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
+      <PageHeader
+        back={`/obras/${id}`}
+        backLabel="Voltar para a obra"
+        crumb={
+          <>
             <Link href="/obras">Obras</Link> / <Link href={`/obras/${id}`}>{orcamento.nome}</Link> /{" "}
             <span aria-current="page" style={{ color: "#001b3d" }}>Almoxarifado</span>
-          </nav>
-          <h1 className="gp-h1">{orcamento.nome}</h1>
-          <p className="gp-sub">Estoque do canteiro e equipamentos locados.</p>
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button type="button" className="gp-btn gp-bd" onClick={() => setModalTipo("SAIDA")}>
-            Registrar saída
-          </button>
-          <button type="button" className="gp-btn gp-bp" onClick={() => setModalTipo("ENTRADA")}>
-            Registrar entrada
-          </button>
-        </div>
-      </div>
+          </>
+        }
+        eyebrow="Almoxarifado"
+        title={orcamento.nome}
+        subtitle="Estoque do canteiro e equipamentos locados."
+        actions={
+          <>
+            <button type="button" className="gp-btn gp-bd" onClick={() => setModalTipo("SAIDA")}>
+              Registrar saída
+            </button>
+            <button type="button" className="gp-btn gp-bp" onClick={() => setModalTipo("ENTRADA")}>
+              Registrar entrada
+            </button>
+          </>
+        }
+      />
 
       <ObraTabs id={id} atual="almoxarifado" />
 

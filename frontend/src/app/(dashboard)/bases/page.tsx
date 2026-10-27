@@ -7,6 +7,7 @@ import { agruparPorFonte, FONTES } from '@/lib/bases';
 import { getSinapiBases, type SinapiBase } from '@/lib/api/orcamentos';
 import { MinhasBases } from '@/components/bases-proprias/MinhasBases';
 import { useUserRole } from '@/hooks/use-user-role';
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function BasesPage() {
   const { role } = useUserRole();
@@ -26,20 +27,20 @@ export default function BasesPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            Comercial / <span aria-current="page" style={{ color: "#001b3d" }}>Bases de dados</span>
-          </nav>
-          <h1 className="gp-h1">Bases de dados</h1>
-          <p className="gp-sub">Referências oficiais e as suas bases com preços próprios.</p>
-        </div>
-        {role === "admin" && (
-          <Link href="/admin/sinapi" className="gp-btn gp-bs">
-            Importar referência (admin)
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        crumb={<>Comercial / <span aria-current="page" style={{ color: "#001b3d" }}>Bases de dados</span></>}
+        eyebrow="Comercial"
+        back="/mais"
+        title="Bases de dados"
+        subtitle="Referências oficiais e as suas bases com preços próprios."
+        actions={
+          role === "admin" && (
+            <Link href="/admin/sinapi" className="gp-btn gp-bs">
+              Importar referência (admin)
+            </Link>
+          )
+        }
+      />
 
       <section aria-labelledby="h-of" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <h2 id="h-of" className="gp-h2">Referências oficiais</h2>
