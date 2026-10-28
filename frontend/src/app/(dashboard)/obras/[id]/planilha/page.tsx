@@ -46,6 +46,9 @@ export default function PlanilhaOrcamentariaPage() {
     if (value === null || value === undefined) return "R$ 0,00";
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
+  // Valor curto para o cartão do mobile (R$ 812 mil)
+  const formatCompact = (value: number | null | undefined) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", notation: "compact", maximumFractionDigits: Math.abs(value ?? 0) >= 1e6 ? 1 : 0 }).format(value ?? 0);
 
   return (
     <>
@@ -61,6 +64,7 @@ export default function PlanilhaOrcamentariaPage() {
         eyebrow="Planilha"
         title={orcamento.nome}
         subtitle="Detalhamento financeiro, composições e insumos vinculados ao projeto."
+        lift
         actions={
           <button type="button" className="gp-btn gp-bs">
             <DownloadSimple size={18} weight="bold" aria-hidden="true" /> Exportar Excel
@@ -68,9 +72,25 @@ export default function PlanilhaOrcamentariaPage() {
         }
       />
 
+      {/* Mobile: totais num cartão que sobe sobre o cabeçalho */}
+      <dl className="gp-4c-kpis" aria-label="Totais">
+        <div>
+          <dt>Valor total</dt>
+          <dd>{formatCompact(orcamento.valor_total)}</dd>
+        </div>
+        <div>
+          <dt>BDI</dt>
+          <dd>{orcamento.bdi ? `${orcamento.bdi.toFixed(2)}%` : "0.00%"}</dd>
+        </div>
+        <div>
+          <dt>Base</dt>
+          <dd title={orcamento.base_referencia || undefined}>{orcamento.base_referencia || "—"}</dd>
+        </div>
+      </dl>
+
       <ObraTabs id={id} atual="planilha" />
 
-      <section aria-label="Totais" className="gp-grid">
+      <section aria-label="Totais" className="gp-grid gp-only-d">
         <div className="gp-card gp-met">
           <span className="gp-ml">Valor total</span>
           <span className="gp-mv">{formatCurrency(orcamento.valor_total)}</span>

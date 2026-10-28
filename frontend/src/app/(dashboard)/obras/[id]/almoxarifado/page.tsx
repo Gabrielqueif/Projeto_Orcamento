@@ -379,10 +379,10 @@ export default function AlmoxarifadoPage() {
         subtitle="Estoque do canteiro e equipamentos locados."
         actions={
           <>
-            <button type="button" className="gp-btn gp-bd" onClick={() => setModalTipo("SAIDA")}>
+            <button type="button" className="gp-btn gp-bd gp-4c-alms" onClick={() => setModalTipo("SAIDA")}>
               Registrar saída
             </button>
-            <button type="button" className="gp-btn gp-bp" onClick={() => setModalTipo("ENTRADA")}>
+            <button type="button" className="gp-btn gp-bp gp-4c-alme" onClick={() => setModalTipo("ENTRADA")}>
               Registrar entrada
             </button>
           </>
@@ -411,8 +411,9 @@ export default function AlmoxarifadoPage() {
         </div>
       )}
 
-      <section className="gp-card" style={{ overflow: "hidden" }}>
-        <div role="tablist" aria-label="Almoxarifado" style={{ display: "flex", gap: 4, padding: "12px 16px 0", borderBottom: "1px solid #E6EBF2" }}>
+      {/* No mobile a moldura some e as linhas das tabelas viram cartões (gp-stack) */}
+      <section className="gp-card gp-m-flat" style={{ overflow: "hidden" }}>
+        <div role="tablist" aria-label="Almoxarifado" className="gp-4c-almtabs" style={{ display: "flex", gap: 4, padding: "12px 16px 0", borderBottom: "1px solid #E6EBF2" }}>
           {abas.map((a) => {
             const sel = a.k === aba;
             return (
@@ -440,7 +441,7 @@ export default function AlmoxarifadoPage() {
         <div id="painel-almox" role="tabpanel" aria-labelledby={`tab-${aba}`} style={{ overflowX: "auto" }}>
           {aba === "est" && (
             <>
-              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, padding: "14px 22px" }}>
+              <div className="gp-4c-almbar" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, padding: "14px 22px" }}>
                 <label className="gp-srch" style={{ flex: "1 1 260px", maxWidth: 360 }}>
                   <MagnifyingGlass size={18} weight="bold" aria-hidden="true" />
                   <span className="gp-sr">Buscar material</span>
@@ -473,7 +474,7 @@ export default function AlmoxarifadoPage() {
                   Adicionar material
                 </button>
               </div>
-              <table style={{ width: "100%", minWidth: 820, borderCollapse: "collapse" }}>
+              <table className="gp-stack gp-4c-stack" style={{ width: "100%", minWidth: 820, borderCollapse: "collapse" }}>
                 <caption className="gp-sr">Estoque atual</caption>
                 <thead>
                   <tr>
@@ -528,11 +529,11 @@ export default function AlmoxarifadoPage() {
                             </p>
                             <span className="gp-cnt" style={{ marginTop: 4, display: "inline-block" }}>{insumo.categoria}</span>
                           </th>
-                          <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600 }}>
+                          <td className="gp-td gp-mono" data-label="Saldo" style={{ textAlign: "right", fontWeight: 600 }}>
                             {fmt(atual)} {insumo.unidade}
                           </td>
-                          <td className="gp-td gp-mono" style={{ textAlign: "right", color: "#475569" }}>{fmt(min)}</td>
-                          <td className="gp-td">
+                          <td className="gp-td gp-mono" data-label="Mínimo" style={{ textAlign: "right", color: "#475569" }}>{fmt(min)}</td>
+                          <td className="gp-td" data-label="Nível">
                             <span className="gp-bar" style={{ position: "relative", overflow: "visible" }}>
                               <span style={{ width: `${Math.min(100, (atual / max) * 100)}%`, background: baixo ? "#F97316" : "#00a3b1" }} />
                               <span
@@ -541,16 +542,16 @@ export default function AlmoxarifadoPage() {
                               />
                             </span>
                           </td>
-                          <td className="gp-td">
+                          <td className="gp-td" data-label="Situação">
                             <span className={baixo ? "gp-bg gp-wa" : "gp-bg gp-ok"}>
                               <span className="gp-dot" aria-hidden="true" style={{ background: baixo ? "#F97316" : "#65A30D" }} />
                               {baixo ? "Abaixo do mínimo" : "OK"}
                             </span>
                           </td>
-                          <td className="gp-td" style={{ color: "#475569" }}>
+                          <td className="gp-td" data-label="Atualizado em" style={{ color: "#475569" }}>
                             {insumo.updated_at ? new Date(insumo.updated_at).toLocaleDateString("pt-BR") : "—"}
                           </td>
-                          <td className="gp-td" style={{ paddingRight: 22, textAlign: "right" }}>
+                          <td className="gp-td gp-4c-act" style={{ paddingRight: 22, textAlign: "right" }}>
                             <button
                               type="button"
                               className="gp-ib"
@@ -573,7 +574,7 @@ export default function AlmoxarifadoPage() {
 
           {aba === "loc" && (
             <>
-              <table style={{ width: "100%", minWidth: 820, borderCollapse: "collapse" }}>
+              <table className="gp-stack gp-4c-stack" style={{ width: "100%", minWidth: 820, borderCollapse: "collapse" }}>
                 <caption className="gp-sr">Locações</caption>
                 <thead>
                   <tr>
@@ -600,13 +601,13 @@ export default function AlmoxarifadoPage() {
                         <th scope="row" className="gp-td" style={{ paddingLeft: 22, textAlign: "left", fontWeight: 700 }}>
                           {eq.nome_equipamento}
                         </th>
-                        <td className="gp-td">{eq.locadora}</td>
-                        <td className="gp-td" style={{ color: "#475569" }}>{eq.responsavel || "—"}</td>
-                        <td className="gp-td">{new Date(eq.devolucao_prevista).toLocaleDateString("pt-BR")}</td>
-                        <td className="gp-td">
+                        <td className="gp-td" data-label="Fornecedor">{eq.locadora}</td>
+                        <td className="gp-td" data-label="Responsável" style={{ color: "#475569" }}>{eq.responsavel || "—"}</td>
+                        <td className="gp-td" data-label="Devolução">{new Date(eq.devolucao_prevista).toLocaleDateString("pt-BR")}</td>
+                        <td className="gp-td" data-label="Situação">
                           <button
                             type="button"
-                            className={locBadge(eq.status)}
+                            className={`${locBadge(eq.status)} gp-4c-tog`}
                             style={{ border: 0, cursor: "pointer", fontFamily: "inherit" }}
                             title="Clique para alternar o status do equipamento"
                             onClick={() => handleToggleLocStatus(eq.id, eq.status)}
@@ -615,7 +616,7 @@ export default function AlmoxarifadoPage() {
                             {locLabel(eq.status)}
                           </button>
                         </td>
-                        <td className="gp-td" style={{ paddingRight: 22, textAlign: "right" }}>
+                        <td className="gp-td gp-4c-act" style={{ paddingRight: 22, textAlign: "right" }}>
                           <button
                             type="button"
                             className="gp-ib"
@@ -632,7 +633,7 @@ export default function AlmoxarifadoPage() {
                   )}
                 </tbody>
               </table>
-              <div style={{ padding: "14px 22px", borderTop: "1px solid #E6EBF2" }}>
+              <div className="gp-4c-almbar" style={{ padding: "14px 22px", borderTop: "1px solid #E6EBF2" }}>
                 <button type="button" className="gp-btn gp-bs gp-sm" onClick={() => setShowLocacaoModal(true)}>
                   Nova locação
                 </button>
@@ -658,7 +659,7 @@ export default function AlmoxarifadoPage() {
                 <span className="gp-hint">O saldo de estoque foi atualizado.</span>
               </div>
             ) : (
-              <form onSubmit={handleMovimentacaoSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <form onSubmit={handleMovimentacaoSubmit} className="gp-4c-form" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {movError && <p role="alert" style={erroBox}>{movError}</p>}
                 <div className="gp-fld">
                   <label htmlFor="mv-i" className="gp-lb">Insumo <span className="gp-req">(obrigatório)</span></label>
@@ -695,7 +696,7 @@ export default function AlmoxarifadoPage() {
                     onChange={(e) => setMovObs(e.target.value)}
                   />
                 </div>
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                <div className="gp-4c-dlgact" style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
                   <button type="button" className="gp-btn gp-bs" onClick={fecharMov}>Cancelar</button>
                   <button type="submit" className="gp-btn gp-bp">Salvar</button>
                 </div>
@@ -732,7 +733,7 @@ export default function AlmoxarifadoPage() {
                 <label htmlFor="loc-r" className="gp-lb">Responsável</label>
                 <input id="loc-r" className="gp-in" placeholder="Colaborador responsável pelo uso" value={locResponsavel} onChange={(e) => setLocResponsavel(e.target.value)} />
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <div className="gp-4c-dlgact" style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
                 <button type="button" className="gp-btn gp-bs" onClick={fecharLoc}>Cancelar</button>
                 <button type="submit" className="gp-btn gp-bp">Salvar</button>
               </div>
@@ -750,7 +751,7 @@ export default function AlmoxarifadoPage() {
                 <X size={18} weight="bold" aria-hidden="true" />
               </button>
             </div>
-            <form onSubmit={handleAddMaterialSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <form onSubmit={handleAddMaterialSubmit} className="gp-4c-form" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {addMatError && <p role="alert" style={erroBox}>{addMatError}</p>}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
                 <div className="gp-fld">
@@ -777,7 +778,7 @@ export default function AlmoxarifadoPage() {
                 <label htmlFor="mat-u" className="gp-lb">Unidade de medida <span className="gp-req">(obrigatório)</span></label>
                 <input id="mat-u" className="gp-in" placeholder="sacos, kg, un" value={newMatUnidade} onChange={(e) => setNewMatUnidade(e.target.value)} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+              <div className="gp-4c-mat3" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
                 <div className="gp-fld">
                   <label htmlFor="mat-qa" className="gp-lb">Saldo atual</label>
                   <input id="mat-qa" type="number" className="gp-in gp-mono" placeholder="0" value={newMatQtdAtual} onChange={(e) => setNewMatQtdAtual(e.target.value)} />
@@ -794,7 +795,7 @@ export default function AlmoxarifadoPage() {
                   </div>
                 </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <div className="gp-4c-dlgact" style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
                 <button type="button" className="gp-btn gp-bs" onClick={fecharMat}>Cancelar</button>
                 <button type="submit" className="gp-btn gp-bp">Adicionar</button>
               </div>

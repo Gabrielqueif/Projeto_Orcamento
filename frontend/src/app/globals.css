@@ -470,4 +470,113 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
   .gp-4b-ap-res{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
   .gp-4b-ap-res>div:last-child{grid-column:1/-1}
   .gp-4b-ap-res dd{font-size:18px !important}
+
+/* ===== Fase 4c ===== */
+/* Obras em detalhe: artefatos ObraDetalhe, ObraMedicoes, ObraNova1-3, ObraPlanilha, ObraAlmox e ObraPrazos */
+.gp-4c-dact{display:contents}
+.gp-4c-kpis,.gp-4c-prk,.gp-4c-wstep{display:none}
+#h-cs{scroll-margin-top:16px}
+@media (max-width: 1023px){
+  /* Detalhe da obra: selo de status acima do título; ações do desktop somem (viram abas e atalhos) */
+  .gp-ph-title:has(> .gp-4c-st){flex-direction:column-reverse;align-items:flex-start;gap:8px}
+  .gp-ph-act:has(> .gp-4c-dact){display:none}
+
+  /* Cartão de três métricas que sobe sobre o cabeçalho escuro */
+  .gp-4c-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;padding:16px 6px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 14px 30px -18px rgba(0,27,61,.35)}
+  .gp-4c-kpis>div{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:0 6px;text-align:center}
+  .gp-4c-kpis>div+div{border-left:1px solid #E6EBF2}
+  .gp-4c-kpis dt{font-size:12px;font-weight:700;color:#475569}
+  .gp-4c-kpis dd{margin:0;max-width:100%;font-size:18px;font-weight:800;color:#001b3d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* Painel de prazo: total, atalhos e linha do tempo */
+  .gp-4c-prz{display:flex;flex-direction:column;gap:12px}
+  .gp-4c-total{margin:0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;background:#001b3d;color:#fff;font-size:14px}
+  .gp-4c-total span{color:#cbd5e1}
+  .gp-4c-total strong{font-size:18px}
+  .gp-4c-atalho{display:flex;align-items:center;gap:12px;min-height:44px;padding:14px 16px;border-radius:18px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.08);color:#001b3d;text-decoration:none}
+  .gp-4c-atalho:hover{color:#001b3d}
+  .gp-4c-ati{width:40px;height:40px;flex:0 0 40px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+  .gp-4c-att{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .gp-4c-att strong{font-size:15px}
+  .gp-4c-att span{font-size:13px;color:#475569}
+  .gp-4c-tl{padding:18px 16px;display:flex;flex-direction:column;gap:16px}
+  .gp-4c-tl ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+  .gp-4c-tl li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px}
+  .gp-4c-tlm{display:flex;flex-direction:column;align-items:center}
+  .gp-4c-dot{width:24px;height:24px;flex:0 0 24px;box-sizing:border-box;border-radius:999px;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #94a3b8}
+  .gp-4c-dot[data-st=ok]{background:#059669;border:0;color:#fff}
+  .gp-4c-dot[data-st=exe]{border:6px solid #00a3b1}
+  .gp-4c-dot[data-st=sem]{border-style:dashed}
+  .gp-4c-tll{flex:1 1 auto;width:2px;min-height:12px}
+  .gp-4c-tlt{min-width:0;padding-bottom:18px;display:flex;flex-direction:column;gap:3px}
+  .gp-4c-tl li:last-child .gp-4c-tlt{padding-bottom:0}
+  .gp-4c-tlt>strong{font-size:15px}
+  .gp-4c-tlb{display:flex;align-items:center;gap:10px;margin-top:5px;font-size:13px}
+  .gp-4c-tlb .gp-bar{flex:1 1 auto}
+
+  /* Botões de diálogo (folha inferior) dividem a largura */
+  .gp-4c-dlgact>.gp-btn{flex:1 1 0}
+  .gp-4c-form .gp-affix input{font-size:16px}
+
+  /* Curva S (artefato ObraMedicoes): métricas numa linha de 3 acima do gráfico */
+  .gp-4c-cs{gap:12px}
+  .gp-4c-csside{order:-1;display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px !important}
+  .gp-4c-csside .gp-met{padding:10px 12px;gap:2px;border-radius:14px;min-width:0}
+  .gp-4c-csside .gp-ml{font-size:12px}
+  .gp-4c-csside .gp-mv{font-size:16px;white-space:nowrap}
+  .gp-4c-csside .gp-ms{display:none}
+  .gp-4c-csch{height:220px !important}
+
+  /* Assistente de nova obra: indicador compacto, sem resumo lateral e rodapé fixo no lugar da barra inferior */
+  .gp-4c-wstep{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;list-style:none;margin:0;padding:0}
+  .gp-4c-wstep li{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .gp-4c-wsb{height:4px;border-radius:999px;background:rgba(255,255,255,.18)}
+  .gp-4c-wstep li[data-st] .gp-4c-wsb{background:#9fd300}
+  .gp-4c-wsl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#cbd5e1}
+  .gp-4c-wstep li[aria-current] .gp-4c-wsl{font-weight:800;color:#fff}
+  .gp-4c-wsn{width:24px;height:24px;flex:0 0 24px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:rgba(255,255,255,.12);color:#cbd5e1}
+  .gp-4c-wstep li[data-st] .gp-4c-wsn{background:#9fd300;color:#001b3d}
+  .gp-4c-resumo{display:none !important}
+  .gp-4c-wfoot{position:fixed;left:0;right:0;bottom:0;z-index:46;display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px !important;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -10px 30px -18px rgba(0,27,61,.35)}
+  .gp-4c-wfoot>.gp-btn{min-height:54px;border-radius:16px}
+  .gp-4c-wfoot>.gp-bs{background:#F4F6FA;border-color:transparent}
+  body:has(.gp-4c-wfoot) .gp-bn{display:none}
+
+  /* Almoxarifado: Entrada antes de Saída, tabelas como cartões */
+  .gp-4c-alme{order:-1}
+  .gp-4c-alme,.gp-4c-alms{flex:1 1 0;padding:0 10px}
+  .gp-4c-almtabs{padding:0 !important}
+  .gp-4c-almtabs+[role=tabpanel]{overflow:visible !important}
+  .gp-4c-almbar{padding:14px 0 !important;border-top:0 !important}
+  .gp-4c-almbar .gp-srch{flex:1 1 100% !important;max-width:none !important}
+  .gp-4c-stack tbody th{display:block;padding:12px 0 10px !important;border-top:0;text-align:left}
+  .gp-4c-stack td{padding-left:0 !important;padding-right:0 !important}
+  .gp-4c-stack td[data-label]::before{font-family:'Manrope',system-ui,sans-serif}
+  .gp-4c-stack td .gp-bar{flex:0 1 55%}
+  .gp-4c-stack td.gp-4c-act{justify-content:flex-end}
+  .gp-4c-stack .gp-ib{width:44px !important;height:44px !important}
+  .gp-4c-tog{min-height:44px;padding:0 14px}
+  .gp-4c-mat3{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+  .gp-4c-mat3>:last-child{grid-column:1/-1}
+
+  /* Prazos: resumo no cabeçalho e lista de etapas com datas no lugar do Gantt */
+  .gp-4c-prk{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0}
+  .gp-4c-prk>div{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.08);display:flex;flex-direction:column;gap:2px;min-width:0}
+  .gp-4c-prk dt{font-size:12px;color:#cbd5e1}
+  .gp-4c-prk dd{margin:0;font-size:16px;font-weight:800;white-space:nowrap}
+  .gp-4c-prk>[data-alerta]{background:rgba(255,170,60,.16)}
+  .gp-4c-prk>[data-alerta] dt,.gp-4c-prk>[data-alerta] dd{color:#FDBA74}
+  .gp-4c-prl{display:flex;flex-direction:column;gap:10px}
+  .gp-4c-prl>h2{padding:0 4px}
+  .gp-4c-prl ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .gp-4c-prl li{padding:14px;display:flex;flex-direction:column;gap:10px}
+  .gp-4c-prh{display:flex;align-items:center;gap:10px;min-width:0}
+  .gp-4c-prh h3{flex:1 1 auto;min-width:0;margin:0;font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gp-4c-prh .gp-bg{flex:0 0 auto;font-size:12px}
+  .gp-4c-prn{width:32px;height:32px;flex:0 0 32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;background:#F4F6FA;color:#475569}
+  .gp-4c-prn[data-ok]{background:#001b3d;color:#9fd300}
+  .gp-4c-prd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .gp-4c-prd .gp-fld{gap:4px}
+  .gp-4c-prd .gp-lb{font-size:13px;color:#475569}
+  .gp-4c-prd .gp-in{height:46px;padding:0 10px;min-width:0}
 }

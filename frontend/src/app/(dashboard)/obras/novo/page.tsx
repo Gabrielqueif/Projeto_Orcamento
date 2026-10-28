@@ -109,7 +109,8 @@ export default function NovaObraPage() {
             </div>
           </section>
 
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+          {/* No mobile vira rodapé fixo (gp-4c-wfoot) */}
+          <div className="gp-4c-wfoot" style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <Link href="/obras" className="gp-btn gp-bs">Cancelar</Link>
             <Link href="/obras/novo/etapa-2" className="gp-btn gp-bp">Próximo: equipe</Link>
           </div>

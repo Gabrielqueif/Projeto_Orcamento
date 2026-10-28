@@ -192,7 +192,8 @@ export default function NovaObraEtapa2Page() {
             <Link href="/equipe" style={{ fontSize: 14, fontWeight: 800 }}>Cadastrar novo colaborador</Link>
           </section>
 
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+          {/* No mobile vira rodapé fixo (gp-4c-wfoot) */}
+          <div className="gp-4c-wfoot" style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <Link href="/obras/novo" className="gp-btn gp-bs">Voltar</Link>
             <Link href="/obras/novo/etapa-3" className="gp-btn gp-bp">Próximo: financeiro</Link>
           </div>

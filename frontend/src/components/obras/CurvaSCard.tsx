@@ -55,7 +55,8 @@ export function CurvaSCard({ obraId }: { obraId: string }) {
   const fundoDesvio = curva?.situacao === "ATRASADA" ? "#FEE2E2" : curva?.situacao === "NO_PRAZO" || curva?.situacao === "ADIANTADA" ? "#E6F6D0" : undefined;
 
   return (
-    <div className="gp-split">
+    // No mobile (artefato ObraMedicoes) as métricas sobem para uma linha de 3 acima do gráfico
+    <div className="gp-split gp-4c-cs">
       <section className="gp-card gp-pad gp-main" aria-labelledby="h-cs" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
           <div>
@@ -89,7 +90,7 @@ export function CurvaSCard({ obraId }: { obraId: string }) {
                 <span aria-hidden="true" style={{ width: 18, height: 3, background: "#00a3b1" }} />Realizado
               </li>
             </ul>
-            <div style={{ height: 280 }} role="img" aria-label={`Curva S: planejado ${formatarPontos(curva.planejado_hoje)} e realizado ${formatarPontos(curva.realizado_hoje)} hoje. ${sit?.texto}.`}>
+            <div className="gp-4c-csch" style={{ height: 280 }} role="img" aria-label={`Curva S: planejado ${formatarPontos(curva.planejado_hoje)} e realizado ${formatarPontos(curva.realizado_hoje)} hoje. ${sit?.texto}.`}>
               <Line
                 data={{
                   labels: curva.pontos.map((p) => formatarDia(p.data)),
@@ -134,7 +135,7 @@ export function CurvaSCard({ obraId }: { obraId: string }) {
       </section>
 
       {comCurva && curva && (
-        <div className="gp-side" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="gp-side gp-4c-csside" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div className="gp-card gp-met gp-dark">
             <span className="gp-ml">Realizado hoje</span>
             <span className="gp-mv">{formatarPontos(curva.realizado_hoje)}</span>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { CheckSquare, Warehouse } from "@phosphor-icons/react";
+import { CaretRight, ChartLineUp, Check, CheckSquare, ListBullets, Warehouse } from "@phosphor-icons/react";
 import {
   getOrcamento,
   getEtapas,
@@ -14,6 +14,7 @@ import {
   type OrcamentoItem,
 } from "@/lib/api/orcamentos";
 import { getEstoqueInsumos, type InsumoAlmoxarifado } from "@/lib/api/almoxarifado";
+import { getConsolidadoFinanceiro } from "@/lib/api/financeiro";
 
 import { CurvaSCard } from "@/components/obras/CurvaSCard";
 import { ObraTabs } from "@/components/obras/ObraTabs";
@@ -33,6 +34,8 @@ export default function ObraDetalhePage() {
   const [obraStatus, setObraStatus] = useState<string>("EM_ANDAMENTO");
   const [obraId, setObraId] = useState<string | null>(null);
   const [concluindo, setConcluindo] = useState(false);
+  // Total gasto (financeiro da obra), mostrado nas métricas do mobile
+  const [gasto, setGasto] = useState<number | null>(null);
   // Estado do modal de progresso de etapa
   const [modalAberto, setModalAberto] = useState(false);
   const [etapaSelecionada, setEtapaSelecionada] = useState<string>("");
@@ -62,6 +65,9 @@ export default function ObraDetalhePage() {
           if (obra) {
             setObraStatus(obra.status);
             setObraId(obra.id);
+            getConsolidadoFinanceiro(obra.id)
+              .then((c) => setGasto(c.total_realizado))
+              .catch(() => { /* sem financeiro: métrica fica em branco */ });
           }
         } catch { /* obra ainda não iniciada */ }
       } catch (err) {
@@ -205,6 +211,23 @@ export default function ObraDetalhePage() {
     etapasComProgresso.find((e) => e.progresso < 100)?.nome || (progressoTotal === 100 ? "Concluído" : "Planejamento");
   const fimProjeto = new Date(tempoMaximo).toLocaleDateString("pt-BR");
 
+  // Mobile: valores curtos (R$ 812 mil), datas dd/mm e etapas sem prazo
+  const moedaCurta = (v: number) =>
+    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", notation: "compact", maximumFractionDigits: Math.abs(v) >= 1e6 ? 1 : 0 });
+  const diaMes = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+  const etapasSemDatas = etapasComProgresso.filter((e) => !e.hasDates).length;
+
+  const abrirModalProgresso = () => {
+    if (etapas.length === 0) {
+      showToast("Nenhuma etapa cadastrada nesta obra.", undefined, "warning");
+      return;
+    }
+    // pré-preenche com a primeira etapa
+    setEtapaSelecionada(etapas[0].id);
+    setProgressoEtapa(etapas[0].progresso ?? 0);
+    setModalAberto(true);
+  };
+
   return (
     <>
       <PageHeader
@@ -213,7 +236,7 @@ export default function ObraDetalhePage() {
         crumb={<><Link href="/obras">Obras</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{orcamento.nome}</span></>}
         title={orcamento.nome}
         badge={
-          <span className={`gp-bg ${classeStatus}`}>
+          <span className={`gp-bg gp-4c-st ${classeStatus}`}>
             <span className="gp-dot" aria-hidden="true" />
             {statusProjeto}
           </span>
@@ -224,15 +247,33 @@ export default function ObraDetalhePage() {
             {orcamento.responsavel_tecnico ? ` · Resp. técnica: ${orcamento.responsavel_tecnico}` : ""} · Fase: {faseAtual}
           </>
         }
+        lift
         actions={
-          <>
+          // No mobile os atalhos ficam nas abas e no painel de prazo
+          <div className="gp-4c-dact">
             <Link href={`/diario/${id}`} className="gp-btn gp-bs">Registrar diário</Link>
             <Link href={`/prazo/${id}`} className="gp-btn gp-bd">Editar prazos</Link>
-          </>
+          </div>
         }
       />
 
-      <section aria-label="Resumo da obra" className="gp-grid">
+      {/* Mobile: três métricas num cartão que sobe sobre o cabeçalho */}
+      <dl className="gp-4c-kpis" aria-label="Resumo da obra">
+        <div>
+          <dt>Progresso</dt>
+          <dd style={{ color: "#00626b" }}>{progressoTotal}%</dd>
+        </div>
+        <div>
+          <dt>Orçado</dt>
+          <dd>{moedaCurta(orcamento.valor_total || 0)}</dd>
+        </div>
+        <div>
+          <dt>Gasto</dt>
+          <dd>{gasto == null ? "—" : moedaCurta(gasto)}</dd>
+        </div>
+      </dl>
+
+      <section aria-label="Resumo da obra" className="gp-grid gp-only-d">
         <div className="gp-card gp-met gp-dark">
           <span className="gp-ml">Avanço físico</span>
           <span className="gp-mv">{progressoTotal}%</span>
@@ -259,8 +300,112 @@ export default function ObraDetalhePage() {
 
       <ObraTabs id={id} atual="prazo" />
 
+      {/* Mobile: prazo total, atalhos e cronograma como linha do tempo vertical */}
+      <div className="gp-only-m gp-4c-prz">
+        <p className="gp-4c-total">
+          <span>Prazo total calculado</span>
+          <strong>{datasSalvas.length > 0 ? `${diasTotais} dias` : "Sem datas"}</strong>
+        </p>
+        <Link href={`/prazo/${id}`} className="gp-4c-atalho">
+          <span aria-hidden="true" className="gp-4c-ati" style={{ background: "#FFEDD5", color: "#9A3412" }}>
+            <ListBullets size={20} weight="bold" />
+          </span>
+          <span className="gp-4c-att">
+            <strong>Prazos e etapas</strong>
+            <span>
+              {etapas.length === 0
+                ? "Nenhuma etapa cadastrada"
+                : etapasSemDatas > 0
+                ? `${etapasSemDatas} ${etapasSemDatas === 1 ? "etapa sem datas" : "etapas sem datas"}`
+                : "Todas as etapas com datas"}
+            </span>
+          </span>
+          <CaretRight size={18} weight="bold" aria-hidden="true" color="#475569" />
+        </Link>
+        <a href="#h-cs" className="gp-4c-atalho">
+          <span aria-hidden="true" className="gp-4c-ati" style={{ background: "#e0f5f7", color: "#00626b" }}>
+            <ChartLineUp size={20} weight="bold" />
+          </span>
+          <span className="gp-4c-att">
+            <strong>Medições e Curva S</strong>
+            <span>Planejado × realizado</span>
+          </span>
+          <CaretRight size={18} weight="bold" aria-hidden="true" color="#475569" />
+        </a>
+
+        <section className="gp-card gp-4c-tl" aria-labelledby="h-crm">
+          <h2 id="h-crm" className="gp-h2">Cronograma das etapas</h2>
+          {etapasComProgresso.length === 0 ? (
+            <p className="gp-hint" style={{ margin: 0 }}>Nenhuma etapa cadastrada.</p>
+          ) : (
+            <ol>
+              {etapasComProgresso.map((etapa, idx) => {
+                const concluida = etapa.progresso === 100;
+                const emExecucao = !concluida && etapa.progresso > 0;
+                const proxima = etapasComProgresso[idx + 1];
+                const proximaEmExecucao = !!proxima && proxima.progresso > 0 && proxima.progresso < 100;
+                const st = !etapa.hasDates ? "sem datas" : concluida ? "concluída" : emExecucao ? "em execução" : "a iniciar";
+                const corSt = !etapa.hasDates ? "#9A3412" : concluida ? "#047857" : emExecucao ? "#00626b" : "#475569";
+                const linha = concluida ? (proximaEmExecucao ? "#00a3b1" : "#059669") : "#E6EBF2";
+                const dias = etapa.hasDates
+                  ? Math.round(
+                      (new Date(etapa.data_fim + "T12:00:00").getTime() - new Date(etapa.data_inicio + "T12:00:00").getTime()) /
+                        (24 * 60 * 60 * 1000)
+                    ) + 1
+                  : 0;
+                return (
+                  <li key={etapa.id}>
+                    <span className="gp-4c-tlm" aria-hidden="true">
+                      <span className="gp-4c-dot" data-st={!etapa.hasDates ? "sem" : concluida ? "ok" : emExecucao ? "exe" : "ini"}>
+                        {concluida && <Check size={13} weight="bold" />}
+                      </span>
+                      {proxima && <span className="gp-4c-tll" style={{ background: linha }} />}
+                    </span>
+                    <span className="gp-4c-tlt">
+                      <strong>{etapa.nome}</strong>
+                      <span className="gp-hint">
+                        {etapa.hasDates
+                          ? `${diaMes(etapa.data_inicio!)} a ${diaMes(etapa.data_fim!)} · ${dias} ${dias === 1 ? "dia" : "dias"} · `
+                          : ""}
+                        <span style={{ fontWeight: 700, color: corSt }}>{st}</span>
+                      </span>
+                      {emExecucao && (
+                        <span className="gp-4c-tlb">
+                          <span
+                            className="gp-bar"
+                            role="progressbar"
+                            aria-label={`Execução da etapa ${etapa.nome}`}
+                            aria-valuenow={etapa.progresso}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          >
+                            <span style={{ width: `${etapa.progresso}%`, background: "#00a3b1" }} />
+                          </span>
+                          <strong>{etapa.progresso}%</strong>
+                        </span>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+          {obraStatus === "CONCLUIDA" ? (
+            <span className="gp-bg gp-ok" style={{ alignSelf: "flex-start" }}>
+              <CheckSquare size={14} weight="fill" aria-hidden="true" />
+              Obra Concluída
+            </span>
+          ) : (
+            <button type="button" className="gp-btn gp-bs" onClick={abrirModalProgresso}>
+              <CheckSquare size={18} weight="bold" aria-hidden="true" />
+              Atualizar Progresso
+            </button>
+          )}
+        </section>
+      </div>
+
       <div className="gp-split">
-        <section className="gp-card gp-main" aria-labelledby="h-cr" style={{ overflow: "hidden" }}>
+        <section className="gp-card gp-main gp-only-d" aria-labelledby="h-cr" style={{ overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "18px 22px", borderBottom: "1px solid #E6EBF2" }}>
             <h2 id="h-cr" className="gp-h2">Cronograma das etapas</h2>
             <Link href={`/prazo/${id}`} style={{ fontSize: 14, fontWeight: 800 }}>Editar cronograma</Link>
@@ -348,16 +493,7 @@ export default function ObraDetalhePage() {
                 id="btn-marcar-concluido"
                 type="button"
                 className="gp-btn gp-bs gp-sm"
-                onClick={() => {
-                  if (etapas.length === 0) {
-                    showToast("Nenhuma etapa cadastrada nesta obra.", undefined, "warning");
-                    return;
-                  }
-                  // pré-preenche com a primeira etapa
-                  setEtapaSelecionada(etapas[0].id);
-                  setProgressoEtapa(etapas[0].progresso ?? 0);
-                  setModalAberto(true);
-                }}
+                onClick={abrirModalProgresso}
               >
                 <CheckSquare size={16} weight="bold" aria-hidden="true" />
                 Atualizar Progresso
@@ -482,7 +618,7 @@ export default function ObraDetalhePage() {
               </span>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <div className="gp-4c-dlgact" style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
               <button type="button" className="gp-btn gp-bs" onClick={() => setModalAberto(false)}>Cancelar</button>
               <button
                 id="modal-btn-salvar"
