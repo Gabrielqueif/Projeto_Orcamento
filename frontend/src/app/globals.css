@@ -393,6 +393,7 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
   .gp-4a-auth-tit h1{font-size:22px !important;letter-spacing:-.3px !important}
   .gp-4a-auth-tit .gp-sub{font-size:14px}
   .gp-4a-auth-folha .gp-in,.gp-4a-auth-folha .gp-affix{height:54px;border-radius:14px;background:#F4F6FA}
+}
 
 /* ===== Fase 4b ===== */
 /* Orçamento em detalhe: planilha, item, insumos, memória de cálculo, BDI, curva ABC, cronograma e atualizar preços */
@@ -470,6 +471,7 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
   .gp-4b-ap-res{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
   .gp-4b-ap-res>div:last-child{grid-column:1/-1}
   .gp-4b-ap-res dd{font-size:18px !important}
+}
 
 /* ===== Fase 4c ===== */
 /* Obras em detalhe: artefatos ObraDetalhe, ObraMedicoes, ObraNova1-3, ObraPlanilha, ObraAlmox e ObraPrazos */
@@ -579,6 +581,7 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
   .gp-4c-prd .gp-fld{gap:4px}
   .gp-4c-prd .gp-lb{font-size:13px;color:#475569}
   .gp-4c-prd .gp-in{height:46px;padding:0 10px;min-width:0}
+}
 
 /* ===== Fase 4d ===== */
 /* Custos, diário e equipe no app mobile. Fora do @media ficam só os estilos que já
@@ -744,6 +747,7 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
   .gp-4d-cgb>.gp-bp{flex-grow:2}
   .gp-4d-ckl{min-height:48px}
   .gp-4d-ck{width:22px;height:22px}
+}
 
 /* ===== Fase 4e ===== */
 /* Bases, administração, estados do sistema e documentos. As regras fora da media query
