@@ -323,9 +323,9 @@ export function MemoriaCalculoModal({
       isOpen={isOpen}
       onClose={onClose}
       title={`Memória de Cálculo — ${composicaoDescricao || "Item"}`}
-      maxWidth="max-w-5xl"
+      maxWidth="max-w-5xl gp-4b-tela"
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 16, color: "#001b3d" }}>
+      <div className="gp-4b-corpo" style={{ display: "flex", flexDirection: "column", gap: 16, color: "#001b3d" }}>
         {/* Barra Superior de Ações e Modos de Variáveis */}
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -387,7 +387,8 @@ export function MemoriaCalculoModal({
           defaultFormulaString={generateDefaultFormula(variableConfigs)}
         />
 
-        {/* Resultado Total (Soma dos Subtotais) */}
+        {/* Resultado Total (Soma dos Subtotais); no mobile o valor fica no rodapé fixo */}
+        <div className="gp-only-d">
         <div className="gp-card gp-pad gp-dark" style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <div>
             <h3 className="gp-h2" style={{ color: "#fff" }}>Quantidade calculada</h3>
@@ -403,9 +404,21 @@ export function MemoriaCalculoModal({
             <span style={{ fontFamily: "Manrope, sans-serif", fontSize: 16, color: "#cbd5e1" }}>{unidade}</span>
           </p>
         </div>
+        </div>
 
-        {/* Ações Finais do Modal */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "flex-end" }}>
+        {/* Ações Finais do Modal (rodapé fixo no mobile, com a quantidade calculada) */}
+        <div className="gp-4b-pe" style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "flex-end" }}>
+          <p className="gp-only-m" aria-live="polite" style={{ margin: 0, flexBasis: "100%" }}>
+            <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#475569" }}>Quantidade calculada</span>
+              <strong className="gp-mono" style={{ fontSize: 18 }}>
+                {previewResult !== null
+                  ? previewResult.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+                  : "---"}{" "}
+                {unidade}
+              </strong>
+            </span>
+          </p>
           <button type="button" onClick={onClose} className="gp-btn gp-bs">
             Cancelar
           </button>

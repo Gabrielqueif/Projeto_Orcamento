@@ -242,7 +242,8 @@ export function EtapasEstrutura({
   const raizes = filhos(null);
 
   return (
-    <section className="gp-card mb-6" style={{ padding: 20 }} aria-labelledby="h-estrutura">
+    // Árvore com arrastar e soltar só no desktop; no mobile o acordeão da PlanilhaView cobre as mesmas ações
+    <section className="gp-card mb-6 gp-only-d" style={{ padding: 20 }} aria-labelledby="h-estrutura">
       <div className={`flex items-center justify-between gap-3 ${painelAberto ? "mb-2" : ""}`}>
         <button
           type="button"

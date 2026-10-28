@@ -15,6 +15,12 @@ import {
   CaretDown,
   Calculator,
   CalendarBlank,
+  DotsThree,
+  Percent,
+  ListBullets,
+  ChartLineUp,
+  Paperclip,
+  type Icon,
 } from "@phosphor-icons/react";
 import { getObras } from "@/lib/api/obras";
 import { getOrcamento, getEtapas, downloadOrcamentoPDF, updateOrcamento, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
@@ -62,6 +68,8 @@ export default function OrcamentoDetalhePage() {
   const [saving, setSaving] = useState(false);
   const [isTransitionDrawerOpen, setIsTransitionDrawerOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  // Folha inferior do mobile com as ações que não cabem no cabeçalho
+  const [isMaisAcoesOpen, setIsMaisAcoesOpen] = useState(false);
   const [jaTemObra, setJaTemObra] = useState(false);
 
   useEffect(() => {
@@ -206,11 +214,12 @@ export default function OrcamentoDetalhePage() {
     color: dark ? "#fff" : undefined,
   });
 
-  const TABS: { id: TabType; label: string }[] = [
-    { id: "planilha", label: "Planilha orçamentária" },
-    { id: "abc", label: "Curva ABC" },
-    { id: "cronograma", label: "Cronograma financeiro" },
-    { id: "anexos", label: "Anexos" },
+  // `curto` e `Icone` são usados nos atalhos do mobile
+  const TABS: { id: TabType; label: string; curto: string; Icone: Icon }[] = [
+    { id: "planilha", label: "Planilha orçamentária", curto: "Planilha", Icone: ListBullets },
+    { id: "abc", label: "Curva ABC", curto: "Curva ABC", Icone: ChartLineUp },
+    { id: "cronograma", label: "Cronograma financeiro", curto: "Cronograma", Icone: CalendarBlank },
+    { id: "anexos", label: "Anexos", curto: "Anexos", Icone: Paperclip },
   ];
 
   return (
@@ -276,6 +285,8 @@ export default function OrcamentoDetalhePage() {
             <DownloadSimple size={16} weight="bold" aria-hidden="true" />
             Exportar PDF
           </button>
+          {/* No mobile as demais ações vão para a folha "Mais ações" */}
+          <div className="hidden lg:contents">
           <button type="button" onClick={handleOpenEditModal} className="gp-btn gp-bs">
             <PencilSimple size={16} weight="bold" aria-hidden="true" />
             Editar
@@ -306,10 +317,69 @@ export default function OrcamentoDetalhePage() {
               Gerar Contrato
             </button>
           )}
+          </div>
+          <div className="gp-only-m">
+            <button
+              type="button"
+              onClick={() => setIsMaisAcoesOpen(true)}
+              aria-haspopup="dialog"
+              aria-label="Mais ações do orçamento"
+              className="gp-btn gp-bd"
+              style={{ width: 48, padding: 0 }}
+            >
+              <DotsThree size={22} weight="bold" aria-hidden="true" />
+            </button>
+          </div>
           </>
         }
+        lift
       />
 
+      {/* Mobile: cartão de totais que sobe sobre o cabeçalho escuro */}
+      <section aria-label="Totais do orçamento" className="gp-only-m">
+        <div className="gp-card" style={{ padding: 18, borderRadius: 22, display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#475569" }}>Total com BDI</span>
+            <strong style={{ fontSize: 30, lineHeight: 1.1, letterSpacing: "-0.8px", overflowWrap: "anywhere" }}>
+              {formatCurrency(orcamento.valor_total)}
+            </strong>
+          </div>
+          <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+            <div style={{ padding: "10px 12px", borderRadius: 14, background: "#F4F6FA", display: "flex", flexDirection: "column", gap: 2 }}>
+              <dt style={{ fontSize: 12, fontWeight: 700, color: "#475569" }}>Custo direto</dt>
+              <dd className="gp-mono" style={{ margin: 0, fontSize: 14, fontWeight: 600, overflowWrap: "anywhere" }}>{formatCurrency(custoDireto)}</dd>
+            </div>
+            <div style={{ padding: "10px 12px", borderRadius: 14, background: "#F4F6FA", display: "flex", flexDirection: "column", gap: 2 }}>
+              <dt style={{ fontSize: 12, fontWeight: 700, color: "#475569" }}>BDI {orcamento.bdi ? `${orcamento.bdi}%` : "0%"}</dt>
+              <dd className="gp-mono" style={{ margin: 0, fontSize: 14, fontWeight: 600, overflowWrap: "anywhere" }}>{formatCurrency(valorBdi)}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      {/* Mobile: atalhos no lugar das abas */}
+      <nav aria-label="Ferramentas do orçamento" className="gp-only-m">
+        <div className="gp-chips">
+          <button type="button" className="gp-chip" onClick={() => setIsBdiModalOpen(true)} aria-haspopup="dialog">
+            <Percent size={18} weight="bold" color="#00626b" aria-hidden="true" />
+            BDI
+          </button>
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className="gp-chip"
+              aria-pressed={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <tab.Icone size={18} weight="bold" color={activeTab === tab.id ? "currentColor" : "#00626b"} aria-hidden="true" />
+              {tab.curto}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <div className="gp-only-d">
       <section
         aria-label="Totais"
         className="gp-card"
@@ -350,7 +420,10 @@ export default function OrcamentoDetalhePage() {
           </p>
         </div>
       </section>
+      </div>
 
+      {/* alignSelf mantém a barra de abas do tamanho do conteúdo, como antes do invólucro */}
+      <div className="gp-only-d" style={{ alignSelf: "flex-start" }}>
       <div className="gp-tabs" role="tablist" aria-label="Seções do orçamento">
         {TABS.map((tab) => (
           <button
@@ -364,6 +437,7 @@ export default function OrcamentoDetalhePage() {
             {tab.label}
           </button>
         ))}
+      </div>
       </div>
 
       {/* Active Tab View Rendering */}
@@ -487,6 +561,74 @@ export default function OrcamentoDetalhePage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Mobile: folha "Mais ações" com as ações que no desktop ficam no cabeçalho */}
+      <Modal isOpen={isMaisAcoesOpen} onClose={() => setIsMaisAcoesOpen(false)} title="Mais ações">
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+          <li>
+            <button
+              type="button"
+              onClick={() => {
+                setIsMaisAcoesOpen(false);
+                handleOpenEditModal();
+              }}
+              className="gp-btn gp-bs"
+              style={{ width: "100%", justifyContent: "flex-start", minHeight: 52 }}
+            >
+              <PencilSimple size={18} weight="bold" aria-hidden="true" />
+              Editar orçamento
+            </button>
+          </li>
+          <li>
+            <Link
+              href={`/prazo/${orcamento.id}`}
+              className="gp-btn gp-bs"
+              style={{ width: "100%", justifyContent: "flex-start", minHeight: 52 }}
+            >
+              <CalendarBlank size={18} weight="bold" aria-hidden="true" />
+              Cronograma de prazos
+            </Link>
+          </li>
+          <li>
+            <button type="button" className="gp-btn gp-bs" style={{ width: "100%", justifyContent: "flex-start", minHeight: 52 }}>
+              <Copy size={18} weight="bold" aria-hidden="true" />
+              Duplicar
+            </button>
+          </li>
+          <li>
+            {isAprovado ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMaisAcoesOpen(false);
+                  setIsTransitionDrawerOpen(true);
+                }}
+                disabled={jaTemObra}
+                className="gp-btn gp-bd"
+                style={{
+                  width: "100%",
+                  justifyContent: "flex-start",
+                  minHeight: 52,
+                  ...(jaTemObra ? { background: "#EDF1F6", color: "#475569", cursor: "not-allowed" } : null),
+                }}
+              >
+                <HardHat size={18} weight="bold" aria-hidden="true" />
+                {jaTemObra ? "Obra já gerada" : "Gerar Obra"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="gp-btn"
+                style={{ width: "100%", justifyContent: "flex-start", minHeight: 52, background: "#EDF1F6", color: "#475569", cursor: "not-allowed" }}
+                disabled
+              >
+                <FileText size={18} weight="bold" aria-hidden="true" />
+                Gerar Contrato
+              </button>
+            )}
+          </li>
+        </ul>
       </Modal>
 
       {isBdiModalOpen && orcamento && (

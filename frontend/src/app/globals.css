@@ -393,4 +393,81 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
   .gp-4a-auth-tit h1{font-size:22px !important;letter-spacing:-.3px !important}
   .gp-4a-auth-tit .gp-sub{font-size:14px}
   .gp-4a-auth-folha .gp-in,.gp-4a-auth-folha .gp-affix{height:54px;border-radius:14px;background:#F4F6FA}
+
+/* ===== Fase 4b ===== */
+/* Orçamento em detalhe: planilha, item, insumos, memória de cálculo, BDI, curva ABC, cronograma e atualizar preços */
+/* Formulário de item: altura máxima com rolagem própria no desktop (antes inline) */
+.gp-4b-itemform{max-height:80vh;overflow-y:auto}
+
+@media (max-width: 1023px){
+  /* Diálogo em tela cheia: Modal com maxWidth "max-w-* gp-4b-tela". Cabeçalho escuro, corpo rolável e rodapé fixo (gp-4b-pe) */
+  .gp-4b-tela{height:100dvh;max-height:100dvh}
+  .gp-4b-tela>.gp-dlg{max-height:none;height:100%;padding:0;gap:0;border-radius:0;background:#F4F6FA;overflow:hidden}
+  .gp-4b-tela>.gp-dlg>div:first-child{flex-direction:row-reverse;justify-content:flex-end !important;padding:calc(10px + env(safe-area-inset-top)) 16px 18px;border-radius:0 0 28px 28px;background-color:#001b3d;background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:22px 22px;color:#fff}
+  .gp-4b-tela>.gp-dlg>div:first-child h2{color:#fff;font-size:20px !important;line-height:1.25;letter-spacing:-.3px;min-width:0}
+  .gp-4b-tela>.gp-dlg>div:first-child .gp-ib{flex:0 0 44px;width:44px !important;height:44px !important;border-radius:14px;border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff}
+  .gp-4b-tela>.gp-dlg>div:last-child{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;padding:16px 16px 0}
+  .gp-4b-corpo{display:flex;flex-direction:column;flex:1 0 auto}
+  .gp-4b-pe{position:sticky;bottom:0;z-index:2;flex-wrap:wrap;margin:auto -16px 0 !important;padding:12px 16px calc(16px + env(safe-area-inset-bottom)) !important;border-top:0 !important;border-radius:24px 24px 0 0;background:#fff;box-shadow:0 -10px 30px -18px rgba(0,27,61,.35)}
+  .gp-4b-pe>.gp-btn{flex:1 1 0;min-height:54px;border-radius:16px}
+  .gp-4b-pe>.gp-bp{flex-grow:1.7}
+  .gp-4b-tela .gp-btn.gp-sm{min-height:44px}
+  .gp-4b-tela .gp-affix input{font-size:16px}
+  .gp-4b-tela .gp-pad{padding:16px}
+  /* Abas do BDI: uma sob a outra, em vez de rolagem lateral que corta o segundo rótulo */
+  .gp-4b-tela .gp-tabs{flex-direction:column;overflow:visible}
+  .gp-4b-tela .gp-tab{white-space:normal;justify-content:center;min-height:48px}
+
+  /* Formulário de item: sem moldura, Cancelar à esquerda do botão principal */
+  .gp-4b-itemform{max-height:none}
+  .gp-4b-itemform .gp-4b-pe{flex-direction:row-reverse !important}
+  .gp-4b-busca .gp-chip{min-height:44px}
+  .gp-4b-res{max-height:none !important;overflow:visible !important;border:0 !important;display:flex;flex-direction:column;gap:8px}
+  .gp-4b-res>li{border-top:0 !important}
+  .gp-4b-res button{flex-direction:column;align-items:stretch !important;gap:8px !important;padding:14px !important;border-radius:18px;box-shadow:0 1px 2px rgba(0,27,61,.06)}
+  .gp-4b-res button>span:first-child{flex-direction:row !important;align-items:center;min-width:0 !important}
+
+  /* Tabela empilhada: célula de cabeçalho de linha (th scope=row) também vira bloco */
+  .gp-stack th[scope=row]{display:block;padding:10px 0;text-align:left !important}
+  .gp-stack th[scope=row]:first-child{border-top:0}
+  .gp-4b-sem-borda{border:0 !important}
+
+  /* Insumos do item: folha inferior em vez de gaveta, linhas como cartões cinza */
+  .gp-4b-ins{top:auto;height:88dvh;border-radius:28px 28px 0 0;box-shadow:0 -20px 40px -20px rgba(0,16,42,.5)}
+  .gp-4b-ins .gp-stack tbody{gap:8px}
+  .gp-4b-ins .gp-stack tr{background:#F4F6FA;box-shadow:none;border-radius:14px;padding:4px 12px}
+  .gp-4b-ins .gp-4b-num{width:132px !important;height:44px !important;font-size:16px !important}
+
+  /* Memória de cálculo: elementos como cartões, campos com 44px e texto de 16px */
+  .gp-4b-mc-rolagem{max-height:none !important;min-height:0 !important;overflow:visible !important}
+  .gp-4b-mc-rolagem .gp-stack td{padding-left:0 !important;padding-right:0 !important}
+  .gp-4b-mc-rolagem .gp-stack td:first-child{padding-top:12px !important}
+  .gp-4b-mc-rolagem thead{position:static !important}
+  .gp-4b-mc-in{height:44px !important;font-size:16px !important}
+  .gp-4b-mc-el{flex-wrap:wrap}
+  .gp-4b-mc-local{max-width:none !important;flex:1 1 100%}
+  .gp-4b-mc-acao{justify-content:flex-end !important}
+  .gp-4b-mc-acao .gp-ib{width:44px !important;height:44px !important;margin:0 !important}
+  .gp-4b-fchip{min-height:44px;min-width:44px;font-size:15px !important}
+
+  /* Curva ABC: classes lado a lado em cartões compactos */
+  .gp-4b-abc-cl{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:8px !important}
+  .gp-4b-abc-cl>button{flex-direction:column;align-items:flex-start !important;gap:6px !important;padding:12px !important;border-radius:18px;min-width:0}
+  .gp-4b-abc-cl>button>span:first-child{width:32px !important;height:32px !important;border-radius:10px !important;font-size:16px !important}
+  .gp-4b-abc-cl strong{font-size:20px !important}
+  .gp-4b-abc-cl .gp-4b-abc-txt{display:block;font-size:12px !important;font-weight:600;color:#475569}
+  .gp-4b-abc-cl .gp-hint{display:none !important}
+
+  /* Cronograma financeiro: gráfico rola para o lado; meses como blocos cinza */
+  .gp-4b-cf-corpo{padding:16px !important;gap:16px !important}
+  .gp-4b-cf-graf{flex-basis:100% !important;min-width:0;gap:6px !important;height:230px !important;overflow-x:auto;overflow-y:hidden}
+  .gp-4b-cf-graf>span{flex:1 0 48px !important}
+  .gp-4b-cf .gp-stack tbody{gap:8px}
+  .gp-4b-cf .gp-stack tr{background:#F4F6FA;box-shadow:none;border-radius:14px;padding:4px 14px}
+  .gp-4b-cf .gp-stack td{border-top-color:#E2E8F0}
+
+  /* Atualizar preços: resumo em duas colunas */
+  .gp-4b-ap-res{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+  .gp-4b-ap-res>div:last-child{grid-column:1/-1}
+  .gp-4b-ap-res dd{font-size:18px !important}
 }

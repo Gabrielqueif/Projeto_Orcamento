@@ -199,9 +199,9 @@ export function BdiConfigModal({ isOpen, onClose, orcamento, onUpdated }: BdiCon
       isOpen={isOpen}
       onClose={onClose}
       title="Configuração de BDI (Bonificação e Despesas Indiretas)"
-      maxWidth="max-w-3xl"
+      maxWidth="max-w-3xl gp-4b-tela"
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 16, color: "#001b3d" }}>
+      <div className="gp-4b-corpo" style={{ display: "flex", flexDirection: "column", gap: 16, color: "#001b3d" }}>
         {/* Toggle de Modo: Analítico TCU vs Sintético */}
         <div role="tablist" aria-label="Modo do BDI" className="gp-tabs">
           {tabBtn(tipoBdi === "ANALITICO", () => setTipoBdi("ANALITICO"), <Calculator size={16} weight="bold" aria-hidden="true" />, "BDI Analítico (Fórmula Oficial TCU)")}
@@ -344,8 +344,14 @@ export function BdiConfigModal({ isOpen, onClose, orcamento, onUpdated }: BdiCon
           </div>
         )}
 
-        {/* Rodapé / Ações */}
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 10 }}>
+        {/* Rodapé / Ações (fixo no mobile, com o BDI resultante sempre à vista) */}
+        <div className="gp-4b-pe" style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 10 }}>
+          <p className="gp-only-m" style={{ margin: 0, flexBasis: "100%", fontSize: 14, fontWeight: 700, color: "#475569" }}>
+            {tipoBdi === "ANALITICO" ? "BDI calculado" : "BDI padrão"}:{" "}
+            <strong className="gp-mono" style={{ fontSize: 18, color: "#001b3d" }}>
+              {tipoBdi === "ANALITICO" ? bdiCalculado : bdiSintetico}%
+            </strong>
+          </p>
           <button type="button" onClick={onClose} disabled={saving} className="gp-btn gp-bs">
             Cancelar
           </button>

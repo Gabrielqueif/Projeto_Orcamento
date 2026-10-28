@@ -13,7 +13,7 @@ import {
   type Etapa, 
   type OrcamentoItem
 } from "@/lib/api/orcamentos";
-import { Plus, Trash, PencilSimple, Database, Check, ArrowsClockwise } from "@phosphor-icons/react";
+import { Plus, Trash, PencilSimple, Database, Check, ArrowsClockwise, CaretDown, FolderPlus } from "@phosphor-icons/react";
 
 import { Modal } from "@/components/ui/Modal";
 import { OrcamentoItemForm } from "./OrcamentoItemForm";
@@ -49,7 +49,8 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
   // Insumos Drawer State
   const [drawerItem, setDrawerItem] = React.useState<OrcamentoItem | null>(null);
 
-  // Expansion State
+  // Acordeão de etapas do mobile (null = só a primeira etapa aberta)
+  const [etapasAbertas, setEtapasAbertas] = React.useState<Set<string> | null>(null);
 
   // Refs e estado de edição de nome de etapas/sub-etapas
   const [editingEtapaId, setEditingEtapaId] = React.useState<string | null>(null);
@@ -276,6 +277,30 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
     return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
+  // Preços do item conforme o modo (venda com BDI ou custo direto); usados pela tabela e pelos cartões do mobile
+  const precosItem = (item: OrcamentoItem) => {
+    const taxaBdiItem = item.bdi_aplicado !== null && item.bdi_aplicado !== undefined ? item.bdi_aplicado : bdiOrcamento;
+    const precoUn = modoPreco === "VENDA"
+      ? (item.preco_unitario_bdi ?? ((item.preco_unitario || 0) * (1 + taxaBdiItem / 100)))
+      : item.preco_unitario;
+    const precoTot = modoPreco === "VENDA"
+      ? (item.preco_total_bdi ?? ((item.preco_total || 0) * (1 + taxaBdiItem / 100)))
+      : item.preco_total;
+    return { taxaBdiItem, precoUn, precoTot };
+  };
+
+  const seloFonte = (item: OrcamentoItem) =>
+    item.fonte === "PROPRIA"
+      ? { bg: "#e0f5f7", fg: "#00626b" }
+      : item.fonte === "SEINFRA"
+        ? { bg: "#EDF1F6", fg: "#001b3d" }
+        : { bg: "#E6F6D0", fg: "#3F6604" };
+
+  const rotuloFonte = (item: OrcamentoItem) =>
+    item.fonte === "PROPRIA"
+      ? `Própria${item.base_propria_nome ? `: ${item.base_propria_nome}` : ""}`
+      : item.fonte;
+
   const renderItemTable = (itensDaEtapa: OrcamentoItem[], etapaId: string) => {
     const subtotal = itensDaEtapa.reduce((acc, curr) => {
       const taxa = curr.bdi_aplicado !== null && curr.bdi_aplicado !== undefined ? curr.bdi_aplicado : bdiOrcamento;
@@ -314,28 +339,15 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
               </tr>
             ) : (
               itensDaEtapa.map(item => {
-                const taxaBdiItem = item.bdi_aplicado !== null && item.bdi_aplicado !== undefined ? item.bdi_aplicado : bdiOrcamento;
-                const precoUn = modoPreco === "VENDA"
-                  ? (item.preco_unitario_bdi ?? ((item.preco_unitario || 0) * (1 + taxaBdiItem / 100)))
-                  : item.preco_unitario;
-                const precoTot = modoPreco === "VENDA"
-                  ? (item.preco_total_bdi ?? ((item.preco_total || 0) * (1 + taxaBdiItem / 100)))
-                  : item.preco_total;
-                const selo =
-                  item.fonte === "PROPRIA"
-                    ? { bg: "#e0f5f7", fg: "#00626b" }
-                    : item.fonte === "SEINFRA"
-                      ? { bg: "#EDF1F6", fg: "#001b3d" }
-                      : { bg: "#E6F6D0", fg: "#3F6604" };
+                const { taxaBdiItem, precoUn, precoTot } = precosItem(item);
+                const selo = seloFonte(item);
 
                 return (
                   <tr key={item.id} className="gp-row">
                     <td className="gp-td">
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
                         <span style={{ fontSize: 12, fontWeight: 800, padding: "2px 8px", borderRadius: 6, background: selo.bg, color: selo.fg }}>
-                          {item.fonte === "PROPRIA"
-                            ? `Própria${item.base_propria_nome ? `: ${item.base_propria_nome}` : ""}`
-                            : item.fonte}
+                          {rotuloFonte(item)}
                         </span>
                         {item.tipo_bdi_item === "DIFERENCIADO" ? (
                           <span style={{ fontSize: 12, fontWeight: 700, color: "#9A3412" }}>
@@ -520,6 +532,105 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
       </div>
     );
   };
+  // ===== Mobile: etapas em acordeão e itens como cartões (mesmos dados e ações do desktop) =====
+  const contarItens = (etapaId: string) => {
+    const ids = new Set([etapaId, ...getDescendantIds(etapaId)]);
+    return itens.filter(i => i.etapa_id && ids.has(i.etapa_id)).length;
+  };
+
+  const formatarQtd = (valor: number) => valor.toLocaleString("pt-BR", { maximumFractionDigits: 4 });
+
+  const renomearEtapaMobile = (etapa: Etapa) => {
+    const nome = window.prompt("Novo nome da etapa", etapa.nome);
+    if (nome && nome.trim()) handleUpdateEtapaNome(etapa.id, nome.trim());
+  };
+
+  const renderItemCartao = (item: OrcamentoItem) => {
+    const { precoUn, precoTot } = precosItem(item);
+    const selo = seloFonte(item);
+    return (
+      <li key={item.id}>
+        <button
+          type="button"
+          onClick={() => setDrawerItem(item)}
+          aria-haspopup="dialog"
+          style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8, padding: 12, border: 0, borderRadius: 14, background: "#F4F6FA", color: "#001b3d", textAlign: "left", cursor: "pointer", font: "inherit" }}
+        >
+          <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+            <span className="gp-mono" style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>{item.codigo_composicao}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: selo.bg, color: selo.fg }}>{rotuloFonte(item)}</span>
+            {item.tipo_bdi_item === "DIFERENCIADO" && (
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#9A3412" }}>BDI dif. {item.bdi_aplicado ? `${item.bdi_aplicado}%` : ""}</span>
+            )}
+          </span>
+          <span style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.35 }}>{item.descricao}</span>
+          <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 8, fontSize: 13, color: "#475569" }}>
+            <span className="gp-mono">{formatarQtd(item.quantidade)} {item.unidade} × {formatarReal(precoUn)}</span>
+            <strong className="gp-mono" style={{ color: "#001b3d" }}>{formatarReal(precoTot)}</strong>
+          </span>
+        </button>
+      </li>
+    );
+  };
+
+  const botaoTracejado: React.CSSProperties = {
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 48, border: "2px dashed #94a3b8",
+    borderRadius: 14, background: "transparent", color: "#001b3d", fontSize: 14, fontWeight: 800, cursor: "pointer", font: "inherit",
+  };
+  const botaoAcaoEtapa: React.CSSProperties = {
+    display: "inline-flex", alignItems: "center", gap: 6, minHeight: 44, padding: "0 10px", border: 0, borderRadius: 12,
+    background: "transparent", color: "#001b3d", fontSize: 14, fontWeight: 700, cursor: "pointer", font: "inherit",
+  };
+
+  // Conteúdo da etapa aberta: itens diretos, sub-etapas (recursivo), adicionar item e ações da etapa
+  const renderPainelEtapaMobile = (etapa: Etapa, prefix: string, nivel: number): React.ReactNode => {
+    const subEtapas = getSubEtapas(etapa.id);
+    const itensDaEtapa = itens.filter(i => i.etapa_id === etapa.id);
+    return (
+      <>
+        {itensDaEtapa.length > 0 && (
+          <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
+            {itensDaEtapa.map(renderItemCartao)}
+          </ul>
+        )}
+        {subEtapas.map((sub, sIdx) => {
+          const subPrefix = `${prefix}.${sIdx + 1}`;
+          return (
+            <section
+              key={sub.id}
+              aria-label={`Sub-etapa ${subPrefix} ${sub.nome}`}
+              style={{ display: "flex", flexDirection: "column", gap: 8, paddingLeft: 10, borderLeft: "2px solid #E6EBF2" }}
+            >
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, paddingTop: 4 }}>
+                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>
+                  <span className="gp-mono" style={{ fontWeight: 600, color: "#475569" }}>{subPrefix}</span> {sub.nome}
+                </h4>
+                <span className="gp-mono" style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>{formatarReal(totaisPorEtapa[sub.id] || 0)}</span>
+              </div>
+              {renderPainelEtapaMobile(sub, subPrefix, nivel + 1)}
+            </section>
+          );
+        })}
+        <button type="button" onClick={() => openModalToCreate(etapa.id)} style={botaoTracejado}>
+          <Plus size={16} weight="bold" aria-hidden="true" /> Adicionar item
+        </button>
+        <div role="group" aria-label={`Ações de ${etapa.nome}`} style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 }}>
+          <button type="button" onClick={() => renomearEtapaMobile(etapa)} style={botaoAcaoEtapa}>
+            <PencilSimple size={16} weight="bold" aria-hidden="true" /> Renomear
+          </button>
+          {nivel < MAX_NIVEL_ETAPAS && (
+            <button type="button" onClick={() => handleAddSubEtapa(etapa.id)} style={botaoAcaoEtapa}>
+              <FolderPlus size={16} weight="bold" aria-hidden="true" /> Sub-etapa
+            </button>
+          )}
+          <button type="button" onClick={() => handleRemoveEtapa(etapa.id)} style={{ ...botaoAcaoEtapa, color: "#B91C1C" }}>
+            <Trash size={16} weight="bold" aria-hidden="true" /> Excluir
+          </button>
+        </div>
+      </>
+    );
+  };
+
   if (loading && etapas.length === 0) {
     return <div role="status" className="gp-sub" style={{ textAlign: "center", padding: 40 }}>Carregando estrutura da planilha...</div>;
   }
@@ -540,6 +651,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
         onSelect={scrollToEtapa}
         onMove={handleMoveEtapa}
       />
+      <div className="gp-only-d">
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 20 }}>
         <div>
           <h2 id="h-etapas" className="gp-h2">Etapas e itens</h2>
@@ -565,13 +677,95 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
           </button>
         </div>
       </div>
+      </div>
+
+      {/* Mobile: cabeçalho da lista, modo de preço e etapas em acordeão */}
+      <section className="gp-only-m" aria-labelledby="h-etapas-m" style={{ marginBottom: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "0 4px" }}>
+            <h2 id="h-etapas-m" className="gp-h2">
+              Etapas <span style={{ fontSize: 14, fontWeight: 600, color: "#475569" }}>· {etapasPrincipais.length}</span>
+            </h2>
+            <button type="button" onClick={handleAddEtapa} style={{ ...botaoAcaoEtapa, color: "#00626b", fontWeight: 800, paddingRight: 4 }}>
+              <Plus size={16} weight="bold" aria-hidden="true" /> Nova etapa
+            </button>
+          </div>
+          <div className="gp-seg" role="group" aria-label="Modo de preço">
+            <button type="button" aria-pressed={modoPreco === "VENDA"} onClick={() => setModoPreco("VENDA")} style={{ minHeight: 44 }}>
+              Com BDI
+            </button>
+            <button type="button" aria-pressed={modoPreco === "DIRETO"} onClick={() => setModoPreco("DIRETO")} style={{ minHeight: 44 }}>
+              Custo direto
+            </button>
+          </div>
+          <button type="button" onClick={abrirPreviaPrecos} className="gp-btn gp-bs gp-sm" style={{ minHeight: 44 }}>
+            <ArrowsClockwise size={16} weight="bold" aria-hidden="true" /> Atualizar preços da base própria
+          </button>
+
+          {etapasPrincipais.length > 0 && (
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
+              {etapasPrincipais.map((etapa, index) => {
+                const abertas = etapasAbertas ?? new Set(etapasPrincipais.slice(0, 1).map(e => e.id));
+                const aberta = abertas.has(etapa.id);
+                const qtdItens = contarItens(etapa.id);
+                const painelId = `etapa-m-${etapa.id}`;
+                return (
+                  <li key={etapa.id} className="gp-card" style={{ overflow: "hidden" }}>
+                    <h3 style={{ margin: 0 }}>
+                      <button
+                        type="button"
+                        aria-expanded={aberta}
+                        aria-controls={painelId}
+                        onClick={() => {
+                          const prox = new Set(abertas);
+                          if (aberta) prox.delete(etapa.id);
+                          else prox.add(etapa.id);
+                          setEtapasAbertas(prox);
+                        }}
+                        style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, minHeight: 68, padding: "10px 14px", border: 0, background: "transparent", color: "#001b3d", textAlign: "left", cursor: "pointer", font: "inherit" }}
+                      >
+                        <span aria-hidden="true" className="gp-mono" style={{ width: 34, height: 34, flex: "0 0 34px", borderRadius: 11, background: "#F4F6FA", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {index + 1}
+                        </span>
+                        <span style={{ flex: "1 1 auto", minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+                          <span style={{ fontSize: 15, fontWeight: 800, overflowWrap: "anywhere" }}>{etapa.nome}</span>
+                          <span style={{ fontSize: 13, fontWeight: 500, color: "#475569" }}>{qtdItens} {qtdItens === 1 ? "item" : "itens"}</span>
+                        </span>
+                        <span className="gp-mono" style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap" }}>{formatarReal(totaisPorEtapa[etapa.id] || 0)}</span>
+                        <CaretDown size={18} weight="bold" color="#475569" aria-hidden="true" style={{ flex: "0 0 18px", transition: "transform 150ms", transform: aberta ? "rotate(180deg)" : undefined }} />
+                      </button>
+                    </h3>
+                    {aberta && (
+                      <div id={painelId} style={{ padding: "0 10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+                        {renderPainelEtapaMobile(etapa, String(index + 1), 1)}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {itensSemEtapa.length > 0 && (
+            <section className="gp-card" aria-labelledby="h-sem-etapa-m" style={{ padding: "14px 10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+              <h3 id="h-sem-etapa-m" style={{ margin: "0 4px", fontSize: 15, fontWeight: 800 }}>Itens sem etapa vinculada</h3>
+              <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
+                {itensSemEtapa.map(renderItemCartao)}
+              </ul>
+              <button type="button" onClick={() => openModalToCreate("")} style={botaoTracejado}>
+                <Plus size={16} weight="bold" aria-hidden="true" /> Vincular novo item
+              </button>
+            </section>
+          )}
+        </div>
+      </section>
 
       {etapas.length === 0 && itensSemEtapa.length === 0 ? (
         <div className="gp-card" style={{ textAlign: "center", padding: 40, fontSize: 14, color: "#475569", border: "1px dashed #CBD5E1" }}>
           Nenhuma etapa adicionada. Clique em &quot;Nova Etapa&quot; para começar.
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-8 gp-only-d">
           {etapasPrincipais.map((etapa, index) => renderEtapa(etapa, String(index + 1), 1))}
 
           {/* Itens sem etapa */}
@@ -596,9 +790,10 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); setEditingItem(null); }}
         title={editingItem ? "Editar Insumo" : "Adicionar Atividade / Serviço"}
-        maxWidth="max-w-2xl"
+        maxWidth="max-w-2xl gp-4b-tela"
       >
-        <div className="max-h-[80vh] overflow-y-auto">
+        {/* No mobile o formulário ocupa a tela (gp-4b-tela) e rola junto com o diálogo */}
+        <div className="lg:max-h-[80vh] lg:overflow-y-auto gp-4b-corpo">
           {isModalOpen && (
             <OrcamentoItemForm
               orcamentoId={orcamentoId}
@@ -626,6 +821,14 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
         item={drawerItem}
         onClose={() => setDrawerItem(null)}
         onUpdate={carregarDados}
+        onEdit={(item) => {
+          setDrawerItem(null);
+          openModalToEdit(item);
+        }}
+        onRemove={(item) => {
+          setDrawerItem(null);
+          handleRemoveItem(item.id);
+        }}
       />
     </div>
   );

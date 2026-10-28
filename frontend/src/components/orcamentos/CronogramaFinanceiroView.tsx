@@ -62,7 +62,8 @@ export function CronogramaFinanceiroView({ orcamentoId }: CronogramaFinanceiroVi
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <section className="gp-card" aria-labelledby="h-cf">
+      {/* gp-4b-cf: no mobile o gráfico rola para o lado e a tabela vira um bloco por mês */}
+      <section className="gp-card gp-4b-cf" aria-labelledby="h-cf">
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "16px 22px", borderBottom: "1px solid #E6EBF2" }}>
           <div>
             <h2 id="h-cf" className="gp-h2">Desembolso mensal</h2>
@@ -76,10 +77,11 @@ export function CronogramaFinanceiroView({ orcamentoId }: CronogramaFinanceiroVi
           </div>
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 24, padding: 22 }}>
+        <div className="gp-4b-cf-corpo" style={{ display: "flex", flexWrap: "wrap", gap: 24, padding: 22 }}>
           <div
             role="img"
             aria-label={ariaGrafico}
+            className="gp-4b-cf-graf"
             style={{ flex: "2 1 480px", display: "flex", alignItems: "flex-end", gap: 14, height: 260, paddingBottom: 28, borderBottom: "1px solid #94a3b8" }}
           >
             {mensalData.map((m, idx) => (
@@ -101,7 +103,7 @@ export function CronogramaFinanceiroView({ orcamentoId }: CronogramaFinanceiroVi
             ))}
           </div>
 
-          <table style={{ flex: "1 1 340px", borderCollapse: "collapse", alignSelf: "flex-start" }}>
+          <table className="gp-stack" style={{ flex: "1 1 340px", borderCollapse: "collapse", alignSelf: "flex-start" }}>
             <caption className="gp-sr">Cronograma financeiro por mês</caption>
             <thead>
               <tr>
@@ -115,11 +117,11 @@ export function CronogramaFinanceiroView({ orcamentoId }: CronogramaFinanceiroVi
               {mensalData.map((item, idx) => (
                 <tr key={item.mes} className="gp-row">
                   <th scope="row" className="gp-td" style={{ textAlign: "left" }}>{item.mes}</th>
-                  <td className="gp-td" style={{ color: "#475569" }}>{item.servicos || "—"}</td>
-                  <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: idx === picoIndex ? 800 : 400 }}>
+                  <td className="gp-td" data-label="Serviços" style={{ color: "#475569" }}>{item.servicos || "—"}</td>
+                  <td className="gp-td gp-mono" data-label="Valor" style={{ textAlign: "right", fontWeight: idx === picoIndex ? 800 : 400 }}>
                     {formatCurrency(item.valor)}
                   </td>
-                  <td className="gp-td gp-mono" style={{ textAlign: "right" }}>{item.acumulado_pct}%</td>
+                  <td className="gp-td gp-mono" data-label="Acumulado" style={{ textAlign: "right" }}>{item.acumulado_pct}%</td>
                 </tr>
               ))}
             </tbody>

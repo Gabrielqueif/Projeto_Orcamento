@@ -66,7 +66,7 @@ export function CurvaAbcView({ orcamentoId }: CurvaAbcViewProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Filtro por classe */}
-      <div role="group" aria-label="Filtrar por classe" className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+      <div role="group" aria-label="Filtrar por classe" className="gp-grid gp-4b-abc-cl" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
         {["A", "B", "C"].map((k) => {
           const ativo = filtro === k;
           const itens = data.insumos.filter((i) => i.classe === k).length;
@@ -95,7 +95,7 @@ export function CurvaAbcView({ orcamentoId }: CurvaAbcViewProps) {
                 <strong className="gp-mono" style={{ display: "block", fontSize: 24 }}>
                   {total > 0 ? fmtPct((valor / total) * 100) : "0,0%"}
                 </strong>
-                <span style={{ fontSize: 14 }}>do custo · {itens} itens</span>
+                <span className="gp-4b-abc-txt" style={{ fontSize: 14 }}>do custo · {itens} itens</span>
                 <span className="gp-hint" style={{ display: "block" }}>{formatCurrency(valor)}</span>
               </span>
             </button>
@@ -112,7 +112,37 @@ export function CurvaAbcView({ orcamentoId }: CurvaAbcViewProps) {
             {visiveis.length} itens mostrados · custo direto total {formatCurrency(total)}
           </span>
         </div>
-        <div style={{ overflowX: "auto" }}>
+        {/* Mobile: ranking em lista (posição, insumo, classe, valor, % e % acumulado) */}
+        <ol className="gp-only-m" aria-label="Ranking da curva ABC" style={{ margin: 0, padding: 6, listStyle: "none" }}>
+          {visiveis.map((item, idx) => {
+            const pos = data.insumos.indexOf(item) + 1;
+            const cl = CLASSES[item.classe] ?? CLASSES.C;
+            return (
+              <li
+                key={item.codigo_insumo}
+                style={{ display: "grid", gridTemplateColumns: "28px minmax(0, 1fr) auto", gap: 10, alignItems: "center", padding: "12px 10px", borderTop: idx > 0 ? "1px solid #E6EBF2" : undefined }}
+              >
+                <span className="gp-mono" style={{ fontSize: 13, fontWeight: 600, color: "#475569" }}>{String(pos).padStart(2, "0")}</span>
+                <span style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+                  <strong style={{ fontSize: 14, lineHeight: 1.3, overflowWrap: "anywhere" }}>{item.descricao}</strong>
+                  <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+                    <span style={{ ...cl.selo, fontSize: 12, fontWeight: 800, padding: "2px 8px", borderRadius: 6 }}>{item.classe}</span>
+                    <span className="gp-mono" style={{ fontSize: 12, color: "#475569" }}>{formatCurrency(item.total)}</span>
+                  </span>
+                </span>
+                <span className="gp-mono" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                  <strong style={{ fontSize: 14 }}>{fmtPct(item.porcentagem)}</strong>
+                  <span style={{ fontSize: 12, color: "#475569" }}>
+                    <span className="gp-sr">acumulado </span>
+                    {fmtPct(item.acumulado)}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+
+        <div className="gp-only-d" style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}>
             <caption className="gp-sr">Ranking da curva ABC</caption>
             <thead>

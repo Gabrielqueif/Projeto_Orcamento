@@ -111,7 +111,7 @@ export function ComposicaoSearchSelect({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div className="gp-4b-busca" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
         <label className="gp-lb" htmlFor="busca" style={{ marginRight: "auto" }}>
           Buscar Composição
@@ -193,6 +193,8 @@ export function ComposicaoSearchSelect({
           {resultados.length > 0 && (
             <ul
               aria-live="polite"
+              aria-label="Resultados da busca"
+              className="gp-4b-res"
               style={{ listStyle: "none", margin: 0, padding: 0, maxHeight: 288, overflowY: "auto", border: "1px solid #E6EBF2", borderRadius: 14 }}
             >
               {resultados.map((item) => (

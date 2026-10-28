@@ -106,6 +106,7 @@ export function FormulaEditor({
                 key={cfg.id}
                 type="button"
                 onClick={() => insertText(varIdentifier)}
+                className="gp-4b-fchip"
                 style={chip}
                 title={`Inserir variável da coluna: ${cfg.label} (${varIdentifier})`}
               >
@@ -121,6 +122,7 @@ export function FormulaEditor({
                   key={idx}
                   type="button"
                   onClick={() => insertText(g.nome || "")}
+                  className="gp-4b-fchip"
                   style={{ ...chip, background: "#F7FCE9", borderColor: "#9fd300" }}
                   title={`Inserir variável global: ${g.nome} = ${g.valor}`}
                 >
@@ -134,7 +136,7 @@ export function FormulaEditor({
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
           <span style={rotulo}>Operadores:</span>
           {["+", "-", "*", "/", "(", ")"].map((op) => (
-            <button key={op} type="button" onClick={() => insertOperator(op)} style={{ ...chip, minWidth: 36 }}>
+            <button key={op} type="button" onClick={() => insertOperator(op)} className="gp-4b-fchip" style={{ ...chip, minWidth: 36 }}>
               {op}
             </button>
           ))}

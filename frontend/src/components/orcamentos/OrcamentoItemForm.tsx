@@ -248,8 +248,10 @@ export function OrcamentoItemForm({
   };
 
   return (
-    <div className="gp-card gp-pad" style={{ maxHeight: "80vh", overflowY: "auto" }}>
-      <h3 className="gp-h2" style={{ marginBottom: 16 }}>
+    // gp-4b-itemform: altura máxima com rolagem no desktop; no mobile vira tela cheia com rodapé fixo
+    <div className="gp-card gp-pad gp-m-flat gp-4b-itemform gp-4b-corpo">
+      {/* No mobile o título já está no cabeçalho do diálogo */}
+      <h3 className="gp-h2 gp-only-d" style={{ marginBottom: 16 }}>
         {itemToEdit ? "Editar Item" : "Adicionar Item"}
       </h3>
 
@@ -262,7 +264,7 @@ export function OrcamentoItemForm({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <form onSubmit={handleSubmit} className="gp-4b-corpo" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {/* Seleção de Etapa */}
         <EtapaSelect
           etapas={etapas}
@@ -342,8 +344,8 @@ export function OrcamentoItemForm({
           </div>
         )}
 
-        {/* Botões de Ação */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {/* Botões de Ação (rodapé fixo no mobile) */}
+        <div className="gp-4b-pe" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <button
             type="submit"
             disabled={submitting || !composicaoSelecionada || !estadoOrcamento}
