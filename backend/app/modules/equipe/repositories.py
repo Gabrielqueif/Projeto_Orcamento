@@ -2,6 +2,8 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from core.busca import sanitizar_termo
+
 logger = logging.getLogger("projeto_orcamento")
 
 TABELA_EQUIPES = "equipes"
@@ -27,8 +29,9 @@ class EquipeRepository:
     def listar(self, user_id: str, nome: Optional[str] = None) -> List[Dict[str, Any]]:
         try:
             query = self.supabase.table(TABELA_EQUIPES).select("*").eq("user_id", user_id)
-            if nome:
-                query = query.ilike("nome", f"%{nome}%")
+            termo = sanitizar_termo(nome or "")
+            if termo:
+                query = query.ilike("nome", f"%{termo}%")
             query = query.order("nome")
             resultado = query.execute()
             return resultado.data or []
@@ -145,8 +148,9 @@ class MembroEquipeRepository:
         try:
             query = self.supabase.table(TABELA_MEMBROS).select("*").eq("user_id", user_id)
 
-            if nome:
-                query = query.ilike("nome", f"%{nome}%")
+            termo = sanitizar_termo(nome or "")
+            if termo:
+                query = query.ilike("nome", f"%{termo}%")
             if cargo:
                 query = query.eq("cargo", cargo)
             if status:

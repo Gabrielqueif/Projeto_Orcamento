@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from app.modules.almoxarifado import router as almoxarifado_router
 from app.modules.base_propria import router as base_propria_router
+from app.modules.busca import router as busca_router
 from app.modules.composicao import router as item_router
 from app.modules.dashboard import router as dashboard_router
 from app.modules.diario import router as diario_router
@@ -94,6 +95,7 @@ app.include_router(medicao_router)
 app.include_router(dashboard_router)
 app.include_router(notificacao_router)
 app.include_router(base_propria_router)
+app.include_router(busca_router)
 
 
 @app.get("/health")
