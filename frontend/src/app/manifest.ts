@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: "GPObras",
     short_name: "GPObras",
     description: "Orçamentos, obras, diário, almoxarifado e financeiro da sua construtora.",

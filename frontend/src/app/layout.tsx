@@ -1,5 +1,6 @@
 import "./globals.css"
 import type { Metadata, Viewport } from "next";
+import { RegistrarServiceWorker } from "@/components/pwa/RegistrarServiceWorker";
 
 export const metadata: Metadata = {
   title: "GPObras",
@@ -29,6 +30,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className="antialiased h-screen">
         {children}
+        <RegistrarServiceWorker />
       </body>
     </html>
   );
