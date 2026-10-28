@@ -20,6 +20,7 @@ from app.modules.medicao import router as medicao_router
 from app.modules.notificacao import router as notificacao_router
 from app.modules.obra import router as obra_router
 from app.modules.orcamento import router as orcamento_router
+from app.modules.perfil import router as perfil_router
 from core.config import settings
 from core.exceptions import ConflitoError, NaoEncontradoError
 
@@ -96,6 +97,7 @@ app.include_router(dashboard_router)
 app.include_router(notificacao_router)
 app.include_router(base_propria_router)
 app.include_router(busca_router)
+app.include_router(perfil_router)
 
 
 @app.get("/health")
