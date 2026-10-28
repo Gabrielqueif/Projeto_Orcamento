@@ -19,6 +19,18 @@ const SITUACOES: Record<SituacaoDiario, { rotulo: string; classe: string }> = {
   ALERTA: { rotulo: "Alerta", classe: "gp-da" },
 };
 
+// Cartão do mobile: cores do selo da sigla e a ação de cada situação.
+const ACAO_MOBILE: Record<SituacaoDiario, { texto: string; botao: string; tile: string; cor: string; ponto: string }> = {
+  ENVIADO: { texto: "Ver diário", botao: "gp-bs", tile: "#E6F6D0", cor: "#3F6604", ponto: "#65A30D" },
+  RASCUNHO: { texto: "Continuar rascunho", botao: "gp-bd", tile: "#EDF1F6", cor: "#334155", ponto: "#64748b" },
+  PENDENTE: { texto: "Registrar agora", botao: "gp-bd", tile: "#e0f5f7", cor: "#00626b", ponto: "#00a3b1" },
+  ALERTA: { texto: "Registrar agora", botao: "gp-bd", tile: "#FFEDD5", cor: "#9A3412", ponto: "#F97316" },
+};
+
+function sigla(nome: string): string {
+  return nome.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
+}
+
 function IconeClima({ clima }: { clima?: Clima | null }) {
   if (clima === "SOL") return <Sun weight="fill" size={24} color="#F59E0B" aria-label="Sol" />;
   if (clima === "NUBLADO") return <Cloud weight="fill" size={24} color="#94a3b8" aria-label="Nublado" />;
@@ -89,9 +101,17 @@ export default function DiarioVisaoPage() {
             ? "Nenhuma obra ativa no momento."
             : `${resumo.enviados_hoje} de ${resumo.total_obras} obras ativas já enviaram o diário de hoje.`
         }
-      />
+      >
+        {/* Mobile: taxa de preenchimento dentro do cabeçalho */}
+        {resumo.total_obras > 0 && (
+          <p className="gp-only-m gp-4a-taxa">
+            <strong>{resumo.taxa_preenchimento_7d}%</strong>
+            <span>dos dias com diário nos últimos 7 dias</span>
+          </p>
+        )}
+      </PageHeader>
 
-      <section aria-label="Indicadores" className="gp-grid">
+      <section aria-label="Indicadores" className="gp-grid gp-only-d">
         <div className="gp-card gp-met gp-dark">
           <span className="gp-ml">Preenchimento (7 dias)</span>
           <span className="gp-mv">{resumo.taxa_preenchimento_7d}%</span>
@@ -117,13 +137,20 @@ export default function DiarioVisaoPage() {
         </div>
       </section>
 
-      <section className="gp-card" aria-labelledby="h-sem" style={{ overflow: "hidden" }}>
-        <div style={{ padding: "18px 22px", borderBottom: "1px solid #E6EBF2" }}>
+      <section className="gp-card gp-m-flat" aria-labelledby="h-sem" style={{ overflow: "hidden" }}>
+        <div className="gp-4a-sech" style={{ padding: "18px 22px", borderBottom: "1px solid #E6EBF2" }}>
           <h2 id="h-sem" className="gp-h2">Projetos ativos</h2>
           <p className="gp-sub" style={{ fontSize: 14 }}>Situação do diário de cada obra em andamento.</p>
+          {resumo.alertas > 0 && (
+            <div className="gp-only-m gp-4a-filtro">
+              <button type="button" onClick={() => setSoAlertas((v) => !v)} aria-pressed={soAlertas} className="gp-chip">
+                {soAlertas ? "Mostrar todas as obras" : `Ver só as obras em alerta (${resumo.alertas})`}
+              </button>
+            </div>
+          )}
         </div>
         {obras.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center" }}>
+          <div className="gp-4a-cartao" style={{ padding: 40, textAlign: "center" }}>
             <p style={{ margin: 0, color: "#475569" }}>
               {resumo.total_obras === 0 ? "Você ainda não tem obras em andamento." : "Nenhuma obra em alerta."}
             </p>
@@ -134,7 +161,38 @@ export default function DiarioVisaoPage() {
             )}
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <>
+          {/* Mobile: um cartão por obra, com a ação do dia */}
+          <ul className="gp-only-m gp-4a-dlista">
+            {obras.map((obra) => {
+              const estilo = SITUACOES[obra.situacao];
+              const acao = ACAO_MOBILE[obra.situacao];
+              return (
+                <li key={obra.obra_id}>
+                  <div className="gp-4a-dtopo">
+                    <span aria-hidden="true" className="gp-4a-tile" style={{ background: acao.tile, color: acao.cor }}>
+                      {sigla(obra.nome)}
+                    </span>
+                    <span className="gp-4a-dnome">
+                      <strong>{obra.nome}</strong>
+                      <span style={{ color: acao.cor }}>
+                        <span className="gp-dot" aria-hidden="true" style={{ background: acao.ponto }} />
+                        {estilo.rotulo} · último registro: {descreverUltimoRegistro(obra.ultimo_registro).toLowerCase()}
+                      </span>
+                      {(obra.local || obra.responsavel) && (
+                        <span>{[obra.local, obra.responsavel && `Gestor: ${obra.responsavel}`].filter(Boolean).join(" · ")}</span>
+                      )}
+                    </span>
+                    <span className="gp-4a-dclima"><IconeClima clima={obra.ultimo_clima} /></span>
+                  </div>
+                  <Link href={`/diario/${obra.obra_id}`} className={`gp-btn ${acao.botao}`} aria-label={`${acao.texto}: ${obra.nome}`}>
+                    {acao.texto}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="gp-only-d" style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse" }}>
               <caption className="gp-sr">Situação do diário por obra</caption>
               <thead>
@@ -178,6 +236,7 @@ export default function DiarioVisaoPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </section>
     </>

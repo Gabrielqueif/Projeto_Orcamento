@@ -26,6 +26,9 @@ export default function SignupPage() {
             wide
             title="Criar conta"
             subtitle="Leva menos de 2 minutos."
+            back="/login"
+            backLabel="Voltar para o login"
+            tagline={<>Comece a orçar no GP<span style={{ color: '#9fd300', fontWeight: 800 }}>Obras</span></>}
             side={
                 <>
                     <p style={{ margin: 0, fontSize: 40, fontWeight: 800, lineHeight: 1.1, letterSpacing: -1 }}>

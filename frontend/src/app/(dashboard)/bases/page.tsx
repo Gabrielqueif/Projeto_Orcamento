@@ -60,10 +60,17 @@ export default function BasesPage() {
           </div>
         )}
 
-        <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))" }}>
+        <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(380px, 100%), 1fr))" }}>
           {fontesComDados.map((f) => (
-            <DatabaseCard key={f.id} id={f.id} fonte={f.fonte} title={f.title} description={f.description}>
-              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4, fontSize: 14, color: "#334155" }}>
+            <DatabaseCard
+              key={f.id}
+              id={f.id}
+              fonte={f.fonte}
+              title={f.title}
+              description={f.description}
+              badge={porFonte[f.fonte].length === 1 ? "1 variante" : `${porFonte[f.fonte].length} variantes`}
+            >
+              <ul className="gp-4a-variantes" style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4, fontSize: 14, color: "#334155" }}>
                 {porFonte[f.fonte].map((b) => (
                   <li key={`${b.mes_referencia}-${b.tipo_composicao}`}>
                     {b.mes_referencia} · {b.tipo_composicao}

@@ -237,3 +237,160 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
   /* Cartão que só serve de moldura para a tabela some no mobile */
   .gp-m-flat{background:transparent !important;box-shadow:none !important;padding:0 !important;border-radius:0 !important;overflow:visible !important}
 }
+
+/* ===== Fase 4a ===== */
+/* Acesso, Início e listas principais (Orçamentos, Novo orçamento, Bases, Obras, Diário) abaixo de 1024px.
+   Só classes novas gp-4a-*; o desktop não muda. Os !important vencem estilos inline que só valem no desktop. */
+@media (max-width: 1023px){
+  /* Início: saudação e anel de progresso no lugar do título do desktop */
+  .gp-ph:has(.gp-4a-hero)>.gp-ph-row{display:none}
+  .gp-4a-hero{display:flex;flex-direction:column;gap:22px}
+  .gp-4a-perfil{display:flex;align-items:center;gap:12px;min-height:44px;align-self:flex-start;color:#fff;text-decoration:none}
+  .gp-4a-perfil:hover{color:#fff}
+  .gp-4a-perfil .gp-av{width:44px;height:44px;flex-basis:44px;border-radius:14px;font-size:15px}
+  .gp-4a-perfil-txt{display:flex;flex-direction:column;gap:1px}
+  .gp-4a-perfil-txt>span{font-size:13px;color:#cbd5e1}
+  .gp-4a-perfil-txt>strong{font-size:17px;font-weight:800}
+  .gp-4a-anel{display:flex;align-items:center;gap:20px}
+  .gp-4a-anel>svg{flex:0 0 104px}
+  .gp-4a-anel text{font-family:Manrope,system-ui,sans-serif}
+  .gp-4a-anel .gp-h1{margin:6px 0 0;font-size:22px;letter-spacing:-.4px}
+
+  /* Indicadores num cartão único que sobe sobre o cabeçalho */
+  .gp-4a-kpis{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);margin:0;padding:16px 8px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 14px 30px -18px rgba(0,27,61,.35)}
+  .gp-4a-kpis>div{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:0 4px}
+  .gp-4a-kpis>div+div{border-left:1px solid #E6EBF2}
+  .gp-4a-kpis dt{font-size:12px;font-weight:700;color:#475569;text-align:center}
+  .gp-4a-kpis dd{margin:0;font-size:24px;font-weight:800;letter-spacing:-.4px;white-space:nowrap}
+  .gp-4a-kpis small{font-size:12px;font-weight:600;letter-spacing:0;color:#475569}
+  .gp-4a-kpis-l{padding:16px 4px}
+  .gp-4a-kpis-l>div{align-items:flex-start;padding:0 14px}
+  .gp-4a-kpis-l dt{text-align:left}
+  .gp-4a-kpis-l dd{font-size:22px}
+
+  /* Início: alerta de diário, carrossel de obras e barra de verba */
+  .gp-4a-alerta{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:#FFF7ED;color:#001b3d;text-decoration:none}
+  .gp-4a-alerta:hover{color:#001b3d;background:#FFEDD5}
+  .gp-4a-alerta-ic{width:44px;height:44px;flex:0 0 44px;border-radius:14px;background:#F97316;color:#fff;display:flex;align-items:center;justify-content:center}
+  .gp-4a-alerta-txt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .gp-4a-alerta-txt strong{font-size:15px}
+  .gp-4a-alerta-txt span{font-size:13px;color:#9A3412}
+  .gp-4a-sec-tit{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+  .gp-4a-sec-tit a{display:flex;align-items:center;min-height:44px;padding:0 4px;font-size:14px;font-weight:700;color:#007a85}
+  .gp-4a-carr{margin:0 -16px -8px;padding:2px 16px 12px;list-style:none;display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 16px;scrollbar-width:none}
+  .gp-4a-carr::-webkit-scrollbar{display:none}
+  .gp-4a-carr>li{flex:0 0 min(272px,80vw);scroll-snap-align:start}
+  .gp-4a-carr-card{height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 10px 24px -16px rgba(0,27,61,.3);color:#001b3d;text-decoration:none}
+  .gp-4a-carr-card:hover{color:#001b3d}
+  .gp-4a-carr-top{display:flex;align-items:center;gap:12px;min-width:0}
+  .gp-4a-tile{width:42px;height:42px;flex:0 0 42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+  .gp-4a-carr-nome{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .gp-4a-carr-nome>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gp-4a-carr-nome strong{font-size:15px}
+  .gp-4a-carr-nome span{font-size:13px;color:#475569}
+  .gp-4a-carr-pct{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}
+  .gp-4a-carr-pct>span{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+  .gp-4a-carr-pct strong{font-weight:800}
+  .gp-4a-verba{display:flex;align-items:center;gap:12px}
+  .gp-4a-verba>[role=progressbar]{flex:1 1 auto;display:flex;height:14px;padding:3px;box-sizing:border-box;border-radius:999px;background:#EDF1F6}
+  .gp-4a-verba>[role=progressbar]>span{display:block;height:100%;border-radius:999px}
+  .gp-4a-verba>strong{font-size:16px;font-weight:600}
+  .gp-4a-split>.gp-side{order:-1}
+
+  /* Listas: busca no cabeçalho, chips rolando, contagem e estado vazio */
+  .gp-4a-busca{display:flex;flex-direction:column;gap:6px}
+  .gp-4a-busca>label{font-size:13px;font-weight:700;color:#cbd5e1}
+  .gp-4a-busca input{font-size:16px}
+  .gp-4a-tbar{padding:0 !important;border:0 !important}
+  .gp-4a-chips{flex:1 1 100% !important;min-width:0;flex-wrap:nowrap !important;gap:8px !important}
+  .gp-4a-chips>.gp-chip{border-color:transparent;border-radius:14px;padding:0 16px;box-shadow:0 1px 2px rgba(0,27,61,.08)}
+  .gp-4a-chips>.gp-chip[aria-pressed=true]{box-shadow:0 8px 18px -10px rgba(0,27,61,.7)}
+  .gp-4a-cont{margin:16px 4px 12px;font-size:13px;font-weight:700;color:#475569}
+  .gp-4a-vazio{display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px 12px 0;text-align:center}
+  .gp-4a-vazio-ic{position:relative;width:132px;height:132px;border-radius:40px;background:#fff;box-shadow:0 20px 40px -24px rgba(0,27,61,.45);display:flex;align-items:center;justify-content:center}
+  .gp-4a-vazio-ic>span{position:absolute;top:-6px;right:-6px;width:40px;height:40px;border-radius:14px;background:#9fd300;display:flex;align-items:center;justify-content:center}
+  .gp-4a-vazio h2{margin:8px 0 0;font-size:21px;font-weight:800}
+  .gp-4a-vazio p{margin:0;font-size:15px;line-height:1.55;color:#475569}
+  .gp-4a-vazio .gp-btn{align-self:stretch;min-height:54px;border-radius:16px}
+
+  /* Tabela em cartões: cada linha vira um cartão; as células se posicionam por data-m */
+  .gp-4a-tw{overflow:visible !important}
+  table.gp-4a-ct{display:block;width:100%;min-width:0 !important}
+  .gp-4a-ct thead{display:none}
+  .gp-4a-ct tbody{display:flex;flex-direction:column;gap:12px}
+  .gp-4a-ct tr{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 12px;padding:16px;border-radius:22px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 10px 24px -18px rgba(0,27,61,.35)}
+  .gp-4a-ct tr.gp-row:hover{background:#fff}
+  .gp-4a-ct th,.gp-4a-ct td{display:block;min-width:0;width:auto !important;padding:0 !important;border:0 !important;text-align:left !important}
+  .gp-4a-ct td.gp-4a-msg{grid-column:1/-1;padding:24px 8px !important;text-align:center !important}
+  .gp-4a-ct [data-label]::before{content:attr(data-label) ": ";font-weight:600;color:#475569}
+  .gp-4a-ct [data-m=nome] a::after{content:"";position:absolute;inset:0;border-radius:22px}
+  .gp-4a-ct [data-m=nome]{grid-area:nome;padding-right:48px !important}
+  .gp-4a-ct [data-m=acoes]{position:absolute;top:10px;right:10px;z-index:1}
+  .gp-4a-ct [data-m=acoes] .gp-ib{width:44px !important;height:44px !important}
+  .gp-4a-ct [data-m=cli]{grid-area:cli;font-size:13px}
+  .gp-4a-ct [data-m=st]{grid-area:st}
+  .gp-4a-ct [data-m=valor]{grid-area:valor;justify-self:end;font-size:17px}
+  .gp-4a-ct [data-m=data]{grid-area:data;justify-self:end;font-size:12px}
+  .gp-4a-ct [data-m=fase]{grid-area:fase;justify-self:end;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+  .gp-4a-ct [data-m=prog]{grid-area:prog}
+  .gp-4a-ct [data-m=fim]{grid-area:fim;font-size:13px}
+  .gp-4a-ct-orc tr.gp-row{grid-template-areas:"nome nome" "cli cli" "st valor" "st data";row-gap:6px}
+  .gp-4a-ct-orc [data-m=cli]{margin-bottom:8px}
+  .gp-4a-ct-obras tr.gp-row{grid-template-areas:"nome nome" "cli cli" "st fase" "prog prog" "fim fim"}
+
+  /* Diário: taxa no cabeçalho e um cartão por obra */
+  .gp-4a-taxa{margin:0;display:flex;align-items:baseline;gap:8px;font-size:13px;color:#cbd5e1}
+  .gp-4a-taxa strong{font-size:26px;line-height:1;font-weight:800;color:#fff}
+  .gp-4a-sech{padding:0 4px 12px !important;border:0 !important}
+  .gp-4a-filtro{margin-top:12px}
+  .gp-4a-filtro .gp-chip{min-height:44px}
+  .gp-4a-cartao{border-radius:22px;background:#fff;padding:32px 20px !important}
+  .gp-4a-dlista{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+  .gp-4a-dlista>li{display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:22px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 10px 24px -18px rgba(0,27,61,.35)}
+  .gp-4a-dtopo{display:flex;align-items:center;gap:12px}
+  .gp-4a-dtopo .gp-4a-tile{width:46px;height:46px;flex-basis:46px;border-radius:14px;font-size:15px}
+  .gp-4a-dnome{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .gp-4a-dnome strong{font-size:16px}
+  .gp-4a-dnome>span{font-size:13px;color:#475569}
+  .gp-4a-dnome>span:first-of-type{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+  .gp-4a-dclima{flex:0 0 auto;display:flex}
+
+  /* Bases: variantes como etiquetas, botão na largura do cartão */
+  .gp-4a-dbcard h3{font-size:18px !important}
+  .gp-4a-dbcard>.gp-btn{align-self:stretch !important}
+  .gp-4a-variantes{flex-direction:row !important;flex-wrap:wrap;gap:8px !important}
+  .gp-4a-variantes>li{padding:8px 12px;border-radius:12px;background:#F4F6FA;font-size:13px;font-weight:700;color:#001b3d}
+  .gp-4a-tracejado{background:#fff;border:2px dashed #CBD5E1;box-shadow:none}
+  .gp-btn.gp-4a-alvo{min-height:44px}
+
+  /* Novo orçamento: uma coluna e rodapé fixo com a ação principal */
+  .gp-4a-form>fieldset{grid-template-columns:minmax(0,1fr) !important;gap:14px !important;padding:18px !important}
+  .gp-4a-form>fieldset>.gp-fld{grid-column:1/-1 !important}
+  .gp-4a-form .gp-grid{grid-template-columns:minmax(0,1fr)}
+  .gp-4a-rodape{position:fixed;left:0;right:0;bottom:0;z-index:46;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-radius:24px 24px 0 0;background:#fff;box-shadow:0 -12px 30px -18px rgba(0,27,61,.45)}
+  .gp-4a-rodape>div{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:10px}
+  .gp-4a-rodape .gp-btn{min-height:54px;padding:0 12px;border-radius:16px}
+
+  /* Acesso: topo escuro com a marca e o formulário numa folha branca */
+  .gp-4a-auth{flex-direction:column;flex-wrap:nowrap !important;min-height:100dvh !important;background:#001b3d !important}
+  .gp-4a-auth-lado{flex:1 0 auto !important;justify-content:flex-end !important;gap:0 !important;padding:calc(40px + env(safe-area-inset-top)) 28px 28px !important}
+  .gp-4a-auth-folha{flex:0 0 auto !important;align-items:flex-start !important;padding:28px 24px calc(28px + env(safe-area-inset-bottom)) !important;border-radius:32px 32px 0 0;background:#fff}
+  .gp-4a-auth-c .gp-4a-auth-lado{flex:0 0 auto !important;padding:calc(10px + env(safe-area-inset-top)) 16px 22px !important}
+  .gp-4a-auth-c .gp-4a-auth-folha{flex:1 0 auto !important;padding-top:24px !important}
+  .gp-4a-auth-marca{display:flex;flex-direction:column;gap:16px}
+  .gp-4a-auth-id{display:flex;flex-direction:column;gap:18px}
+  .gp-4a-auth-logo{width:76px;height:76px;border-radius:24px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 18px 40px -16px rgba(0,163,177,.6)}
+  .gp-4a-auth-nome{margin:0;font-size:34px;line-height:1.05;font-weight:800;letter-spacing:-1px;color:#fff}
+  .gp-4a-auth-nome span{color:#9fd300}
+  .gp-4a-auth-frase{margin:6px 0 0;font-size:16px;line-height:1.5;color:#cbd5e1}
+  .gp-4a-auth-voltar{display:inline-flex;align-self:flex-start;align-items:center;justify-content:center;width:44px;height:44px;box-sizing:border-box;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff}
+  .gp-4a-auth-voltar:hover{color:#fff}
+  .gp-4a-auth-compacto .gp-4a-auth-id{flex-direction:row;align-items:center;gap:14px}
+  .gp-4a-auth-compacto .gp-4a-auth-logo{width:52px;height:52px;flex:0 0 52px;border-radius:16px;box-shadow:none}
+  .gp-4a-auth-compacto .gp-4a-auth-logo img{width:34px;height:40px}
+  .gp-4a-auth-compacto h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.5px;color:#fff}
+  .gp-4a-auth-compacto .gp-4a-auth-frase{margin:2px 0 0;font-size:14px}
+  .gp-4a-auth-tit h1{font-size:22px !important;letter-spacing:-.3px !important}
+  .gp-4a-auth-tit .gp-sub{font-size:14px}
+  .gp-4a-auth-folha .gp-in,.gp-4a-auth-folha .gp-affix{height:54px;border-radius:14px;background:#F4F6FA}
+}

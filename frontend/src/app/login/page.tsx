@@ -19,6 +19,7 @@ export default async function LoginPage({
         <AuthShell
             title="Entrar na sua conta"
             subtitle="Use o e-mail cadastrado na GPObras."
+            tagline={<>Orçamento preciso.<br />Execução sob controle.</>}
             side={
                 <>
                     <p style={{ margin: 0, fontSize: 44, fontWeight: 800, lineHeight: 1.1, letterSpacing: -1 }}>
@@ -56,7 +57,7 @@ export default async function LoginPage({
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 44, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
                     <input type="checkbox" defaultChecked style={{ width: 20, height: 20, accentColor: '#001b3d' }} />
-                    Manter conectado neste computador
+                    <span>Manter conectado<span className="gp-only-d"> neste computador</span></span>
                 </label>
                 <button formAction={login} className="gp-btn gp-bp" style={{ minHeight: 54, fontSize: 16 }}>
                     Entrar

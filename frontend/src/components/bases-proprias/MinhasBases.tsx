@@ -61,11 +61,11 @@ export function MinhasBases() {
 
   return (
     <section aria-labelledby="minhas-bases-titulo" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
         <h2 id="minhas-bases-titulo" className="gp-h2">
           Minhas bases
         </h2>
-        <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp gp-sm">
+        <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp gp-sm gp-4a-alvo">
           <Plus size={16} weight="bold" aria-hidden="true" /> Nova base
         </button>
       </div>
@@ -74,7 +74,7 @@ export function MinhasBases() {
       {erro && <p style={{ color: "#B91C1C", margin: 0 }}>{erro}</p>}
 
       {!loading && !erro && bases.length === 0 && (
-        <div className="gp-card gp-pad" style={{ textAlign: "center" }} data-testid="minhas-bases-vazio">
+        <div className="gp-card gp-pad gp-4a-tracejado" style={{ textAlign: "center" }} data-testid="minhas-bases-vazio">
           <p style={{ margin: 0, fontWeight: 700 }}>Você ainda não tem bases próprias.</p>
           <p className="gp-hint" style={{ margin: "4px 0 0" }}>
             Crie uma base para cadastrar insumos e composições com preços seus.
@@ -83,7 +83,7 @@ export function MinhasBases() {
       )}
 
       {bases.length > 0 && (
-        <ul className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", listStyle: "none", margin: 0, padding: 0 }}>
+        <ul className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", listStyle: "none", margin: 0, padding: 0 }}>
           {bases.map((b) => (
             <li key={b.id}>
               <Link

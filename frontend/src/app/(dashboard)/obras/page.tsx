@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, MagnifyingGlass, ArrowRight, Trash } from "@phosphor-icons/react";
+import { Plus, MagnifyingGlass, ArrowRight, Trash, HardHat } from "@phosphor-icons/react";
 import { getOrcamentos, getEtapas, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
 import { excluirObra, getObras, type Obra } from "@/lib/api/obras";
 import { useToast } from "@/components/common/toast";
@@ -178,6 +178,8 @@ export default function ObrasPage() {
     ? Math.round(obrasItems.reduce((acc, i) => acc + i.progressoCalculado, 0) / obrasItems.length)
     : 0;
   const atrasadas = obrasItems.filter((i) => i.statusCalculado === "ATRASADO");
+  // Sem nenhuma obra (e sem busca), o mobile mostra o estado vazio no lugar da lista.
+  const semObras = !loading && obrasItems.length === 0 && !searchTerm;
 
   return (
     <>
@@ -192,10 +194,36 @@ export default function ObrasPage() {
             Nova obra
           </Link>
         }
-      />
-      <Fab href="/obras/novo" label="Nova obra" />
+      >
+        {/* Mobile: a busca fica no cabeçalho (some quando ainda não há nenhuma obra) */}
+        {!semObras && (
+          <div className="gp-only-m gp-4a-busca">
+            <label htmlFor="bo-m">Buscar obra</label>
+            <div className="gp-srch">
+              <MagnifyingGlass size={20} color="#475569" weight="bold" aria-hidden="true" />
+              <input id="bo-m" type="search" placeholder="Nome ou cliente" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            </div>
+          </div>
+        )}
+      </PageHeader>
+      {!semObras && <Fab href="/obras/novo" label="Nova obra" />}
 
-      <section aria-label="Indicadores" className="gp-grid">
+      {semObras && (
+        <section className="gp-only-m gp-4a-vazio" aria-labelledby="h-vazio">
+          <span className="gp-4a-vazio-ic" aria-hidden="true">
+            <HardHat size={64} weight="light" color="#001b3d" />
+            <span><Plus size={20} weight="bold" color="#001b3d" /></span>
+          </span>
+          <h2 id="h-vazio">Nenhuma obra por aqui ainda</h2>
+          <p>
+            Crie a primeira obra para lançar diário, despesas e medições. Se já tem um orçamento aprovado, dá para começar a partir dele.
+          </p>
+          <Link href="/obras/novo" className="gp-btn gp-bp">Criar obra</Link>
+          <Link href="/orcamentos" className="gp-btn gp-bs">Usar um orçamento</Link>
+        </section>
+      )}
+
+      <section aria-label="Indicadores" className="gp-grid gp-only-d">
         <div className="gp-card gp-met gp-dark">
           <span className="gp-ml">Em andamento</span>
           <span className="gp-mv">{ativas.length}</span>
@@ -220,10 +248,10 @@ export default function ObrasPage() {
         </div>
       </section>
 
-      <section className="gp-card" aria-labelledby="h-l" style={{ overflow: "hidden" }}>
+      <section className={semObras ? "gp-card gp-only-d" : "gp-card gp-m-flat"} aria-labelledby="h-l" style={{ overflow: "hidden" }}>
         <h2 id="h-l" className="gp-sr">Lista de obras</h2>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid #E6EBF2" }}>
-          <div role="group" aria-label="Filtrar por status" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <div className="gp-4a-tbar" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid #E6EBF2" }}>
+          <div role="group" aria-label="Filtrar por status" className="gp-chips gp-4a-chips" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {filtros.map((f) => (
               <button key={f.key} type="button" className="gp-chip" aria-pressed={activeFilter === f.key} onClick={() => setActiveFilter(f.key)}>
                 {f.label}
@@ -231,14 +259,17 @@ export default function ObrasPage() {
               </button>
             ))}
           </div>
-          <div className="gp-srch" style={{ marginLeft: "auto", flex: "0 1 300px" }}>
+          <div className="gp-srch gp-only-d" style={{ marginLeft: "auto", flex: "0 1 300px" }}>
             <MagnifyingGlass size={18} color="#475569" weight="bold" aria-hidden="true" />
             <label htmlFor="bo" className="gp-sr">Buscar obra</label>
             <input id="bo" type="search" placeholder="Nome ou cliente" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         </div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", minWidth: 920, borderCollapse: "collapse" }}>
+        <p className="gp-only-m gp-4a-cont" aria-live="polite">
+          {filteredItems.length} {filteredItems.length === 1 ? "obra" : "obras"}
+        </p>
+        <div className="gp-4a-tw" style={{ overflowX: "auto" }}>
+          <table className="gp-4a-ct gp-4a-ct-obras" style={{ width: "100%", minWidth: 920, borderCollapse: "collapse" }}>
             <caption className="gp-sr">Obras</caption>
             <thead>
               <tr>
@@ -254,11 +285,11 @@ export default function ObrasPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="gp-td" style={{ textAlign: "center", padding: 48, color: "#475569" }}>Carregando obras...</td>
+                  <td colSpan={7} className="gp-td gp-4a-msg" style={{ textAlign: "center", padding: 48, color: "#475569" }}>Carregando obras...</td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="gp-td" style={{ textAlign: "center", padding: 48, color: "#475569" }}>Nenhuma obra encontrada.</td>
+                  <td colSpan={7} className="gp-td gp-4a-msg" style={{ textAlign: "center", padding: 48, color: "#475569" }}>Nenhuma obra encontrada.</td>
                 </tr>
               ) : (
                 filteredItems.map((item) => {
@@ -266,7 +297,7 @@ export default function ObrasPage() {
                   const nome = item.orcamento.nome;
                   return (
                     <tr key={item.orcamento.id} className="gp-row">
-                      <th scope="row" className="gp-td" style={{ paddingLeft: 20, textAlign: "left", fontWeight: 400 }}>
+                      <th scope="row" data-m="nome" className="gp-td" style={{ paddingLeft: 20, textAlign: "left", fontWeight: 400 }}>
                         <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
                           <span aria-hidden="true" style={{ width: 42, height: 42, flex: "0 0 42px", borderRadius: 12, background: "#EDF1F6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800 }}>
                             {sigla(nome)}
@@ -281,9 +312,9 @@ export default function ObrasPage() {
                           </span>
                         </span>
                       </th>
-                      <td className="gp-td" style={{ color: "#334155" }}>{item.orcamento.cliente || "—"}</td>
-                      <td className="gp-td" style={{ fontWeight: 700 }} title={item.faseAtual}>{item.faseAtual}</td>
-                      <td className="gp-td">
+                      <td data-m="cli" className="gp-td" style={{ color: "#334155" }}>{item.orcamento.cliente || "—"}</td>
+                      <td data-m="fase" data-label="Fase" className="gp-td" style={{ fontWeight: 700 }} title={item.faseAtual}>{item.faseAtual}</td>
+                      <td data-m="prog" className="gp-td">
                         <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <span className="gp-bar" role="progressbar" aria-label={`Avanço físico de ${nome}`} aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} style={{ flex: "1 1 auto" }}>
                             <span style={{ width: `${pct}%`, background: pct === 100 ? "#65A30D" : "#00a3b1" }} />
@@ -291,14 +322,14 @@ export default function ObrasPage() {
                           <span className="gp-mono" style={{ fontWeight: 600, minWidth: 40, textAlign: "right" }}>{pct.toFixed(1)}%</span>
                         </span>
                       </td>
-                      <td className="gp-td" style={{ color: "#334155" }}>{terminoPrevisto(item.etapas)}</td>
-                      <td className="gp-td">
+                      <td data-m="fim" data-label="Término previsto" className="gp-td" style={{ color: "#334155" }}>{terminoPrevisto(item.etapas)}</td>
+                      <td data-m="st" className="gp-td">
                         <span className={`gp-bg ${STATUS_CLASSES[item.statusCalculado] || "gp-ne"}`}>
                           <span aria-hidden="true" className="gp-dot" />
                           {STATUS_LABELS[item.statusCalculado] || item.statusCalculado}
                         </span>
                       </td>
-                      <td className="gp-td" style={{ textAlign: "right", paddingRight: 20 }}>
+                      <td data-m="acoes" className="gp-td" style={{ textAlign: "right", paddingRight: 20 }}>
                         <span style={{ display: "inline-flex", gap: 6 }}>
                           {item.obra && (
                             <button
@@ -313,7 +344,7 @@ export default function ObrasPage() {
                               <Trash size={18} weight="bold" aria-hidden="true" />
                             </button>
                           )}
-                          <Link href={`/obras/${item.orcamento.id}`} className="gp-ib" aria-label={`Abrir obra ${nome}`} style={{ width: 40, height: 40 }}>
+                          <Link href={`/obras/${item.orcamento.id}`} className="gp-ib gp-only-d" aria-label={`Abrir obra ${nome}`} style={{ width: 40, height: 40 }}>
                             <ArrowRight size={18} weight="bold" aria-hidden="true" />
                           </Link>
                         </span>
@@ -325,7 +356,7 @@ export default function ObrasPage() {
             </tbody>
           </table>
         </div>
-        <div style={{ padding: "14px 20px", borderTop: "1px solid #E6EBF2", fontSize: 14, color: "#475569" }} aria-live="polite">
+        <div className="gp-only-d" style={{ padding: "14px 20px", borderTop: "1px solid #E6EBF2", fontSize: 14, color: "#475569" }} aria-live="polite">
           {filteredItems.length} {filteredItems.length === 1 ? "obra" : "obras"}
         </div>
       </section>
