@@ -178,7 +178,7 @@ export function ComposicaoEditor({
           <h2 className="gp-h2">
             Editar composição <span className="gp-mono" style={{ fontSize: 14, fontWeight: 600, color: "#00626b" }}>{comp.codigo}</span>
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 120px 180px", gap: 16 }}>
+          <div className="gp-4e-edgrid">
             <div className="gp-fld">
               <label htmlFor="ed-desc" className="gp-lb">Descrição <span className="gp-req">(obrigatório)</span></label>
               <input id="ed-desc" value={descricao} onChange={(e) => setDescricao(e.target.value)} required aria-required="true" className="gp-in" />
@@ -192,7 +192,7 @@ export function ComposicaoEditor({
               <input id="ed-grupo" value={grupo} onChange={(e) => setGrupo(e.target.value)} className="gp-in" />
             </div>
           </div>
-          <button type="submit" className="gp-btn gp-bs" style={{ alignSelf: "flex-start" }}>Salvar dados</button>
+          <button type="submit" className="gp-btn gp-bs gp-4e-start">Salvar dados</button>
         </form>
 
         <section className="gp-card gp-pad" aria-label="Contexto de preço" style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 16 }}>
@@ -240,7 +240,7 @@ export function ComposicaoEditor({
             <h2 id="h-ins" className="gp-h2">Insumos por {unidade || "unidade"}</h2>
           </div>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", minWidth: 680, borderCollapse: "collapse" }}>
+            <table className="gp-4e-ptab gp-4e-itens" style={{ width: "100%", minWidth: 680, borderCollapse: "collapse" }}>
               <caption className="gp-sr">Itens da composição</caption>
               <thead>
                 <tr>
@@ -258,14 +258,15 @@ export function ComposicaoEditor({
                   const semPrecoItem = preco !== null && (!p || !p.encontrado || p.preco_unitario == null);
                   return (
                     <tr key={i.id} className="gp-row">
-                      <th scope="row" className="gp-td" style={{ paddingLeft: 22, textAlign: "left" }}>
+                      {/* gridArea só tem efeito no mobile, onde cada item vira cartão (.gp-4e-ptab) */}
+                      <th scope="row" className="gp-td" style={{ paddingLeft: 22, textAlign: "left", gridArea: "item" }}>
                         <span style={{ display: "block", fontWeight: 800 }}>{p?.descricao ?? "—"}</span>
                         <span className="gp-mono" style={{ fontSize: 12, color: "#475569", fontWeight: 400 }}>
                           {i.ref_codigo} · {i.ref_fonte} · {i.ref_tipo === "INSUMO" ? "Insumo" : "Composição"}
                         </span>
                       </th>
-                      <td className="gp-td">{p?.unidade ?? "—"}</td>
-                      <td className="gp-td">
+                      <td className="gp-td gp-4e-iun" style={{ gridArea: "un" }}>{p?.unidade ?? "—"}</td>
+                      <td className="gp-td" style={{ gridArea: "coef" }}>
                         <input
                           aria-label={`Coeficiente de ${i.ref_codigo}`}
                           defaultValue={String(i.coeficiente)}
@@ -275,13 +276,13 @@ export function ComposicaoEditor({
                           style={{ height: 40, width: 110 }}
                         />
                       </td>
-                      <td className="gp-td gp-mono" style={{ textAlign: "right" }}>
+                      <td className="gp-td gp-mono gp-4e-ipu" style={{ textAlign: "right", gridArea: "pu" }}>
                         {semPrecoItem ? <span style={{ color: "#9A3412", fontWeight: 700, fontFamily: "inherit" }}>Sem preço</span> : formatarMoeda(p?.preco_unitario)}
                       </td>
-                      <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600 }}>
+                      <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600, gridArea: "sub" }}>
                         {p && !semPrecoItem ? formatarMoeda(p.subtotal) : "—"}
                       </td>
-                      <td className="gp-td" style={{ paddingRight: 22, textAlign: "right" }}>
+                      <td className="gp-td" style={{ paddingRight: 22, textAlign: "right", gridArea: "rm" }}>
                         <button type="button" aria-label={`Remover ${i.ref_codigo}`} onClick={() => remover(i.id)} className="gp-ib" style={{ width: 40, height: 40, color: "#B91C1C" }}>
                           <Trash size={18} weight="bold" aria-hidden="true" />
                         </button>
@@ -320,13 +321,14 @@ export function ComposicaoEditor({
         </section>
       </div>
 
-      <aside className="gp-card gp-pad gp-dark gp-side" aria-labelledby="h-tot" style={{ display: "flex", flexDirection: "column", gap: 14, position: "sticky", top: 24 }}>
+      {/* No mobile vira o rodapé fixo com o custo unitário (artefato "Editar composição") */}
+      <aside className="gp-card gp-pad gp-dark gp-side gp-4e-tot" aria-labelledby="h-tot" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <h2 id="h-tot" className="gp-h2" style={{ color: "#fff" }}>Custo unitário</h2>
-        <p role="status" className="gp-mono" style={{ margin: 0, fontSize: 34, fontWeight: 600 }} data-testid="preco-total">
+        <p role="status" className="gp-mono" style={{ margin: 0, fontWeight: 600 }} data-testid="preco-total">
           {calculando ? "Calculando..." : preco ? formatarMoeda(preco.preco_total) : "—"}
           <span style={{ fontFamily: "Manrope, sans-serif", fontSize: 15, color: "#cbd5e1" }}> / {unidade}</span>
         </p>
-        <p style={{ margin: 0, fontSize: 13, color: "#cbd5e1", lineHeight: 1.5 }}>
+        <p className="gp-only-d" style={{ margin: 0, fontSize: 13, color: "#cbd5e1", lineHeight: 1.5 }}>
           Orçamentos que usam esta composição recebem o novo custo só quando você atualizar os preços neles.
         </p>
       </aside>

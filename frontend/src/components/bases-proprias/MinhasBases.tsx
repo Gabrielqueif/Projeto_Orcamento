@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus } from "@phosphor-icons/react";
+import { CaretRight, Database, Plus } from "@phosphor-icons/react";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/common/toast";
 import { criarBase, listarBases, type BasePropria } from "@/lib/api/basesProprias";
@@ -65,7 +65,7 @@ export function MinhasBases() {
         <h2 id="minhas-bases-titulo" className="gp-h2">
           Minhas bases
         </h2>
-        <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp gp-sm gp-4a-alvo">
+        <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp gp-sm gp-4a-alvo gp-4e-tap">
           <Plus size={16} weight="bold" aria-hidden="true" /> Nova base
         </button>
       </div>
@@ -88,11 +88,27 @@ export function MinhasBases() {
             <li key={b.id}>
               <Link
                 href={`/bases/propria/${b.id}`}
-                className="gp-card gp-pad"
+                className="gp-card gp-pad gp-4e-bcard"
                 style={{ display: "flex", flexDirection: "column", gap: 10, color: "#001b3d", textDecoration: "none", height: "100%", boxSizing: "border-box" }}
               >
-                <strong style={{ fontSize: 17 }}>{b.nome}</strong>
-                {b.descricao && <span style={{ fontSize: 14, color: "#475569" }}>{b.descricao}</span>}
+                {/* No mobile a linha ganha ícone e seta (artefato "Minhas bases") */}
+                <span className="gp-4e-brow">
+                  <span className="gp-only-m" aria-hidden="true">
+                    <span className="gp-4e-bico"><Database size={22} weight="bold" /></span>
+                  </span>
+                  <span className="gp-4e-btxt">
+                    <strong style={{ fontSize: 17 }}>{b.nome}</strong>
+                    {b.descricao && <span style={{ fontSize: 14, color: "#475569" }}>{b.descricao}</span>}
+                    {b.updated_at && (
+                      <span className="gp-only-m" style={{ fontSize: 13, color: "#475569" }}>
+                        Atualizada em {new Date(b.updated_at).toLocaleDateString("pt-BR")}
+                      </span>
+                    )}
+                  </span>
+                  <span className="gp-only-m" aria-hidden="true" style={{ marginLeft: "auto", color: "#475569" }}>
+                    <CaretRight size={18} weight="bold" />
+                  </span>
+                </span>
                 {b.uf && (
                   <span style={{ display: "flex", gap: 8 }}>
                     <span className="gp-bg gp-ne">{b.uf}</span>
@@ -123,7 +139,7 @@ export function MinhasBases() {
               ))}
             </select>
           </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <div className="gp-4e-dlgacts">
             <button type="button" onClick={fechar} className="gp-btn gp-bs">Cancelar</button>
             <button type="submit" disabled={salvando || !nome.trim()} className="gp-btn gp-bp" style={salvando || !nome.trim() ? { opacity: 0.5 } : undefined}>
               {salvando ? "Criando..." : "Criar base"}

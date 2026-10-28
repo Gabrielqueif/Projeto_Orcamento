@@ -63,13 +63,34 @@ export function BasePropriaView({ baseId }: { baseId: string }) {
             </>
           )
         }
-      />
+      >
+        {/* Mobile: abas em controle segmentado dentro do cabeçalho escuro */}
+        {!erro && (
+          <div className="gp-only-m">
+            <div role="tablist" aria-label="Conteúdo da base" className="gp-4e-seg">
+              {ABAS.map((a) => (
+                <button
+                  key={a.k}
+                  type="button"
+                  role="tab"
+                  id={`tpm-${a.k}`}
+                  aria-selected={aba === a.k}
+                  aria-controls="pb"
+                  onClick={() => setAba(a.k)}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </PageHeader>
 
       {erro && <p style={{ margin: 0, color: "#B91C1C" }}>{erro}</p>}
 
       {!erro && (
-        <section className="gp-card" style={{ overflow: "hidden" }}>
-          <div role="tablist" aria-label="Conteúdo da base" style={{ display: "flex", gap: 4, padding: "12px 16px 0", borderBottom: "1px solid #E6EBF2" }}>
+        <section className="gp-card gp-m-flat" style={{ overflow: "hidden" }}>
+          <div role="tablist" aria-label="Conteúdo da base" className="gp-4e-dtabs">
             {ABAS.map((a) => (
               <button
                 key={a.k}

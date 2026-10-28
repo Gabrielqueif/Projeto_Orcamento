@@ -744,4 +744,176 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
   .gp-4d-cgb>.gp-bp{flex-grow:2}
   .gp-4d-ckl{min-height:48px}
   .gp-4d-ck{width:22px;height:22px}
+
+/* ===== Fase 4e ===== */
+/* Bases, administração, estados do sistema e documentos. As regras fora da media query
+   só reproduzem o que antes era estilo inline (o desktop não muda). */
+.gp-4e-col{display:flex;flex-direction:column;gap:14px}
+.gp-4e-h3{margin:0;font-size:14px;font-weight:800;color:#475569}
+.gp-4e-start{align-self:flex-start}
+.gp-4e-fab{border:0;cursor:pointer;font-family:inherit}
+/* Barra de ferramentas das abas da base própria */
+.gp-4e-tb{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 16px}
+.gp-4e-tbq{flex:1 1 240px;max-width:360px}
+.gp-4e-tbacts{display:flex;flex-wrap:wrap;gap:10px;margin-left:auto}
+.gp-4e-dtabs{display:flex;gap:4px;padding:12px 16px 0;border-bottom:1px solid #E6EBF2}
+.gp-4e-edw{padding:16px;border-top:1px solid #E6EBF2;background:#F8FAFC}
+.gp-4e-edgrid{display:grid;grid-template-columns:minmax(0,1fr) 120px 180px;gap:16px}
+.gp-4e-tot{position:sticky;top:24px}
+.gp-4e-tot [role=status]{font-size:34px}
+.gp-4e-brow{display:flex;align-items:center;gap:12px}
+.gp-4e-btxt{display:flex;flex-direction:column;gap:10px;min-width:0}
+.gp-4e-dlgacts{display:flex;justify-content:flex-end;gap:10px}
+.gp-4e-dlgt{font-size:21px}
+.gp-4e-dlgx{width:40px;height:40px}
+.gp-4e-stack{display:flex;gap:10px}
+/* Estados: erro de rota, 404 e toasts */
+.gp-4e-err{display:flex;align-items:center;justify-content:center;text-align:center;min-height:560px}
+.gp-4e-nf{padding:40px 56px}
+.gp-4e-nfm{align-items:center;justify-content:center;gap:56px}
+.gp-4e-nfa{flex:0 1 380px;align-items:center}
+.gp-4e-nf404{font-size:160px;letter-spacing:-8px}
+.gp-4e-nfbar{width:300px;height:22px}
+.gp-4e-nfpes{width:260px}
+.gp-4e-nft{font-size:40px;letter-spacing:-1px}
+.gp-4e-nfp{font-size:17px}
+.gp-4e-toast{padding:10px 8px 10px 16px;border-radius:16px}
+.gp-4e-tico{border-radius:9px}
+.gp-4e-tx{width:40px;height:40px}
+/* Elementos que só existem no mobile */
+.gp-4e-seg{display:none}
+.gp-4e-skd{display:block;border-radius:16px;background:linear-gradient(90deg,rgba(255,255,255,.08) 0%,rgba(255,255,255,.18) 40%,rgba(255,255,255,.08) 80%);background-size:300% 100%;animation:gp-sk 1.4s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.gp-4e-skd{animation:none}}
+
+@media (max-width: 1023px){
+  .gp-4e-tap{min-height:44px}
+  .gp-4e-ib44{width:44px !important;height:44px !important}
+
+  /* Controle segmentado no cabeçalho escuro (abas) */
+  .gp-4e-seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);padding:4px;border-radius:16px;background:rgba(255,255,255,.08)}
+  .gp-4e-seg>button{min-height:44px;border:0;border-radius:12px;background:transparent;color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer}
+  .gp-4e-seg>button[aria-selected=true]{background:#9fd300;color:#001b3d;font-weight:800}
+  .gp-ph .gp-4e-q{padding:0 6px 0 16px}
+  .gp-4e-q input,.gp-4e-tbq input{font-size:16px}
+  .gp-4e-q .gp-btn{min-height:40px;border-radius:12px}
+  .gp-ph .gp-chip.gp-4e-hchip{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-weight:700}
+  .gp-ph .gp-chip.gp-4e-hchip[aria-pressed=true]{border-color:#9fd300;background:#9fd300;color:#001b3d;font-weight:800}
+
+  /* Pesquisa na base de referência: chips de UF e cartões de resultado */
+  .gp-chips>.gp-chip.gp-4e-uf{min-width:56px;justify-content:center;border-radius:999px;border-color:#CBD5E1}
+  .gp-4e-vazio{margin:0;padding:24px 16px;border-radius:18px;background:#fff;text-align:center;font-size:15px;color:#475569}
+  .gp-4e-cards{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .gp-4e-rcard{border-radius:18px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.06);overflow:hidden}
+  .gp-4e-rcard>button{display:flex;flex-direction:column;gap:8px;width:100%;padding:14px 16px;border:0;background:transparent;color:#001b3d;font:inherit;text-align:left;cursor:pointer}
+  .gp-4e-rcard>button[aria-expanded=true]{box-shadow:inset 4px 0 0 #9fd300}
+  .gp-4e-rtop,.gp-4e-rfoot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .gp-4e-cod{padding:3px 8px;border-radius:8px;background:#E6F6D0;color:#3F6604;font-size:13px;font-weight:600}
+  .gp-4e-un{font-size:12px;font-weight:700;color:#475569}
+  .gp-4e-desc{font-size:15px;font-weight:700;line-height:1.4}
+  .gp-4e-rfoot{align-items:baseline;padding-top:8px;border-top:1px solid #E6EBF2;font-size:13px;color:#475569}
+  .gp-4e-rfoot>.gp-mono{font-size:16px;font-weight:600;color:#001b3d}
+  .gp-4e-rdet{display:flex;flex-direction:column;gap:6px;padding:12px 16px 14px;border-top:1px solid #E6EBF2;background:#F7FCE9}
+  .gp-4e-uflist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
+  .gp-4e-uflist>li{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid #E6EBF2;font-size:14px}
+  .gp-4e-uflist>li>span:first-child{font-weight:700}
+
+  /* Minhas bases: cartão com ícone e seta */
+  .gp-4e-bcard{border-radius:22px;padding:18px !important}
+  .gp-4e-btxt{flex:1 1 auto;gap:2px}
+  .gp-4e-bico{width:46px;height:46px;border-radius:14px;background:#E6F6D0;color:#3F6604;display:flex;align-items:center;justify-content:center}
+
+  /* Diálogos (Modal e confirmações) como folha inferior com alça */
+  .gp-4e-dlgw{max-width:none !important}
+  .gp-4e-sheet::before,.gp-dlg[role=alertdialog]::before{content:"";flex:0 0 auto;align-self:center;width:40px;height:5px;margin:-8px 0 -4px;border-radius:3px;background:#CBD5E1}
+  .gp-4e-dlgt{font-size:20px}
+  .gp-4e-dlgx{width:44px;height:44px;border:0;border-radius:14px;background:#F4F6FA}
+  .gp-4e-dlgacts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);margin-top:4px}
+  .gp-4e-dlgacts>.gp-btn{min-height:54px;border-radius:16px}
+  .gp-4e-dlgacts>.gp-bs{border-color:transparent;background:#F4F6FA}
+  /* Confirmação de exclusão: ação principal em cima, cancelar embaixo, na largura toda */
+  .gp-dlg[role=alertdialog]>div:last-child{flex-direction:column-reverse !important;align-items:stretch !important;gap:10px !important;margin-top:4px}
+  .gp-dlg[role=alertdialog]>div:last-child>.gp-btn{width:100%;min-height:54px;border-radius:16px}
+  .gp-dlg[role=alertdialog]>div:last-child>.gp-bs{border-color:transparent;background:#F4F6FA}
+
+  /* Base própria: barra de ferramentas, abas e tabelas viram cartões em grade */
+  .gp-4e-dtabs{display:none}
+  .gp-4e-tb{padding:0 0 12px;gap:10px}
+  .gp-4e-tbq{order:2;flex:1 1 100%;max-width:none;height:50px;border-radius:16px}
+  .gp-4e-tbacts{order:1;flex:1 1 100%;margin-left:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gp-4e-tbacts>.gp-btn{min-height:52px;border-radius:16px}
+  .gp-4e-tbacts>.gp-bd{order:-1}
+  .gp-4e-ptab{min-width:0 !important;display:block;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.06);overflow:hidden}
+  .gp-4e-ptab>thead{display:none}
+  .gp-4e-ptab>tbody{display:block}
+  .gp-4e-ptab tr{display:grid;column-gap:10px;row-gap:4px;align-items:center;padding:12px 14px;border-top:1px solid #E6EBF2}
+  .gp-4e-ptab tr:first-child{border-top:0}
+  .gp-4e-ptab tr>td,.gp-4e-ptab tr>th{display:block;min-width:0;padding:0 !important;border:0;font-size:14px}
+  .gp-4e-ptab .gp-ib{width:44px !important;height:44px !important}
+  .gp-4e-ptab .gp-btn.gp-sm{min-height:44px}
+  .gp-4e-ptab .gp-mono{font-size:13px}
+  .gp-4e-ins tr{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"cod cod preco" "desc desc desc" "un tipo acts"}
+  .gp-4e-ins .gp-4e-tipo::before{content:"· "}
+  .gp-4e-cmp tr{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"cod un" "desc desc" "acts acts"}
+  .gp-4e-itens tr{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"item item rm" "pu un un" "coef sub sub";row-gap:6px}
+  .gp-4e-itens .gp-4e-ipu,.gp-4e-itens .gp-4e-iun{font-size:13px;color:#475569;text-align:left !important}
+  .gp-4e-itens .gp-4e-iun::before{content:"/ "}
+  .gp-4e-itens input{height:44px !important}
+  .gp-4e-comps[data-editando] .gp-4e-tb,.gp-4e-comps[data-editando] .gp-4e-lista{display:none}
+  .gp-4e-edw{padding:0;border-top:0;background:transparent}
+  .gp-4e-comps:not([data-editando]) .gp-4e-edw{display:none}
+  .gp-4e-voltar{margin-bottom:14px}
+  .gp-4e-edgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .gp-4e-edgrid>:first-child{grid-column:1/-1}
+  .gp-4e-start{align-self:stretch}
+  .gp-4e-bref{display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gp-4e-bref>input,.gp-4e-bref>button{grid-column:1/-1}
+  .gp-4e-bref>select,.gp-4e-bref>input{height:48px !important}
+  .gp-4e-refbtn{min-height:44px}
+  /* Custo unitário vira rodapé fixo acima da barra inferior */
+  .gp-4e-tot{top:auto;bottom:calc(92px + env(safe-area-inset-bottom));z-index:5;flex-direction:row !important;flex-wrap:wrap;align-items:baseline !important;justify-content:space-between;gap:4px 12px !important;padding:14px 18px;border-radius:20px;box-shadow:0 -10px 30px -18px rgba(0,27,61,.45)}
+  .gp-4e-tot .gp-h2{font-size:14px;color:#cbd5e1 !important}
+  .gp-4e-tot [role=status]{font-size:22px}
+
+  /* Admin: aviso de que a importação é melhor no computador */
+  .gp-4e-nota{display:flex;gap:12px;padding:14px 16px;border-radius:18px;background:#e0f5f7;color:#00626b;font-size:14px;line-height:1.5}
+
+  /* Documentos */
+  .gp-4e-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;border-radius:20px;overflow:hidden;background:#E6EBF2;box-shadow:0 1px 2px rgba(0,27,61,.05),0 14px 30px -18px rgba(0,27,61,.35)}
+  .gp-4e-kpis>.gp-card{border-radius:0;box-shadow:none;padding:14px 16px;gap:2px}
+  .gp-4e-kpis .gp-mv{font-size:20px}
+  .gp-4e-g1{grid-template-columns:minmax(0,1fr) !important}
+  .gp-4e-wrap .gp-li{flex-wrap:wrap}
+  .gp-4e-wrap .gp-li span{overflow-wrap:anywhere;white-space:normal !important}
+  .gp-4e-frows{min-width:0 !important;display:block}
+  .gp-4e-frows>thead{display:none}
+  .gp-4e-frows>tbody{display:block}
+  .gp-4e-frows tr{display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;padding:10px 14px;border-top:1px solid #E6EBF2}
+  .gp-4e-frows tr:first-child{border-top:0}
+  .gp-4e-frows tr>th,.gp-4e-frows tr>td{display:block;padding:0 !important;border:0;min-width:0}
+  .gp-4e-frows tr>th{order:1;flex:1 1 calc(100% - 56px);overflow-wrap:anywhere}
+  .gp-4e-frows tr>td:last-child{order:2;flex:0 0 auto}
+  .gp-4e-frows tr>td:not(:last-child){order:3;font-size:13px;color:#475569;text-align:left !important}
+  .gp-4e-frows tr>td:nth-child(2){padding-left:50px !important}
+  .gp-4e-frows tr>td:nth-child(n+3):not(:last-child)::before{content:"· "}
+  .gp-4e-frows .gp-ib{width:44px !important;height:44px !important}
+
+  /* Estados do sistema */
+  .gp-4e-err{min-height:calc(100dvh - 200px)}
+  .gp-4e-err>[role=alert]{width:100%}
+  .gp-4e-errt{font-size:21px}
+  .gp-4e-stack{flex-direction:column;align-self:stretch}
+  .gp-4e-stack>.gp-btn{width:100%;min-height:54px;border-radius:16px}
+  .gp-4e-nf{padding:calc(22px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom))}
+  .gp-4e-nfm{flex-direction:column;flex-wrap:nowrap !important;align-items:stretch;justify-content:center;gap:14px;padding:0 8px;box-sizing:border-box}
+  .gp-4e-nfm>div{flex:0 0 auto !important}
+  .gp-4e-nfa{align-items:flex-start;gap:0 !important}
+  .gp-4e-nf404{font-size:96px;letter-spacing:-4px}
+  .gp-4e-nfbar{width:120px;height:12px;margin-top:12px}
+  .gp-4e-nfpes{width:108px;margin-left:6px}
+  .gp-4e-nfpes>span{width:6px !important;height:16px !important}
+  .gp-4e-nft{font-size:26px;letter-spacing:-.5px;margin-top:8px !important}
+  .gp-4e-nfp{font-size:15px}
+  .gp-4e-toast{padding:8px 6px 8px 14px;border-radius:18px}
+  .gp-4e-tico{border-radius:50%}
+  .gp-4e-tx{width:44px;height:44px}
 }

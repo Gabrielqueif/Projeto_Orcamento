@@ -163,15 +163,14 @@ export function InsumosTab({ baseId }: { baseId: string }) {
 
   return (
     <div>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "14px 16px" }}>
+      <div className="gp-4e-tb">
         <form
           role="search"
           onSubmit={(e) => {
             e.preventDefault();
             carregar(busca);
           }}
-          className="gp-srch"
-          style={{ flex: "1 1 240px", maxWidth: 360 }}
+          className="gp-srch gp-4e-tbq"
         >
           <MagnifyingGlass size={18} weight="bold" aria-hidden="true" color="#475569" />
           <input
@@ -185,7 +184,7 @@ export function InsumosTab({ baseId }: { baseId: string }) {
             Buscar
           </button>
         </form>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginLeft: "auto" }}>
+        <div className="gp-4e-tbacts">
           <button type="button" onClick={baixarModelo} className="gp-btn gp-bs gp-sm">
             <DownloadSimple size={16} weight="bold" aria-hidden="true" /> Baixar modelo
           </button>
@@ -199,14 +198,19 @@ export function InsumosTab({ baseId }: { baseId: string }) {
             <UploadSimple size={16} weight="bold" aria-hidden="true" /> {importando ? "Importando..." : "Importar .xlsx"}
           </button>
           <input ref={arquivoRef} type="file" accept=".xlsx" className="gp-sr" tabIndex={-1} aria-hidden="true" data-testid="input-importar" onChange={importar} />
-          <button type="button" onClick={abrirNovo} className="gp-btn gp-bp gp-sm">
+          <button type="button" onClick={abrirNovo} className="gp-btn gp-bp gp-sm gp-only-d">
             <Plus size={16} weight="bold" aria-hidden="true" /> Novo insumo
           </button>
         </div>
       </div>
 
+      {/* Mobile: "Novo insumo" vira o botão flutuante acima da barra inferior */}
+      <button type="button" onClick={abrirNovo} className="gp-fab gp-4e-fab">
+        <Plus size={22} weight="bold" aria-hidden="true" /> Novo insumo
+      </button>
+
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse" }}>
+        <table className="gp-4e-ptab gp-4e-ins" style={{ width: "100%", minWidth: 760, borderCollapse: "collapse" }}>
           <caption className="gp-sr">Insumos da base própria</caption>
           <thead>
             <tr>
@@ -221,12 +225,13 @@ export function InsumosTab({ baseId }: { baseId: string }) {
           <tbody>
             {insumos.map((i) => (
               <tr key={i.id} className="gp-row">
-                <td className="gp-td gp-mono" style={{ paddingLeft: 22, color: "#00626b", fontWeight: 600 }}>{i.codigo}</td>
-                <th scope="row" className="gp-td" style={{ textAlign: "left", fontWeight: 700 }}>{i.descricao}</th>
-                <td className="gp-td">{i.unidade}</td>
-                <td className="gp-td" style={{ color: "#475569" }}>{rotuloTipoInsumo(i.tipo)}</td>
-                <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600 }}>{formatarMoeda(i.preco)}</td>
-                <td className="gp-td" style={{ paddingRight: 22, textAlign: "right", whiteSpace: "nowrap" }}>
+                {/* gridArea só tem efeito no mobile, onde a linha vira grade (.gp-4e-ptab) */}
+                <td className="gp-td gp-mono" style={{ paddingLeft: 22, color: "#00626b", fontWeight: 600, gridArea: "cod" }}>{i.codigo}</td>
+                <th scope="row" className="gp-td" style={{ textAlign: "left", fontWeight: 700, gridArea: "desc" }}>{i.descricao}</th>
+                <td className="gp-td" style={{ gridArea: "un" }}>{i.unidade}</td>
+                <td className="gp-td gp-4e-tipo" style={{ color: "#475569", gridArea: "tipo" }}>{rotuloTipoInsumo(i.tipo)}</td>
+                <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600, gridArea: "preco" }}>{formatarMoeda(i.preco)}</td>
+                <td className="gp-td" style={{ paddingRight: 22, textAlign: "right", whiteSpace: "nowrap", gridArea: "acts" }}>
                   <button type="button" aria-label={`Editar ${i.codigo}`} onClick={() => abrirEdicao(i)} className="gp-ib" style={{ width: 40, height: 40 }}>
                     <PencilSimple size={18} weight="bold" aria-hidden="true" />
                   </button>{" "}
@@ -274,7 +279,7 @@ export function InsumosTab({ baseId }: { baseId: string }) {
             <label htmlFor="ins-preco" className="gp-lb">Preço (R$)</label>
             <input id="ins-preco" value={form.preco} onChange={set("preco")} inputMode="decimal" className="gp-in gp-mono" />
           </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <div className="gp-4e-dlgacts">
             <button type="button" onClick={fechar} className="gp-btn gp-bs">Cancelar</button>
             <button type="submit" disabled={salvando} className="gp-btn gp-bp" style={salvando ? { opacity: 0.5 } : undefined}>
               {salvando ? "Salvando..." : "Salvar"}

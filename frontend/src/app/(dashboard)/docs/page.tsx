@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { FolderPlus, Folder, ArrowRight, FilePdf, FileText, DownloadSimple } from "@phosphor-icons/react";
+import { FolderPlus, Folder, ArrowRight, FilePdf, FileText, DownloadSimple, Plus } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/layout/PageHeader";
 
 type Situacao = "conformidade" | "vencidos" | "pendencias";
@@ -37,7 +38,18 @@ const recentDocs = [
   { id: "3", name: "Projeto_Eletrico_Rev01.pdf", project: "Retrofit Edifício Central", date: "08 out 2026", type: "pdf" },
 ];
 
+// Filtro por situação (chips do mobile; no desktop fica sempre em "Todos").
+const FILTROS: { k: Situacao | "todas"; label: string }[] = [
+  { k: "todas", label: "Todos" },
+  { k: "conformidade", label: "Em conformidade" },
+  { k: "vencidos", label: "Vencidos" },
+  { k: "pendencias", label: "Pendências" },
+];
+
 export default function DocsPage() {
+  const [filtro, setFiltro] = useState<Situacao | "todas">("todas");
+  const visiveis = projects.filter((p) => filtro === "todas" || p.status === filtro);
+
   return (
     <>
       <PageHeader
@@ -46,24 +58,36 @@ export default function DocsPage() {
         back="/mais"
         title="Repositório de projetos"
         subtitle="Conformidade técnica e legal das obras ativas."
+        lift
         actions={
-          <button type="button" className="gp-btn gp-bp">
+          <button type="button" className="gp-btn gp-bp gp-only-d">
             <FolderPlus size={18} weight="bold" aria-hidden="true" /> Novo repositório
           </button>
         }
       />
 
-      <section aria-label="Indicadores" className="gp-grid">
+      <section aria-label="Indicadores" className="gp-grid gp-4e-kpis">
         <div className="gp-card gp-met gp-dark"><span className="gp-ml">Total de arquivos</span><span className="gp-mv">2.842</span><span className="gp-ms">em 4 repositórios</span></div>
         <div className="gp-card gp-met"><span className="gp-ml">Em conformidade</span><span className="gp-mv">18</span><span className="gp-ms">obras</span></div>
         <div className="gp-card gp-met"><span className="gp-ml">Pendências críticas</span><span className="gp-mv" style={{ color: "#9A3412" }}>04</span><span className="gp-ms">exigem ação</span></div>
         <div className="gp-card gp-met"><span className="gp-ml">Vencidos</span><span className="gp-mv" style={{ color: "#B91C1C" }}>07</span><span className="gp-ms">documentos</span></div>
       </section>
 
+      <div className="gp-only-m">
+        <div className="gp-chips" role="group" aria-label="Filtrar por situação">
+          {FILTROS.map((f) => (
+            <button key={f.k} type="button" aria-pressed={filtro === f.k} onClick={() => setFiltro(f.k)} className="gp-chip">
+              {f.label}
+              <span className="gp-cnt">{f.k === "todas" ? projects.length : projects.filter((p) => p.status === f.k).length}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <section aria-labelledby="h-rep" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <h2 id="h-rep" className="gp-h2">Repositórios</h2>
         <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-          {projects.map((p) => {
+          {visiveis.map((p) => {
             const s = SIT[p.status];
             const pct = Math.round((p.metricValue / p.metricMax) * 100);
             return (
@@ -89,7 +113,7 @@ export default function DocsPage() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid #E6EBF2" }}>
                   <span style={{ fontSize: 13, color: "#475569" }}>{p.storageUsed} armazenados</span>
-                  <Link href={`/docs/${p.id}`} className="gp-btn gp-bs gp-sm">Acessar pasta <ArrowRight size={14} weight="bold" aria-hidden="true" /></Link>
+                  <Link href={`/docs/${p.id}`} className="gp-btn gp-bs gp-sm gp-4e-tap">Acessar pasta <ArrowRight size={14} weight="bold" aria-hidden="true" /></Link>
                 </div>
               </article>
             );
@@ -101,10 +125,10 @@ export default function DocsPage() {
         <section className="gp-card gp-main" aria-labelledby="h-rec" style={{ overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid #E6EBF2" }}>
             <h2 id="h-rec" className="gp-h2">Documentos recentes</h2>
-            <button type="button" className="gp-btn gp-bs gp-sm">Ver todos</button>
+            <button type="button" className="gp-btn gp-bs gp-sm gp-4e-tap">Ver todos</button>
           </div>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
+            <table className="gp-4e-frows" style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
               <caption className="gp-sr">Documentos recentes</caption>
               <thead><tr><th scope="col" className="gp-th" style={{ paddingLeft: 22 }}>Documento</th><th scope="col" className="gp-th">Projeto</th><th scope="col" className="gp-th">Data</th><th scope="col" className="gp-th" style={{ paddingRight: 22 }}><span className="gp-sr">Baixar</span></th></tr></thead>
               <tbody>
@@ -140,6 +164,11 @@ export default function DocsPage() {
           <div className="gp-li"><span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}><span className="gp-dot" aria-hidden="true" style={{ background: "#9fd300" }} />Relatórios e docs</span><span className="gp-mono" style={{ fontWeight: 600 }}>4,2 GB</span></div>
         </aside>
       </div>
+
+      {/* Mobile: "Novo repositório" vira o botão flutuante */}
+      <button type="button" className="gp-fab gp-4e-fab">
+        <Plus size={22} weight="bold" aria-hidden="true" /> Novo repositório
+      </button>
     </>
   );
 }

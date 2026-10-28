@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Desktop } from '@phosphor-icons/react';
 import { importWorksheet } from '@/lib/api/importacao';
 
 export function ImportUpload() {
@@ -44,6 +45,16 @@ export function ImportUpload() {
     const semArquivo = importing || files.length === 0;
 
     return (
+        <>
+        {/* Mobile: os arquivos oficiais são grandes; avisa que o computador é o melhor lugar */}
+        <div className="gp-only-m">
+            <div role="note" className="gp-4e-nota">
+                <Desktop size={22} weight="bold" aria-hidden="true" style={{ flex: '0 0 22px' }} />
+                <p style={{ margin: 0 }}>
+                    <strong>Melhor no computador.</strong> Os arquivos oficiais são grandes e a importação pode demorar. No celular, mantenha esta tela aberta até o fim.
+                </p>
+            </div>
+        </div>
         <div className="gp-split">
             <section className="gp-card gp-pad gp-main" aria-labelledby="h-nv" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <h2 id="h-nv" className="gp-h2">Nova importação</h2>
@@ -86,10 +97,10 @@ export function ImportUpload() {
 
                 <button
                     type="button"
-                    className="gp-btn gp-bp"
+                    className="gp-btn gp-bp gp-4e-start"
                     onClick={handleImport}
                     disabled={semArquivo}
-                    style={semArquivo ? { alignSelf: 'flex-start', background: '#E6EBF2', color: '#475569', cursor: 'not-allowed' } : { alignSelf: 'flex-start' }}
+                    style={semArquivo ? { background: '#E6EBF2', color: '#475569', cursor: 'not-allowed' } : undefined}
                 >
                     {importing ? 'Processando (Isso pode demorar)...' : 'Importar Tabela Completa'}
                 </button>
@@ -131,5 +142,6 @@ export function ImportUpload() {
                 </p>
             </aside>
         </div>
+        </>
     );
 }
