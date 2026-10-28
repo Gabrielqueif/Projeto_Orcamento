@@ -16,6 +16,7 @@ from app.modules.financeiro import router as financeiro_router
 from app.modules.financeiro import router_portfolio as financeiro_portfolio_router
 from app.modules.importacao import router as importacao_router
 from app.modules.medicao import router as medicao_router
+from app.modules.notificacao import router as notificacao_router
 from app.modules.obra import router as obra_router
 from app.modules.orcamento import router as orcamento_router
 from core.config import settings
@@ -91,6 +92,7 @@ app.include_router(diario_router)
 app.include_router(diario_resumo_router)
 app.include_router(medicao_router)
 app.include_router(dashboard_router)
+app.include_router(notificacao_router)
 app.include_router(base_propria_router)
 
 

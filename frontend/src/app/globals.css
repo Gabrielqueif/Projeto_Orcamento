@@ -938,3 +938,26 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
   .gp-6a-contador{gap:6px}
   .gp-6a-contador button{border-radius:14px;font-size:22px}
 }
+
+/* ===== Fase 6b ===== */
+.gp-6b-pagina{display:flex;flex-direction:column;gap:18px}
+.gp-6b-bolinha{position:absolute;top:8px;right:8px;width:10px;height:10px;border-radius:50%;background:#65A30D;box-shadow:0 0 0 2px #fff;pointer-events:none}
+.gp-6b-grupo{display:flex;flex-direction:column;gap:10px}
+.gp-6b-lista{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.gp-6b-item{display:flex;align-items:center;gap:14px;padding:14px 16px;position:relative;text-decoration:none;color:#001b3d;box-sizing:border-box}
+.gp-6b-nao-lida{background:#F7FBEA;box-shadow:inset 4px 0 0 #65A30D,0 1px 2px rgba(0,27,61,.05),0 10px 24px -18px rgba(0,27,61,.35)}
+.gp-6b-icone{width:36px;height:36px;flex:0 0 36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.gp-6b-sev-critical{background:#FEE2E2;color:#B91C1C}
+.gp-6b-sev-moderate{background:#FFEDD5;color:#9A3412}
+.gp-6b-sev-info{background:#e0f5f7;color:#00626b}
+.gp-6b-corpo{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.gp-6b-titulo{font-size:15px;font-weight:800;overflow-wrap:anywhere}
+.gp-6b-desc{font-size:14px;line-height:1.45;color:#475569}
+.gp-6b-ponto{flex:0 0 10px;width:10px;height:10px;border-radius:50%;background:#65A30D}
+.gp-6b-erro,.gp-6b-vazio{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+@media (max-width:1023px){
+  .gp-6b-item{min-height:64px;padding:14px}
+  .gp-6b-lista{gap:8px}
+  .gp-6b-desc{font-size:13px}
+  .gp-6b-erro .gp-btn{align-self:stretch;min-height:52px}
+}
