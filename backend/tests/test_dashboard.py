@@ -292,3 +292,30 @@ def test_rota_dashboard_usa_o_usuario_autenticado(client, service, repo):
     app.dependency_overrides[get_dashboard_service] = lambda: service
     client.get("/dashboard")
     repo.obras_do_usuario.assert_called_once_with("test-user-id")
+
+
+# --- lista completa de riscos (usada pelas notificações) -------------------------
+
+
+def test_listar_riscos_nao_corta_e_nao_sincroniza_status(service, repo, medicoes):
+    # 10 obras, cada uma com ATRASO (crítico) e ESTOQUE (moderado): 20 riscos, acima de MAX_RISCOS.
+    repo.obras_do_usuario.return_value = [_obra(f"o{i}") for i in range(10)]
+    repo.insumos_criticos_por_obra.return_value = {f"o{i}": 1 for i in range(10)}
+    # Diário recente em todas as obras, para não gerar riscos de DIARIO.
+    repo.diarios_recentes.return_value = [_diario(obra_id=f"o{i}") for i in range(10)]
+    medicoes.listar.return_value = [{"etapa_id": "e1", "data": "2026-10-22", "progresso": 10}]
+
+    riscos = service.listar_riscos(USUARIO)
+
+    assert len(riscos) == 20
+    assert all("obra_id" in r for r in riscos)
+    assert {(r["tipo"], r["obra_id"]) for r in riscos} == {("ATRASO", f"o{i}") for i in range(10)} | {
+        ("ESTOQUE", f"o{i}") for i in range(10)
+    }
+    repo.atualizar_status_obra.assert_not_called()
+
+
+def test_obter_continua_sincronizando_status_ao_usar_a_lista(service, repo, medicoes):
+    medicoes.listar.return_value = [{"etapa_id": "e1", "data": "2026-10-22", "progresso": 10}]
+    service.obter(USUARIO)
+    repo.atualizar_status_obra.assert_called_once_with("o1", "ATRASADO")

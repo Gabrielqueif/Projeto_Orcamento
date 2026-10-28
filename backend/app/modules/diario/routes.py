@@ -14,6 +14,7 @@ from app.modules.diario.schemas import (
     ResumoDiarioResponse,
 )
 from app.modules.diario.services import DiarioService
+from app.modules.equipe.repositories import CargoRepository
 from app.modules.medicao.repositories import MedicaoRepository
 from app.modules.medicao.services import MedicaoService
 from core.ownership import enforce_ownership
@@ -34,7 +35,9 @@ router_resumo = APIRouter(
 
 
 def get_diario_service(supabase=Depends(get_supabase)) -> DiarioService:
-    return DiarioService(DiarioRepository(supabase), MedicaoService(MedicaoRepository(supabase)))
+    return DiarioService(
+        DiarioRepository(supabase), MedicaoService(MedicaoRepository(supabase)), CargoRepository(supabase)
+    )
 
 
 @router_resumo.get("/resumo", response_model=ResumoDiarioResponse, summary="Visão geral do diário das obras ativas")
@@ -52,8 +55,13 @@ async def listar_endpoint(
 
 
 @router.post("", response_model=DiarioResponse, status_code=status.HTTP_201_CREATED, summary="Criar diário do dia")
-async def criar_endpoint(obra_id: str, dados: DiarioCreate, service: DiarioService = Depends(get_diario_service)):
-    return service.criar(obra_id, dados)
+async def criar_endpoint(
+    obra_id: str,
+    dados: DiarioCreate,
+    service: DiarioService = Depends(get_diario_service),
+    user: dict = Depends(get_current_user),
+):
+    return service.criar(obra_id, dados, user_id=user["id"])
 
 
 @router.get("/{diario_id}", response_model=DiarioResponse, summary="Buscar diário")
@@ -63,9 +71,13 @@ async def obter_endpoint(obra_id: str, diario_id: str, service: DiarioService = 
 
 @router.put("/{diario_id}", response_model=DiarioResponse, summary="Atualizar diário")
 async def atualizar_endpoint(
-    obra_id: str, diario_id: str, dados: DiarioUpdate, service: DiarioService = Depends(get_diario_service)
+    obra_id: str,
+    diario_id: str,
+    dados: DiarioUpdate,
+    service: DiarioService = Depends(get_diario_service),
+    user: dict = Depends(get_current_user),
 ):
-    return service.atualizar(obra_id, diario_id, dados)
+    return service.atualizar(obra_id, diario_id, dados, user_id=user["id"])
 
 
 @router.patch("/{diario_id}/status", response_model=DiarioResponse, summary="Enviar, aprovar ou reabrir diário")

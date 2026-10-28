@@ -37,6 +37,11 @@ it("mostra o perfil e os atalhos de gestão", () => {
   expect(screen.getByRole("link", { name: /suporte/i })).toHaveAttribute("href", "mailto:suporte@gpobras.com.br");
 });
 
+it("leva às configurações da conta", () => {
+  render(<MaisPage />);
+  expect(screen.getByRole("link", { name: /configurações/i })).toHaveAttribute("href", "/configuracoes");
+});
+
 it("esconde a importação de quem não é admin", () => {
   render(<MaisPage />);
   expect(screen.queryByRole("link", { name: /importação/i })).not.toBeInTheDocument();

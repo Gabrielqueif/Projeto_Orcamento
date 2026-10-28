@@ -12,6 +12,8 @@ import { getObras, type Obra } from '@/lib/api/obras';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Fab } from "@/components/layout/Fab";
+import { BuscaBotao } from "@/components/layout/BuscaCampo";
+import { NotificacoesSino } from "@/components/layout/NotificacoesSino";
 
 const ICONES_RISCO: Record<TipoRisco, React.ReactNode> = {
   ATRASO: <Clock weight="bold" />,
@@ -120,15 +122,23 @@ export default function DashboardPage() {
       >
         {/* Mobile: saudação e anel do progresso médio no lugar do título do desktop */}
         <div className="gp-only-m gp-4a-hero">
-          {nome && (
-            <Link href="/mais" className="gp-4a-perfil">
-              <span className="gp-av" aria-hidden="true">{iniciais}</span>
-              <span className="gp-4a-perfil-txt">
-                <span>{saudacao()},</span>
-                <strong>{nome}</strong>
-              </span>
-            </Link>
-          )}
+          <div className="gp-6-topo">
+            {nome ? (
+              <Link href="/mais" className="gp-4a-perfil">
+                <span className="gp-av" aria-hidden="true">{iniciais}</span>
+                <span className="gp-4a-perfil-txt">
+                  <span>{saudacao()},</span>
+                  <strong>{nome}</strong>
+                </span>
+              </Link>
+            ) : (
+              <span />
+            )}
+            <div className="gp-6-topo-acoes">
+              <BuscaBotao />
+              <NotificacoesSino />
+            </div>
+          </div>
           <div className="gp-4a-anel">
             <svg width="104" height="104" viewBox="0 0 100 100" role="img" aria-label={`Progresso médio das obras ativas: ${progresso}%`}>
               <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="10" />

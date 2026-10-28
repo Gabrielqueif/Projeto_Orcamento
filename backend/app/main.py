@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from app.modules.almoxarifado import router as almoxarifado_router
 from app.modules.base_propria import router as base_propria_router
+from app.modules.busca import router as busca_router
 from app.modules.composicao import router as item_router
 from app.modules.dashboard import router as dashboard_router
 from app.modules.diario import router as diario_router
@@ -16,8 +17,10 @@ from app.modules.financeiro import router as financeiro_router
 from app.modules.financeiro import router_portfolio as financeiro_portfolio_router
 from app.modules.importacao import router as importacao_router
 from app.modules.medicao import router as medicao_router
+from app.modules.notificacao import router as notificacao_router
 from app.modules.obra import router as obra_router
 from app.modules.orcamento import router as orcamento_router
+from app.modules.perfil import router as perfil_router
 from core.config import settings
 from core.exceptions import ConflitoError, NaoEncontradoError
 
@@ -91,7 +94,10 @@ app.include_router(diario_router)
 app.include_router(diario_resumo_router)
 app.include_router(medicao_router)
 app.include_router(dashboard_router)
+app.include_router(notificacao_router)
 app.include_router(base_propria_router)
+app.include_router(busca_router)
+app.include_router(perfil_router)
 
 
 @app.get("/health")
