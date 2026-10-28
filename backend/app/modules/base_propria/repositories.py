@@ -3,6 +3,8 @@ import re
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional
 
+from core.busca import sanitizar_termo
+
 logger = logging.getLogger("projeto_orcamento")
 
 TABELA_BASES = "bases_proprias"
@@ -95,7 +97,7 @@ class BasePropriaRepository:
 
     def listar_insumos(self, base_id: str, busca: Optional[str], limite: int, offset: int) -> List[Dict[str, Any]]:
         consulta = self.supabase.table(TABELA_INSUMOS).select(COLUNAS_INSUMO).eq("base_id", base_id)
-        termo = _termo_seguro(busca or "")
+        termo = _termo_seguro(sanitizar_termo(busca or ""))
         if termo:
             consulta = consulta.or_(f"descricao.ilike.%{termo}%,codigo.ilike.%{termo}%")
         resultado = consulta.order("codigo").range(offset, offset + limite - 1).execute()
@@ -151,7 +153,7 @@ class BasePropriaRepository:
 
     def listar_composicoes(self, base_id: str, busca: Optional[str], limite: int, offset: int) -> List[Dict[str, Any]]:
         consulta = self.supabase.table(TABELA_COMPOSICOES).select(COLUNAS_COMPOSICAO).eq("base_id", base_id)
-        termo = _termo_seguro(busca or "")
+        termo = _termo_seguro(sanitizar_termo(busca or ""))
         if termo:
             consulta = consulta.or_(f"descricao.ilike.%{termo}%,codigo.ilike.%{termo}%")
         resultado = consulta.order("codigo").range(offset, offset + limite - 1).execute()

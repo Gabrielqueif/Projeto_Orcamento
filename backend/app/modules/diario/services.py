@@ -5,7 +5,8 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.modules.diario.repositories import DiarioRepository
-from app.modules.diario.schemas import DiarioCreate, DiarioUpdate, ServicoInput
+from app.modules.diario.schemas import DiarioCreate, DiarioUpdate, EfetivoInput, ServicoInput
+from app.modules.equipe.repositories import CargoRepository
 from app.modules.medicao.schemas import AvancoEtapa
 from app.modules.medicao.services import MedicaoService
 from core.exceptions import NaoEncontradoError
@@ -104,9 +105,15 @@ def calcular_avancos(itens: List[Dict[str, Any]], linhas: List[Dict[str, Any]]) 
 
 
 class DiarioService:
-    def __init__(self, repository: DiarioRepository, medicoes: Optional[MedicaoService] = None):
+    def __init__(
+        self,
+        repository: DiarioRepository,
+        medicoes: Optional[MedicaoService] = None,
+        cargos: Optional[CargoRepository] = None,
+    ):
         self.repository = repository
         self.medicoes = medicoes
+        self.cargos = cargos
 
     # --- Helpers -------------------------------------------------------------
 
@@ -146,6 +153,11 @@ class DiarioService:
                     "created_at": f.get("created_at"),
                 }
             )
+        efetivo: Dict[str, List[Dict[str, Any]]] = {}
+        for linha in self.repository.listar_efetivo([d["id"] for d in diarios]):
+            efetivo.setdefault(linha["diario_id"], []).append(
+                {"cargo_id": linha.get("cargo_id"), "funcao": linha["funcao"], "quantidade": linha["quantidade"]}
+            )
         linhas = self.repository.servicos_dos_diarios([d["id"] for d in diarios])
         itens = {i["id"]: i for i in self.repository.itens_por_ids(list({linha["item_id"] for linha in linhas}))}
         servicos: Dict[str, List[Dict[str, Any]]] = {}
@@ -172,6 +184,7 @@ class DiarioService:
                 "tem_ocorrencia": bool((d.get("ocorrencias") or "").strip()),
                 "fotos": por_diario.get(d["id"], []),
                 "servicos": servicos.get(d["id"], []),
+                "efetivo": efetivo.get(d["id"], []),
             }
             for d in diarios
         ]
@@ -261,6 +274,23 @@ class DiarioService:
         self.repository.substituir_servicos(diario_id, [s.model_dump() for s in servicos])
         self._sincronizar_medicoes(real, obra.get("orcamento_id"), desde, diario_id, data)
 
+    def _validar_efetivo(self, user_id: Optional[str], efetivo: List[EfetivoInput]) -> None:
+        funcoes = [e.funcao for e in efetivo]
+        if len(set(funcoes)) != len(funcoes):
+            raise ValueError("Há função repetida no efetivo")
+        for item in efetivo:
+            if item.cargo_id is None:
+                continue
+            # Sem repositório ou usuário não há como provar que o cargo é do usuário: recusa.
+            if self.cargos is None or user_id is None:
+                raise ValueError("Não foi possível validar o cargo informado")
+            if not self.cargos.buscar_por_id(item.cargo_id, user_id):
+                raise NaoEncontradoError("Cargo não encontrado")
+
+    @staticmethod
+    def _total_efetivo(efetivo: List[EfetivoInput]) -> int:
+        return sum(e.quantidade for e in efetivo)
+
     # --- Diários -------------------------------------------------------------
 
     def listar(self, obra_id: str, limite: int) -> Dict[str, Any]:
@@ -274,31 +304,40 @@ class DiarioService:
         real = self._obra(obra_id)
         return self._com_fotos([self._diario(real, diario_id)])[0]
 
-    def criar(self, obra_id: str, schema: DiarioCreate) -> Dict[str, Any]:
+    def criar(self, obra_id: str, schema: DiarioCreate, user_id: Optional[str] = None) -> Dict[str, Any]:
         real = self._obra(obra_id)
         self._validar_data(schema.data)
         if self.repository.buscar_por_data(real, schema.data.isoformat()):
             raise ValueError("Já existe um diário para essa data nesta obra")
-        criado = self.repository.criar(real, _serializar(schema.model_dump(exclude={"servicos"})))
-        if schema.servicos:
-            try:
+        if schema.efetivo is not None:
+            self._validar_efetivo(user_id, schema.efetivo)
+        dados = _serializar(schema.model_dump(exclude={"servicos", "efetivo"}))
+        if schema.efetivo is not None:
+            dados["equipe_presente"] = self._total_efetivo(schema.efetivo)
+        criado = self.repository.criar(real, dados)
+        try:
+            if schema.servicos:
                 self._gravar_servicos(real, criado["id"], schema.data, schema.data, schema.servicos)
-            except Exception:
-                # Sem os serviços o registro ficaria incompleto: desfaz a criação.
-                self.repository.deletar(criado["id"], real)
-                raise
+            if schema.efetivo is not None:
+                self.repository.substituir_efetivo(criado["id"], [e.model_dump() for e in schema.efetivo])
+        except Exception:
+            # Sem os serviços ou o efetivo o registro ficaria incompleto: desfaz a criação.
+            self.repository.deletar(criado["id"], real)
+            raise
         return self._com_fotos([criado])[0]
 
-    def atualizar(self, obra_id: str, diario_id: str, schema: DiarioUpdate) -> Dict[str, Any]:
+    def atualizar(
+        self, obra_id: str, diario_id: str, schema: DiarioUpdate, user_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         real = self._obra(obra_id)
         atual = self._diario(real, diario_id)
         self._exigir_editavel(atual)
 
-        dados = schema.model_dump(exclude_unset=True, exclude={"servicos"})
+        dados = schema.model_dump(exclude_unset=True, exclude={"servicos", "efetivo"})
         for campo in CAMPOS_OBRIGATORIOS:
             if campo in dados and dados[campo] is None:
                 raise ValueError(f"O campo '{campo}' não pode ser vazio")
-        if not dados and schema.servicos is None:
+        if not dados and schema.servicos is None and schema.efetivo is None:
             return self._com_fotos([atual])[0]
 
         nova_data = dados.get("data")
@@ -307,6 +346,9 @@ class DiarioService:
             conflito = self.repository.buscar_por_data(real, nova_data.isoformat())
             if conflito and conflito["id"] != diario_id:
                 raise ValueError("Já existe um diário para essa data nesta obra")
+        if schema.efetivo is not None:
+            self._validar_efetivo(user_id, schema.efetivo)
+            dados["equipe_presente"] = self._total_efetivo(schema.efetivo)
 
         dados["updated_at"] = datetime.now(timezone.utc).isoformat()
         atualizado = self.repository.atualizar(diario_id, real, _serializar(dados))
@@ -315,6 +357,8 @@ class DiarioService:
         if schema.servicos is not None:
             nova = _como_data(atualizado["data"])
             self._gravar_servicos(real, diario_id, nova, min(nova, _como_data(atual["data"])), schema.servicos)
+        if schema.efetivo is not None:
+            self.repository.substituir_efetivo(diario_id, [e.model_dump() for e in schema.efetivo])
         return self._com_fotos([atualizado])[0]
 
     def alterar_status(self, obra_id: str, diario_id: str, novo_status: str) -> Dict[str, Any]:

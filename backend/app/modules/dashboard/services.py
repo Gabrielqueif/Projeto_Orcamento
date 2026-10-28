@@ -27,6 +27,10 @@ def _pct(valor: float) -> str:
     return f"{valor:.1f}".replace(".", ",")
 
 
+def _datas_semana(data_hoje: date) -> List[date]:
+    return [data_hoje - timedelta(days=7 * i) for i in range(SEMANAS - 1, -1, -1)]
+
+
 class DashboardService:
     def __init__(
         self,
@@ -122,23 +126,19 @@ class DashboardService:
             )
         return riscos
 
-    def obter(self, user_id: str) -> Dict[str, Any]:
-        data_hoje = hoje()
-        datas_semana = [data_hoje - timedelta(days=7 * i) for i in range(SEMANAS - 1, -1, -1)]
-        semanas = [d.strftime("%d/%m") for d in datas_semana]
+    def _varrer(self, user_id: str, data_hoje: date, datas_semana: List[date], sincronizar: bool) -> Dict[str, Any]:
+        """Percorre as obras ativas do usuário e reúne riscos, totais, séries e feed.
 
+        Só `obter` passa `sincronizar=True`: apenas o painel regrava o status das obras.
+        """
         obras = [o for o in self.repository.obras_do_usuario(user_id) if o.get("status") not in OBRAS_ENCERRADAS]
         if not obras:
             return {
-                "obras_ativas": 0,
-                "progresso_medio": 0,
-                "orcamento_total": 0.0,
-                "gasto_realizado": 0.0,
-                "disponivel": 0.0,
-                "utilizacao_orcamento": 0.0,
-                "alertas_criticos": 0,
+                "obras": [],
+                "progressos": [],
+                "orcado_total": 0.0,
+                "realizado_total": 0.0,
                 "riscos": [],
-                "semanas": semanas,
                 "series": [],
                 "feed": [],
             }
@@ -155,7 +155,7 @@ class DashboardService:
         progressos: List[int] = []
         orcado_total = 0.0
         realizado_total = 0.0
-        riscos: List[Dict[str, str]] = []
+        riscos: List[Dict[str, Any]] = []
         series: List[Dict[str, Any]] = []
         nomes: Dict[str, str] = {}
 
@@ -171,7 +171,8 @@ class DashboardService:
             progressos.append(round(sum(int(e.get("progresso") or 0) for e in etapas) / len(etapas)) if etapas else 0)
 
             curva = calcular_curva(etapas, pesos, medicoes, data_hoje)
-            self._sincronizar_status(obra, curva)
+            if sincronizar:
+                self._sincronizar_status(obra, curva)
 
             financeiro = self.financeiro.obter_consolidado_financeiro(obra["id"])
             orcado_total += financeiro["total_orcado"]
@@ -184,7 +185,10 @@ class DashboardService:
                 data_hoje,
             )
             riscos.extend(
-                self._riscos_da_obra(nome, obra, curva, financeiro, criticos.get(obra["id"], 0), situacao_diario)
+                {"obra_id": obra["id"], **risco}
+                for risco in self._riscos_da_obra(
+                    nome, obra, curva, financeiro, criticos.get(obra["id"], 0), situacao_diario
+                )
             )
 
             if curva["situacao"] != "SEM_CRONOGRAMA" and len(series) < MAX_SERIES:
@@ -219,6 +223,51 @@ class DashboardService:
         ]
 
         return {
+            "obras": obras,
+            "progressos": progressos,
+            "orcado_total": orcado_total,
+            "realizado_total": realizado_total,
+            "riscos": riscos,
+            "series": series,
+            "feed": feed,
+        }
+
+    def listar_riscos(self, user_id: str) -> List[Dict[str, Any]]:
+        """Lista completa dos riscos ativos, ordenada por severidade, com `obra_id` de origem.
+
+        Não corta em MAX_RISCOS e não regrava o status das obras (isso só acontece em `obter`).
+        """
+        data_hoje = hoje()
+        return self._varrer(user_id, data_hoje, _datas_semana(data_hoje), sincronizar=False)["riscos"]
+
+    def obter(self, user_id: str) -> Dict[str, Any]:
+        data_hoje = hoje()
+        datas_semana = _datas_semana(data_hoje)
+        semanas = [d.strftime("%d/%m") for d in datas_semana]
+
+        varredura = self._varrer(user_id, data_hoje, datas_semana, sincronizar=True)
+        obras = varredura["obras"]
+        if not obras:
+            return {
+                "obras_ativas": 0,
+                "progresso_medio": 0,
+                "orcamento_total": 0.0,
+                "gasto_realizado": 0.0,
+                "disponivel": 0.0,
+                "utilizacao_orcamento": 0.0,
+                "alertas_criticos": 0,
+                "riscos": [],
+                "semanas": semanas,
+                "series": [],
+                "feed": [],
+            }
+
+        orcado_total = varredura["orcado_total"]
+        realizado_total = varredura["realizado_total"]
+        progressos = varredura["progressos"]
+        riscos = varredura["riscos"]
+
+        return {
             "obras_ativas": len(obras),
             "progresso_medio": round(sum(progressos) / len(progressos)),
             "orcamento_total": round(orcado_total, 2),
@@ -226,8 +275,8 @@ class DashboardService:
             "disponivel": round(max(orcado_total - realizado_total, 0.0), 2),
             "utilizacao_orcamento": round(100.0 * realizado_total / orcado_total, 1) if orcado_total > 0 else 0.0,
             "alertas_criticos": sum(1 for r in riscos if r["severidade"] == "critical"),
-            "riscos": riscos[:MAX_RISCOS],
+            "riscos": [{k: v for k, v in r.items() if k != "obra_id"} for r in riscos[:MAX_RISCOS]],
             "semanas": semanas,
-            "series": series,
-            "feed": feed,
+            "series": varredura["series"],
+            "feed": varredura["feed"],
         }

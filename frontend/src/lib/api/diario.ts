@@ -36,6 +36,13 @@ export interface ServicoInput {
   quantidade: number;
 }
 
+/** Pessoas de uma função no canteiro. cargo_id ausente quando a função foi digitada livremente. */
+export interface EfetivoItem {
+  cargo_id?: string | null;
+  funcao: string;
+  quantidade: number;
+}
+
 export interface Diario {
   id: string;
   obra_id: string;
@@ -51,6 +58,7 @@ export interface Diario {
   status: StatusDiario;
   fotos: FotoDiario[];
   servicos: ServicoDiario[];
+  efetivo?: EfetivoItem[];
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -65,6 +73,7 @@ export interface DiarioCreate {
   equipe_presente: number;
   responsavel?: string | null;
   servicos?: ServicoInput[];
+  efetivo?: EfetivoItem[];
 }
 
 export type DiarioUpdate = Partial<DiarioCreate>;

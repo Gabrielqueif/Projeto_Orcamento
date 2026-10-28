@@ -9,6 +9,7 @@ logger = logging.getLogger("projeto_orcamento")
 TABELA_DIARIOS = "diarios_obra"
 TABELA_FOTOS = "diario_fotos"
 TABELA_SERVICOS = "diario_servicos"
+TABELA_EFETIVO = "diario_efetivo"
 BUCKET_FOTOS = "diario-fotos"
 VALIDADE_URL_SEGUNDOS = 3600
 
@@ -215,6 +216,33 @@ class DiarioRepository:
         if servicos:
             self.supabase.table(TABELA_SERVICOS).insert(
                 [{"diario_id": diario_id, "item_id": s["item_id"], "quantidade": s["quantidade"]} for s in servicos]
+            ).execute()
+
+    def listar_efetivo(self, diario_ids: List[str]) -> List[Dict[str, Any]]:
+        if not diario_ids:
+            return []
+        resultado = (
+            self.supabase.table(TABELA_EFETIVO)
+            .select("diario_id, cargo_id, funcao, quantidade")
+            .in_("diario_id", diario_ids)
+            .order("funcao")
+            .execute()
+        )
+        return resultado.data or []
+
+    def substituir_efetivo(self, diario_id: str, itens: List[Dict[str, Any]]) -> None:
+        self.supabase.table(TABELA_EFETIVO).delete().eq("diario_id", diario_id).execute()
+        if itens:
+            self.supabase.table(TABELA_EFETIVO).insert(
+                [
+                    {
+                        "diario_id": diario_id,
+                        "cargo_id": i.get("cargo_id"),
+                        "funcao": i["funcao"],
+                        "quantidade": i["quantidade"],
+                    }
+                    for i in itens
+                ]
             ).execute()
 
     def diarios_recentes(self, obra_ids: List[str], desde: date) -> List[Dict[str, Any]]:
