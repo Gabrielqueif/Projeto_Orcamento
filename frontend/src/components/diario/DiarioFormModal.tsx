@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, Cloud, CloudRain, Image as ImageIcon, Sun, X } from "@phosphor-icons/react";
 import { useToast } from "@/components/common/toast";
+import { getCargos, type Cargo } from "@/lib/api/cargos";
 import {
   alterarStatusDiario,
   atualizarDiario,
@@ -11,6 +12,7 @@ import {
   removerFotoDiario,
   type Clima,
   type Diario,
+  type DiarioCreate,
   type FotoDiario,
   type ServicoObra,
 } from "@/lib/api/diario";
@@ -37,6 +39,62 @@ function arredondar(n: number, casas: number): string {
   return Number.isFinite(n) ? String(Number(n.toFixed(casas))) : "";
 }
 const paraNumero = (texto: string) => Number(texto.replace(",", "."));
+
+// Teto por função: o backend recusa linhas acima de 10000 pessoas.
+const MAX_POR_FUNCAO = 10000;
+
+/** Total de pessoas: soma dos cargos da lista mais as funções sem cargo do registro antigo. */
+export function totalDoEfetivo(cargos: Cargo[], quantidades: Record<string, number>, outrasPessoas: number): number {
+  return cargos.reduce((soma, c) => soma + (quantidades[c.id] ?? 0), 0) + outrasPessoas;
+}
+
+interface EfetivoProps {
+  cargos: Cargo[];
+  quantidades: Record<string, number>;
+  onAjustar: (cargoId: string, quantidade: number) => void;
+  /** Pessoas de funções sem cargo (digitadas livremente no registro antigo): entram no total, não são editáveis aqui. */
+  outrasPessoas: number;
+  /** Total antigo do registro, mostrado como apoio quando ainda não há efetivo por função. */
+  equipeAnterior?: number | null;
+}
+
+export function EfetivoPorFuncao({ cargos, quantidades, onAjustar, outrasPessoas, equipeAnterior }: EfetivoProps) {
+  const total = totalDoEfetivo(cargos, quantidades, outrasPessoas);
+  return (
+    <div className="gp-fld">
+      <span className="gp-lb" id="diario-efetivo">Efetivo no canteiro</span>
+      <ul role="list" aria-labelledby="diario-efetivo" className="gp-6a-efetivo">
+        {cargos.map((cargo) => {
+          const qtd = quantidades[cargo.id] ?? 0;
+          return (
+            <li key={cargo.id} className="gp-6a-efetivo-linha">
+              <span className="gp-6a-efetivo-nome">{cargo.nome}</span>
+              <div className="gp-6a-contador">
+                <button type="button" aria-label={`Diminuir ${cargo.nome}`} disabled={qtd <= 0}
+                  onClick={() => onAjustar(cargo.id, Math.max(0, qtd - 1))}>
+                  −
+                </button>
+                <output aria-live="polite">{qtd}</output>
+                <button type="button" aria-label={`Aumentar ${cargo.nome}`} disabled={qtd >= MAX_POR_FUNCAO}
+                  onClick={() => onAjustar(cargo.id, Math.min(MAX_POR_FUNCAO, qtd + 1))}>
+                  +
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="gp-6a-efetivo-total">
+        <strong>{total} {total === 1 ? "pessoa" : "pessoas"}</strong>
+      </p>
+      {equipeAnterior != null && equipeAnterior > 0 && (
+        <p className="gp-hint" style={{ margin: 0 }}>
+          Antes: {equipeAnterior} pessoas, sem detalhe por função. Informe o efetivo para substituir.
+        </p>
+      )}
+    </div>
+  );
+}
 
 interface Props {
   isOpen: boolean;
@@ -117,6 +175,37 @@ function FormularioDiario({ onClose, obraId, obraNome, titulo: tituloForm, regis
     )
   );
   const [busca, setBusca] = useState("");
+  // null enquanto carrega; sem cargos (ou se falhar) o formulário usa o campo numérico "Equipe presente".
+  const [cargos, setCargos] = useState<Cargo[] | null>(null);
+  const [quantidades, setQuantidades] = useState<Record<string, number>>(() =>
+    Object.fromEntries(
+      (registro?.efetivo ?? []).flatMap((e): [string, number][] => (e.cargo_id ? [[e.cargo_id, e.quantidade]] : []))
+    )
+  );
+
+  useEffect(() => {
+    let ativo = true;
+    getCargos()
+      .then((lista) => { if (ativo) setCargos(lista); })
+      .catch(() => { if (ativo) setCargos([]); });
+    return () => { ativo = false; };
+  }, []);
+
+  const cargosDisponiveis = cargos ?? [];
+  const usaEfetivo = cargosDisponiveis.length > 0;
+  const efetivoAtual = registro?.efetivo ?? [];
+  // Funções sem cargo (ou com cargo que já não existe) não aparecem na lista; ficam no registro e no total.
+  const idsCargos = new Set(cargosDisponiveis.map((c) => c.id));
+  const outrasFuncoes = efetivoAtual.filter((e) => !e.cargo_id || !idsCargos.has(e.cargo_id));
+  const outrasPessoas = outrasFuncoes.reduce((soma, e) => soma + e.quantidade, 0);
+  const linhasEfetivo = [
+    ...cargosDisponiveis
+      .filter((c) => (quantidades[c.id] ?? 0) > 0)
+      .map((c) => ({ cargo_id: c.id, funcao: c.nome, quantidade: quantidades[c.id] })),
+    ...outrasFuncoes.map((e) => ({ cargo_id: null, funcao: e.funcao, quantidade: e.quantidade })),
+  ];
+  // Registro antigo sem efetivo e com contadores zerados: não envia efetivo, para não zerar o total antigo.
+  const enviaEfetivo = usaEfetivo && (linhasEfetivo.length > 0 || efetivoAtual.length > 0);
 
   const marcar = (id: string, marcado: boolean) =>
     setFeitos((atual) => {
@@ -192,16 +281,24 @@ function FormularioDiario({ onClose, obraId, obraNome, titulo: tituloForm, regis
     }
     setSalvando(true);
     try {
-      const dados = {
+      // Sem efetivo enviado, o backend mantém o efetivo atual; equipe_presente segue o campo numérico
+      // (ou o total antigo, quando a lista está ativa mas o registro ainda não tem efetivo).
+      const equipePresente = enviaEfetivo
+        ? linhasEfetivo.reduce((soma, l) => soma + l.quantidade, 0)
+        : usaEfetivo
+          ? (registro?.equipe_presente ?? 0)
+          : Number(equipe) || 0;
+      const dados: DiarioCreate = {
         data,
         titulo: titulo.trim(),
         atividades: atividades.trim(),
         ocorrencias: ocorrencias.trim() || null,
         clima,
         temperatura: temperatura.trim() === "" ? null : Number(temperatura.replace(",", ".")),
-        equipe_presente: Number(equipe) || 0,
+        equipe_presente: equipePresente,
         responsavel: responsavel.trim() || null,
         servicos: marcados.map(({ servico, quantidade }) => ({ item_id: servico.id, quantidade })),
+        ...(enviaEfetivo ? { efetivo: linhasEfetivo } : {}),
       };
       const salvo = registro
         ? await atualizarDiario(obraId, registro.id, dados)
@@ -318,11 +415,13 @@ function FormularioDiario({ onClose, obraId, obraNome, titulo: tituloForm, regis
               <input id="diario-temp" inputMode="decimal" value={temperatura}
                 onChange={(e) => setTemperatura(e.target.value)} placeholder="28" className="gp-in" />
             </div>
-            <div className="gp-fld">
-              <label className="gp-lb" htmlFor="diario-equipe">Equipe presente</label>
-              <input id="diario-equipe" type="number" min={0} max={10000} value={equipe}
-                onChange={(e) => setEquipe(e.target.value)} className="gp-in" />
-            </div>
+            {!usaEfetivo && (
+              <div className="gp-fld">
+                <label className="gp-lb" htmlFor="diario-equipe">Equipe presente</label>
+                <input id="diario-equipe" type="number" min={0} max={10000} value={equipe}
+                  onChange={(e) => setEquipe(e.target.value)} className="gp-in" />
+              </div>
+            )}
             <div className="gp-fld">
               <label className="gp-lb" htmlFor="diario-resp">Responsável</label>
               <input id="diario-resp" maxLength={150} value={responsavel}
@@ -330,6 +429,18 @@ function FormularioDiario({ onClose, obraId, obraNome, titulo: tituloForm, regis
             </div>
           </div>
         </div>
+
+        {usaEfetivo && (
+          <div className="gp-4d-sec">
+            <EfetivoPorFuncao
+              cargos={cargosDisponiveis}
+              quantidades={quantidades}
+              outrasPessoas={outrasPessoas}
+              equipeAnterior={efetivoAtual.length === 0 ? registro?.equipe_presente : null}
+              onAjustar={(cargoId, quantidade) => setQuantidades((atual) => ({ ...atual, [cargoId]: quantidade }))}
+            />
+          </div>
+        )}
 
         <div className="gp-4d-sec">
           <div className="gp-fld">

@@ -20,6 +20,14 @@ class ServicoInput(BaseModel):
     quantidade: float = Field(gt=0)
 
 
+class EfetivoInput(BaseModel):
+    """Pessoas de uma função presentes no canteiro no dia. cargo_id é opcional: função digitada livremente."""
+
+    cargo_id: Optional[str] = None
+    funcao: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+    quantidade: int = Field(ge=1, le=10000)
+
+
 class DiarioCreate(BaseModel):
     data: date
     titulo: Titulo
@@ -30,6 +38,8 @@ class DiarioCreate(BaseModel):
     equipe_presente: int = Field(default=0, ge=0, le=10000)
     responsavel: Optional[Responsavel] = None
     servicos: List[ServicoInput] = []
+    # Quando informado, equipe_presente passa a ser a soma das quantidades.
+    efetivo: Optional[List[EfetivoInput]] = None
 
 
 class DiarioUpdate(BaseModel):
@@ -43,6 +53,8 @@ class DiarioUpdate(BaseModel):
     responsavel: Optional[Responsavel] = None
     # None mantém os serviços do diário; lista (mesmo vazia) substitui.
     servicos: Optional[List[ServicoInput]] = None
+    # None mantém o efetivo do diário; lista (mesmo vazia) substitui.
+    efetivo: Optional[List[EfetivoInput]] = None
 
 
 class DiarioStatusUpdate(BaseModel):
@@ -64,6 +76,12 @@ class ServicoDiario(BaseModel):
     unidade: str
     quantidade: float
     percentual: float
+
+
+class EfetivoDiario(BaseModel):
+    cargo_id: Optional[str] = None
+    funcao: str
+    quantidade: int
 
 
 class ServicoObra(BaseModel):
@@ -91,6 +109,7 @@ class DiarioResponse(BaseModel):
     status: StatusDiario
     fotos: List[FotoResponse] = []
     servicos: List[ServicoDiario] = []
+    efetivo: List[EfetivoDiario] = []
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

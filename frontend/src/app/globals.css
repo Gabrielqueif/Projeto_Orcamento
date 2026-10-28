@@ -921,3 +921,20 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
   .gp-4e-tico{border-radius:50%}
   .gp-4e-tx{width:44px;height:44px}
 }
+
+/* ===== Fase 6a ===== */
+.gp-6a-efetivo{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.gp-6a-efetivo-linha{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:6px 12px;border:1px solid #E6EBF2;border-radius:12px;background:#fff;box-sizing:border-box}
+.gp-6a-efetivo-nome{flex:1;min-width:0;font-size:14px;color:#001b3d;overflow-wrap:anywhere}
+.gp-6a-contador{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto}
+.gp-6a-contador button{width:44px;height:44px;border:1px solid #7B8AA0;border-radius:12px;background:#fff;color:#001b3d;font-size:20px;font-weight:700;line-height:1;cursor:pointer;padding:0}
+.gp-6a-contador button:disabled{opacity:.4;cursor:not-allowed}
+.gp-6a-contador output{min-width:32px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums;color:#001b3d}
+.gp-6a-efetivo-total{margin:4px 0 0;font-size:14px;color:#001b3d}
+@media (max-width: 1023px){
+  .gp-6a-efetivo{gap:8px}
+  .gp-6a-efetivo-linha{padding:8px 10px;border-radius:14px}
+  .gp-6a-efetivo-nome{font-size:15px}
+  .gp-6a-contador{gap:6px}
+  .gp-6a-contador button{border-radius:14px;font-size:22px}
+}
