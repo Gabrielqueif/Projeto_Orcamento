@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { MagnifyingGlass, Plus, Trash } from "@phosphor-icons/react";
+import { ArrowLeft, MagnifyingGlass, Plus, Trash } from "@phosphor-icons/react";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/common/toast";
 import {
@@ -47,6 +47,14 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
 
   const fechar = useCallback(() => setModalAberto(false), []);
 
+  function abrirEditor(id: string) {
+    setSelecionada(id);
+    // No mobile o editor substitui a lista: volta ao topo para começar pelos dados da composição.
+    if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 1023px)").matches) {
+      window.scrollTo({ top: 0 });
+    }
+  }
+
   async function criar(e: React.FormEvent) {
     e.preventDefault();
     setSalvando(true);
@@ -64,7 +72,7 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
       setModalAberto(false);
       showToast("Composição criada", undefined, "success");
       await carregar(busca);
-      setSelecionada(nova.id);
+      abrirEditor(nova.id);
     } catch (err) {
       showToast("Erro ao criar a composição", err instanceof Error ? err.message : undefined, "error");
     } finally {
@@ -85,16 +93,16 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
   }
 
   return (
-    <div>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "14px 16px" }}>
+    // No mobile, com uma composição aberta, a lista some e o editor ocupa a tela (globals.css).
+    <div className="gp-4e-comps" data-editando={selecionada ? "" : undefined}>
+      <div className="gp-4e-tb">
         <form
           role="search"
           onSubmit={(e) => {
             e.preventDefault();
             carregar(busca);
           }}
-          className="gp-srch"
-          style={{ flex: "1 1 240px", maxWidth: 360 }}
+          className="gp-srch gp-4e-tbq"
         >
           <MagnifyingGlass size={18} weight="bold" aria-hidden="true" color="#475569" />
           <input
@@ -108,13 +116,20 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
             Buscar
           </button>
         </form>
-        <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp gp-sm" style={{ marginLeft: "auto" }}>
+        <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp gp-sm gp-only-d" style={{ marginLeft: "auto" }}>
           <Plus size={16} weight="bold" aria-hidden="true" /> Nova composição
         </button>
       </div>
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse" }}>
+      {/* Mobile: "Nova composição" vira o botão flutuante; some enquanto o editor está aberto */}
+      {!selecionada && (
+        <button type="button" onClick={() => setModalAberto(true)} className="gp-fab gp-4e-fab">
+          <Plus size={22} weight="bold" aria-hidden="true" /> Nova composição
+        </button>
+      )}
+
+      <div className="gp-4e-lista" style={{ overflowX: "auto" }}>
+        <table className="gp-4e-ptab gp-4e-cmp" style={{ width: "100%", minWidth: 640, borderCollapse: "collapse" }}>
           <caption className="gp-sr">Composições da base própria</caption>
           <thead>
             <tr>
@@ -129,15 +144,16 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
               const on = selecionada === c.id;
               return (
                 <tr key={c.id} className="gp-row" style={on ? { background: "#F7FCE9" } : undefined}>
-                  <td className="gp-td gp-mono" style={{ paddingLeft: 22, color: "#00626b", fontWeight: 600 }}>{c.codigo}</td>
-                  <th scope="row" className="gp-td" style={{ textAlign: "left", fontWeight: 700 }}>{c.descricao}</th>
-                  <td className="gp-td">{c.unidade}</td>
-                  <td className="gp-td" style={{ paddingRight: 22, textAlign: "right", whiteSpace: "nowrap" }}>
+                  {/* gridArea só tem efeito no mobile, onde a linha vira grade (.gp-4e-ptab) */}
+                  <td className="gp-td gp-mono" style={{ paddingLeft: 22, color: "#00626b", fontWeight: 600, gridArea: "cod" }}>{c.codigo}</td>
+                  <th scope="row" className="gp-td" style={{ textAlign: "left", fontWeight: 700, gridArea: "desc" }}>{c.descricao}</th>
+                  <td className="gp-td" style={{ gridArea: "un" }}>{c.unidade}</td>
+                  <td className="gp-td" style={{ paddingRight: 22, textAlign: "right", whiteSpace: "nowrap", gridArea: "acts" }}>
                     <button
                       type="button"
                       aria-pressed={on}
                       aria-label={`Editar ${c.codigo}`}
-                      onClick={() => setSelecionada(c.id)}
+                      onClick={() => abrirEditor(c.id)}
                       className="gp-btn gp-bs gp-sm"
                     >
                       Editar
@@ -159,7 +175,14 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
         )}
       </div>
 
-      <div style={{ padding: 16, borderTop: "1px solid #E6EBF2", background: "#F8FAFC" }}>
+      <div className="gp-4e-edw">
+        {selecionada && (
+          <div className="gp-only-m">
+            <button type="button" onClick={() => setSelecionada(null)} className="gp-btn gp-bs gp-4e-voltar">
+              <ArrowLeft size={18} weight="bold" aria-hidden="true" /> Voltar para composições
+            </button>
+          </div>
+        )}
         {selecionada ? (
           <ComposicaoEditor
             key={selecionada}
@@ -169,7 +192,7 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
             onAlterada={() => carregar(busca)}
           />
         ) : (
-          <p className="gp-hint" style={{ margin: 0, textAlign: "center", padding: "12px 0" }}>
+          <p className="gp-hint gp-only-d" style={{ margin: 0, textAlign: "center", padding: "12px 0" }}>
             Selecione uma composição para editar seus itens.
           </p>
         )}
@@ -195,7 +218,7 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
               <input id="comp-grupo" value={grupo} onChange={(e) => setGrupo(e.target.value)} maxLength={100} className="gp-in" />
             </div>
           </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <div className="gp-4e-dlgacts">
             <button type="button" onClick={fechar} className="gp-btn gp-bs">Cancelar</button>
             <button type="submit" disabled={salvando} className="gp-btn gp-bp" style={salvando ? { opacity: 0.5 } : undefined}>
               {salvando ? "Criando..." : "Criar composição"}

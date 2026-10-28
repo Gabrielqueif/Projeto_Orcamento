@@ -50,8 +50,22 @@ export default function BudgetGauge({ utilizacao, gastoRealizado, disponivel }: 
         <h2 id="h-verba" className="gp-h2">Utilização de verba</h2>
         <p className="gp-ms" style={{ margin: '2px 0 0' }}>Consolidado financeiro geral</p>
       </div>
+      {/* Mobile: barra de utilização no lugar do medidor */}
+      <div className="gp-only-m gp-4a-verba">
+        <span
+          role="progressbar"
+          aria-label={`Verba utilizada${estourou ? ', acima do orçado' : ''}`}
+          aria-valuenow={usado}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuetext={`${utilizacao.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`}
+        >
+          <span style={{ width: `${usado}%`, background: estourou ? '#DC2626' : '#9fd300' }} />
+        </span>
+        <strong className="gp-mono">{utilizacao.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%</strong>
+      </div>
       <div
-        className="relative w-full flex flex-col items-center justify-center mt-4 mb-2"
+        className="gp-only-d relative w-full flex flex-col items-center justify-center mt-4 mb-2"
         role="img"
         aria-label={`${utilizacao.toLocaleString('pt-BR')}% da verba utilizada`}
       >

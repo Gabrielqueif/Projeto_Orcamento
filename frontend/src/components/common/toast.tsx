@@ -48,17 +48,17 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       <div
         role="status"
         aria-live="polite"
-        style={{ position: "fixed", right: 24, bottom: 24, zIndex: 60, width: 420, maxWidth: "calc(100% - 48px)", display: "flex", flexDirection: "column", gap: 8, pointerEvents: "none" }}
+        className="gp-toasts"
       >
         {toasts.map((toast) => {
           const { bg, fg, Icon } = ICONE[toast.type];
           return (
             <div
               key={toast.id}
-              className="gp-toast"
-              style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 12, padding: "10px 8px 10px 16px", borderRadius: 16, background: "#00102a", color: "#fff", boxShadow: "0 18px 36px -14px rgba(0,16,42,.7)" }}
+              className="gp-toast gp-4e-toast"
+              style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 12, background: "#00102a", color: "#fff", boxShadow: "0 18px 36px -14px rgba(0,16,42,.7)" }}
             >
-              <span aria-hidden="true" style={{ width: 28, height: 28, flex: "0 0 28px", borderRadius: 9, background: bg, color: fg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span aria-hidden="true" className="gp-4e-tico" style={{ width: 28, height: 28, flex: "0 0 28px", background: bg, color: fg, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Icon size={16} weight="bold" />
               </span>
               <span style={{ flex: "1 1 auto", minWidth: 0 }}>
@@ -71,7 +71,8 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 type="button"
                 onClick={() => removeToast(toast.id)}
                 aria-label="Fechar aviso"
-                style={{ width: 40, height: 40, border: 0, background: "transparent", color: "#cbd5e1", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                className="gp-4e-tx"
+                style={{ flex: "0 0 auto", border: 0, background: "transparent", color: "#cbd5e1", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
               >
                 <X size={16} weight="bold" />
               </button>

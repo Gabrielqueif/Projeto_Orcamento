@@ -35,9 +35,42 @@ export function MemoriaCalculoTable({
   } as const;
 
   return (
-    <section className="gp-card" style={{ overflow: "hidden" }}>
-      <div style={{ overflow: "auto", minHeight: 140, maxHeight: 288 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <>
+    {/* Mobile: o cabeçalho da tabela some no modo empilhado, então as variáveis ganham um cartão próprio */}
+    <section className="gp-only-m" aria-labelledby="mc-vars">
+      <div className="gp-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+        <h3 id="mc-vars" style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Variáveis</h3>
+        <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
+          {variableConfigs.map((cfg) => (
+            <li key={cfg.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 6px 6px 12px", borderRadius: 14, background: "#F4F6FA" }}>
+              <input
+                type="text"
+                value={cfg.label}
+                onChange={(e) => onUpdateColumnLabel(cfg.key, e.target.value)}
+                aria-label={`Nome da variável ${cfg.label}`}
+                className="gp-in"
+                style={{ height: 44, flex: "1 1 auto", minWidth: 0, fontWeight: 700, textTransform: "uppercase" }}
+              />
+              {variableConfigs.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => onRemoveVariableColumn(cfg.key)}
+                  aria-label={`Remover variável ${cfg.label}`}
+                  className="gp-ib"
+                  style={{ flex: "0 0 44px" }}
+                >
+                  <X size={18} weight="bold" aria-hidden="true" />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <section className="gp-card gp-m-flat" style={{ overflow: "hidden" }}>
+      <div className="gp-4b-mc-rolagem" style={{ overflow: "auto", minHeight: 140, maxHeight: 288 }}>
+        <table className="gp-stack" style={{ width: "100%", borderCollapse: "collapse" }}>
           <caption className="gp-sr">Elementos da memória de cálculo</caption>
           <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
             <tr>
@@ -85,7 +118,7 @@ export function MemoriaCalculoTable({
                   <tr key={el.id} className="gp-row" style={isDiscount ? { background: "#FEF2F2" } : undefined}>
                     {/* ELEMENTO / DESCRIÇÃO */}
                     <td className="gp-td" style={{ paddingLeft: 22 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div className="gp-4b-mc-el" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span className="gp-bg gp-ne gp-mono" title={`Código da variável: E${index + 1}`}>
                           E{index + 1}
                         </span>
@@ -94,6 +127,7 @@ export function MemoriaCalculoTable({
                           value={el.descricao}
                           onChange={(e) => onUpdateElementoDescricao(el.id, e.target.value)}
                           aria-label={`Descrição do elemento E${index + 1}`}
+                          className="gp-4b-mc-in"
                           style={{ ...campo, fontFamily: "inherit", fontWeight: 700, width: "100%", color: isDiscount ? "#B91C1C" : "#001b3d" }}
                           placeholder="Descrição do elemento"
                         />
@@ -105,6 +139,7 @@ export function MemoriaCalculoTable({
                                 onUpdateElementoDescricao(el.id, e.target.value);
                               }
                             }}
+                            className="gp-4b-mc-in gp-4b-mc-local"
                             style={{ ...campo, fontFamily: "inherit", fontSize: 13, maxWidth: 130, cursor: "pointer" }}
                           >
                             <option value="">Locais...</option>
@@ -126,9 +161,10 @@ export function MemoriaCalculoTable({
                       const val = getElementVariableValue(el, cfg.key);
                       const isQtdKey = cfg.key === "quantidade";
                       return (
-                        <td key={cfg.id} className="gp-td" style={{ textAlign: "center" }}>
+                        <td key={cfg.id} className="gp-td" data-label={cfg.label} style={{ textAlign: "center" }}>
                           <input
                             type="number"
+                            className="gp-4b-mc-in"
                             value={val}
                             aria-label={`${cfg.label} do elemento E${index + 1}`}
                             onChange={(e) =>
@@ -147,6 +183,7 @@ export function MemoriaCalculoTable({
                     {/* SUBTOTAL */}
                     <td
                       className="gp-td gp-mono"
+                      data-label="Subtotal"
                       style={{ textAlign: "right", fontWeight: 600, whiteSpace: "nowrap", color: isDiscount ? "#B91C1C" : "#001b3d" }}
                     >
                       {el.subtotal.toLocaleString("pt-BR", {
@@ -157,7 +194,7 @@ export function MemoriaCalculoTable({
                     </td>
 
                     {/* AÇÕES */}
-                    <td className="gp-td" style={{ textAlign: "center", paddingRight: 22 }}>
+                    <td className="gp-td gp-4b-mc-acao" style={{ textAlign: "center", paddingRight: 22 }}>
                       <button
                         type="button"
                         onClick={() => onRemoveElemento(el.id)}
@@ -177,5 +214,6 @@ export function MemoriaCalculoTable({
         </table>
       </div>
     </section>
+    </>
   );
 }

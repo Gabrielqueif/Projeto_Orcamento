@@ -39,13 +39,13 @@ export function AtualizarPrecosPropriaModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Atualizar preços da base própria"
-      maxWidth="max-w-3xl"
+      maxWidth="max-w-3xl gp-4b-tela"
     >
       {loading || !previa ? (
         <p className="gp-sub" style={{ textAlign: "center", padding: "24px 0", margin: 0 }}>Calculando prévia...</p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
+        <div className="gp-4b-corpo" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <dl className="gp-4b-ap-res" style={{ margin: 0, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
             <div style={{ padding: "12px 14px", borderRadius: 12, background: "#F4F6FA" }}>
               <dt className="gp-ml">Itens verificados</dt>
               <dd className="gp-mono" style={{ margin: "2px 0 0", fontSize: 22, fontWeight: 600 }}>{previa.total_itens}</dd>
@@ -75,8 +75,8 @@ export function AtualizarPrecosPropriaModal({
               Os preços dos itens de bases próprias já estão atualizados.
             </p>
           ) : (
-            <div style={{ overflowX: "auto", border: "1px solid #E6EBF2", borderRadius: 14 }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div className="gp-m-flat gp-4b-sem-borda" style={{ overflowX: "auto", border: "1px solid #E6EBF2", borderRadius: 14 }}>
+              <table className="gp-stack" style={{ width: "100%", borderCollapse: "collapse" }}>
                 <caption className="gp-sr">Itens com diferença de preço</caption>
                 <thead>
                   <tr>
@@ -93,12 +93,12 @@ export function AtualizarPrecosPropriaModal({
                     <tr key={item.item_id} className="gp-row">
                       <td className="gp-td gp-mono" style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{item.codigo_composicao}</td>
                       <th scope="row" className="gp-td" style={{ textAlign: "left", fontWeight: 700 }}>{item.descricao}</th>
-                      <td className="gp-td gp-mono" style={{ textAlign: "right", whiteSpace: "nowrap" }}>{moeda(item.preco_atual)}</td>
-                      <td className="gp-td gp-mono" style={{ textAlign: "right", whiteSpace: "nowrap", fontWeight: 600 }}>{moeda(item.preco_novo)}</td>
-                      <td className="gp-td gp-mono" style={{ textAlign: "right", whiteSpace: "nowrap", fontWeight: 600, color: item.diferenca > 0 ? "#9A3412" : "#3F6604" }}>
+                      <td className="gp-td gp-mono" data-label="Preço atual" style={{ textAlign: "right", whiteSpace: "nowrap" }}>{moeda(item.preco_atual)}</td>
+                      <td className="gp-td gp-mono" data-label="Preço novo" style={{ textAlign: "right", whiteSpace: "nowrap", fontWeight: 600 }}>{moeda(item.preco_novo)}</td>
+                      <td className="gp-td gp-mono" data-label="Diferença" style={{ textAlign: "right", whiteSpace: "nowrap", fontWeight: 600, color: item.diferenca > 0 ? "#9A3412" : "#3F6604" }}>
                         {moeda(item.diferenca)}
                       </td>
-                      <td className="gp-td" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                      <td className="gp-td" data-label="Variação" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                         <span className={`gp-bg ${item.diferenca > 0 ? "gp-wa" : "gp-ok"}`}>{percentual(item.variacao_percentual)}</span>
                       </td>
                     </tr>
@@ -121,7 +121,7 @@ export function AtualizarPrecosPropriaModal({
             </div>
           )}
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <div className="gp-4b-pe" style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
             <button type="button" onClick={onClose} disabled={confirmando} className="gp-btn gp-bs" style={confirmando ? { opacity: 0.5 } : undefined}>
               Cancelar
             </button>

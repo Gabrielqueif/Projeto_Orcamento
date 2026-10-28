@@ -1,82 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  House,
-  HardHat,
-  Database,
-  Users,
-  Plus,
-  Question,
-  SignOut,
-  Coins,
-  UploadSimple,
-  Notebook,
-  ChartBar,
-} from "@phosphor-icons/react";
+import { Plus, Question, SignOut } from "@phosphor-icons/react";
 import { logout } from "@/app/auth/actions";
 import Image from "next/image";
 import { useUserRole } from "@/hooks/use-user-role";
-import { createClient } from "@/utils/supabase/client";
-
-type NavLink = { href: string; icon: typeof House; label: string };
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { gruposSidebar, linkAtivo } from "./nav";
 
 export function Sidebar() {
   const pathname = usePathname();
   const { role } = useUserRole();
-  const [nome, setNome] = useState("");
-  const [cargo, setCargo] = useState("");
-
-  useEffect(() => {
-    createClient()
-      .auth.getUser()
-      .then(({ data: { user } }) => {
-        const meta = user?.user_metadata;
-        setNome(meta?.full_name || meta?.username || user?.email || "Usuário");
-        setCargo(meta?.role || meta?.cargo || "Gerente de obras");
-      })
-      .catch(() => setNome("Usuário"));
-  }, []);
-
-  const grupos: { titulo: string; links: NavLink[] }[] = [
-    {
-      titulo: "Comercial",
-      links: [
-        { href: "/", icon: House, label: "Visão geral" },
-        { href: "/orcamentos", icon: Coins, label: "Orçamentos" },
-        { href: "/bases", icon: Database, label: "Bases de dados" },
-      ],
-    },
-    {
-      titulo: "Operação",
-      links: [
-        { href: "/obras", icon: HardHat, label: "Obras" },
-        { href: "/diario", icon: Notebook, label: "Diário de obra" },
-        { href: "/equipe", icon: Users, label: "Equipe" },
-      ],
-    },
-    {
-      titulo: "Gestão",
-      links: [
-        { href: "/financeiro", icon: ChartBar, label: "Financeiro" },
-        ...(role === "admin"
-          ? [{ href: "/admin/sinapi", icon: UploadSimple, label: "Importação" }]
-          : []),
-      ],
-    },
-  ];
-
-  const ativo = (href: string) =>
-    pathname === href || (href !== "/" && !!pathname?.startsWith(href + "/"));
-  const iniciais = nome
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase();
+  const { nome, cargo, iniciais } = useCurrentUser();
+  const grupos = gruposSidebar(role === "admin");
+  const ativo = (href: string) => linkAtivo(pathname, href);
 
   return (
     <aside

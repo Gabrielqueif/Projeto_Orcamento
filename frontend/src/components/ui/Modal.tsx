@@ -12,6 +12,10 @@ interface ModalProps {
     maxWidth?: string;
 }
 
+/**
+ * Diálogo modal. No desktop fica centralizado; abaixo de 1024px vira folha inferior
+ * (.gp-ov/.gp-dlg em globals.css) com alça, ocupando toda a largura (.gp-4e-dlgw).
+ */
 export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-md" }: ModalProps) {
     const [mounted, setMounted] = React.useState(false);
 
@@ -38,17 +42,17 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-md" 
     return createPortal(
         <div className="gp-ov">
             {/* wrapper carrega o max-w-* do chamador; .gp-dlg tem max-width próprio que o sobrescreveria */}
-            <div className={`w-full ${maxWidth} flex max-h-full`}>
+            <div className={`w-full ${maxWidth} flex max-h-full gp-4e-dlgw`}>
                 <div
-                    className="gp-dlg"
+                    className="gp-dlg gp-4e-sheet"
                     style={{ maxWidth: 'none', flex: '1 1 auto', minWidth: 0 }}
                     role="dialog"
                     aria-modal="true"
                     aria-label={title}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexShrink: 0 }}>
-                        <h2 className="gp-h2" style={{ margin: 0, fontSize: 21 }}>{title}</h2>
-                        <button type="button" onClick={onClose} aria-label="Fechar" className="gp-ib" style={{ width: 40, height: 40 }}>
+                        <h2 className="gp-h2 gp-4e-dlgt" style={{ margin: 0 }}>{title}</h2>
+                        <button type="button" onClick={onClose} aria-label="Fechar" className="gp-ib gp-4e-dlgx">
                             <X size={18} weight="bold" />
                         </button>
                     </div>

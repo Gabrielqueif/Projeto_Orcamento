@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CircleNotch, ArrowRight } from "@phosphor-icons/react";
 import { createOrcamento, getSinapiBases, SinapiBase } from "@/lib/api/orcamentos";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 const ESTADOS = [
   { value: "ac", label: "AC - Acre" },
@@ -42,6 +43,14 @@ export default function NovoOrcamentoPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const erroRef = useRef<HTMLDivElement>(null);
+
+  // No mobile a ação fica no rodapé fixo: traz o aviso de erro, que fica no topo, para a vista.
+  useEffect(() => {
+    if (error && window.matchMedia?.("(max-width: 1023px)").matches) {
+      erroRef.current?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    }
+  }, [error]);
 
   // Form State
   const [nome, setNome] = useState("");
@@ -181,27 +190,36 @@ export default function NovoOrcamentoPage() {
   );
   const fieldset: React.CSSProperties = { margin: 0, padding: 24, border: 0, minWidth: 0 };
   const req = <span className="gp-req"> (obrigatório)</span>;
+  const botaoCriar = loading ? (
+    <>
+      <CircleNotch size={18} weight="bold" className="animate-spin" aria-hidden="true" />
+      Criando...
+    </>
+  ) : (
+    <>
+      Criar orçamento
+      <ArrowRight size={16} weight="bold" aria-hidden="true" />
+    </>
+  );
 
   return (
     <>
-      <div>
-        <nav aria-label="Trilha" className="gp-crumb">
-          <Link href="/orcamentos">Orçamentos</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Novo orçamento</span>
-        </nav>
-        <h1 className="gp-h1">Novo orçamento</h1>
-        <p className="gp-sub">
-          Campos com <span className="gp-req" style={{ fontWeight: 700 }}>(obrigatório)</span> precisam ser preenchidos para criar.
-        </p>
-      </div>
+      <PageHeader
+        back="/orcamentos"
+        backLabel="Voltar para orçamentos"
+        crumb={<><Link href="/orcamentos">Orçamentos</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Novo orçamento</span></>}
+        title="Novo orçamento"
+        subtitle={<>Campos com <span className="gp-req" style={{ fontWeight: 700 }}>(obrigatório)</span> precisam ser preenchidos para criar.</>}
+      />
 
       {error && (
-        <div role="alert" style={{ padding: "12px 16px", borderRadius: 14, background: "#FEE2E2", color: "#B91C1C", fontSize: 14, fontWeight: 700 }}>
+        <div ref={erroRef} role="alert" style={{ padding: "12px 16px", borderRadius: 14, background: "#FEE2E2", color: "#B91C1C", fontSize: 14, fontWeight: 700 }}>
           {error}
         </div>
       )}
 
       <div className="gp-split" style={{ gap: 24 }}>
-        <form onSubmit={(e) => handleSubmit(e)} className="gp-main" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <form onSubmit={(e) => handleSubmit(e)} className="gp-main gp-4a-form" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <fieldset className="gp-card" style={{ ...fieldset, display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 16 }}>
             {legend(1, "Obra")}
             <div className="gp-fld" style={{ gridColumn: "span 4" }}>
@@ -392,24 +410,14 @@ export default function NovoOrcamentoPage() {
                 SEINFRA liberada: a obra é no Ceará.
               </p>
             )}
-            <button type="button" onClick={(e) => handleSubmit(e)} disabled={loading} className="gp-btn gp-bp" style={{ minHeight: 52, opacity: loading ? 0.6 : 1 }}>
-              {loading ? (
-                <>
-                  <CircleNotch size={18} weight="bold" className="animate-spin" aria-hidden="true" />
-                  Criando...
-                </>
-              ) : (
-                <>
-                  Criar orçamento
-                  <ArrowRight size={16} weight="bold" aria-hidden="true" />
-                </>
-              )}
+            <button type="button" onClick={(e) => handleSubmit(e)} disabled={loading} className="gp-btn gp-bp gp-only-d" style={{ minHeight: 52, opacity: loading ? 0.6 : 1 }}>
+              {botaoCriar}
             </button>
             <button
               type="button"
               onClick={(e) => handleSubmit(e, "em_elaboracao")}
               disabled={loading}
-              className="gp-btn"
+              className="gp-btn gp-only-d"
               style={{ border: "1px solid rgba(255,255,255,0.24)", background: "transparent", color: "#fff" }}
             >
               Salvar como rascunho
@@ -420,6 +428,18 @@ export default function NovoOrcamentoPage() {
             <span style={{ fontSize: 14, fontWeight: 800, color: "#007a85" }}>Guia técnico</span>
           </Link>
         </aside>
+      </div>
+
+      {/* Mobile: rodapé fixo com a ação principal */}
+      <div className="gp-only-m gp-4a-rodape">
+        <div>
+          <button type="button" onClick={(e) => handleSubmit(e, "em_elaboracao")} disabled={loading} className="gp-btn gp-bs">
+            Salvar rascunho
+          </button>
+          <button type="button" onClick={(e) => handleSubmit(e)} disabled={loading} className="gp-btn gp-bp" style={loading ? { opacity: 0.6 } : undefined}>
+            {botaoCriar}
+          </button>
+        </div>
       </div>
     </>
   );

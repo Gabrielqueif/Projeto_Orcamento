@@ -92,7 +92,7 @@ export function BuscaReferencia({
   const bloqueado = buscando || termo.trim().length < 2;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <form onSubmit={buscar} style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      <form onSubmit={buscar} className="gp-4e-bref" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         <select aria-label="Fonte" value={fonte} onChange={(e) => setFonte(e.target.value as RefFonte)} className="gp-in" style={sel}>
           {FONTES_REF.map((f) => (
             <option key={f.valor} value={f.valor}>{f.rotulo}</option>
@@ -129,6 +129,7 @@ export function BuscaReferencia({
                   setTermo("");
                   setBuscou(false);
                 }}
+                className="gp-4e-refbtn"
                 style={{ width: "100%", textAlign: "left", padding: "10px 14px", border: 0, background: "transparent", cursor: "pointer", fontSize: 14, color: "#001b3d" }}
               >
                 <span className="gp-mono" style={{ fontSize: 12, color: "#475569", marginRight: 8 }}>{r.ref_codigo}</span>

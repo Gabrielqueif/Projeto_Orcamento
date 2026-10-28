@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Funnel, UploadSimple, FilePdf, File, DotsThreeVertical, Camera, FileText, ShieldCheck } from "@phosphor-icons/react";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 const NOMES: Record<string, string> = {
   aurora: "Residencial Aurora",
@@ -35,32 +37,58 @@ const atividades = [
   { quem: "Sistema", acao: "avisou o vencimento de", alvo: "Licenca_Ambiental_Previa.pdf", quando: "08 out, 08:00" },
 ];
 
+// Seções da pasta: no mobile viram chips no cabeçalho; no desktop tudo fica visível ("Tudo").
+type Secao = "todos" | "projetos" | "fotos" | "contratos" | "licencas";
+const SECOES: { k: Secao; label: string }[] = [
+  { k: "todos", label: "Tudo" },
+  { k: "projetos", label: "Projetos" },
+  { k: "fotos", label: "Fotos" },
+  { k: "contratos", label: "Contratos" },
+  { k: "licencas", label: "Licenças" },
+];
+
 export default function ProjectDocsPage() {
   const id = useParams().id as string;
   const projectName = NOMES[id] ?? "Residencial Aurora";
+  const [secao, setSecao] = useState<Secao>("todos");
+  const ver = (k: Secao) => secao === "todos" || secao === k;
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb"><Link href="/docs">Documentos</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{projectName}</span></nav>
-          <h1 className="gp-h1">{projectName}</h1>
-          <p className="gp-sub">Arquivo técnico centralizado · atualizado há 2 horas</p>
+      <PageHeader
+        back="/docs"
+        backLabel="Voltar para documentos"
+        crumb={<><Link href="/docs">Documentos</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{projectName}</span></>}
+        eyebrow="Pasta do projeto"
+        title={projectName}
+        subtitle="Arquivo técnico centralizado · atualizado há 2 horas"
+        actions={
+          <>
+            <button type="button" className="gp-btn gp-bs gp-only-d"><Funnel size={16} weight="bold" aria-hidden="true" />Filtrar</button>
+            <button type="button" className="gp-btn gp-bp gp-only-d"><UploadSimple size={16} weight="bold" aria-hidden="true" />Enviar arquivos</button>
+          </>
+        }
+      >
+        <div className="gp-only-m">
+          <div className="gp-chips" role="group" aria-label="Seções da pasta">
+            {SECOES.map((s) => (
+              <button key={s.k} type="button" aria-pressed={secao === s.k} onClick={() => setSecao(s.k)} className="gp-chip gp-4e-hchip">
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button type="button" className="gp-btn gp-bs"><Funnel size={16} weight="bold" aria-hidden="true" />Filtrar</button>
-          <button type="button" className="gp-btn gp-bp"><UploadSimple size={16} weight="bold" aria-hidden="true" />Enviar arquivos</button>
-        </div>
-      </div>
+      </PageHeader>
 
       <div className="gp-split">
+        {ver("projetos") && (
         <section className="gp-card gp-main" aria-labelledby="h-pl" style={{ overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid #E6EBF2" }}>
             <h2 id="h-pl" className="gp-h2">Plantas e projetos</h2>
             <span className="gp-bg gp-ne">12 arquivos</span>
           </div>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
+            <table className="gp-4e-frows" style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
               <caption className="gp-sr">Plantas e projetos</caption>
               <thead><tr><th scope="col" className="gp-th" style={{ paddingLeft: 22 }}>Arquivo</th><th scope="col" className="gp-th">Data</th><th scope="col" className="gp-th" style={{ textAlign: "right" }}>Tamanho</th><th scope="col" className="gp-th" style={{ paddingRight: 22 }}><span className="gp-sr">Ações</span></th></tr></thead>
               <tbody>
@@ -83,11 +111,13 @@ export default function ProjectDocsPage() {
             </table>
           </div>
         </section>
+        )}
 
+        {ver("fotos") && (
         <aside className="gp-card gp-pad gp-side" aria-labelledby="h-fo" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <h2 id="h-fo" className="gp-h2">Fotos de campo</h2>
-            <button type="button" className="gp-ib" aria-label="Adicionar foto" style={{ width: 40, height: 40 }}><Camera size={18} weight="bold" aria-hidden="true" /></button>
+            <button type="button" className="gp-ib gp-4e-ib44" aria-label="Adicionar foto" style={{ width: 40, height: 40 }}><Camera size={18} weight="bold" aria-hidden="true" /></button>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
             {fotos.map((t) => (
@@ -102,11 +132,13 @@ export default function ProjectDocsPage() {
             <span className="gp-bar" role="progressbar" aria-label="Armazenamento usado" aria-valuenow={45} aria-valuemin={0} aria-valuemax={100}><span style={{ width: "45%", background: "#00a3b1" }} /></span>
           </div>
         </aside>
+        )}
       </div>
 
-      <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))" }}>
+      <div className="gp-grid gp-4e-g1 gp-4e-wrap" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))" }}>
+        {ver("contratos") && (
         <section className="gp-card gp-pad" aria-labelledby="h-co">
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}><h2 id="h-co" className="gp-h2">Contratos</h2><button type="button" className="gp-btn gp-bs gp-sm">Ver tudo</button></div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}><h2 id="h-co" className="gp-h2">Contratos</h2><button type="button" className="gp-btn gp-bs gp-sm gp-4e-tap">Ver tudo</button></div>
           {contractFiles.map((c) => (
             <div key={c.name} className="gp-li">
               <span style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
@@ -117,8 +149,10 @@ export default function ProjectDocsPage() {
             </div>
           ))}
         </section>
+        )}
+        {ver("licencas") && (
         <section className="gp-card gp-pad" aria-labelledby="h-li">
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}><h2 id="h-li" className="gp-h2">Licenças e alvarás</h2><button type="button" className="gp-btn gp-bs gp-sm">Ver tudo</button></div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}><h2 id="h-li" className="gp-h2">Licenças e alvarás</h2><button type="button" className="gp-btn gp-bs gp-sm gp-4e-tap">Ver tudo</button></div>
           {licenseFiles.map((l) => (
             <div key={l.name} className="gp-li">
               <span style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
@@ -129,9 +163,10 @@ export default function ProjectDocsPage() {
             </div>
           ))}
         </section>
+        )}
       </div>
 
-      <section className="gp-card gp-pad" aria-labelledby="h-at">
+      <section className="gp-card gp-pad gp-4e-wrap" aria-labelledby="h-at">
         <h2 id="h-at" className="gp-h2">Atividades recentes</h2>
         <p className="gp-sub" style={{ marginBottom: 8 }}>Acessos e modificações nos documentos do projeto.</p>
         {atividades.map((a) => (
@@ -141,6 +176,11 @@ export default function ProjectDocsPage() {
           </div>
         ))}
       </section>
+
+      {/* Mobile: "Enviar arquivos" vira o botão flutuante */}
+      <button type="button" className="gp-fab gp-4e-fab">
+        <UploadSimple size={22} weight="bold" aria-hidden="true" /> Enviar arquivos
+      </button>
     </>
   );
 }

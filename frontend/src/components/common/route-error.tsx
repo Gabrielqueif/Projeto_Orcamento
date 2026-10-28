@@ -2,30 +2,34 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { WifiSlash } from "@phosphor-icons/react";
+import { ArrowClockwise, WifiSlash } from "@phosphor-icons/react";
 
 interface RouteErrorProps {
   error: Error & { digest?: string };
   reset: () => void;
 }
 
+/** Erro de rota. No mobile (artefato "Erro") ocupa a altura da tela e empilha os botões. */
 export function RouteError({ error, reset }: RouteErrorProps) {
   useEffect(() => {
     console.error("Erro na rota:", error);
   }, [error]);
 
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", minHeight: 560 }}>
+    <div className="gp-4e-err">
       <div role="alert" style={{ maxWidth: 560, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
         <span aria-hidden="true" style={{ width: 112, height: 112, borderRadius: 34, background: "#FEE2E2", color: "#B91C1C", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <WifiSlash size={52} weight="bold" />
         </span>
-        <h1 className="gp-h1" style={{ margin: "8px 0 0" }}>Não conseguimos carregar esta página</h1>
+        <h1 className="gp-h1 gp-4e-errt" style={{ margin: "8px 0 0" }}>Não conseguimos carregar esta página</h1>
         <p className="gp-sub" style={{ margin: 0, lineHeight: 1.6 }}>
           Pode ser a conexão ou uma instabilidade nossa. Seus dados estão salvos. Tente de novo em alguns segundos.
         </p>
-        <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-          <button type="button" onClick={reset} className="gp-btn gp-bp">Tentar de novo</button>
+        <div className="gp-4e-stack" style={{ marginTop: 8 }}>
+          <button type="button" onClick={reset} className="gp-btn gp-bp">
+            <ArrowClockwise size={18} weight="bold" aria-hidden="true" className="gp-only-m" />
+            Tentar de novo
+          </button>
           <Link href="/" className="gp-btn gp-bs">Voltar ao início</Link>
         </div>
         {error.digest && (

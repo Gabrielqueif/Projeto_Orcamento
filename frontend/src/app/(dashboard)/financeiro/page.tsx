@@ -3,9 +3,22 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getPortfolioConsolidado, PortfolioConsolidado } from "@/lib/api/financeiro";
+import { Check, Warning } from "@phosphor-icons/react";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 const formatCurrency = (val: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(val);
+
+// Valores curtos para o resumo do mobile ("R$ 412 mil").
+// Formatação própria: o modo "compact" do Intl difere entre Node e navegador e quebra a hidratação.
+const formatCompacto = (val: number) => {
+  const num = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+  if (Math.abs(val) >= 1_000_000) return `R$ ${num(val / 1_000_000)} mi`;
+  return Math.abs(val) >= 1000 ? `R$ ${num(val / 1000)} mil` : `R$ ${num(val)}`;
+};
+
+const iniciais = (nome: string) =>
+  nome.split(" ").filter((p) => p.length > 2).map((p) => p[0]).join("").substring(0, 2).toUpperCase() || nome.substring(0, 2).toUpperCase();
 
 // O backend devolve classes de tema antigas em barColor; aqui só se lê a gravidade.
 const gravidade = (barColor: string) =>
@@ -60,19 +73,51 @@ export default function FinanceiroVisaoPage() {
     total_orcado > 0 ? Math.min(Math.round((total_realizado / total_orcado) * 1000) / 10, 100) : 0;
   const pctTexto = percentualUtilizado.toString().replace(".", ",");
 
+  const nObras = `${projetos.length} ${projetos.length === 1 ? "obra ativa" : "obras ativas"}`;
+
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            Gestão / <span aria-current="page" style={{ color: "#001b3d" }}>Financeiro</span>
-          </nav>
-          <h1 className="gp-h1">Financeiro</h1>
-          <p className="gp-sub">Verba, gasto e saldo de todas as obras ativas.</p>
+      <PageHeader
+        crumb={<>Gestão / <span aria-current="page" style={{ color: "#001b3d" }}>Financeiro</span></>}
+        eyebrow="Gestão"
+        back="/mais"
+        title="Financeiro"
+        subtitle={<span className="gp-only-d">Verba, gasto e saldo de todas as obras ativas.</span>}
+        lift
+      >
+        <div className="gp-only-m">
+          <p className="gp-4d-hv" style={{ margin: 0 }}>
+            <span>Orçamento global · {nObras}</span>
+            <strong>{formatCurrency(total_orcado)}</strong>
+          </p>
         </div>
-      </div>
+      </PageHeader>
 
-      <section aria-label="Indicadores" className="gp-grid">
+      {/* Mobile: gasto e saldo num cartão que sobe sobre o cabeçalho */}
+      <section aria-label="Gasto e saldo" className="gp-only-m">
+        <div className="gp-4d-sum">
+          <span
+            className="gp-4d-pb"
+            role="progressbar"
+            aria-label={`Verba utilizada ${pctTexto}%`}
+            aria-valuenow={percentualUtilizado}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <span style={{ width: `${percentualUtilizado}%` }}></span>
+          </span>
+          <dl className="gp-4d-dl">
+            <div><dt>Gasto</dt><dd>{formatCompacto(total_realizado)}</dd></div>
+            <div><dt>Utilizado</dt><dd>{pctTexto}%</dd></div>
+            <div>
+              <dt>Saldo</dt>
+              <dd style={{ color: saldo_restante >= 0 ? undefined : "#B91C1C" }}>{formatCompacto(saldo_restante)}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section aria-label="Indicadores" className="gp-grid gp-only-d">
         <div className="gp-card gp-met gp-dark">
           <span className="gp-ml">Verba das obras ativas</span>
           <span className="gp-mv">{formatCurrency(total_orcado)}</span>
@@ -108,8 +153,54 @@ export default function FinanceiroVisaoPage() {
         </div>
       </section>
 
+      {/* Mobile: obras em cartões, com o mesmo dado da tabela do desktop */}
+      <section aria-labelledby="h-po-m" className="gp-only-m">
+        <h2 id="h-po-m" className="gp-4d-h" style={{ marginBottom: 10 }}>Por obra</h2>
+        {projetos.length === 0 ? (
+          <p className="gp-card" style={{ margin: 0, padding: 24, textAlign: "center", color: "#475569" }}>
+            Nenhuma obra ativa com dados financeiros registrados.
+          </p>
+        ) : (
+          <ul className="gp-4d-lst">
+            {projetos.map((p) => {
+              const g = gravidade(p.barColor);
+              return (
+                <li key={p.id}>
+                  <Link href={p.href} className="gp-4d-it">
+                    <span className="gp-4d-row">
+                      <span aria-hidden="true" className={`gp-4d-av ${g.badge}`}>{iniciais(p.nome)}</span>
+                      <span className="gp-4d-tx">
+                        <strong>{p.nome}</strong>
+                        <span>{formatCurrency(p.realizado)} de {formatCurrency(p.previsto)}</span>
+                      </span>
+                      <strong style={{ fontSize: 15 }}>{p.percent}%</strong>
+                    </span>
+                    <span className="gp-4d-row">
+                      <span
+                        className="gp-4d-pb gp-4d-fino"
+                        role="progressbar"
+                        aria-label={`Verba utilizada em ${p.nome}`}
+                        aria-valuenow={Math.min(p.percent, 100)}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                      >
+                        <span style={{ width: `${Math.min(p.percent, 100)}%`, background: g.cor }}></span>
+                      </span>
+                      <span className={`gp-bg ${g.badge}`}>
+                        <span className="gp-dot" aria-hidden="true"></span>
+                        {p.status}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
       <div className="gp-split">
-        <section className="gp-card gp-main" aria-labelledby="h-po" style={{ overflow: "hidden" }}>
+        <section className="gp-card gp-main gp-only-d" aria-labelledby="h-po" style={{ overflow: "hidden" }}>
           <div style={{ padding: "18px 22px", borderBottom: "1px solid #E6EBF2" }}>
             <h2 id="h-po" className="gp-h2">Por obra</h2>
           </div>
@@ -204,6 +295,26 @@ export default function FinanceiroVisaoPage() {
           </ul>
           <p className="gp-hint" style={{ margin: 0 }}>Barra = realizado sobre o planejado da categoria.</p>
         </section>
+      </div>
+
+      {/* Mobile: o aviso do rodapé da tabela vira um quadro de status */}
+      <div className="gp-only-m">
+        {alerta_critico ? (
+          <section aria-label="Status do portfólio" className="gp-4d-st gp-wa">
+            <span aria-hidden="true" className="gp-4d-sti"><Warning size={20} weight="bold" /></span>
+            <span>
+              <strong>{alerta_critico.obra_nome}: gasto {alerta_critico.excesso_pct}% acima do orçado.</strong>{" "}
+              <Link href={alerta_critico.href}>Analisar detalhes</Link>
+            </span>
+          </section>
+        ) : (
+          <section aria-label="Status do portfólio" className="gp-4d-st gp-ok">
+            <span aria-hidden="true" className="gp-4d-sti"><Check size={20} weight="bold" /></span>
+            <span>
+              <strong>Execução dentro do planejado.</strong> Nenhuma obra passou da verba prevista.
+            </span>
+          </section>
+        )}
       </div>
     </>
   );

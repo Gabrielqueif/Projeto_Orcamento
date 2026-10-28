@@ -56,7 +56,8 @@
   }
 }/* Design system do artefato GPObras (prefixo gp-). Fonte: artefato JKGY8ti4isXDRDXpECWDFS */
 :focus-visible{outline:3px solid #00a3b1;outline-offset:2px}
-.gp-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* left:0 evita que, dentro de tabelas largas com rolagem, o texto oculto estique a página */
+.gp-sr{position:absolute;left:0;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .gp-sd{flex:1 1 248px;box-sizing:border-box;background-color:#001b3d;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:22px 22px;color:#fff;padding:20px 14px;display:flex;flex-direction:column;gap:22px}
 .gp-sd-brand{display:flex;align-items:center;gap:10px;padding:0 6px;color:#fff;text-decoration:none;font-size:20px;font-weight:800;letter-spacing:-.4px}
 .gp-sd-brand:hover{color:#fff}
@@ -147,3 +148,776 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
 .gp-toast{animation:gp-up .28s cubic-bezier(.2,.8,.2,1)}
 @keyframes gp-up{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion: reduce){.gp-sk,.gp-toast{animation:none}}
+
+/* Container dos toasts */
+.gp-toasts{position:fixed;right:24px;bottom:24px;z-index:60;width:420px;max-width:calc(100% - 48px);display:flex;flex-direction:column;gap:8px;pointer-events:none}
+
+/* Cabeçalho de página (PageHeader). No desktop: trilha, título e ações à direita */
+.gp-ph{display:flex;flex-direction:column;gap:16px}
+.gp-ph-back,.gp-ph-eb{display:none}
+/* Sem trilha, o rótulo aparece no desktop no lugar dela */
+.gp-ph-eb:first-child{display:block;font-size:13px;font-weight:600;color:#475569}
+.gp-ph-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.gp-ph-txt{min-width:0}
+.gp-ph-title{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:4px}
+.gp-ph-title .gp-h1{margin:0}
+.gp-ph-act{display:flex;flex-wrap:wrap;gap:10px}
+
+/* Elementos que só existem no mobile */
+.gp-bn,.gp-fab,.gp-only-m{display:none}
+
+/* ===== Mobile (artefato "GPObras — App Mobile"), abaixo de 1024px ===== */
+@media (max-width: 1023px){
+  .gp-sd,.gp-tb,.gp-only-d{display:none}
+  .gp-mn{padding:calc(16px + env(safe-area-inset-top)) 16px calc(124px + env(safe-area-inset-bottom));gap:18px}
+  .gp-h1{font-size:26px;letter-spacing:-.5px}
+  .gp-h2{font-size:18px}
+  .gp-pad{padding:18px}
+  .gp-btn{min-height:48px}
+  .gp-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .gp-met{padding:16px}
+  .gp-mv{font-size:22px}
+  .gp-split>.gp-main,.gp-split>.gp-side{flex-basis:100%}
+  .gp-only-m{display:revert}
+
+  /* Abas e chips rolam para o lado em vez de quebrar linha */
+  .gp-tabs{flex-wrap:nowrap;overflow-x:auto;align-self:stretch;max-width:100%;scrollbar-width:none}
+  .gp-tabs::-webkit-scrollbar{display:none}
+  .gp-tab{flex:0 0 auto;white-space:nowrap}
+  .gp-chips{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;margin:0 -16px;padding:2px 16px;scrollbar-width:none}
+  .gp-chips::-webkit-scrollbar{display:none}
+  .gp-chips>.gp-chip{flex:0 0 auto;white-space:nowrap;min-height:44px}
+
+  /* Cabeçalho escuro */
+  .gp-ph{margin:calc(-16px - env(safe-area-inset-top)) -16px 0;padding:calc(14px + env(safe-area-inset-top)) 16px 22px;gap:14px;border-radius:0 0 28px 28px;background-color:#001b3d;background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:22px 22px;color:#fff}
+  .gp-ph[data-lift]{padding-bottom:62px}
+  .gp-ph[data-lift]+*{margin-top:-58px;position:relative}
+  .gp-ph-back{display:inline-flex;align-self:flex-start;align-items:center;justify-content:center;width:44px;height:44px;box-sizing:border-box;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff}
+  .gp-ph-back:hover{color:#fff}
+  .gp-ph .gp-crumb{display:none}
+  .gp-ph .gp-ph-eb{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#c8ec5a}
+  .gp-ph-row{align-items:flex-start;gap:14px}
+  .gp-ph-title{margin-top:2px}
+  .gp-ph .gp-h1{color:#fff;line-height:1.2}
+  .gp-ph .gp-sub{color:#cbd5e1;font-size:14px}
+  .gp-ph .gp-hint{color:#94A9C4}
+  .gp-ph .gp-req{color:#FCA5A5}
+  .gp-ph-act{width:100%;gap:8px}
+  .gp-ph .gp-bd{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16)}
+  .gp-ph .gp-bs{border-color:transparent}
+  .gp-ph .gp-srch{height:50px;border:0;border-radius:16px}
+
+  /* Barra inferior e botão flutuante */
+  .gp-bn{display:grid;position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:45;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:6px;border-radius:24px;background:#001b3d;box-shadow:0 18px 36px -14px rgba(0,16,42,.6)}
+  .gp-bn a{min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:18px;color:#cbd5e1;text-decoration:none;font-size:12px;font-weight:600;letter-spacing:-.2px}
+  .gp-bn a:hover{color:#fff}
+  .gp-bn a[aria-current=page]{background:#9fd300;color:#001b3d;font-weight:800}
+  .gp-fab{display:inline-flex;position:fixed;right:18px;bottom:calc(104px + env(safe-area-inset-bottom));z-index:44;min-width:56px;height:56px;padding:0 16px;box-sizing:border-box;border-radius:18px;background:#9fd300;color:#001b3d;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:800;text-decoration:none;box-shadow:0 12px 24px -8px rgba(77,126,5,.55)}
+  .gp-fab:hover{color:#001b3d;background:#b2e61a}
+
+  /* Diálogos viram folha inferior; gavetas ocupam a tela */
+  .gp-ov{align-items:flex-end;padding:0}
+  .gp-dlg{max-height:92dvh;border-radius:24px 24px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
+  .gp-dh{padding:16px}
+  .gp-db{padding:16px}
+  .gp-df{flex-wrap:wrap;padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+  .gp-df>.gp-btn{flex:1 1 140px}
+
+  .gp-toasts{left:16px;right:16px;bottom:calc(100px + env(safe-area-inset-bottom));width:auto;max-width:none}
+
+  /* Tabela empilhada: cada linha vira um cartão, cada célula mostra o rótulo de data-label */
+  table.gp-stack{min-width:0 !important;width:100%}
+  .gp-stack thead{display:none}
+  .gp-stack tbody{display:flex;flex-direction:column;gap:12px}
+  .gp-stack tr{display:block;padding:6px 16px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 10px 24px -18px rgba(0,27,61,.35)}
+  .gp-stack td{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #E6EBF2;text-align:right !important;width:auto !important}
+  .gp-stack td:first-child{display:block;border-top:0;text-align:left !important}
+  .gp-stack td[data-label]::before{content:attr(data-label);flex:0 0 auto;font-size:13px;font-weight:700;color:#475569;text-align:left}
+  .gp-stack td:empty{display:none}
+  /* Cartão que só serve de moldura para a tabela some no mobile */
+  .gp-m-flat{background:transparent !important;box-shadow:none !important;padding:0 !important;border-radius:0 !important;overflow:visible !important}
+}
+
+/* ===== Fase 4a ===== */
+/* Acesso, Início e listas principais (Orçamentos, Novo orçamento, Bases, Obras, Diário) abaixo de 1024px.
+   Só classes novas gp-4a-*; o desktop não muda. Os !important vencem estilos inline que só valem no desktop. */
+@media (max-width: 1023px){
+  /* Início: saudação e anel de progresso no lugar do título do desktop */
+  .gp-ph:has(.gp-4a-hero)>.gp-ph-row{display:none}
+  .gp-4a-hero{display:flex;flex-direction:column;gap:22px}
+  .gp-4a-perfil{display:flex;align-items:center;gap:12px;min-height:44px;align-self:flex-start;color:#fff;text-decoration:none}
+  .gp-4a-perfil:hover{color:#fff}
+  .gp-4a-perfil .gp-av{width:44px;height:44px;flex-basis:44px;border-radius:14px;font-size:15px}
+  .gp-4a-perfil-txt{display:flex;flex-direction:column;gap:1px}
+  .gp-4a-perfil-txt>span{font-size:13px;color:#cbd5e1}
+  .gp-4a-perfil-txt>strong{font-size:17px;font-weight:800}
+  .gp-4a-anel{display:flex;align-items:center;gap:20px}
+  .gp-4a-anel>svg{flex:0 0 104px}
+  .gp-4a-anel text{font-family:Manrope,system-ui,sans-serif}
+  .gp-4a-anel .gp-h1{margin:6px 0 0;font-size:22px;letter-spacing:-.4px}
+
+  /* Indicadores num cartão único que sobe sobre o cabeçalho */
+  .gp-4a-kpis{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);margin:0;padding:16px 8px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 14px 30px -18px rgba(0,27,61,.35)}
+  .gp-4a-kpis>div{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:0 4px}
+  .gp-4a-kpis>div+div{border-left:1px solid #E6EBF2}
+  .gp-4a-kpis dt{font-size:12px;font-weight:700;color:#475569;text-align:center}
+  .gp-4a-kpis dd{margin:0;font-size:24px;font-weight:800;letter-spacing:-.4px;white-space:nowrap}
+  .gp-4a-kpis small{font-size:12px;font-weight:600;letter-spacing:0;color:#475569}
+  .gp-4a-kpis-l{padding:16px 4px}
+  .gp-4a-kpis-l>div{align-items:flex-start;padding:0 14px}
+  .gp-4a-kpis-l dt{text-align:left}
+  .gp-4a-kpis-l dd{font-size:22px}
+
+  /* Início: alerta de diário, carrossel de obras e barra de verba */
+  .gp-4a-alerta{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;background:#FFF7ED;color:#001b3d;text-decoration:none}
+  .gp-4a-alerta:hover{color:#001b3d;background:#FFEDD5}
+  .gp-4a-alerta-ic{width:44px;height:44px;flex:0 0 44px;border-radius:14px;background:#F97316;color:#fff;display:flex;align-items:center;justify-content:center}
+  .gp-4a-alerta-txt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .gp-4a-alerta-txt strong{font-size:15px}
+  .gp-4a-alerta-txt span{font-size:13px;color:#9A3412}
+  .gp-4a-sec-tit{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+  .gp-4a-sec-tit a{display:flex;align-items:center;min-height:44px;padding:0 4px;font-size:14px;font-weight:700;color:#007a85}
+  .gp-4a-carr{margin:0 -16px -8px;padding:2px 16px 12px;list-style:none;display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 16px;scrollbar-width:none}
+  .gp-4a-carr::-webkit-scrollbar{display:none}
+  .gp-4a-carr>li{flex:0 0 min(272px,80vw);scroll-snap-align:start}
+  .gp-4a-carr-card{height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 10px 24px -16px rgba(0,27,61,.3);color:#001b3d;text-decoration:none}
+  .gp-4a-carr-card:hover{color:#001b3d}
+  .gp-4a-carr-top{display:flex;align-items:center;gap:12px;min-width:0}
+  .gp-4a-tile{width:42px;height:42px;flex:0 0 42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+  .gp-4a-carr-nome{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .gp-4a-carr-nome>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gp-4a-carr-nome strong{font-size:15px}
+  .gp-4a-carr-nome span{font-size:13px;color:#475569}
+  .gp-4a-carr-pct{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}
+  .gp-4a-carr-pct>span{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+  .gp-4a-carr-pct strong{font-weight:800}
+  .gp-4a-verba{display:flex;align-items:center;gap:12px}
+  .gp-4a-verba>[role=progressbar]{flex:1 1 auto;display:flex;height:14px;padding:3px;box-sizing:border-box;border-radius:999px;background:#EDF1F6}
+  .gp-4a-verba>[role=progressbar]>span{display:block;height:100%;border-radius:999px}
+  .gp-4a-verba>strong{font-size:16px;font-weight:600}
+  .gp-4a-split>.gp-side{order:-1}
+
+  /* Listas: busca no cabeçalho, chips rolando, contagem e estado vazio */
+  .gp-4a-busca{display:flex;flex-direction:column;gap:6px}
+  .gp-4a-busca>label{font-size:13px;font-weight:700;color:#cbd5e1}
+  .gp-4a-busca input{font-size:16px}
+  .gp-4a-tbar{padding:0 !important;border:0 !important}
+  .gp-4a-chips{flex:1 1 100% !important;min-width:0;flex-wrap:nowrap !important;gap:8px !important}
+  .gp-4a-chips>.gp-chip{border-color:transparent;border-radius:14px;padding:0 16px;box-shadow:0 1px 2px rgba(0,27,61,.08)}
+  .gp-4a-chips>.gp-chip[aria-pressed=true]{box-shadow:0 8px 18px -10px rgba(0,27,61,.7)}
+  .gp-4a-cont{margin:16px 4px 12px;font-size:13px;font-weight:700;color:#475569}
+  .gp-4a-vazio{display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px 12px 0;text-align:center}
+  .gp-4a-vazio-ic{position:relative;width:132px;height:132px;border-radius:40px;background:#fff;box-shadow:0 20px 40px -24px rgba(0,27,61,.45);display:flex;align-items:center;justify-content:center}
+  .gp-4a-vazio-ic>span{position:absolute;top:-6px;right:-6px;width:40px;height:40px;border-radius:14px;background:#9fd300;display:flex;align-items:center;justify-content:center}
+  .gp-4a-vazio h2{margin:8px 0 0;font-size:21px;font-weight:800}
+  .gp-4a-vazio p{margin:0;font-size:15px;line-height:1.55;color:#475569}
+  .gp-4a-vazio .gp-btn{align-self:stretch;min-height:54px;border-radius:16px}
+
+  /* Tabela em cartões: cada linha vira um cartão; as células se posicionam por data-m */
+  .gp-4a-tw{overflow:visible !important}
+  table.gp-4a-ct{display:block;width:100%;min-width:0 !important}
+  .gp-4a-ct thead{display:none}
+  .gp-4a-ct tbody{display:flex;flex-direction:column;gap:12px}
+  .gp-4a-ct tr{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 12px;padding:16px;border-radius:22px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 10px 24px -18px rgba(0,27,61,.35)}
+  .gp-4a-ct tr.gp-row:hover{background:#fff}
+  .gp-4a-ct th,.gp-4a-ct td{display:block;min-width:0;width:auto !important;padding:0 !important;border:0 !important;text-align:left !important}
+  .gp-4a-ct td.gp-4a-msg{grid-column:1/-1;padding:24px 8px !important;text-align:center !important}
+  .gp-4a-ct [data-label]::before{content:attr(data-label) ": ";font-weight:600;color:#475569}
+  .gp-4a-ct [data-m=nome] a::after{content:"";position:absolute;inset:0;border-radius:22px}
+  .gp-4a-ct [data-m=nome]{grid-area:nome;padding-right:48px !important}
+  .gp-4a-ct [data-m=acoes]{position:absolute;top:10px;right:10px;z-index:1}
+  .gp-4a-ct [data-m=acoes] .gp-ib{width:44px !important;height:44px !important}
+  .gp-4a-ct [data-m=cli]{grid-area:cli;font-size:13px}
+  .gp-4a-ct [data-m=st]{grid-area:st}
+  .gp-4a-ct [data-m=valor]{grid-area:valor;justify-self:end;font-size:17px}
+  .gp-4a-ct [data-m=data]{grid-area:data;justify-self:end;font-size:12px}
+  .gp-4a-ct [data-m=fase]{grid-area:fase;justify-self:end;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+  .gp-4a-ct [data-m=prog]{grid-area:prog}
+  .gp-4a-ct [data-m=fim]{grid-area:fim;font-size:13px}
+  .gp-4a-ct-orc tr.gp-row{grid-template-areas:"nome nome" "cli cli" "st valor" "st data";row-gap:6px}
+  .gp-4a-ct-orc [data-m=cli]{margin-bottom:8px}
+  .gp-4a-ct-obras tr.gp-row{grid-template-areas:"nome nome" "cli cli" "st fase" "prog prog" "fim fim"}
+
+  /* Diário: taxa no cabeçalho e um cartão por obra */
+  .gp-4a-taxa{margin:0;display:flex;align-items:baseline;gap:8px;font-size:13px;color:#cbd5e1}
+  .gp-4a-taxa strong{font-size:26px;line-height:1;font-weight:800;color:#fff}
+  .gp-4a-sech{padding:0 4px 12px !important;border:0 !important}
+  .gp-4a-filtro{margin-top:12px}
+  .gp-4a-filtro .gp-chip{min-height:44px}
+  .gp-4a-cartao{border-radius:22px;background:#fff;padding:32px 20px !important}
+  .gp-4a-dlista{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+  .gp-4a-dlista>li{display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:22px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 10px 24px -18px rgba(0,27,61,.35)}
+  .gp-4a-dtopo{display:flex;align-items:center;gap:12px}
+  .gp-4a-dtopo .gp-4a-tile{width:46px;height:46px;flex-basis:46px;border-radius:14px;font-size:15px}
+  .gp-4a-dnome{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .gp-4a-dnome strong{font-size:16px}
+  .gp-4a-dnome>span{font-size:13px;color:#475569}
+  .gp-4a-dnome>span:first-of-type{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+  .gp-4a-dclima{flex:0 0 auto;display:flex}
+
+  /* Bases: variantes como etiquetas, botão na largura do cartão */
+  .gp-4a-dbcard h3{font-size:18px !important}
+  .gp-4a-dbcard>.gp-btn{align-self:stretch !important}
+  .gp-4a-variantes{flex-direction:row !important;flex-wrap:wrap;gap:8px !important}
+  .gp-4a-variantes>li{padding:8px 12px;border-radius:12px;background:#F4F6FA;font-size:13px;font-weight:700;color:#001b3d}
+  .gp-4a-tracejado{background:#fff;border:2px dashed #CBD5E1;box-shadow:none}
+  .gp-btn.gp-4a-alvo{min-height:44px}
+
+  /* Novo orçamento: uma coluna e rodapé fixo com a ação principal */
+  .gp-4a-form>fieldset{grid-template-columns:minmax(0,1fr) !important;gap:14px !important;padding:18px !important}
+  .gp-4a-form>fieldset>.gp-fld{grid-column:1/-1 !important}
+  .gp-4a-form .gp-grid{grid-template-columns:minmax(0,1fr)}
+  .gp-4a-rodape{position:fixed;left:0;right:0;bottom:0;z-index:46;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-radius:24px 24px 0 0;background:#fff;box-shadow:0 -12px 30px -18px rgba(0,27,61,.45)}
+  .gp-4a-rodape>div{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:10px}
+  .gp-4a-rodape .gp-btn{min-height:54px;padding:0 12px;border-radius:16px}
+
+  /* Acesso: topo escuro com a marca e o formulário numa folha branca */
+  .gp-4a-auth{flex-direction:column;flex-wrap:nowrap !important;min-height:100dvh !important;background:#001b3d !important}
+  .gp-4a-auth-lado{flex:1 0 auto !important;justify-content:flex-end !important;gap:0 !important;padding:calc(40px + env(safe-area-inset-top)) 28px 28px !important}
+  .gp-4a-auth-folha{flex:0 0 auto !important;align-items:flex-start !important;padding:28px 24px calc(28px + env(safe-area-inset-bottom)) !important;border-radius:32px 32px 0 0;background:#fff}
+  .gp-4a-auth-c .gp-4a-auth-lado{flex:0 0 auto !important;padding:calc(10px + env(safe-area-inset-top)) 16px 22px !important}
+  .gp-4a-auth-c .gp-4a-auth-folha{flex:1 0 auto !important;padding-top:24px !important}
+  .gp-4a-auth-marca{display:flex;flex-direction:column;gap:16px}
+  .gp-4a-auth-id{display:flex;flex-direction:column;gap:18px}
+  .gp-4a-auth-logo{width:76px;height:76px;border-radius:24px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 18px 40px -16px rgba(0,163,177,.6)}
+  .gp-4a-auth-nome{margin:0;font-size:34px;line-height:1.05;font-weight:800;letter-spacing:-1px;color:#fff}
+  .gp-4a-auth-nome span{color:#9fd300}
+  .gp-4a-auth-frase{margin:6px 0 0;font-size:16px;line-height:1.5;color:#cbd5e1}
+  .gp-4a-auth-voltar{display:inline-flex;align-self:flex-start;align-items:center;justify-content:center;width:44px;height:44px;box-sizing:border-box;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff}
+  .gp-4a-auth-voltar:hover{color:#fff}
+  .gp-4a-auth-compacto .gp-4a-auth-id{flex-direction:row;align-items:center;gap:14px}
+  .gp-4a-auth-compacto .gp-4a-auth-logo{width:52px;height:52px;flex:0 0 52px;border-radius:16px;box-shadow:none}
+  .gp-4a-auth-compacto .gp-4a-auth-logo img{width:34px;height:40px}
+  .gp-4a-auth-compacto h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.5px;color:#fff}
+  .gp-4a-auth-compacto .gp-4a-auth-frase{margin:2px 0 0;font-size:14px}
+  .gp-4a-auth-tit h1{font-size:22px !important;letter-spacing:-.3px !important}
+  .gp-4a-auth-tit .gp-sub{font-size:14px}
+  .gp-4a-auth-folha .gp-in,.gp-4a-auth-folha .gp-affix{height:54px;border-radius:14px;background:#F4F6FA}
+}
+
+/* ===== Fase 4b ===== */
+/* Orçamento em detalhe: planilha, item, insumos, memória de cálculo, BDI, curva ABC, cronograma e atualizar preços */
+/* Formulário de item: altura máxima com rolagem própria no desktop (antes inline) */
+.gp-4b-itemform{max-height:80vh;overflow-y:auto}
+
+@media (max-width: 1023px){
+  /* Diálogo em tela cheia: Modal com maxWidth "max-w-* gp-4b-tela". Cabeçalho escuro, corpo rolável e rodapé fixo (gp-4b-pe) */
+  .gp-4b-tela{height:100dvh;max-height:100dvh}
+  .gp-4b-tela>.gp-dlg{max-height:none;height:100%;padding:0;gap:0;border-radius:0;background:#F4F6FA;overflow:hidden}
+  .gp-4b-tela>.gp-dlg>div:first-child{flex-direction:row-reverse;justify-content:flex-end !important;padding:calc(10px + env(safe-area-inset-top)) 16px 18px;border-radius:0 0 28px 28px;background-color:#001b3d;background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:22px 22px;color:#fff}
+  .gp-4b-tela>.gp-dlg>div:first-child h2{color:#fff;font-size:20px !important;line-height:1.25;letter-spacing:-.3px;min-width:0}
+  .gp-4b-tela>.gp-dlg>div:first-child .gp-ib{flex:0 0 44px;width:44px !important;height:44px !important;border-radius:14px;border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff}
+  .gp-4b-tela>.gp-dlg>div:last-child{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;padding:16px 16px 0}
+  .gp-4b-corpo{display:flex;flex-direction:column;flex:1 0 auto}
+  .gp-4b-pe{position:sticky;bottom:0;z-index:2;flex-wrap:wrap;margin:auto -16px 0 !important;padding:12px 16px calc(16px + env(safe-area-inset-bottom)) !important;border-top:0 !important;border-radius:24px 24px 0 0;background:#fff;box-shadow:0 -10px 30px -18px rgba(0,27,61,.35)}
+  .gp-4b-pe>.gp-btn{flex:1 1 0;min-height:54px;border-radius:16px}
+  .gp-4b-pe>.gp-bp{flex-grow:1.7}
+  .gp-4b-tela .gp-btn.gp-sm{min-height:44px}
+  .gp-4b-tela .gp-affix input{font-size:16px}
+  .gp-4b-tela .gp-pad{padding:16px}
+  /* Abas do BDI: uma sob a outra, em vez de rolagem lateral que corta o segundo rótulo */
+  .gp-4b-tela .gp-tabs{flex-direction:column;overflow:visible}
+  .gp-4b-tela .gp-tab{white-space:normal;justify-content:center;min-height:48px}
+
+  /* Formulário de item: sem moldura, Cancelar à esquerda do botão principal */
+  .gp-4b-itemform{max-height:none}
+  .gp-4b-itemform .gp-4b-pe{flex-direction:row-reverse !important}
+  .gp-4b-busca .gp-chip{min-height:44px}
+  .gp-4b-res{max-height:none !important;overflow:visible !important;border:0 !important;display:flex;flex-direction:column;gap:8px}
+  .gp-4b-res>li{border-top:0 !important}
+  .gp-4b-res button{flex-direction:column;align-items:stretch !important;gap:8px !important;padding:14px !important;border-radius:18px;box-shadow:0 1px 2px rgba(0,27,61,.06)}
+  .gp-4b-res button>span:first-child{flex-direction:row !important;align-items:center;min-width:0 !important}
+
+  /* Tabela empilhada: célula de cabeçalho de linha (th scope=row) também vira bloco */
+  .gp-stack th[scope=row]{display:block;padding:10px 0;text-align:left !important}
+  .gp-stack th[scope=row]:first-child{border-top:0}
+  .gp-4b-sem-borda{border:0 !important}
+
+  /* Insumos do item: folha inferior em vez de gaveta, linhas como cartões cinza */
+  .gp-4b-ins{top:auto;height:88dvh;border-radius:28px 28px 0 0;box-shadow:0 -20px 40px -20px rgba(0,16,42,.5)}
+  .gp-4b-ins .gp-stack tbody{gap:8px}
+  .gp-4b-ins .gp-stack tr{background:#F4F6FA;box-shadow:none;border-radius:14px;padding:4px 12px}
+  .gp-4b-ins .gp-4b-num{width:132px !important;height:44px !important;font-size:16px !important}
+
+  /* Memória de cálculo: elementos como cartões, campos com 44px e texto de 16px */
+  .gp-4b-mc-rolagem{max-height:none !important;min-height:0 !important;overflow:visible !important}
+  .gp-4b-mc-rolagem .gp-stack td{padding-left:0 !important;padding-right:0 !important}
+  .gp-4b-mc-rolagem .gp-stack td:first-child{padding-top:12px !important}
+  .gp-4b-mc-rolagem thead{position:static !important}
+  .gp-4b-mc-in{height:44px !important;font-size:16px !important}
+  .gp-4b-mc-el{flex-wrap:wrap}
+  .gp-4b-mc-local{max-width:none !important;flex:1 1 100%}
+  .gp-4b-mc-acao{justify-content:flex-end !important}
+  .gp-4b-mc-acao .gp-ib{width:44px !important;height:44px !important;margin:0 !important}
+  .gp-4b-fchip{min-height:44px;min-width:44px;font-size:15px !important}
+
+  /* Curva ABC: classes lado a lado em cartões compactos */
+  .gp-4b-abc-cl{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:8px !important}
+  .gp-4b-abc-cl>button{flex-direction:column;align-items:flex-start !important;gap:6px !important;padding:12px !important;border-radius:18px;min-width:0}
+  .gp-4b-abc-cl>button>span:first-child{width:32px !important;height:32px !important;border-radius:10px !important;font-size:16px !important}
+  .gp-4b-abc-cl strong{font-size:20px !important}
+  .gp-4b-abc-cl .gp-4b-abc-txt{display:block;font-size:12px !important;font-weight:600;color:#475569}
+  .gp-4b-abc-cl .gp-hint{display:none !important}
+
+  /* Cronograma financeiro: gráfico rola para o lado; meses como blocos cinza */
+  .gp-4b-cf-corpo{padding:16px !important;gap:16px !important}
+  .gp-4b-cf-graf{flex-basis:100% !important;min-width:0;gap:6px !important;height:230px !important;overflow-x:auto;overflow-y:hidden}
+  .gp-4b-cf-graf>span{flex:1 0 48px !important}
+  .gp-4b-cf .gp-stack tbody{gap:8px}
+  .gp-4b-cf .gp-stack tr{background:#F4F6FA;box-shadow:none;border-radius:14px;padding:4px 14px}
+  .gp-4b-cf .gp-stack td{border-top-color:#E2E8F0}
+
+  /* Atualizar preços: resumo em duas colunas */
+  .gp-4b-ap-res{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+  .gp-4b-ap-res>div:last-child{grid-column:1/-1}
+  .gp-4b-ap-res dd{font-size:18px !important}
+}
+
+/* ===== Fase 4c ===== */
+/* Obras em detalhe: artefatos ObraDetalhe, ObraMedicoes, ObraNova1-3, ObraPlanilha, ObraAlmox e ObraPrazos */
+.gp-4c-dact{display:contents}
+.gp-4c-kpis,.gp-4c-prk,.gp-4c-wstep{display:none}
+#h-cs{scroll-margin-top:16px}
+@media (max-width: 1023px){
+  /* Detalhe da obra: selo de status acima do título; ações do desktop somem (viram abas e atalhos) */
+  .gp-ph-title:has(> .gp-4c-st){flex-direction:column-reverse;align-items:flex-start;gap:8px}
+  .gp-ph-act:has(> .gp-4c-dact){display:none}
+
+  /* Cartão de três métricas que sobe sobre o cabeçalho escuro */
+  .gp-4c-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;padding:16px 6px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 14px 30px -18px rgba(0,27,61,.35)}
+  .gp-4c-kpis>div{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:0 6px;text-align:center}
+  .gp-4c-kpis>div+div{border-left:1px solid #E6EBF2}
+  .gp-4c-kpis dt{font-size:12px;font-weight:700;color:#475569}
+  .gp-4c-kpis dd{margin:0;max-width:100%;font-size:18px;font-weight:800;color:#001b3d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* Painel de prazo: total, atalhos e linha do tempo */
+  .gp-4c-prz{display:flex;flex-direction:column;gap:12px}
+  .gp-4c-total{margin:0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;background:#001b3d;color:#fff;font-size:14px}
+  .gp-4c-total span{color:#cbd5e1}
+  .gp-4c-total strong{font-size:18px}
+  .gp-4c-atalho{display:flex;align-items:center;gap:12px;min-height:44px;padding:14px 16px;border-radius:18px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.08);color:#001b3d;text-decoration:none}
+  .gp-4c-atalho:hover{color:#001b3d}
+  .gp-4c-ati{width:40px;height:40px;flex:0 0 40px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+  .gp-4c-att{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .gp-4c-att strong{font-size:15px}
+  .gp-4c-att span{font-size:13px;color:#475569}
+  .gp-4c-tl{padding:18px 16px;display:flex;flex-direction:column;gap:16px}
+  .gp-4c-tl ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+  .gp-4c-tl li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px}
+  .gp-4c-tlm{display:flex;flex-direction:column;align-items:center}
+  .gp-4c-dot{width:24px;height:24px;flex:0 0 24px;box-sizing:border-box;border-radius:999px;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #94a3b8}
+  .gp-4c-dot[data-st=ok]{background:#059669;border:0;color:#fff}
+  .gp-4c-dot[data-st=exe]{border:6px solid #00a3b1}
+  .gp-4c-dot[data-st=sem]{border-style:dashed}
+  .gp-4c-tll{flex:1 1 auto;width:2px;min-height:12px}
+  .gp-4c-tlt{min-width:0;padding-bottom:18px;display:flex;flex-direction:column;gap:3px}
+  .gp-4c-tl li:last-child .gp-4c-tlt{padding-bottom:0}
+  .gp-4c-tlt>strong{font-size:15px}
+  .gp-4c-tlb{display:flex;align-items:center;gap:10px;margin-top:5px;font-size:13px}
+  .gp-4c-tlb .gp-bar{flex:1 1 auto}
+
+  /* Botões de diálogo (folha inferior) dividem a largura */
+  .gp-4c-dlgact>.gp-btn{flex:1 1 0}
+  .gp-4c-form .gp-affix input{font-size:16px}
+
+  /* Curva S (artefato ObraMedicoes): métricas numa linha de 3 acima do gráfico */
+  .gp-4c-cs{gap:12px}
+  .gp-4c-csside{order:-1;display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px !important}
+  .gp-4c-csside .gp-met{padding:10px 12px;gap:2px;border-radius:14px;min-width:0}
+  .gp-4c-csside .gp-ml{font-size:12px}
+  .gp-4c-csside .gp-mv{font-size:16px;white-space:nowrap}
+  .gp-4c-csside .gp-ms{display:none}
+  .gp-4c-csch{height:220px !important}
+
+  /* Assistente de nova obra: indicador compacto, sem resumo lateral e rodapé fixo no lugar da barra inferior */
+  .gp-4c-wstep{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;list-style:none;margin:0;padding:0}
+  .gp-4c-wstep li{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .gp-4c-wsb{height:4px;border-radius:999px;background:rgba(255,255,255,.18)}
+  .gp-4c-wstep li[data-st] .gp-4c-wsb{background:#9fd300}
+  .gp-4c-wsl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#cbd5e1}
+  .gp-4c-wstep li[aria-current] .gp-4c-wsl{font-weight:800;color:#fff}
+  .gp-4c-wsn{width:24px;height:24px;flex:0 0 24px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:rgba(255,255,255,.12);color:#cbd5e1}
+  .gp-4c-wstep li[data-st] .gp-4c-wsn{background:#9fd300;color:#001b3d}
+  .gp-4c-resumo{display:none !important}
+  .gp-4c-wfoot{position:fixed;left:0;right:0;bottom:0;z-index:46;display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px !important;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -10px 30px -18px rgba(0,27,61,.35)}
+  .gp-4c-wfoot>.gp-btn{min-height:54px;border-radius:16px}
+  .gp-4c-wfoot>.gp-bs{background:#F4F6FA;border-color:transparent}
+  body:has(.gp-4c-wfoot) .gp-bn{display:none}
+
+  /* Almoxarifado: Entrada antes de Saída, tabelas como cartões */
+  .gp-4c-alme{order:-1}
+  .gp-4c-alme,.gp-4c-alms{flex:1 1 0;padding:0 10px}
+  .gp-4c-almtabs{padding:0 !important}
+  .gp-4c-almtabs+[role=tabpanel]{overflow:visible !important}
+  .gp-4c-almbar{padding:14px 0 !important;border-top:0 !important}
+  .gp-4c-almbar .gp-srch{flex:1 1 100% !important;max-width:none !important}
+  .gp-4c-stack tbody th{display:block;padding:12px 0 10px !important;border-top:0;text-align:left}
+  .gp-4c-stack td{padding-left:0 !important;padding-right:0 !important}
+  .gp-4c-stack td[data-label]::before{font-family:'Manrope',system-ui,sans-serif}
+  .gp-4c-stack td .gp-bar{flex:0 1 55%}
+  .gp-4c-stack td.gp-4c-act{justify-content:flex-end}
+  .gp-4c-stack .gp-ib{width:44px !important;height:44px !important}
+  .gp-4c-tog{min-height:44px;padding:0 14px}
+  .gp-4c-mat3{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+  .gp-4c-mat3>:last-child{grid-column:1/-1}
+
+  /* Prazos: resumo no cabeçalho e lista de etapas com datas no lugar do Gantt */
+  .gp-4c-prk{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0}
+  .gp-4c-prk>div{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.08);display:flex;flex-direction:column;gap:2px;min-width:0}
+  .gp-4c-prk dt{font-size:12px;color:#cbd5e1}
+  .gp-4c-prk dd{margin:0;font-size:16px;font-weight:800;white-space:nowrap}
+  .gp-4c-prk>[data-alerta]{background:rgba(255,170,60,.16)}
+  .gp-4c-prk>[data-alerta] dt,.gp-4c-prk>[data-alerta] dd{color:#FDBA74}
+  .gp-4c-prl{display:flex;flex-direction:column;gap:10px}
+  .gp-4c-prl>h2{padding:0 4px}
+  .gp-4c-prl ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .gp-4c-prl li{padding:14px;display:flex;flex-direction:column;gap:10px}
+  .gp-4c-prh{display:flex;align-items:center;gap:10px;min-width:0}
+  .gp-4c-prh h3{flex:1 1 auto;min-width:0;margin:0;font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gp-4c-prh .gp-bg{flex:0 0 auto;font-size:12px}
+  .gp-4c-prn{width:32px;height:32px;flex:0 0 32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;background:#F4F6FA;color:#475569}
+  .gp-4c-prn[data-ok]{background:#001b3d;color:#9fd300}
+  .gp-4c-prd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .gp-4c-prd .gp-fld{gap:4px}
+  .gp-4c-prd .gp-lb{font-size:13px;color:#475569}
+  .gp-4c-prd .gp-in{height:46px;padding:0 10px;min-width:0}
+}
+
+/* ===== Fase 4d ===== */
+/* Custos, diário e equipe no app mobile. Fora do @media ficam só os estilos que já
+   valiam no desktop (antes inline); o que muda abaixo de 1024px vem no bloco seguinte. */
+.gp-4d-fabb{border:0;cursor:pointer;font-family:inherit}
+.gp-4d-tb{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid #E6EBF2}
+.gp-4d-sec{display:flex;flex-direction:column;gap:16px}
+.gp-4d-dnh{display:contents}
+.gp-4d-err{margin:0}
+.gp-4d-fg{display:flex;flex-wrap:wrap;gap:12px}
+.gp-4d-ft{position:relative;width:80px;height:80px;border-radius:12px;overflow:hidden;box-sizing:border-box}
+.gp-4d-fx{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,27,61,.7);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.gp-4d-reg{display:flex;align-items:flex-start;gap:16px;padding:18px 22px;flex-wrap:wrap}
+.gp-4d-rd{min-width:64px}
+.gp-4d-rc{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.gp-4d-ra{display:flex;flex-wrap:wrap;gap:8px}
+.gp-4d-fmb{padding:24px;display:flex;flex-direction:column;gap:16px}
+.gp-4d-i40{width:40px;height:40px}
+.gp-4d-ck{width:18px;height:18px}
+.gp-4d-cgi{padding:14px 22px;display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.gp-4d-cgi+.gp-4d-cgi{border-top:1px solid #E6EBF2}
+.gp-4d-cga{margin-left:auto;display:flex;gap:8px}
+.gp-4d-shw{display:contents}
+@media (min-width: 1024px){
+  .gp-4d-fl{display:flex;flex-wrap:wrap;gap:6px}
+}
+@media (max-width: 1023px){
+  /* Resumos que sobem sobre o cabeçalho escuro */
+  .gp-4d-sum{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:22px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 14px 30px -18px rgba(0,27,61,.35)}
+  .gp-4d-dl{margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .gp-4d-dl>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .gp-4d-dl dt{font-size:12px;font-weight:700;color:#475569}
+  .gp-4d-dl dd{margin:0;font-size:16px;font-weight:800}
+  .gp-4d-dl.gp-4d-dk>div{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.08)}
+  .gp-4d-dl.gp-4d-dk dt{color:#cbd5e1}
+  .gp-4d-dl.gp-4d-dk dd{font-size:18px}
+  .gp-4d-dl.gp-4d-ctr{padding:14px 4px}
+  .gp-4d-dl.gp-4d-ctr>div{align-items:center;text-align:center}
+  .gp-4d-dl.gp-4d-ctr>div+div{border-left:1px solid #E6EBF2}
+  .gp-4d-hv{display:flex;flex-direction:column;gap:4px}
+  .gp-4d-hv>span{font-size:13px;color:#cbd5e1}
+  .gp-4d-hv>strong{font-size:32px;line-height:1.1;letter-spacing:-.8px}
+  .gp-4d-hs{display:flex;flex-direction:column;gap:6px}
+  .gp-4d-hs>label{font-size:13px;font-weight:700;color:#cbd5e1}
+  .gp-4d-hs input{font-size:16px}
+  .gp-4d-pb{display:flex;height:14px;padding:3px;box-sizing:border-box;border-radius:999px;background:#EDF1F6;flex:1 1 auto}
+  .gp-4d-pb>span{border-radius:999px;background:#9fd300}
+  .gp-4d-pb.gp-4d-fino{height:8px;padding:0}
+  .gp-4d-h{margin:0;padding:0 4px;font-size:18px;font-weight:800}
+  .gp-4d-cnt{margin:0;padding:0 4px;font-size:13px;font-weight:700;color:#475569}
+
+  /* Listas em cartões */
+  .gp-4d-lst{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .gp-4d-it{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.06);color:#001b3d;text-decoration:none}
+  a.gp-4d-it:hover{color:#001b3d}
+  .gp-4d-row{display:flex;align-items:center;gap:12px;min-width:0}
+  .gp-4d-av{flex:0 0 42px;width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+  .gp-4d-tx{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .gp-4d-tx>strong{font-size:15px;line-height:1.3}
+  .gp-4d-tx>span{font-size:13px;color:#475569}
+  .gp-4d-st{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;font-size:14px;line-height:1.45}
+  .gp-4d-st.gp-ok{background:#E6F6D0;color:#2F4D03}
+  .gp-4d-st.gp-wa{background:#FFEDD5;color:#7C2D12}
+  .gp-4d-st a{color:inherit;font-weight:800}
+  .gp-4d-sti{flex:0 0 40px;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff}
+  .gp-ok>.gp-4d-sti{background:#4D7E05}
+  .gp-wa>.gp-4d-sti{background:#C2410C}
+
+  /* Barra de filtros dentro de um cartão-moldura */
+  .gp-4d-tb{padding:0;border-bottom:0}
+  .gp-4d-tb select.gp-in{font-size:16px !important;height:48px !important}
+
+  /* Financeiro da obra: despesas */
+  .gp-4d-dp{padding:12px 14px;gap:10px}
+  .gp-4d-dp .gp-4d-av{flex-basis:40px;width:40px;height:40px;border-radius:12px;font-size:12px}
+  .gp-4d-dp .gp-4d-tx>span{font-size:12px}
+  .gp-4d-vl{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;white-space:nowrap}
+  .gp-4d-dpc{display:flex;align-items:center;gap:8px}
+  .gp-4d-dpc select{flex:1 1 auto;min-width:0;height:44px;font-size:16px}
+  .gp-4d-dpc .gp-ib{flex:0 0 44px}
+
+  /* Folha inferior a partir de uma gaveta */
+  .gp-drw.gp-4d-sht{top:auto;left:0;width:100%;max-height:92dvh;border-radius:28px 28px 0 0;box-shadow:none}
+  .gp-4d-sht .gp-dh{border-bottom:0;padding:6px 12px 8px 20px}
+  .gp-4d-hdl{display:block;align-self:center;flex:0 0 auto;width:40px;height:5px;margin-top:10px;border-radius:999px;background:#CBD5E1}
+
+  /* Diário da obra: registros */
+  .gp-4d-reg{padding:14px;gap:12px}
+  .gp-4d-rd{min-width:0;flex:0 0 48px;text-align:center}
+  .gp-4d-rc{flex:1 1 0}
+  .gp-4d-ra{flex:1 1 100%}
+  .gp-4d-ra .gp-btn{min-height:44px;flex:1 1 auto}
+
+  /* Formulário do diário em tela cheia */
+  .gp-drw.gp-4d-dn{background:#F4F6FA}
+  .gp-4d-dn .gp-db{padding:0 0 20px;gap:14px}
+  .gp-4d-dn .gp-db>*:not(.gp-4d-dnh){margin:0 16px}
+  .gp-4d-dnh{display:flex;flex-direction:column;gap:12px;position:sticky;top:0;z-index:2;padding:calc(10px + env(safe-area-inset-top)) 16px 18px;border-radius:0 0 28px 28px;background-color:#001b3d;background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:22px 22px;color:#fff}
+  .gp-4d-dnh .gp-fld{gap:6px}
+  .gp-4d-dnh .gp-lb{font-size:13px;color:#cbd5e1}
+  .gp-4d-dnh .gp-in{border:0;border-radius:14px}
+  .gp-4d-dnt{display:flex;align-items:center;gap:10px;margin-left:-4px}
+  .gp-4d-dnt h2{margin:0;font-size:20px;font-weight:800}
+  .gp-4d-dnt p{margin:0;font-size:13px;color:#cbd5e1}
+  .gp-4d-x{flex:0 0 44px;width:44px;height:44px;box-sizing:border-box;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .gp-4d-sec{padding:16px;gap:12px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.06)}
+  .gp-4d-sec>.gp-fld>.gp-lb:first-child{font-size:16px;font-weight:800}
+  .gp-4d-clm{background:transparent;padding:0;gap:8px}
+  .gp-4d-clm button{min-height:64px;flex-direction:column;gap:4px;border:2px solid #E6EBF2;border-radius:14px;background:#fff;font-size:14px}
+  .gp-4d-clm button[aria-checked=true]{border-color:#9fd300;background:#F7FCE9;box-shadow:none}
+  .gp-4d-swr{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .gp-4d-swr>span{display:flex;flex-direction:column;gap:2px}
+  .gp-4d-swr strong{font-size:16px}
+  .gp-4d-swr>span>span{font-size:13px;color:#475569}
+  .gp-4d-sw{position:relative;flex:0 0 72px;width:72px;height:44px;padding:0;border:0;border-radius:999px;background:#64748b;cursor:pointer}
+  .gp-4d-sw[aria-checked=true]{background:#4D7E05}
+  .gp-4d-sw>span{position:absolute;top:4px;left:4px;width:36px;height:36px;border-radius:999px;background:#fff;transition:left .15s}
+  .gp-4d-sw[aria-checked=true]>span{left:32px}
+  .gp-4d-oc[data-off]{display:none}
+  .gp-4d-num{height:44px !important;font-size:16px !important}
+  .gp-4d-chk{width:22px !important;height:22px !important;margin-top:0 !important}
+  .gp-4d-fg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .gp-4d-ft{width:auto;height:auto;aspect-ratio:1/1;border-radius:14px}
+  .gp-4d-fx{width:32px;height:32px;border-radius:10px;background:rgba(0,27,61,.8)}
+  .gp-4d-fb{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .gp-4d-fbt{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border:0;border-radius:14px;background:#F4F6FA;color:#001b3d;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer}
+  .gp-4d-fbt.gp-4d-esc{background:#001b3d;color:#fff}
+  .gp-4d-dnf{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px;border-top:0;border-radius:24px 24px 0 0;background:#fff;box-shadow:0 -10px 30px -18px rgba(0,27,61,.35)}
+  .gp-4d-dnf[data-um]{grid-template-columns:minmax(0,1fr)}
+  .gp-4d-dnf .gp-btn{min-height:54px;border-radius:16px;padding:0 8px;font-size:15px}
+  .gp-4d-dnf .gp-4d-rasc{background:#F4F6FA}
+  .gp-4d-dnf .gp-4d-conc{display:inline-flex;box-shadow:0 10px 20px -10px rgba(77,126,5,.6)}
+
+  /* Equipe */
+  .gp-4d-mb{flex-direction:row;align-items:center;gap:8px;padding:6px 6px 6px 14px}
+  .gp-4d-mb>a{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:12px;padding:8px 0;color:#001b3d;text-decoration:none}
+  .gp-4d-mb>a:hover{color:#001b3d}
+  .gp-4d-mb .gp-4d-av{flex-basis:46px;width:46px;height:46px;border-radius:14px;background:#001b3d;color:#9fd300}
+  .gp-4d-mb .gp-4d-tx{gap:4px}
+  .gp-4d-mb .gp-ib{flex:0 0 44px;border:0;color:#B91C1C}
+  .gp-4d-avg{display:flex;align-items:center;gap:14px}
+  .gp-4d-avg>span:first-child{flex:0 0 56px;width:56px;height:56px;border-radius:18px;background:#9fd300;color:#001b3d;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800}
+  .gp-4d-avg p{margin:0;font-size:18px;font-weight:800}
+  .gp-4d-avg p+p{margin-top:2px;font-size:14px;font-weight:500;color:#cbd5e1}
+  .gp-4d-fmb{padding:18px}
+  .gp-4d-fmb .gp-affix input{font-size:16px}
+  .gp-4d-i40{width:44px;height:44px}
+  .gp-4d-ff{position:fixed;left:0;right:0;bottom:0;z-index:46;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px;border-top:0;border-radius:24px 24px 0 0;background:#fff;box-shadow:0 -10px 30px -18px rgba(0,27,61,.35)}
+  .gp-4d-ff .gp-btn{min-height:54px;border-radius:16px}
+
+  /* Cargos: lista em cartões e formulário como folha inferior */
+  .gp-4d-cgl{display:flex;flex-direction:column;gap:10px}
+  .gp-4d-cgi{flex-direction:column;align-items:stretch;gap:10px;padding:14px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.06)}
+  .gp-4d-cgi+.gp-4d-cgi{border-top:0}
+  .gp-4d-cga{margin-left:0;flex-wrap:wrap}
+  .gp-4d-cgi .gp-btn{min-height:44px}
+  .gp-4d-shw{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,16,42,.55)}
+  .gp-4d-shw>form{max-height:86dvh;overflow-y:auto;border-radius:28px 28px 0 0;padding:10px 16px calc(24px + env(safe-area-inset-bottom))}
+  .gp-4d-shh{display:flex;flex-direction:column;gap:6px}
+  .gp-4d-shh>div{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .gp-4d-shh h2{margin:0;font-size:19px;font-weight:800}
+  .gp-4d-cgb>.gp-btn{flex:1 1 0;min-height:52px}
+  .gp-4d-cgb>.gp-bp{flex-grow:2}
+  .gp-4d-ckl{min-height:48px}
+  .gp-4d-ck{width:22px;height:22px}
+}
+
+/* ===== Fase 4e ===== */
+/* Bases, administração, estados do sistema e documentos. As regras fora da media query
+   só reproduzem o que antes era estilo inline (o desktop não muda). */
+.gp-4e-col{display:flex;flex-direction:column;gap:14px}
+.gp-4e-h3{margin:0;font-size:14px;font-weight:800;color:#475569}
+.gp-4e-start{align-self:flex-start}
+.gp-4e-fab{border:0;cursor:pointer;font-family:inherit}
+/* Barra de ferramentas das abas da base própria */
+.gp-4e-tb{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 16px}
+.gp-4e-tbq{flex:1 1 240px;max-width:360px}
+.gp-4e-tbacts{display:flex;flex-wrap:wrap;gap:10px;margin-left:auto}
+.gp-4e-dtabs{display:flex;gap:4px;padding:12px 16px 0;border-bottom:1px solid #E6EBF2}
+.gp-4e-edw{padding:16px;border-top:1px solid #E6EBF2;background:#F8FAFC}
+.gp-4e-edgrid{display:grid;grid-template-columns:minmax(0,1fr) 120px 180px;gap:16px}
+.gp-4e-tot{position:sticky;top:24px}
+.gp-4e-tot [role=status]{font-size:34px}
+.gp-4e-brow{display:flex;align-items:center;gap:12px}
+.gp-4e-btxt{display:flex;flex-direction:column;gap:10px;min-width:0}
+.gp-4e-dlgacts{display:flex;justify-content:flex-end;gap:10px}
+.gp-4e-dlgt{font-size:21px}
+.gp-4e-dlgx{width:40px;height:40px}
+.gp-4e-stack{display:flex;gap:10px}
+/* Estados: erro de rota, 404 e toasts */
+.gp-4e-err{display:flex;align-items:center;justify-content:center;text-align:center;min-height:560px}
+.gp-4e-nf{padding:40px 56px}
+.gp-4e-nfm{align-items:center;justify-content:center;gap:56px}
+.gp-4e-nfa{flex:0 1 380px;align-items:center}
+.gp-4e-nf404{font-size:160px;letter-spacing:-8px}
+.gp-4e-nfbar{width:300px;height:22px}
+.gp-4e-nfpes{width:260px}
+.gp-4e-nft{font-size:40px;letter-spacing:-1px}
+.gp-4e-nfp{font-size:17px}
+.gp-4e-toast{padding:10px 8px 10px 16px;border-radius:16px}
+.gp-4e-tico{border-radius:9px}
+.gp-4e-tx{width:40px;height:40px}
+/* Elementos que só existem no mobile */
+.gp-4e-seg{display:none}
+.gp-4e-skd{display:block;border-radius:16px;background:linear-gradient(90deg,rgba(255,255,255,.08) 0%,rgba(255,255,255,.18) 40%,rgba(255,255,255,.08) 80%);background-size:300% 100%;animation:gp-sk 1.4s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.gp-4e-skd{animation:none}}
+
+@media (max-width: 1023px){
+  .gp-4e-tap{min-height:44px}
+  .gp-4e-ib44{width:44px !important;height:44px !important}
+
+  /* Controle segmentado no cabeçalho escuro (abas) */
+  .gp-4e-seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);padding:4px;border-radius:16px;background:rgba(255,255,255,.08)}
+  .gp-4e-seg>button{min-height:44px;border:0;border-radius:12px;background:transparent;color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer}
+  .gp-4e-seg>button[aria-selected=true]{background:#9fd300;color:#001b3d;font-weight:800}
+  .gp-ph .gp-4e-q{padding:0 6px 0 16px}
+  .gp-4e-q input,.gp-4e-tbq input{font-size:16px}
+  .gp-4e-q .gp-btn{min-height:40px;border-radius:12px}
+  .gp-ph .gp-chip.gp-4e-hchip{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-weight:700}
+  .gp-ph .gp-chip.gp-4e-hchip[aria-pressed=true]{border-color:#9fd300;background:#9fd300;color:#001b3d;font-weight:800}
+
+  /* Pesquisa na base de referência: chips de UF e cartões de resultado */
+  .gp-chips>.gp-chip.gp-4e-uf{min-width:56px;justify-content:center;border-radius:999px;border-color:#CBD5E1}
+  .gp-4e-vazio{margin:0;padding:24px 16px;border-radius:18px;background:#fff;text-align:center;font-size:15px;color:#475569}
+  .gp-4e-cards{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .gp-4e-rcard{border-radius:18px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.06);overflow:hidden}
+  .gp-4e-rcard>button{display:flex;flex-direction:column;gap:8px;width:100%;padding:14px 16px;border:0;background:transparent;color:#001b3d;font:inherit;text-align:left;cursor:pointer}
+  .gp-4e-rcard>button[aria-expanded=true]{box-shadow:inset 4px 0 0 #9fd300}
+  .gp-4e-rtop,.gp-4e-rfoot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .gp-4e-cod{padding:3px 8px;border-radius:8px;background:#E6F6D0;color:#3F6604;font-size:13px;font-weight:600}
+  .gp-4e-un{font-size:12px;font-weight:700;color:#475569}
+  .gp-4e-desc{font-size:15px;font-weight:700;line-height:1.4}
+  .gp-4e-rfoot{align-items:baseline;padding-top:8px;border-top:1px solid #E6EBF2;font-size:13px;color:#475569}
+  .gp-4e-rfoot>.gp-mono{font-size:16px;font-weight:600;color:#001b3d}
+  .gp-4e-rdet{display:flex;flex-direction:column;gap:6px;padding:12px 16px 14px;border-top:1px solid #E6EBF2;background:#F7FCE9}
+  .gp-4e-uflist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
+  .gp-4e-uflist>li{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid #E6EBF2;font-size:14px}
+  .gp-4e-uflist>li>span:first-child{font-weight:700}
+
+  /* Minhas bases: cartão com ícone e seta */
+  .gp-4e-bcard{border-radius:22px;padding:18px !important}
+  .gp-4e-btxt{flex:1 1 auto;gap:2px}
+  .gp-4e-bico{width:46px;height:46px;border-radius:14px;background:#E6F6D0;color:#3F6604;display:flex;align-items:center;justify-content:center}
+
+  /* Diálogos (Modal e confirmações) como folha inferior com alça */
+  .gp-4e-dlgw{max-width:none !important}
+  .gp-4e-sheet::before,.gp-dlg[role=alertdialog]::before{content:"";flex:0 0 auto;align-self:center;width:40px;height:5px;margin:-8px 0 -4px;border-radius:3px;background:#CBD5E1}
+  .gp-4e-dlgt{font-size:20px}
+  .gp-4e-dlgx{width:44px;height:44px;border:0;border-radius:14px;background:#F4F6FA}
+  .gp-4e-dlgacts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);margin-top:4px}
+  .gp-4e-dlgacts>.gp-btn{min-height:54px;border-radius:16px}
+  .gp-4e-dlgacts>.gp-bs{border-color:transparent;background:#F4F6FA}
+  /* Confirmação de exclusão: ação principal em cima, cancelar embaixo, na largura toda */
+  .gp-dlg[role=alertdialog]>div:last-child{flex-direction:column-reverse !important;align-items:stretch !important;gap:10px !important;margin-top:4px}
+  .gp-dlg[role=alertdialog]>div:last-child>.gp-btn{width:100%;min-height:54px;border-radius:16px}
+  .gp-dlg[role=alertdialog]>div:last-child>.gp-bs{border-color:transparent;background:#F4F6FA}
+
+  /* Base própria: barra de ferramentas, abas e tabelas viram cartões em grade */
+  .gp-4e-dtabs{display:none}
+  .gp-4e-tb{padding:0 0 12px;gap:10px}
+  .gp-4e-tbq{order:2;flex:1 1 100%;max-width:none;height:50px;border-radius:16px}
+  .gp-4e-tbacts{order:1;flex:1 1 100%;margin-left:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gp-4e-tbacts>.gp-btn{min-height:52px;border-radius:16px}
+  .gp-4e-tbacts>.gp-bd{order:-1}
+  .gp-4e-ptab{min-width:0 !important;display:block;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.06);overflow:hidden}
+  .gp-4e-ptab>thead{display:none}
+  .gp-4e-ptab>tbody{display:block}
+  .gp-4e-ptab tr{display:grid;column-gap:10px;row-gap:4px;align-items:center;padding:12px 14px;border-top:1px solid #E6EBF2}
+  .gp-4e-ptab tr:first-child{border-top:0}
+  .gp-4e-ptab tr>td,.gp-4e-ptab tr>th{display:block;min-width:0;padding:0 !important;border:0;font-size:14px}
+  .gp-4e-ptab .gp-ib{width:44px !important;height:44px !important}
+  .gp-4e-ptab .gp-btn.gp-sm{min-height:44px}
+  .gp-4e-ptab .gp-mono{font-size:13px}
+  .gp-4e-ins tr{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"cod cod preco" "desc desc desc" "un tipo acts"}
+  .gp-4e-ins .gp-4e-tipo::before{content:"· "}
+  .gp-4e-cmp tr{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"cod un" "desc desc" "acts acts"}
+  .gp-4e-itens tr{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"item item rm" "pu un un" "coef sub sub";row-gap:6px}
+  .gp-4e-itens .gp-4e-ipu,.gp-4e-itens .gp-4e-iun{font-size:13px;color:#475569;text-align:left !important}
+  .gp-4e-itens .gp-4e-iun::before{content:"/ "}
+  .gp-4e-itens input{height:44px !important}
+  .gp-4e-comps[data-editando] .gp-4e-tb,.gp-4e-comps[data-editando] .gp-4e-lista{display:none}
+  .gp-4e-edw{padding:0;border-top:0;background:transparent}
+  .gp-4e-comps:not([data-editando]) .gp-4e-edw{display:none}
+  .gp-4e-voltar{margin-bottom:14px}
+  .gp-4e-edgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .gp-4e-edgrid>:first-child{grid-column:1/-1}
+  .gp-4e-start{align-self:stretch}
+  .gp-4e-bref{display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gp-4e-bref>input,.gp-4e-bref>button{grid-column:1/-1}
+  .gp-4e-bref>select,.gp-4e-bref>input{height:48px !important}
+  .gp-4e-refbtn{min-height:44px}
+  /* Custo unitário vira rodapé fixo acima da barra inferior */
+  .gp-4e-tot{top:auto;bottom:calc(92px + env(safe-area-inset-bottom));z-index:5;flex-direction:row !important;flex-wrap:wrap;align-items:baseline !important;justify-content:space-between;gap:4px 12px !important;padding:14px 18px;border-radius:20px;box-shadow:0 -10px 30px -18px rgba(0,27,61,.45)}
+  .gp-4e-tot .gp-h2{font-size:14px;color:#cbd5e1 !important}
+  .gp-4e-tot [role=status]{font-size:22px}
+
+  /* Admin: aviso de que a importação é melhor no computador */
+  .gp-4e-nota{display:flex;gap:12px;padding:14px 16px;border-radius:18px;background:#e0f5f7;color:#00626b;font-size:14px;line-height:1.5}
+
+  /* Documentos */
+  .gp-4e-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;border-radius:20px;overflow:hidden;background:#E6EBF2;box-shadow:0 1px 2px rgba(0,27,61,.05),0 14px 30px -18px rgba(0,27,61,.35)}
+  .gp-4e-kpis>.gp-card{border-radius:0;box-shadow:none;padding:14px 16px;gap:2px}
+  .gp-4e-kpis .gp-mv{font-size:20px}
+  .gp-4e-g1{grid-template-columns:minmax(0,1fr) !important}
+  .gp-4e-wrap .gp-li{flex-wrap:wrap}
+  .gp-4e-wrap .gp-li span{overflow-wrap:anywhere;white-space:normal !important}
+  .gp-4e-frows{min-width:0 !important;display:block}
+  .gp-4e-frows>thead{display:none}
+  .gp-4e-frows>tbody{display:block}
+  .gp-4e-frows tr{display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;padding:10px 14px;border-top:1px solid #E6EBF2}
+  .gp-4e-frows tr:first-child{border-top:0}
+  .gp-4e-frows tr>th,.gp-4e-frows tr>td{display:block;padding:0 !important;border:0;min-width:0}
+  .gp-4e-frows tr>th{order:1;flex:1 1 calc(100% - 56px);overflow-wrap:anywhere}
+  .gp-4e-frows tr>td:last-child{order:2;flex:0 0 auto}
+  .gp-4e-frows tr>td:not(:last-child){order:3;font-size:13px;color:#475569;text-align:left !important}
+  .gp-4e-frows tr>td:nth-child(2){padding-left:50px !important}
+  .gp-4e-frows tr>td:nth-child(n+3):not(:last-child)::before{content:"· "}
+  .gp-4e-frows .gp-ib{width:44px !important;height:44px !important}
+
+  /* Estados do sistema */
+  .gp-4e-err{min-height:calc(100dvh - 200px)}
+  .gp-4e-err>[role=alert]{width:100%}
+  .gp-4e-errt{font-size:21px}
+  .gp-4e-stack{flex-direction:column;align-self:stretch}
+  .gp-4e-stack>.gp-btn{width:100%;min-height:54px;border-radius:16px}
+  .gp-4e-nf{padding:calc(22px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom))}
+  .gp-4e-nfm{flex-direction:column;flex-wrap:nowrap !important;align-items:stretch;justify-content:center;gap:14px;padding:0 8px;box-sizing:border-box}
+  .gp-4e-nfm>div{flex:0 0 auto !important}
+  .gp-4e-nfa{align-items:flex-start;gap:0 !important}
+  .gp-4e-nf404{font-size:96px;letter-spacing:-4px}
+  .gp-4e-nfbar{width:120px;height:12px;margin-top:12px}
+  .gp-4e-nfpes{width:108px;margin-left:6px}
+  .gp-4e-nfpes>span{width:6px !important;height:16px !important}
+  .gp-4e-nft{font-size:26px;letter-spacing:-.5px;margin-top:8px !important}
+  .gp-4e-nfp{font-size:15px}
+  .gp-4e-toast{padding:8px 6px 8px 14px;border-radius:18px}
+  .gp-4e-tico{border-radius:50%}
+  .gp-4e-tx{width:44px;height:44px}
+}

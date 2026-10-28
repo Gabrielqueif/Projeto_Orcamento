@@ -7,6 +7,7 @@ import { agruparPorFonte, FONTES } from '@/lib/bases';
 import { getSinapiBases, type SinapiBase } from '@/lib/api/orcamentos';
 import { MinhasBases } from '@/components/bases-proprias/MinhasBases';
 import { useUserRole } from '@/hooks/use-user-role';
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function BasesPage() {
   const { role } = useUserRole();
@@ -26,20 +27,20 @@ export default function BasesPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            Comercial / <span aria-current="page" style={{ color: "#001b3d" }}>Bases de dados</span>
-          </nav>
-          <h1 className="gp-h1">Bases de dados</h1>
-          <p className="gp-sub">Referências oficiais e as suas bases com preços próprios.</p>
-        </div>
-        {role === "admin" && (
-          <Link href="/admin/sinapi" className="gp-btn gp-bs">
-            Importar referência (admin)
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        crumb={<>Comercial / <span aria-current="page" style={{ color: "#001b3d" }}>Bases de dados</span></>}
+        eyebrow="Comercial"
+        back="/mais"
+        title="Bases de dados"
+        subtitle="Referências oficiais e as suas bases com preços próprios."
+        actions={
+          role === "admin" && (
+            <Link href="/admin/sinapi" className="gp-btn gp-bs">
+              Importar referência (admin)
+            </Link>
+          )
+        }
+      />
 
       <section aria-labelledby="h-of" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <h2 id="h-of" className="gp-h2">Referências oficiais</h2>
@@ -59,10 +60,17 @@ export default function BasesPage() {
           </div>
         )}
 
-        <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))" }}>
+        <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(380px, 100%), 1fr))" }}>
           {fontesComDados.map((f) => (
-            <DatabaseCard key={f.id} id={f.id} fonte={f.fonte} title={f.title} description={f.description}>
-              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4, fontSize: 14, color: "#334155" }}>
+            <DatabaseCard
+              key={f.id}
+              id={f.id}
+              fonte={f.fonte}
+              title={f.title}
+              description={f.description}
+              badge={porFonte[f.fonte].length === 1 ? "1 variante" : `${porFonte[f.fonte].length} variantes`}
+            >
+              <ul className="gp-4a-variantes" style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4, fontSize: 14, color: "#334155" }}>
                 {porFonte[f.fonte].map((b) => (
                   <li key={`${b.mes_referencia}-${b.tipo_composicao}`}>
                     {b.mes_referencia} · {b.tipo_composicao}

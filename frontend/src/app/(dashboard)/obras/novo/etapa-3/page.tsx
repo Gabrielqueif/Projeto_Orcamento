@@ -91,7 +91,7 @@ export default function NovaObraEtapa3Page() {
 
       <div className="gp-split">
         <div className="gp-main" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <section className="gp-card gp-pad" aria-label="Financeiro" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <section className="gp-card gp-pad gp-4c-form" aria-label="Financeiro" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
               <div className="gp-fld">
                 <label htmlFor="o-vc" className="gp-lb">Custo total estimado</label>
@@ -164,7 +164,8 @@ export default function NovaObraEtapa3Page() {
             </fieldset>
           </section>
 
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+          {/* No mobile vira rodapé fixo (gp-4c-wfoot) */}
+          <div className="gp-4c-wfoot" style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <Link href="/obras/novo/etapa-2" className="gp-btn gp-bs">Voltar</Link>
             <button type="button" className="gp-btn gp-bp" onClick={handleFinish} disabled={isSubmitting} style={isSubmitting ? { opacity: 0.6 } : undefined}>
               {isSubmitting ? "Criando projeto..." : "Criar obra"}

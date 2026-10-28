@@ -10,6 +10,8 @@ import { getOrcamentos, getOrcamentoStats, deleteOrcamento, type Orcamento, type
 
 import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus, type OrcamentoStatus } from "@/lib/orcamentoStatus";
 import { useToast } from "@/components/common/toast";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Fab } from "@/components/layout/Fab";
 
 type FilterStatus = "todos" | OrcamentoStatus;
 
@@ -120,27 +122,56 @@ export default function OrcamentosPage() {
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            Comercial / <span aria-current="page" style={{ color: "#001b3d" }}>Orçamentos</span>
-          </nav>
-          <h1 className="gp-h1">Orçamentos</h1>
-          <p className="gp-sub">Propostas com SINAPI, SEINFRA e as suas bases próprias.</p>
+      <PageHeader
+        crumb={<>Comercial / <span aria-current="page" style={{ color: "#001b3d" }}>Orçamentos</span></>}
+        eyebrow="Comercial"
+        title="Orçamentos"
+        subtitle="Propostas com SINAPI, SEINFRA e as suas bases próprias."
+        lift
+        actions={
+          <>
+            <button type="button" className="gp-btn gp-bs gp-only-d">
+              <DownloadSimple size={18} weight="bold" aria-hidden="true" />
+              Exportar lista
+            </button>
+            <button type="button" onClick={() => router.push("/orcamentos/novo")} className="gp-btn gp-bp gp-only-d">
+              <Plus size={18} weight="bold" aria-hidden="true" />
+              Novo orçamento
+            </button>
+          </>
+        }
+      >
+        {/* Mobile: a busca fica no cabeçalho */}
+        <div className="gp-only-m gp-4a-busca">
+          <label htmlFor="busca-orc-m">Buscar orçamento</label>
+          <div className="gp-srch">
+            <MagnifyingGlass size={20} weight="bold" color="#475569" aria-hidden="true" />
+            <input
+              id="busca-orc-m"
+              type="search"
+              placeholder="Nome ou cliente"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          <button type="button" className="gp-btn gp-bs">
-            <DownloadSimple size={18} weight="bold" aria-hidden="true" />
-            Exportar lista
-          </button>
-          <button type="button" onClick={() => router.push("/orcamentos/novo")} className="gp-btn gp-bp">
-            <Plus size={18} weight="bold" aria-hidden="true" />
-            Novo orçamento
-          </button>
-        </div>
-      </div>
+      </PageHeader>
 
-      <section aria-label="Indicadores" className="gp-grid">
+      {/* Mobile: indicadores principais num cartão sobre o cabeçalho */}
+      <dl className="gp-only-m gp-4a-kpis gp-4a-kpis-l" aria-label="Indicadores principais">
+        <div>
+          <dt>Total orçado</dt>
+          <dd title={formatCurrency(stats?.valor_total)}>{stats ? compact(stats.valor_total) : "—"}</dd>
+        </div>
+        <div>
+          <dt>Aprovação</dt>
+          <dd>
+            {stats ? `${stats.taxa_aprovacao}%` : "—"} <small>meta 75%</small>
+          </dd>
+        </div>
+      </dl>
+
+      <section aria-label="Indicadores" className="gp-grid gp-only-d">
         <div className="gp-card gp-met gp-dark">
           <span className="gp-ml">Total orçado</span>
           <span className="gp-mv" title={formatCurrency(stats?.valor_total)}>{stats ? compact(stats.valor_total) : "—"}</span>
@@ -174,10 +205,10 @@ export default function OrcamentosPage() {
         </div>
       </section>
 
-      <section aria-labelledby="h-lista" className="gp-card" style={{ overflow: "hidden" }}>
+      <section aria-labelledby="h-lista" className="gp-card gp-m-flat" style={{ overflow: "hidden" }}>
         <h2 id="h-lista" className="gp-sr">Lista de orçamentos</h2>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid #E6EBF2" }}>
-          <div role="group" aria-label="Filtrar por status" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <div className="gp-4a-tbar" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid #E6EBF2" }}>
+          <div role="group" aria-label="Filtrar por status" className="gp-chips gp-4a-chips" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {FILTERS.map((filter) => (
               <button
                 key={filter}
@@ -191,7 +222,7 @@ export default function OrcamentosPage() {
               </button>
             ))}
           </div>
-          <div className="gp-srch" style={{ marginLeft: "auto", flex: "0 1 300px" }}>
+          <div className="gp-srch gp-only-d" style={{ marginLeft: "auto", flex: "0 1 300px" }}>
             <MagnifyingGlass size={18} weight="bold" color="#475569" aria-hidden="true" />
             <label htmlFor="busca-orc" className="gp-sr">Buscar orçamento</label>
             <input
@@ -203,8 +234,9 @@ export default function OrcamentosPage() {
             />
           </div>
         </div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", minWidth: 900, borderCollapse: "collapse", fontSize: 14 }}>
+        <p className="gp-only-m gp-4a-cont" aria-live="polite">{contagem}</p>
+        <div className="gp-4a-tw" style={{ overflowX: "auto" }}>
+          <table className="gp-4a-ct gp-4a-ct-orc" style={{ width: "100%", minWidth: 900, borderCollapse: "collapse", fontSize: 14 }}>
             <caption className="gp-sr">Orçamentos, {contagem}</caption>
             <thead>
               <tr>
@@ -219,13 +251,13 @@ export default function OrcamentosPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="gp-td" style={{ padding: 40, textAlign: "center", color: "#475569" }}>
+                  <td colSpan={6} className="gp-td gp-4a-msg" style={{ padding: 40, textAlign: "center", color: "#475569" }}>
                     Carregando orçamentos...
                   </td>
                 </tr>
               ) : filteredOrcamentos.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="gp-td" style={{ padding: "40px 20px", textAlign: "center" }}>
+                  <td colSpan={6} className="gp-td gp-4a-msg" style={{ padding: "40px 20px", textAlign: "center" }}>
                     <p style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Nenhum orçamento encontrado.</p>
                     <p style={{ margin: "6px 0 0", fontSize: 14, color: "#475569" }}>Escolha outro filtro ou crie um novo orçamento.</p>
                   </td>
@@ -236,7 +268,7 @@ export default function OrcamentosPage() {
                   const norm = normalizeStatus(o.status);
                   return (
                     <tr key={o.id} onClick={() => handleRowClick(o.id)} className="gp-row" style={{ cursor: "pointer" }}>
-                      <th scope="row" className="gp-td" style={{ padding: "14px 20px", textAlign: "left", fontWeight: 400 }}>
+                      <th scope="row" data-m="nome" className="gp-td" style={{ padding: "14px 20px", textAlign: "left", fontWeight: 400 }}>
                         <Link
                           href={`/orcamentos/${o.id}`}
                           onClick={(e) => e.stopPropagation()}
@@ -248,18 +280,18 @@ export default function OrcamentosPage() {
                           {`ORC-${o.id.substring(0, 8).toUpperCase()}`}
                         </span>
                       </th>
-                      <td className="gp-td" style={{ color: "#334155" }}>{o.cliente || "—"}</td>
-                      <td className="gp-td" style={{ color: "#334155" }}>{formatDate(o.data)}</td>
-                      <td className="gp-td">
+                      <td data-m="cli" className="gp-td" style={{ color: "#334155" }}>{o.cliente || "—"}</td>
+                      <td data-m="data" className="gp-td" style={{ color: "#334155" }}>{formatDate(o.data)}</td>
+                      <td data-m="st" className="gp-td">
                         <span className={`gp-bg ${norm ? BADGE[norm] : "gp-ne"}`}>
                           <span aria-hidden="true" className="gp-dot"></span>
                           {statusDisplay.label}
                         </span>
                       </td>
-                      <td className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>
+                      <td data-m="valor" className="gp-td gp-mono" style={{ textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>
                         {formatCurrency(o.valor_total)}
                       </td>
-                      <td className="gp-td" style={{ padding: "14px 20px", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                      <td data-m="acoes" className="gp-td" style={{ padding: "14px 20px", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
                           title="Excluir orçamento"
@@ -279,11 +311,15 @@ export default function OrcamentosPage() {
             </tbody>
           </table>
         </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderTop: "1px solid #E6EBF2", fontSize: 14, color: "#475569" }}>
-          <span aria-live="polite">{contagem}</span>
-          <span>Página 1 de 1</span>
+        <div className="gp-only-d">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderTop: "1px solid #E6EBF2", fontSize: 14, color: "#475569" }}>
+            <span aria-live="polite">{contagem}</span>
+            <span>Página 1 de 1</span>
+          </div>
         </div>
       </section>
+      {/* No fim para não ser o vizinho do cabeçalho (o `lift` sobe o elemento seguinte) */}
+      <Fab href="/orcamentos/novo" label="Novo orçamento" />
     </>
   );
 }

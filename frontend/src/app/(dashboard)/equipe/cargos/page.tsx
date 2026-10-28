@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Trash, Lock } from "@phosphor-icons/react";
+import { Plus, Trash, Lock, X } from "@phosphor-icons/react";
 import {
   CAMPOS_BASE,
   createCargo,
@@ -14,6 +14,7 @@ import {
   type CampoExtra,
 } from "@/lib/api/cargos";
 import { useToast } from "@/components/common/toast";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 // A chave do campo vira o nome salvo nos dados do membro; gerada do rótulo.
 const chaveDe = (rotulo: string) =>
@@ -100,24 +101,46 @@ export default function CargosPage() {
     }
   };
 
+  const tituloForm = rascunho?.id ? "Editar cargo" : "Novo cargo";
+
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
-            Operação / <Link href="/equipe">Equipe</Link> /{" "}
-            <span aria-current="page" style={{ color: "#001b3d" }}>Cargos</span>
-          </nav>
-          <h1 className="gp-h1">Cargos</h1>
-          <p className="gp-sub">Funções da equipe e os campos pedidos no cadastro de cada uma.</p>
-        </div>
-        <button type="button" onClick={() => setRascunho(vazio)} className="gp-btn gp-bp">
-          <Plus size={16} weight="bold" aria-hidden="true" /> Novo cargo
-        </button>
-      </div>
+      <PageHeader
+        back="/equipe"
+        backLabel="Voltar para equipe"
+        crumb={<>Operação / <Link href="/equipe">Equipe</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Cargos</span></>}
+        eyebrow="Equipe"
+        title="Cargos"
+        subtitle="Funções da equipe e os campos pedidos no cadastro de cada uma."
+        actions={
+          <button type="button" onClick={() => setRascunho(vazio)} className="gp-btn gp-bp gp-only-d">
+            <Plus size={16} weight="bold" aria-hidden="true" /> Novo cargo
+          </button>
+        }
+      />
 
+      <button type="button" onClick={() => setRascunho(vazio)} className="gp-fab gp-4d-fabb">
+        <Plus size={24} weight="bold" aria-hidden="true" />
+        Novo cargo
+      </button>
+
+      {/* No desktop o formulário aparece no fluxo da página; no mobile, como folha inferior */}
       {rascunho && (
-        <form onSubmit={salvar} className="gp-card gp-pad" style={{ maxWidth: 720, display: "flex", flexDirection: "column", gap: 16 }}>
+        <div
+          className="gp-4d-shw"
+          onClick={(e) => { if (e.target === e.currentTarget) setRascunho(null); }}
+          onKeyDown={(e) => { if (e.key === "Escape") setRascunho(null); }}
+        >
+        <form onSubmit={salvar} aria-label={tituloForm} className="gp-card gp-pad" style={{ maxWidth: 720, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="gp-4d-shh gp-only-m">
+            <span className="gp-4d-hdl" aria-hidden="true"></span>
+            <div>
+              <h2>{tituloForm}</h2>
+              <button type="button" className="gp-ib" aria-label="Fechar" onClick={() => setRascunho(null)} style={{ border: 0, background: "#F4F6FA" }}>
+                <X size={18} weight="bold" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
           <div className="gp-fld">
             <label htmlFor="cargo-nome" className="gp-lb">
               Nome do cargo <span className="gp-req">(obrigatório)</span>
@@ -139,12 +162,12 @@ export default function CargosPage() {
             </legend>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
               {CAMPOS_BASE.map((c) => (
-                <label key={c.chave} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15 }}>
+                <label key={c.chave} className="gp-4d-ckl" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15 }}>
                   <input
                     type="checkbox"
                     checked={!rascunho.campos_ocultos.includes(c.chave)}
                     onChange={() => alternarBase(c.chave)}
-                    style={{ width: 18, height: 18 }}
+                    className="gp-4d-ck"
                   />
                   {c.rotulo}
                 </label>
@@ -175,12 +198,12 @@ export default function CargosPage() {
                   <option value="numero">Número</option>
                   <option value="data">Data</option>
                 </select>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
+                <label className="gp-4d-ckl" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
                   <input
                     type="checkbox"
                     checked={c.obrigatorio}
                     onChange={(e) => mudarExtra(i, { obrigatorio: e.target.checked })}
-                    style={{ width: 18, height: 18 }}
+                    className="gp-4d-ck"
                   />
                   Obrigatório
                 </label>
@@ -190,8 +213,8 @@ export default function CargosPage() {
                   onClick={() =>
                     setRascunho({ ...rascunho, campos_extras: rascunho.campos_extras.filter((_, j) => j !== i) })
                   }
-                  className="gp-ib"
-                  style={{ width: 40, height: 40, color: "#B91C1C" }}
+                  className="gp-ib gp-4d-i40"
+                  style={{ color: "#B91C1C" }}
                 >
                   <Trash size={18} aria-hidden="true" />
                 </button>
@@ -212,21 +235,25 @@ export default function CargosPage() {
             </button>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <div className="gp-4d-cgb" style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
             <button type="button" onClick={() => setRascunho(null)} className="gp-btn gp-bs">Cancelar</button>
             <button type="submit" className="gp-btn gp-bp">Salvar cargo</button>
           </div>
         </form>
+        </div>
       )}
 
-      <section className="gp-card" aria-labelledby="h-cg" style={{ overflow: "hidden" }}>
+      <section className="gp-card gp-m-flat" aria-labelledby="h-cg" style={{ overflow: "hidden" }}>
         <h2 id="h-cg" className="gp-sr">Cargos cadastrados</h2>
-        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {cargos.map((c, i) => (
-            <li
-              key={c.id}
-              style={{ padding: "14px 22px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, borderTop: i === 0 ? 0 : "1px solid #E6EBF2" }}
-            >
+        <p className="gp-only-m gp-4d-cnt" style={{ marginBottom: 10 }}>
+          {cargos.length} {cargos.length === 1 ? "cargo" : "cargos"} ·{" "}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
+            <Lock size={12} weight="bold" aria-hidden="true" /> pré-montado
+          </span>
+        </p>
+        <ul className="gp-4d-cgl" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {cargos.map((c) => (
+            <li key={c.id} className="gp-4d-cgi">
               <div>
                 <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 800 }}>
                   {c.nome}
@@ -237,13 +264,13 @@ export default function CargosPage() {
                   {c.campos_extras.length > 0 && `Extras: ${c.campos_extras.map((e) => e.rotulo).join(", ")}`}
                 </span>
               </div>
-              <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              <div className="gp-4d-cga">
                 {c.user_id !== null && (
-                  <button onClick={() => editar(c)} className="gp-btn gp-bs gp-sm">Editar</button>
+                  <button onClick={() => editar(c)} className="gp-btn gp-bs gp-sm" aria-label={`Editar ${c.nome}`}>Editar</button>
                 )}
-                <button onClick={() => editar(c, true)} className="gp-btn gp-bs gp-sm">Duplicar</button>
+                <button onClick={() => editar(c, true)} className="gp-btn gp-bs gp-sm" aria-label={`Duplicar ${c.nome}`}>Duplicar</button>
                 {c.user_id !== null && (
-                  <button onClick={() => remover(c)} className="gp-btn gp-bs gp-sm" style={{ color: "#B91C1C" }}>Excluir</button>
+                  <button onClick={() => remover(c)} className="gp-btn gp-bs gp-sm" style={{ color: "#B91C1C" }} aria-label={`Excluir ${c.nome}`}>Excluir</button>
                 )}
               </div>
             </li>

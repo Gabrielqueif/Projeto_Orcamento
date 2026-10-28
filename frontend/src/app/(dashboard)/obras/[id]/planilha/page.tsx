@@ -8,6 +8,7 @@ import { getOrcamento, type Orcamento } from "@/lib/api/orcamentos";
 
 import { ObraTabs } from "@/components/obras/ObraTabs";
 import { PlanilhaView } from "@/components/orcamentos/PlanilhaView";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function PlanilhaOrcamentariaPage() {
   const params = useParams();
@@ -45,26 +46,51 @@ export default function PlanilhaOrcamentariaPage() {
     if (value === null || value === undefined) return "R$ 0,00";
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
+  // Valor curto para o cartão do mobile (R$ 812 mil)
+  const formatCompact = (value: number | null | undefined) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", notation: "compact", maximumFractionDigits: Math.abs(value ?? 0) >= 1e6 ? 1 : 0 }).format(value ?? 0);
 
   return (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <nav aria-label="Trilha" className="gp-crumb">
+      <PageHeader
+        back={`/obras/${id}`}
+        backLabel="Voltar para a obra"
+        crumb={
+          <>
             <Link href="/obras">Obras</Link> / <Link href={`/obras/${id}`}>{orcamento.nome}</Link> /{" "}
             <span aria-current="page" style={{ color: "#001b3d" }}>Planilha</span>
-          </nav>
-          <h1 className="gp-h1">{orcamento.nome}</h1>
-          <p className="gp-sub">Detalhamento financeiro, composições e insumos vinculados ao projeto.</p>
+          </>
+        }
+        eyebrow="Planilha"
+        title={orcamento.nome}
+        subtitle="Detalhamento financeiro, composições e insumos vinculados ao projeto."
+        lift
+        actions={
+          <button type="button" className="gp-btn gp-bs">
+            <DownloadSimple size={18} weight="bold" aria-hidden="true" /> Exportar Excel
+          </button>
+        }
+      />
+
+      {/* Mobile: totais num cartão que sobe sobre o cabeçalho */}
+      <dl className="gp-4c-kpis" aria-label="Totais">
+        <div>
+          <dt>Valor total</dt>
+          <dd>{formatCompact(orcamento.valor_total)}</dd>
         </div>
-        <button type="button" className="gp-btn gp-bs">
-          <DownloadSimple size={18} weight="bold" aria-hidden="true" /> Exportar Excel
-        </button>
-      </div>
+        <div>
+          <dt>BDI</dt>
+          <dd>{orcamento.bdi ? `${orcamento.bdi.toFixed(2)}%` : "0.00%"}</dd>
+        </div>
+        <div>
+          <dt>Base</dt>
+          <dd title={orcamento.base_referencia || undefined}>{orcamento.base_referencia || "—"}</dd>
+        </div>
+      </dl>
 
       <ObraTabs id={id} atual="planilha" />
 
-      <section aria-label="Totais" className="gp-grid">
+      <section aria-label="Totais" className="gp-grid gp-only-d">
         <div className="gp-card gp-met">
           <span className="gp-ml">Valor total</span>
           <span className="gp-mv">{formatCurrency(orcamento.valor_total)}</span>
