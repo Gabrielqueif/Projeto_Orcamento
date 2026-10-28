@@ -158,7 +158,8 @@ export default function NovoMembroPage() {
       />
 
       <form onSubmit={handleSave} className="gp-card" style={{ maxWidth: 720, width: "100%", overflow: "hidden" }}>
-        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* Uma coluna; no mobile o rodapé com as ações fica fixo na base da tela */}
+        <div className="gp-4d-fmb">
           <div className="gp-fld">
             <label htmlFor="nome" className="gp-lb">
               Nome completo <span className="gp-req">(obrigatório)</span>
@@ -302,7 +303,7 @@ export default function NovoMembroPage() {
                       </span>
                       <span className="gp-hint gp-mono">{file.size}</span>
                     </span>
-                    <button type="button" onClick={() => removeAttachment(idx)} className="gp-ib" style={{ width: 40, height: 40 }} aria-label={`Remover ${file.name}`}>
+                    <button type="button" onClick={() => removeAttachment(idx)} className="gp-ib gp-4d-i40" aria-label={`Remover ${file.name}`}>
                       <X size={16} weight="bold" aria-hidden="true" />
                     </button>
                   </li>
@@ -312,7 +313,7 @@ export default function NovoMembroPage() {
           </div>
         </div>
 
-        <div className="gp-df">
+        <div className="gp-df gp-4d-ff">
           <button type="button" onClick={() => router.push("/equipe")} className="gp-btn gp-bs">Cancelar</button>
           <button type="submit" className="gp-btn gp-bp">Salvar colaborador</button>
         </div>

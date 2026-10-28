@@ -11,6 +11,16 @@ import { getCargos, type Cargo, type CampoBase } from "@/lib/api/cargos";
 import { CamposExtras } from "@/components/equipe/CamposExtras";
 import { PageHeader } from "@/components/layout/PageHeader";
 
+const iniciais = (nome: string) =>
+  nome.split(" ").filter(Boolean).map((n) => n[0]).join("").substring(0, 2).toUpperCase();
+
+// "2025-03-10" -> "mar/2025"
+const formatarMesAno = (iso: string) => {
+  const [ano, mes] = iso.split("-").map(Number);
+  if (!ano || !mes) return iso;
+  return `${new Date(ano, mes - 1, 1).toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}/${ano}`;
+};
+
 interface FileAttachment {
   name: string;
   size: string;
@@ -206,11 +216,25 @@ export default function EditarMembroPage() {
         crumb={<>Operação / <Link href="/equipe">Equipe</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Editar colaborador</span></>}
         eyebrow="Equipe"
         title="Editar colaborador"
-        subtitle="Atualize os dados, a alocação e a situação do profissional."
-      />
+        subtitle={<span className="gp-only-d">Atualize os dados, a alocação e a situação do profissional.</span>}
+      >
+        {/* Mobile: quem está sendo editado, com cargo e início */}
+        {nome && (
+          <div className="gp-only-m">
+            <div className="gp-4d-avg">
+              <span aria-hidden="true">{iniciais(nome)}</span>
+              <div style={{ minWidth: 0 }}>
+                <p>{nome}</p>
+                <p>{[cargo?.nome, dataInicio ? `desde ${formatarMesAno(dataInicio)}` : null].filter(Boolean).join(" · ")}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </PageHeader>
 
       <form onSubmit={handleSave} className="gp-card" style={{ maxWidth: 720, width: "100%", overflow: "hidden" }}>
-        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* Uma coluna; no mobile o rodapé com as ações fica fixo na base da tela */}
+        <div className="gp-4d-fmb">
           <div className="gp-fld">
             <label htmlFor="nome" className="gp-lb">
               Nome completo <span className="gp-req">(obrigatório)</span>
@@ -367,7 +391,7 @@ export default function EditarMembroPage() {
                       </span>
                       <span className="gp-hint gp-mono">{file.size}</span>
                     </span>
-                    <button type="button" onClick={() => removeAttachment(idx)} className="gp-ib" style={{ width: 40, height: 40 }} aria-label={`Remover ${file.name}`}>
+                    <button type="button" onClick={() => removeAttachment(idx)} className="gp-ib gp-4d-i40" aria-label={`Remover ${file.name}`}>
                       <X size={16} weight="bold" aria-hidden="true" />
                     </button>
                   </li>
@@ -377,7 +401,7 @@ export default function EditarMembroPage() {
           </div>
         </div>
 
-        <div className="gp-df">
+        <div className="gp-df gp-4d-ff">
           <button type="button" onClick={() => router.push("/equipe")} className="gp-btn gp-bs">Cancelar</button>
           <button type="submit" className="gp-btn gp-bp">Salvar alterações</button>
         </div>

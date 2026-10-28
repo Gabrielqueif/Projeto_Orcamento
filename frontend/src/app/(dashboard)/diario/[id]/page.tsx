@@ -159,20 +159,38 @@ export default function DiarioObraPage() {
         title={obra.nome}
         subtitle={
           <>
-            {sub}
-            <span className="gp-hint" style={{ display: "block", marginTop: 4 }}>
-              Último registro alterado em {formatarAtualizacao(obra.ultima_atualizacao)}
+            <span className="gp-only-d">
+              {sub}
+              <span className="gp-hint" style={{ display: "block", marginTop: 4 }}>
+                Último registro alterado em {formatarAtualizacao(obra.ultima_atualizacao)}
+              </span>
+            </span>
+            <span className="gp-only-m">
+              Diário de obra{obra.local ? ` · ${obra.local}` : ""}
             </span>
           </>
         }
         actions={
-          <button type="button" onClick={abrirNovo} className="gp-btn gp-bp">
+          <button type="button" onClick={abrirNovo} className="gp-btn gp-bp gp-only-d">
             <Plus size={16} weight="bold" aria-hidden="true" /> Novo registro
           </button>
         }
-      />
+      >
+        <div className="gp-only-m">
+          <dl className="gp-4d-dl gp-4d-dk">
+            <div><dt>Registros</dt><dd>{registros.length}</dd></div>
+            <div><dt>Ocorrências</dt><dd>{nOcorrencias}</dd></div>
+            <div><dt>Progresso</dt><dd>{obra.progresso}%</dd></div>
+          </dl>
+        </div>
+      </PageHeader>
 
-      <div role="group" aria-label="Filtrar registros" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+      <button type="button" onClick={abrirNovo} className="gp-fab gp-4d-fabb" aria-haspopup="dialog">
+        <Plus size={24} weight="bold" aria-hidden="true" />
+        Novo registro
+      </button>
+
+      <div role="group" aria-label="Filtrar registros" className="gp-chips gp-4d-fl">
         {FILTROS.map(([k, rotulo]) => (
           <button key={k} type="button" className="gp-chip" aria-pressed={filtro === k} onClick={() => setFiltro(k)}>
             {rotulo}
@@ -180,6 +198,10 @@ export default function DiarioObraPage() {
           </button>
         ))}
       </div>
+
+      <p className="gp-only-m gp-4d-cnt" aria-live="polite">
+        {visiveis.length} {visiveis.length === 1 ? "registro" : "registros"}
+      </p>
 
       {visiveis.length === 0 ? (
         <div className="gp-card" style={{ padding: 40, textAlign: "center" }}>
@@ -196,11 +218,8 @@ export default function DiarioObraPage() {
             const btn = "gp-btn gp-sm ";
             return (
               <li key={registro.id}>
-                <article
-                  className="gp-card"
-                  style={{ display: "flex", alignItems: "flex-start", gap: 16, padding: "18px 22px", flexWrap: "wrap" }}
-                >
-                  <span style={{ minWidth: 64 }}>
+                <article className="gp-card gp-4d-reg">
+                  <span className="gp-4d-rd">
                     <strong className="gp-mono" style={{ display: "block", fontSize: 22 }} aria-hidden="true">
                       {String(parseData(registro.data).getDate()).padStart(2, "0")}
                     </strong>
@@ -208,13 +227,14 @@ export default function DiarioObraPage() {
                       aria-hidden="true"
                       style={{ fontSize: 13, fontWeight: 700, color: "#475569", textTransform: "capitalize" }}
                     >
-                      {diaDaSemana(registro.data).split("-")[0]}
+                      <span className="gp-only-d">{diaDaSemana(registro.data).split("-")[0]}</span>
+                      <span className="gp-only-m">{diaDaSemana(registro.data).slice(0, 3)}</span>
                     </span>
                     <span className="gp-sr">
                       {formatarData(registro.data)}, {diaDaSemana(registro.data)}
                     </span>
                   </span>
-                  <div style={{ flex: "1 1 300px", minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div className="gp-4d-rc">
                     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
                       <span className={`gp-bg ${status.classe}`}>
                         <span className="gp-dot" aria-hidden="true"></span>
@@ -306,7 +326,7 @@ export default function DiarioObraPage() {
                     )}
                   </div>
 
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  <div className="gp-4d-ra">
                     {registro.status === "RASCUNHO" && (
                       <button onClick={() => mudarStatus(registro, "ENVIADO")} className={btn + "gp-bd"}>
                         Enviar
@@ -349,6 +369,7 @@ export default function DiarioObraPage() {
         isOpen={modalAberto}
         onClose={() => setModalAberto(false)}
         obraId={obraId}
+        obraNome={obra.nome}
         registro={emEdicao}
         responsavelPadrao={obra.responsavel}
         servicos={obra.servicos}

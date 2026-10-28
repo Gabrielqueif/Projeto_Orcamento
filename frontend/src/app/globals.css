@@ -579,4 +579,169 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
   .gp-4c-prd .gp-fld{gap:4px}
   .gp-4c-prd .gp-lb{font-size:13px;color:#475569}
   .gp-4c-prd .gp-in{height:46px;padding:0 10px;min-width:0}
+
+/* ===== Fase 4d ===== */
+/* Custos, diário e equipe no app mobile. Fora do @media ficam só os estilos que já
+   valiam no desktop (antes inline); o que muda abaixo de 1024px vem no bloco seguinte. */
+.gp-4d-fabb{border:0;cursor:pointer;font-family:inherit}
+.gp-4d-tb{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid #E6EBF2}
+.gp-4d-sec{display:flex;flex-direction:column;gap:16px}
+.gp-4d-dnh{display:contents}
+.gp-4d-err{margin:0}
+.gp-4d-fg{display:flex;flex-wrap:wrap;gap:12px}
+.gp-4d-ft{position:relative;width:80px;height:80px;border-radius:12px;overflow:hidden;box-sizing:border-box}
+.gp-4d-fx{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,27,61,.7);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.gp-4d-reg{display:flex;align-items:flex-start;gap:16px;padding:18px 22px;flex-wrap:wrap}
+.gp-4d-rd{min-width:64px}
+.gp-4d-rc{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.gp-4d-ra{display:flex;flex-wrap:wrap;gap:8px}
+.gp-4d-fmb{padding:24px;display:flex;flex-direction:column;gap:16px}
+.gp-4d-i40{width:40px;height:40px}
+.gp-4d-ck{width:18px;height:18px}
+.gp-4d-cgi{padding:14px 22px;display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.gp-4d-cgi+.gp-4d-cgi{border-top:1px solid #E6EBF2}
+.gp-4d-cga{margin-left:auto;display:flex;gap:8px}
+.gp-4d-shw{display:contents}
+@media (min-width: 1024px){
+  .gp-4d-fl{display:flex;flex-wrap:wrap;gap:6px}
+}
+@media (max-width: 1023px){
+  /* Resumos que sobem sobre o cabeçalho escuro */
+  .gp-4d-sum{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:22px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.05),0 14px 30px -18px rgba(0,27,61,.35)}
+  .gp-4d-dl{margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .gp-4d-dl>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .gp-4d-dl dt{font-size:12px;font-weight:700;color:#475569}
+  .gp-4d-dl dd{margin:0;font-size:16px;font-weight:800}
+  .gp-4d-dl.gp-4d-dk>div{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.08)}
+  .gp-4d-dl.gp-4d-dk dt{color:#cbd5e1}
+  .gp-4d-dl.gp-4d-dk dd{font-size:18px}
+  .gp-4d-dl.gp-4d-ctr{padding:14px 4px}
+  .gp-4d-dl.gp-4d-ctr>div{align-items:center;text-align:center}
+  .gp-4d-dl.gp-4d-ctr>div+div{border-left:1px solid #E6EBF2}
+  .gp-4d-hv{display:flex;flex-direction:column;gap:4px}
+  .gp-4d-hv>span{font-size:13px;color:#cbd5e1}
+  .gp-4d-hv>strong{font-size:32px;line-height:1.1;letter-spacing:-.8px}
+  .gp-4d-hs{display:flex;flex-direction:column;gap:6px}
+  .gp-4d-hs>label{font-size:13px;font-weight:700;color:#cbd5e1}
+  .gp-4d-hs input{font-size:16px}
+  .gp-4d-pb{display:flex;height:14px;padding:3px;box-sizing:border-box;border-radius:999px;background:#EDF1F6;flex:1 1 auto}
+  .gp-4d-pb>span{border-radius:999px;background:#9fd300}
+  .gp-4d-pb.gp-4d-fino{height:8px;padding:0}
+  .gp-4d-h{margin:0;padding:0 4px;font-size:18px;font-weight:800}
+  .gp-4d-cnt{margin:0;padding:0 4px;font-size:13px;font-weight:700;color:#475569}
+
+  /* Listas em cartões */
+  .gp-4d-lst{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .gp-4d-it{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.06);color:#001b3d;text-decoration:none}
+  a.gp-4d-it:hover{color:#001b3d}
+  .gp-4d-row{display:flex;align-items:center;gap:12px;min-width:0}
+  .gp-4d-av{flex:0 0 42px;width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800}
+  .gp-4d-tx{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .gp-4d-tx>strong{font-size:15px;line-height:1.3}
+  .gp-4d-tx>span{font-size:13px;color:#475569}
+  .gp-4d-st{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;font-size:14px;line-height:1.45}
+  .gp-4d-st.gp-ok{background:#E6F6D0;color:#2F4D03}
+  .gp-4d-st.gp-wa{background:#FFEDD5;color:#7C2D12}
+  .gp-4d-st a{color:inherit;font-weight:800}
+  .gp-4d-sti{flex:0 0 40px;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff}
+  .gp-ok>.gp-4d-sti{background:#4D7E05}
+  .gp-wa>.gp-4d-sti{background:#C2410C}
+
+  /* Barra de filtros dentro de um cartão-moldura */
+  .gp-4d-tb{padding:0;border-bottom:0}
+  .gp-4d-tb select.gp-in{font-size:16px !important;height:48px !important}
+
+  /* Financeiro da obra: despesas */
+  .gp-4d-dp{padding:12px 14px;gap:10px}
+  .gp-4d-dp .gp-4d-av{flex-basis:40px;width:40px;height:40px;border-radius:12px;font-size:12px}
+  .gp-4d-dp .gp-4d-tx>span{font-size:12px}
+  .gp-4d-vl{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;white-space:nowrap}
+  .gp-4d-dpc{display:flex;align-items:center;gap:8px}
+  .gp-4d-dpc select{flex:1 1 auto;min-width:0;height:44px;font-size:16px}
+  .gp-4d-dpc .gp-ib{flex:0 0 44px}
+
+  /* Folha inferior a partir de uma gaveta */
+  .gp-drw.gp-4d-sht{top:auto;left:0;width:100%;max-height:92dvh;border-radius:28px 28px 0 0;box-shadow:none}
+  .gp-4d-sht .gp-dh{border-bottom:0;padding:6px 12px 8px 20px}
+  .gp-4d-hdl{display:block;align-self:center;flex:0 0 auto;width:40px;height:5px;margin-top:10px;border-radius:999px;background:#CBD5E1}
+
+  /* Diário da obra: registros */
+  .gp-4d-reg{padding:14px;gap:12px}
+  .gp-4d-rd{min-width:0;flex:0 0 48px;text-align:center}
+  .gp-4d-rc{flex:1 1 0}
+  .gp-4d-ra{flex:1 1 100%}
+  .gp-4d-ra .gp-btn{min-height:44px;flex:1 1 auto}
+
+  /* Formulário do diário em tela cheia */
+  .gp-drw.gp-4d-dn{background:#F4F6FA}
+  .gp-4d-dn .gp-db{padding:0 0 20px;gap:14px}
+  .gp-4d-dn .gp-db>*:not(.gp-4d-dnh){margin:0 16px}
+  .gp-4d-dnh{display:flex;flex-direction:column;gap:12px;position:sticky;top:0;z-index:2;padding:calc(10px + env(safe-area-inset-top)) 16px 18px;border-radius:0 0 28px 28px;background-color:#001b3d;background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:22px 22px;color:#fff}
+  .gp-4d-dnh .gp-fld{gap:6px}
+  .gp-4d-dnh .gp-lb{font-size:13px;color:#cbd5e1}
+  .gp-4d-dnh .gp-in{border:0;border-radius:14px}
+  .gp-4d-dnt{display:flex;align-items:center;gap:10px;margin-left:-4px}
+  .gp-4d-dnt h2{margin:0;font-size:20px;font-weight:800}
+  .gp-4d-dnt p{margin:0;font-size:13px;color:#cbd5e1}
+  .gp-4d-x{flex:0 0 44px;width:44px;height:44px;box-sizing:border-box;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .gp-4d-sec{padding:16px;gap:12px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.06)}
+  .gp-4d-sec>.gp-fld>.gp-lb:first-child{font-size:16px;font-weight:800}
+  .gp-4d-clm{background:transparent;padding:0;gap:8px}
+  .gp-4d-clm button{min-height:64px;flex-direction:column;gap:4px;border:2px solid #E6EBF2;border-radius:14px;background:#fff;font-size:14px}
+  .gp-4d-clm button[aria-checked=true]{border-color:#9fd300;background:#F7FCE9;box-shadow:none}
+  .gp-4d-swr{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .gp-4d-swr>span{display:flex;flex-direction:column;gap:2px}
+  .gp-4d-swr strong{font-size:16px}
+  .gp-4d-swr>span>span{font-size:13px;color:#475569}
+  .gp-4d-sw{position:relative;flex:0 0 72px;width:72px;height:44px;padding:0;border:0;border-radius:999px;background:#64748b;cursor:pointer}
+  .gp-4d-sw[aria-checked=true]{background:#4D7E05}
+  .gp-4d-sw>span{position:absolute;top:4px;left:4px;width:36px;height:36px;border-radius:999px;background:#fff;transition:left .15s}
+  .gp-4d-sw[aria-checked=true]>span{left:32px}
+  .gp-4d-oc[data-off]{display:none}
+  .gp-4d-num{height:44px !important;font-size:16px !important}
+  .gp-4d-chk{width:22px !important;height:22px !important;margin-top:0 !important}
+  .gp-4d-fg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .gp-4d-ft{width:auto;height:auto;aspect-ratio:1/1;border-radius:14px}
+  .gp-4d-fx{width:32px;height:32px;border-radius:10px;background:rgba(0,27,61,.8)}
+  .gp-4d-fb{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .gp-4d-fbt{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border:0;border-radius:14px;background:#F4F6FA;color:#001b3d;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer}
+  .gp-4d-fbt.gp-4d-esc{background:#001b3d;color:#fff}
+  .gp-4d-dnf{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px;border-top:0;border-radius:24px 24px 0 0;background:#fff;box-shadow:0 -10px 30px -18px rgba(0,27,61,.35)}
+  .gp-4d-dnf[data-um]{grid-template-columns:minmax(0,1fr)}
+  .gp-4d-dnf .gp-btn{min-height:54px;border-radius:16px;padding:0 8px;font-size:15px}
+  .gp-4d-dnf .gp-4d-rasc{background:#F4F6FA}
+  .gp-4d-dnf .gp-4d-conc{display:inline-flex;box-shadow:0 10px 20px -10px rgba(77,126,5,.6)}
+
+  /* Equipe */
+  .gp-4d-mb{flex-direction:row;align-items:center;gap:8px;padding:6px 6px 6px 14px}
+  .gp-4d-mb>a{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:12px;padding:8px 0;color:#001b3d;text-decoration:none}
+  .gp-4d-mb>a:hover{color:#001b3d}
+  .gp-4d-mb .gp-4d-av{flex-basis:46px;width:46px;height:46px;border-radius:14px;background:#001b3d;color:#9fd300}
+  .gp-4d-mb .gp-4d-tx{gap:4px}
+  .gp-4d-mb .gp-ib{flex:0 0 44px;border:0;color:#B91C1C}
+  .gp-4d-avg{display:flex;align-items:center;gap:14px}
+  .gp-4d-avg>span:first-child{flex:0 0 56px;width:56px;height:56px;border-radius:18px;background:#9fd300;color:#001b3d;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800}
+  .gp-4d-avg p{margin:0;font-size:18px;font-weight:800}
+  .gp-4d-avg p+p{margin-top:2px;font-size:14px;font-weight:500;color:#cbd5e1}
+  .gp-4d-fmb{padding:18px}
+  .gp-4d-fmb .gp-affix input{font-size:16px}
+  .gp-4d-i40{width:44px;height:44px}
+  .gp-4d-ff{position:fixed;left:0;right:0;bottom:0;z-index:46;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px;border-top:0;border-radius:24px 24px 0 0;background:#fff;box-shadow:0 -10px 30px -18px rgba(0,27,61,.35)}
+  .gp-4d-ff .gp-btn{min-height:54px;border-radius:16px}
+
+  /* Cargos: lista em cartões e formulário como folha inferior */
+  .gp-4d-cgl{display:flex;flex-direction:column;gap:10px}
+  .gp-4d-cgi{flex-direction:column;align-items:stretch;gap:10px;padding:14px;border-radius:20px;background:#fff;box-shadow:0 1px 2px rgba(0,27,61,.06)}
+  .gp-4d-cgi+.gp-4d-cgi{border-top:0}
+  .gp-4d-cga{margin-left:0;flex-wrap:wrap}
+  .gp-4d-cgi .gp-btn{min-height:44px}
+  .gp-4d-shw{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,16,42,.55)}
+  .gp-4d-shw>form{max-height:86dvh;overflow-y:auto;border-radius:28px 28px 0 0;padding:10px 16px calc(24px + env(safe-area-inset-bottom))}
+  .gp-4d-shh{display:flex;flex-direction:column;gap:6px}
+  .gp-4d-shh>div{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .gp-4d-shh h2{margin:0;font-size:19px;font-weight:800}
+  .gp-4d-cgb>.gp-btn{flex:1 1 0;min-height:52px}
+  .gp-4d-cgb>.gp-bp{flex-grow:2}
+  .gp-4d-ckl{min-height:48px}
+  .gp-4d-ck{width:22px;height:22px}
 }

@@ -20,6 +20,29 @@ import { ObraTabs } from "@/components/obras/ObraTabs";
 import { useToast } from "@/components/common/toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 
+// Sigla e tom de cada categoria nos cartões de despesa do mobile.
+const SIGLA_CATEGORIA: Record<string, [string, string]> = {
+  Materiais: ["MA", "gp-te"],
+  "Mão de Obra": ["MO", "gp-ne"],
+  Equipamentos: ["EQ", "gp-wa"],
+  Administrativo: ["AD", "gp-ok"],
+  Outros: ["OU", "gp-ne"],
+};
+
+// Valores curtos para o consolidado do mobile ("R$ 288,9 mil").
+// Formatação própria: o modo "compact" do Intl difere entre Node e navegador e quebra a hidratação.
+const formatCompacto = (val: number) => {
+  const num = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+  if (Math.abs(val) >= 1_000_000) return `R$ ${num(val / 1_000_000)} mi`;
+  return Math.abs(val) >= 1000 ? `R$ ${num(val / 1000)} mil` : `R$ ${num(val)}`;
+};
+
+// "2026-10-20" -> "20/10"
+const formatarDataCurta = (iso: string) => {
+  const [, mes, dia] = iso.split("-");
+  return dia && mes ? `${dia.slice(0, 2)}/${mes}` : iso;
+};
+
 // O nome da obra é o do orçamento de origem; falha aqui não deve derrubar a tela.
 async function buscarNomeObra(obraId: string): Promise<string | null> {
   try {
@@ -194,15 +217,55 @@ export default function GestaoCustosObraPage() {
         title={nomeObra ?? "Detalhamento de Custos da Obra"}
         subtitle="Despesas lançadas e consumo da verba por categoria."
         actions={
-          <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp">
+          <button type="button" onClick={() => setModalAberto(true)} className="gp-btn gp-bp gp-only-d">
             <Plus size={16} weight="bold" aria-hidden="true" /> Nova despesa
           </button>
         }
-      />
+        lift
+      >
+        {/* No mobile a busca fica no cabeçalho; no desktop, na barra de filtros */}
+        <div className="gp-only-m">
+          <div className="gp-4d-hs">
+            <label htmlFor="bd-m">Buscar despesa</label>
+            <div className="gp-srch">
+              <MagnifyingGlass size={20} aria-hidden="true" color="#475569" />
+              <input id="bd-m" type="search" placeholder="Descrição ou responsável" value={busca} onChange={(e) => setBusca(e.target.value)} />
+            </div>
+          </div>
+        </div>
+      </PageHeader>
+
+      {/* Mobile: consolidado num cartão que sobe sobre o cabeçalho */}
+      <section aria-label="Consolidado" className="gp-only-m">
+        <div className="gp-4d-sum">
+          <dl className="gp-4d-dl">
+            <div><dt>Verba</dt><dd>{formatCompacto(total_orcado)}</dd></div>
+            <div><dt>Gasto</dt><dd>{formatCompacto(total_realizado)}</dd></div>
+            <div>
+              <dt>Saldo</dt>
+              <dd style={{ color: saldo_restante >= 0 ? "#00626b" : "#B91C1C" }}>{formatCompacto(saldo_restante)}</dd>
+            </div>
+          </dl>
+          <span className="gp-4d-row" style={{ gap: 10 }}>
+            <span
+              className="gp-4d-pb gp-4d-fino"
+              role="progressbar"
+              aria-label="Verba utilizada"
+              aria-valuenow={Math.min(percentualUtilizado, 100)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              style={{ height: 10 }}
+            >
+              <span style={{ width: `${Math.min(percentualUtilizado, 100)}%` }}></span>
+            </span>
+            <strong style={{ fontSize: 14 }}>{percentualUtilizado}%</strong>
+          </span>
+        </div>
+      </section>
 
       <ObraTabs id={obraId} atual="financeiro" />
 
-      <section aria-label="Indicadores" className="gp-grid">
+      <section aria-label="Indicadores" className="gp-grid gp-only-d">
         <div className="gp-card gp-met gp-dark">
           <span className="gp-ml">Total orçado</span>
           <span className="gp-mv">{formatCurrency(total_orcado)}</span>
@@ -268,23 +331,80 @@ export default function GestaoCustosObraPage() {
         </ul>
       </section>
 
-      <section className="gp-card" aria-labelledby="h-de" style={{ overflow: "hidden" }}>
+      <section className="gp-card gp-m-flat" aria-labelledby="h-de" style={{ overflow: "hidden" }}>
         <h2 id="h-de" className="gp-sr">Despesas</h2>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "16px 22px", borderBottom: "1px solid #E6EBF2" }}>
-          <div role="group" aria-label="Filtrar por categoria" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <div className="gp-4d-tb">
+          <div role="group" aria-label="Filtrar por categoria" className="gp-chips gp-4d-fl">
             {["TODAS", ...CATEGORIAS].map((c) => (
               <button key={c} type="button" className="gp-chip" aria-pressed={categoriaFiltro === c} onClick={() => setCategoriaFiltro(c)}>
                 {c === "TODAS" ? "Todas" : c}
               </button>
             ))}
           </div>
-          <div className="gp-srch" style={{ marginLeft: "auto", flex: "0 1 280px" }}>
+          <div className="gp-srch gp-only-d" style={{ marginLeft: "auto", flex: "0 1 280px" }}>
             <MagnifyingGlass size={16} aria-hidden="true" />
             <label htmlFor="bd" className="gp-sr">Buscar despesa</label>
             <input id="bd" type="search" placeholder="Descrição ou responsável" value={busca} onChange={(e) => setBusca(e.target.value)} />
           </div>
         </div>
-        <div style={{ overflowX: "auto" }}>
+        {/* Mobile: cada despesa vira um cartão, com status e exclusão à mão */}
+        <div className="gp-only-m">
+          <p className="gp-4d-cnt" aria-live="polite" style={{ margin: "14px 0 10px" }}>
+            {despesasFiltradas.length} {despesasFiltradas.length === 1 ? "despesa" : "despesas"} · {formatCurrency(somaFiltradas)}
+          </p>
+          {despesasFiltradas.length === 0 ? (
+            <div className="gp-card" style={{ padding: "28px 16px", textAlign: "center", display: "flex", flexDirection: "column", gap: 6 }}>
+              <strong style={{ fontSize: 15 }}>Nenhuma despesa encontrada</strong>
+              <span style={{ fontSize: 14, color: "#475569" }}>Tente outra busca ou categoria.</span>
+            </div>
+          ) : (
+            <ul className="gp-4d-lst">
+              {despesasFiltradas.map((despesa) => {
+                const [sigla, tom] = SIGLA_CATEGORIA[despesa.categoria] ?? ["OU", "gp-ne"];
+                return (
+                  <li key={despesa.id} className="gp-4d-it gp-4d-dp">
+                    <div className="gp-4d-row">
+                      <span aria-hidden="true" className={`gp-4d-av ${tom}`}>{sigla}</span>
+                      <span className="gp-4d-tx">
+                        <strong style={{ fontSize: 14 }}>{despesa.descricao}</strong>
+                        <span>
+                          {despesa.categoria} · {despesa.responsavel} · {formatarDataCurta(despesa.data_competencia)}
+                        </span>
+                      </span>
+                      <strong className="gp-4d-vl">{formatCurrency(despesa.valor)}</strong>
+                    </div>
+                    <div className="gp-4d-dpc">
+                      {getStatusBadge(despesa.status)}
+                      <select
+                        aria-label={`Status da despesa ${despesa.descricao}`}
+                        value={despesa.status}
+                        onChange={(e) =>
+                          handleAtualizarStatus(despesa.id, e.target.value as "EM_ANALISE" | "APROVADO" | "PAGO" | "RECUSADO")
+                        }
+                        className="gp-in"
+                      >
+                        <option value="EM_ANALISE">Em Análise</option>
+                        <option value="APROVADO">Aprovado</option>
+                        <option value="PAGO">Pago</option>
+                        <option value="RECUSADO">Recusado</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => setDespesaParaExcluir(despesa.id)}
+                        className="gp-ib"
+                        style={{ color: "#B91C1C" }}
+                        aria-label={`Excluir despesa ${despesa.descricao}`}
+                      >
+                        <Trash size={18} aria-hidden="true" />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+        <div className="gp-only-d" style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", minWidth: 800, borderCollapse: "collapse" }}>
             <caption className="gp-sr">Despesas da obra</caption>
             <thead>
@@ -354,17 +474,26 @@ export default function GestaoCustosObraPage() {
             </tbody>
           </table>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 22px", borderTop: "1px solid #E6EBF2", fontSize: 14 }}>
-          <span aria-live="polite" style={{ color: "#475569" }}>
-            {despesasFiltradas.length} {despesasFiltradas.length === 1 ? "despesa" : "despesas"}
-          </span>
-          <strong className="gp-mono">Total: {formatCurrency(somaFiltradas)}</strong>
+        <div className="gp-only-d">
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 22px", borderTop: "1px solid #E6EBF2", fontSize: 14 }}>
+            <span aria-live="polite" style={{ color: "#475569" }}>
+              {despesasFiltradas.length} {despesasFiltradas.length === 1 ? "despesa" : "despesas"}
+            </span>
+            <strong className="gp-mono">Total: {formatCurrency(somaFiltradas)}</strong>
+          </div>
         </div>
       </section>
 
+      <button type="button" onClick={() => setModalAberto(true)} className="gp-fab gp-4d-fabb" aria-haspopup="dialog">
+        <Plus size={24} weight="bold" aria-hidden="true" />
+        Nova despesa
+      </button>
+
       {modalAberto && (
         <div className="gp-ov" style={{ justifyContent: "flex-end", padding: 0 }} onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false); }}>
-          <div className="gp-drw" role="dialog" aria-modal="true" aria-labelledby="nd-t">
+          {/* Gaveta lateral no desktop; folha inferior no mobile */}
+          <div className="gp-drw gp-4d-sht" role="dialog" aria-modal="true" aria-labelledby="nd-t">
+            <span className="gp-only-m gp-4d-hdl" aria-hidden="true"></span>
             <div className="gp-dh">
               <h2 id="nd-t" className="gp-h2">Nova despesa</h2>
               <button type="button" className="gp-ib" aria-label="Fechar" onClick={() => setModalAberto(false)}>

@@ -10,6 +10,12 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Fab } from "@/components/layout/Fab";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+// Valor curto para o resumo do mobile ("R$ 48,6 mil").
+// Formatação própria: o modo "compact" do Intl difere entre Node e navegador e quebra a hidratação.
+const brlCompacto = (v: number) => {
+  const num = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+  return Math.abs(v) >= 1000 ? `R$ ${num(v / 1000)} mil` : `R$ ${num(v)}`;
+};
 const iniciais = (nome: string) =>
   nome.split(" ").filter(Boolean).map((n) => n[0]).join("").substring(0, 2).toUpperCase();
 
@@ -103,10 +109,31 @@ export default function EquipePage() {
             <Link href="/equipe/novo" className="gp-btn gp-bp gp-only-d">Novo colaborador</Link>
           </>
         }
-      />
+        lift
+      >
+        {/* No mobile a busca fica no cabeçalho; no desktop, na barra de filtros */}
+        <div className="gp-only-m">
+          <div className="gp-4d-hs">
+            <label htmlFor="be-m" className="gp-sr">Buscar colaborador</label>
+            <div className="gp-srch">
+              <MagnifyingGlass size={20} aria-hidden="true" color="#475569" />
+              <input id="be-m" type="search" placeholder="Nome ou cargo" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            </div>
+          </div>
+        </div>
+      </PageHeader>
+
+      {/* Mobile: indicadores num cartão que sobe sobre o cabeçalho */}
+      <section aria-label="Indicadores da equipe" className="gp-only-m">
+        <dl className="gp-4d-dl gp-4d-ctr gp-4d-sum">
+          <div><dt>Custo mensal</dt><dd>{brlCompacto(totalCost)}</dd></div>
+          <div><dt>Efetivo ativo</dt><dd>{activeCount}</dd></div>
+          <div><dt>Canteiros</dt><dd>{porCanteiro.size}</dd></div>
+        </dl>
+      </section>
       <Fab href="/equipe/novo" label="Novo colaborador" />
 
-      <section aria-label="Indicadores" className="gp-grid">
+      <section aria-label="Indicadores" className="gp-grid gp-only-d">
         <div className="gp-card gp-met gp-dark">
           <span className="gp-ml">Custo mensal da equipe</span>
           <span className="gp-mv">{brl(totalCost)}</span>
@@ -131,10 +158,10 @@ export default function EquipePage() {
         </div>
       </section>
 
-      <section className="gp-card" aria-labelledby="h-eq" style={{ overflow: "hidden" }}>
+      <section className="gp-card gp-m-flat" aria-labelledby="h-eq" style={{ overflow: "hidden" }}>
         <h2 id="h-eq" className="gp-sr">Colaboradores</h2>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, padding: "16px 22px", borderBottom: "1px solid #E6EBF2" }}>
-          <div role="group" aria-label="Filtrar por obra" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <div className="gp-4d-tb">
+          <div role="group" aria-label="Filtrar por obra" className="gp-chips gp-4d-fl">
             {filtrosObra.map(([valor, label, n]) => (
               <button key={valor} type="button" className="gp-chip" aria-pressed={selectedObra === valor} onClick={() => setSelectedObra(valor)}>
                 {label}
@@ -152,14 +179,60 @@ export default function EquipePage() {
                 ))}
               </select>
             </div>
-            <div className="gp-srch" style={{ flex: "1 1 220px" }}>
+            <div className="gp-srch gp-only-d" style={{ flex: "1 1 220px" }}>
               <MagnifyingGlass size={16} aria-hidden="true" />
               <label htmlFor="be" className="gp-sr">Buscar colaborador</label>
               <input id="be" type="search" placeholder="Nome ou cargo" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
           </div>
         </div>
-        <div style={{ overflowX: "auto" }}>
+        {/* Mobile: colaboradores em cartões; o cartão abre a edição */}
+        <div className="gp-only-m">
+          <p className="gp-4d-cnt" aria-live="polite" style={{ margin: "14px 0 10px" }}>
+            {loading
+              ? "Carregando membros da equipe..."
+              : `${filteredMembers.length} ${filteredMembers.length === 1 ? "colaborador" : "colaboradores"}`}
+          </p>
+          {!loading && filteredMembers.length === 0 ? (
+            <p className="gp-card" style={{ margin: 0, padding: 24, textAlign: "center", color: "#475569" }}>
+              Nenhum membro encontrado com os filtros atuais.
+            </p>
+          ) : (
+            <ul className="gp-4d-lst">
+              {filteredMembers.map((member) => {
+                const ativo = member.status === "ATIVO";
+                return (
+                  <li key={member.id} className="gp-4d-it gp-4d-mb">
+                    <Link href={`/equipe/editar/${member.id}`}>
+                      <span className="gp-sr">Editar </span>
+                      <span aria-hidden="true" className="gp-4d-av">{iniciais(member.nome)}</span>
+                      <span className="gp-4d-tx">
+                        <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, color: "#001b3d" }}>
+                          <strong style={{ fontSize: 15, minWidth: 0 }}>{member.nome}</strong>
+                          <span className={`gp-bg ${ativo ? "gp-ok" : "gp-ne"}`} style={{ fontSize: 12, padding: "3px 8px" }}>
+                            {ativo ? "Ativo" : "Inativo"}
+                          </span>
+                        </span>
+                        <span>{member.cargo} · {member.orcamento_id ? obraDe(member) : "Sem obra"}</span>
+                        <span className="gp-mono" style={{ color: "#001b3d", fontWeight: 600 }}>{brl(member.remuneracao ?? 0)}</span>
+                      </span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteMember(member.id)}
+                      className="gp-ib"
+                      title="Excluir Colaborador"
+                      aria-label={`Excluir ${member.nome}`}
+                    >
+                      <Trash size={18} aria-hidden="true" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+        <div className="gp-only-d" style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", minWidth: 860, borderCollapse: "collapse" }}>
             <caption className="gp-sr">Colaboradores</caption>
             <thead>
