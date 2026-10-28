@@ -22,6 +22,7 @@ GRANT ALL PRIVILEGES ON TABLE public.diario_efetivo TO postgres, service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.diario_efetivo TO authenticated;
 REVOKE ALL ON TABLE public.diario_efetivo FROM anon;
 
+DROP POLICY IF EXISTS "diario_efetivo_dono_da_obra" ON public.diario_efetivo;
 CREATE POLICY "diario_efetivo_dono_da_obra" ON public.diario_efetivo
     FOR ALL TO authenticated
     USING (EXISTS (

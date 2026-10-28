@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CaretRight, Question, SignOut } from "@phosphor-icons/react";
+import { CaretRight, Gear, Question, SignOut } from "@phosphor-icons/react";
 import { logout } from "@/app/auth/actions";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { atalhosGestao } from "@/components/layout/nav";
@@ -63,6 +63,18 @@ export default function MaisPage() {
           Conta e ajuda
         </h2>
         <ul className="gp-card" style={{ margin: 0, padding: 6, listStyle: "none" }}>
+          <li>
+            <Link
+              href="/configuracoes"
+              style={{ display: "flex", alignItems: "center", gap: 14, minHeight: 60, padding: "0 12px", borderRadius: 14, color: "#001b3d", textDecoration: "none", fontSize: 16, fontWeight: 700 }}
+            >
+              <span aria-hidden="true" style={{ width: 38, height: 38, borderRadius: 11, background: "#F4F6FA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Gear size={20} weight="bold" />
+              </span>
+              <span style={{ flex: "1 1 auto" }}>Configurações</span>
+              <CaretRight size={18} weight="bold" color="#64748b" aria-hidden="true" />
+            </Link>
+          </li>
           <li>
             <a
               href="mailto:suporte@gpobras.com.br"

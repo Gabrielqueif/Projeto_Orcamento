@@ -961,3 +961,10 @@ textarea.gp-in{height:auto;padding:12px 14px;resize:vertical;line-height:1.5}
   .gp-6b-desc{font-size:13px}
   .gp-6b-erro .gp-btn{align-self:stretch;min-height:52px}
 }
+
+/* ===== Fase 6 (ligação dos recursos nos cabeçalhos) ===== */
+/* Início no mobile: perfil à esquerda e busca/notificações à direita, no topo do cabeçalho escuro. */
+.gp-6-topo{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.gp-6-topo-acoes{display:flex;gap:8px}
+.gp-6-topo-acoes .gp-ib{border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff}
+.gp-6-topo-acoes .gp-ib:hover{color:#fff}
