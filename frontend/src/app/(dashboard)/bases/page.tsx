@@ -8,6 +8,7 @@ import { getSinapiBases, type SinapiBase } from '@/lib/api/orcamentos';
 import { MinhasBases } from '@/components/bases-proprias/MinhasBases';
 import { useUserRole } from '@/hooks/use-user-role';
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton, SkeletonStatus, SkeletonText } from "@/components/ui/skeleton";
 
 export default function BasesPage() {
   const { role } = useUserRole();
@@ -44,7 +45,22 @@ export default function BasesPage() {
 
       <section aria-labelledby="h-of" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <h2 id="h-of" className="gp-h2">Referências oficiais</h2>
-        {loading && <p className="gp-sub">Carregando bases...</p>}
+        {loading && (
+          <SkeletonStatus texto="Carregando bases...">
+            <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(380px, 100%), 1fr))" }}>
+              {[0, 1].map((i) => (
+                <div key={i} className="gp-card gp-pad" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <Skeleton width="55%" height={20} />
+                    <Skeleton width={80} height={22} radius={999} />
+                  </div>
+                  <Skeleton width="85%" height={14} />
+                  <SkeletonText linhas={3} altura={12} gap={8} larguras={["60%", "70%", "50%"]} />
+                </div>
+              ))}
+            </div>
+          </SkeletonStatus>
+        )}
         {error && <p style={{ color: "#B91C1C" }}>{error}</p>}
 
         {!loading && !error && fontesComDados.length === 0 && (

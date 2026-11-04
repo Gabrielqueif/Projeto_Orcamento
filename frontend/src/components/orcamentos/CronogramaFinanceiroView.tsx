@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Spinner } from "@phosphor-icons/react";
+import { SkeletonStatus } from "@/components/ui/skeleton";
+import { ChartSkeleton, PanelSkeleton } from "@/components/common/skeletons";
 import { getOrcamentoCronograma, type CronogramaResponse } from "@/lib/api/orcamentos";
 
 interface CronogramaFinanceiroViewProps {
@@ -35,10 +36,12 @@ export function CronogramaFinanceiroView({ orcamentoId }: CronogramaFinanceiroVi
 
   if (loading) {
     return (
-      <div role="status" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 48, fontSize: 14, color: "#475569" }}>
-        <Spinner size={16} weight="bold" className="animate-spin" aria-hidden="true" />
-        <span>Calculando Cronograma Financeiro...</span>
-      </div>
+      <SkeletonStatus texto="Calculando Cronograma Financeiro..." style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <ChartSkeleton altura={220} />
+          <PanelSkeleton linhas={6} />
+        </div>
+      </SkeletonStatus>
     );
   }
 

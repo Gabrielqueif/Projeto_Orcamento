@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
 import { useToast } from "@/components/common/toast";
 import { atualizarPerfil, getPerfil } from "@/lib/api/perfil";
 import { createClient } from "@/utils/supabase/client";
@@ -129,9 +130,15 @@ export default function ConfiguracoesPage() {
         </h2>
 
         {carregando && (
-          <p role="status" className="gp-sub">
-            Carregando perfil…
-          </p>
+          <SkeletonStatus texto="Carregando perfil…" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {[110, 60, 54].map((rotulo, i) => (
+              <div key={i} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <Skeleton width={rotulo} height={12} />
+                {i < 2 ? <Skeleton height={44} radius={8} /> : <Skeleton width={220} height={16} />}
+              </div>
+            ))}
+            <Skeleton width={96} height={44} radius={8} />
+          </SkeletonStatus>
         )}
 
         {!carregando && erroCarregar && (

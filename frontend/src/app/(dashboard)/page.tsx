@@ -14,6 +14,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Fab } from "@/components/layout/Fab";
 import { BuscaBotao } from "@/components/layout/BuscaCampo";
 import { NotificacoesSino } from "@/components/layout/NotificacoesSino";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { ChartSkeleton, ListItemSkeleton, MetricCardsSkeleton, PanelSkeleton } from "@/components/common/skeletons";
 
 const ICONES_RISCO: Record<TipoRisco, React.ReactNode> = {
   ATRASO: <Clock weight="bold" />,
@@ -82,7 +84,7 @@ export default function DashboardPage() {
   }, [carregar]);
 
   if (carregando) {
-    return <p role="status" className="gp-sub" style={{ padding: 48, textAlign: 'center' }}>Carregando painel…</p>;
+    return <PainelSkeleton />;
   }
 
   if (erro || !painel) {
@@ -317,5 +319,74 @@ export default function DashboardPage() {
       {/* No fim para não ser o vizinho do cabeçalho (o `lift` sobe o elemento seguinte) */}
       <Fab href="/obras/novo" ariaLabel="Nova obra" />
     </>
+  );
+}
+
+/** Esqueleto do painel: mesmo desenho da tela (indicadores, riscos, gráfico, verba e diário). */
+function PainelSkeleton() {
+  return (
+    <SkeletonStatus texto="Carregando painel…">
+      <div className="gp-only-d">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Skeleton width={160} height={14} />
+          <Skeleton width={240} height={32} />
+          <Skeleton width={380} height={16} style={{ maxWidth: '100%' }} />
+        </div>
+        <MetricCardsSkeleton quantidade={4} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Skeleton width={180} height={20} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: 12 }}>
+            {[0, 1].map((i) => (
+              <div key={i} className="gp-card" style={{ padding: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+                <Skeleton width={40} height={40} radius={10} style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <Skeleton width="60%" height={14} />
+                  <Skeleton width="85%" height={12} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="gp-split gp-4a-split">
+          <div className="gp-main"><ChartSkeleton altura={220} /></div>
+          <div className="gp-side"><PanelSkeleton linhas={3} /></div>
+        </div>
+        <ListItemSkeleton quantidade={3} />
+      </div>
+      </div>
+
+      <div className="gp-only-m">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="gp-ph" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <Skeleton escuro width={104} height={104} radius={999} style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <Skeleton escuro width="50%" height={12} />
+            <Skeleton escuro width="90%" height={22} />
+          </div>
+        </div>
+        <div className="gp-card" style={{ padding: 16, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Skeleton width="80%" height={11} />
+              <Skeleton width="50%" height={24} />
+            </div>
+          ))}
+        </div>
+        <Skeleton width={180} height={20} />
+        <div className="gp-card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <Skeleton width={40} height={40} radius={10} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Skeleton width="70%" height={14} />
+              <Skeleton width="45%" height={12} />
+            </div>
+          </div>
+          <Skeleton height={8} radius={4} />
+        </div>
+        <ListItemSkeleton quantidade={2} avatar={false} />
+      </div>
+      </div>
+    </SkeletonStatus>
   );
 }

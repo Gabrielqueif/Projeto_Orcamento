@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Spinner } from "@phosphor-icons/react";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { PanelSkeleton } from "@/components/common/skeletons";
 import { getOrcamentoCurvaABC, type CurvaABCResponse } from "@/lib/api/orcamentos";
 
 interface CurvaAbcViewProps {
@@ -45,10 +46,22 @@ export function CurvaAbcView({ orcamentoId }: CurvaAbcViewProps) {
 
   if (loading) {
     return (
-      <div role="status" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 48, fontSize: 14, color: "#475569" }}>
-        <Spinner size={16} weight="bold" className="animate-spin" aria-hidden="true" />
-        <span>Calculando Curva ABC...</span>
-      </div>
+      <SkeletonStatus texto="Calculando Curva ABC..." style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="gp-card gp-met" style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                <Skeleton width={44} height={44} radius={12} style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <Skeleton width="55%" height={12} />
+                  <Skeleton width="80%" height={22} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <PanelSkeleton linhas={8} />
+        </div>
+      </SkeletonStatus>
     );
   }
 

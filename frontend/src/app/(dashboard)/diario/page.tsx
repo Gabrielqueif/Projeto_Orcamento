@@ -11,6 +11,8 @@ import {
   type SituacaoDiario,
 } from "@/lib/api/diario";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { CardListSkeleton, MetricCardsSkeleton, TableRowsSkeleton } from "@/components/common/skeletons";
 
 const SITUACOES: Record<SituacaoDiario, { rotulo: string; classe: string }> = {
   ENVIADO: { rotulo: "Enviado", classe: "gp-ok" },
@@ -74,7 +76,34 @@ export default function DiarioVisaoPage() {
   }, [carregar]);
 
   if (carregando) {
-    return <p role="status" style={{ padding: 48, textAlign: "center", color: "#475569" }}>Carregando diário de obra…</p>;
+    return (
+      <>
+        <PageHeader
+          crumb={<>Operação / <span aria-current="page" style={{ color: "#001b3d" }}>Diário de obra</span></>}
+          eyebrow="Operação"
+          title="Diário de obra"
+        />
+        <SkeletonStatus texto="Carregando diário de obra…" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div className="gp-only-d">
+            <MetricCardsSkeleton quantidade={2} />
+          </div>
+          <section className="gp-card gp-m-flat" style={{ overflow: "hidden" }}>
+            <div style={{ padding: "18px 22px", borderBottom: "1px solid #E6EBF2", display: "flex", flexDirection: "column", gap: 8 }}>
+              <Skeleton width={160} height={20} />
+              <Skeleton width={300} height={14} style={{ maxWidth: "100%" }} />
+            </div>
+            <div className="gp-only-m" style={{ padding: 16 }}>
+              <CardListSkeleton quantidade={3} />
+            </div>
+            <table className="gp-only-d" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <tbody>
+                <TableRowsSkeleton colunas={5} linhas={5} anunciar={false} />
+              </tbody>
+            </table>
+          </section>
+        </SkeletonStatus>
+      </>
+    );
   }
 
   if (erro || !resumo) {

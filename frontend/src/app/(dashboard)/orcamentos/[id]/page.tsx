@@ -26,6 +26,8 @@ import { getObras } from "@/lib/api/obras";
 import { getOrcamento, getEtapas, downloadOrcamentoPDF, updateOrcamento, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
 import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus } from "@/lib/orcamentoStatus";
 import { PlanilhaView } from "@/components/orcamentos/PlanilhaView";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { DetailHeaderSkeleton, PanelSkeleton } from "@/components/common/skeletons";
 import { CurvaAbcView } from "@/components/orcamentos/CurvaAbcView";
 import { CronogramaFinanceiroView } from "@/components/orcamentos/CronogramaFinanceiroView";
 import { BdiConfigModal } from "@/components/orcamentos/BdiConfigModal";
@@ -185,9 +187,28 @@ export default function OrcamentoDetalhePage() {
 
   if (loading) {
     return (
-      <p role="status" className="gp-sub" style={{ textAlign: "center", padding: 48 }}>
-        Carregando detalhes do orçamento...
-      </p>
+      <SkeletonStatus texto="Carregando detalhes do orçamento..." style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <DetailHeaderSkeleton />
+          <div
+            className="gp-card"
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 1, overflow: "hidden", background: "#E6EBF2" }}
+          >
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} style={{ padding: "18px 20px", background: i === 0 ? "#001b3d" : "#fff", display: "flex", flexDirection: "column", gap: 10 }}>
+                <Skeleton width="45%" height={12} escuro={i === 0} />
+                <Skeleton width="70%" height={26} escuro={i === 0} />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[170, 110, 160, 90].map((w, i) => (
+              <Skeleton key={i} width={w} height={40} radius={12} />
+            ))}
+          </div>
+          <PanelSkeleton linhas={6} />
+        </div>
+      </SkeletonStatus>
     );
   }
 

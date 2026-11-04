@@ -8,6 +8,8 @@ import { excluirObra, getObras, type Obra } from "@/lib/api/obras";
 import { useToast } from "@/components/common/toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Fab } from "@/components/layout/Fab";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MetricCardsSkeleton } from "@/components/common/skeletons";
 
 interface ObraItemData {
   orcamento: Orcamento;
@@ -223,6 +225,9 @@ export default function ObrasPage() {
         </section>
       )}
 
+      {loading ? (
+        <div className="gp-only-d"><MetricCardsSkeleton quantidade={4} /></div>
+      ) : (
       <section aria-label="Indicadores" className="gp-grid gp-only-d">
         <div className="gp-card gp-met gp-dark">
           <span className="gp-ml">Em andamento</span>
@@ -247,6 +252,7 @@ export default function ObrasPage() {
           <span className="gp-ms">{atrasadas.length === 1 ? "1 obra atrasada" : `${atrasadas.length} obras atrasadas`}</span>
         </div>
       </section>
+      )}
 
       <section className={semObras ? "gp-card gp-only-d" : "gp-card gp-m-flat"} aria-labelledby="h-l" style={{ overflow: "hidden" }}>
         <h2 id="h-l" className="gp-sr">Lista de obras</h2>
@@ -284,9 +290,7 @@ export default function ObrasPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={7} className="gp-td gp-4a-msg" style={{ textAlign: "center", padding: 48, color: "#475569" }}>Carregando obras...</td>
-                </tr>
+                <ObrasLinhasSkeleton />
               ) : filteredItems.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="gp-td gp-4a-msg" style={{ textAlign: "center", padding: 48, color: "#475569" }}>Nenhuma obra encontrada.</td>
@@ -360,6 +364,34 @@ export default function ObrasPage() {
           {filteredItems.length} {filteredItems.length === 1 ? "obra" : "obras"}
         </div>
       </section>
+    </>
+  );
+}
+
+/** Linhas de esqueleto com as mesmas células da tabela (no mobile viram cartões, como as reais). */
+function ObrasLinhasSkeleton({ linhas = 5 }: { linhas?: number }) {
+  return (
+    <>
+      {Array.from({ length: linhas }, (_, i) => (
+        <tr key={i} className="gp-row">
+          <td data-m="nome" className="gp-td" style={{ paddingLeft: 20 }}>
+            {i === 0 && <span role="status" aria-busy="true" className="gp-sr">Carregando obras...</span>}
+            <span aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <Skeleton width={42} height={42} radius={12} style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                <Skeleton width={i % 2 ? "60%" : "75%"} height={15} />
+                <Skeleton width={90} height={12} />
+              </span>
+            </span>
+          </td>
+          <td data-m="cli" className="gp-td"><Skeleton width="70%" height={14} /></td>
+          <td data-m="fase" className="gp-td"><Skeleton width={i % 2 ? 80 : 110} height={14} /></td>
+          <td data-m="prog" className="gp-td"><Skeleton height={8} radius={4} /></td>
+          <td data-m="fim" className="gp-td"><Skeleton width={84} height={14} /></td>
+          <td data-m="st" className="gp-td"><Skeleton width={104} height={24} radius={999} /></td>
+          <td data-m="acoes" className="gp-td" style={{ paddingRight: 20 }}><Skeleton width={32} height={32} radius={8} style={{ marginLeft: "auto" }} /></td>
+        </tr>
+      ))}
     </>
   );
 }

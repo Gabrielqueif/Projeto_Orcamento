@@ -16,6 +16,8 @@ import {
   type StatusDiario,
 } from "@/lib/api/diario";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { DetailHeaderSkeleton, ListItemSkeleton } from "@/components/common/skeletons";
 
 type FiltroStatus = "TODOS" | StatusDiario;
 
@@ -118,9 +120,15 @@ export default function DiarioObraPage() {
 
   if (carregando) {
     return (
-      <p role="status" style={{ padding: 48, textAlign: "center", color: "#475569" }}>
-        Carregando diário da obra…
-      </p>
+      <SkeletonStatus texto="Carregando diário da obra…" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <DetailHeaderSkeleton />
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {[90, 110, 100, 96].map((w, i) => (
+            <Skeleton key={i} width={w} height={36} radius={999} />
+          ))}
+        </div>
+        <ListItemSkeleton quantidade={4} avatar={false} />
+      </SkeletonStatus>
     );
   }
 
