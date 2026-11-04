@@ -7,6 +7,8 @@ import { Calendar, Info, Coins } from "@phosphor-icons/react";
 import { getOrcamento, getEtapas, updateEtapa, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
 import { useToast } from "@/components/common/toast";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { DetailHeaderSkeleton } from "@/components/common/skeletons";
 
 export default function PrazosPage() {
   const { showToast } = useToast();
@@ -51,7 +53,7 @@ export default function PrazosPage() {
   };
 
   if (loading) {
-    return <div className="gp-card gp-pad" role="status" style={{ textAlign: "center", color: "#475569" }}>Carregando cronograma…</div>;
+    return <PrazoSkeleton />;
   }
 
   if (!orcamento) {
@@ -229,5 +231,41 @@ export default function PrazosPage() {
         </>
       )}
     </>
+  );
+}
+
+/** Esqueleto do cronograma: cabeçalho, aviso e a tabela de etapas com as barras do Gantt. */
+function PrazoSkeleton() {
+  const barras: [string, string][] = [["2%", "28%"], ["20%", "35%"], ["45%", "25%"], ["60%", "30%"], ["75%", "20%"]];
+  return (
+    <SkeletonStatus texto="Carregando cronograma…">
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <div className="gp-only-d"><DetailHeaderSkeleton /></div>
+        <div className="gp-only-m">
+          <div className="gp-ph">
+            <Skeleton escuro width={120} height={14} />
+            <Skeleton escuro width="70%" height={26} />
+            <Skeleton escuro height={56} radius={16} />
+          </div>
+        </div>
+        <Skeleton height={48} radius={16} />
+        <div className="gp-card" style={{ overflow: "hidden" }}>
+          {barras.map(([inicio, largura], i) => (
+            <div key={i} style={{ display: "grid", gridTemplateColumns: "minmax(140px, 1.2fr) minmax(0, 2fr)", gap: 16, alignItems: "center", padding: "16px 20px", borderTop: i ? "1px solid #E6EBF2" : undefined }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <Skeleton width={i % 2 ? "60%" : "80%"} height={14} />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <Skeleton width="45%" height={36} radius={8} />
+                  <Skeleton width="45%" height={36} radius={8} />
+                </div>
+              </div>
+              <div style={{ position: "relative", height: 20 }}>
+                <Skeleton height={20} radius={6} style={{ position: "absolute", left: inicio, width: largura }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </SkeletonStatus>
   );
 }

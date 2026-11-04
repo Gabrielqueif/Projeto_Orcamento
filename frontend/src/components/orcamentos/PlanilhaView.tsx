@@ -21,6 +21,8 @@ import { InsumosDrawer } from "./InsumosDrawer";
 import { AtualizarPrecosPropriaModal } from "./AtualizarPrecosPropriaModal";
 import { useToast } from "@/components/common/toast";
 import { EtapasEstrutura, MAX_NIVEL_ETAPAS, type DropPos } from "./EtapasEstrutura";
+import { PlanilhaSkeleton } from "./PlanilhaSkeleton";
+import { SkeletonStatus } from "@/components/ui/skeleton";
 
 interface PlanilhaViewProps {
   orcamentoId: string;
@@ -632,7 +634,11 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
   };
 
   if (loading && etapas.length === 0) {
-    return <div role="status" className="gp-sub" style={{ textAlign: "center", padding: 40 }}>Carregando estrutura da planilha...</div>;
+    return (
+      <SkeletonStatus texto="Carregando estrutura da planilha...">
+        <PlanilhaSkeleton />
+      </SkeletonStatus>
+    );
   }
 
   // Identifica itens sem etapa e separa etapas em raiz e filhas

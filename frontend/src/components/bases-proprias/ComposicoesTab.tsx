@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, MagnifyingGlass, Plus, Trash } from "@phosphor-icons/react";
 import { Modal } from "@/components/ui/Modal";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
 import { useToast } from "@/components/common/toast";
 import {
   criarComposicao,
@@ -167,7 +168,17 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
             })}
           </tbody>
         </table>
-        {loading && <p className="gp-sub" style={{ padding: 16, margin: 0 }}>Carregando composições...</p>}
+        {loading && (
+          <SkeletonStatus texto="Carregando composições..." style={{ padding: "4px 22px 16px" }}>
+            {["80%", "65%", "72%", "58%", "76%"].map((w, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: "14px 0", borderTop: "1px solid #E6EBF2" }}>
+                <Skeleton width={72} height={14} style={{ flexShrink: 0 }} />
+                <Skeleton width={w} height={14} style={{ flex: 1 }} />
+                <Skeleton width={88} height={14} style={{ flexShrink: 0 }} />
+              </div>
+            ))}
+          </SkeletonStatus>
+        )}
         {!loading && lista.length === 0 && (
           <p className="gp-sub" style={{ padding: 24, margin: 0, textAlign: "center" }} data-testid="composicoes-vazio">
             Nenhuma composição ainda.

@@ -10,6 +10,8 @@ import { useToast } from "@/components/common/toast";
 import { getCargos, type Cargo, type CampoBase } from "@/lib/api/cargos";
 import { CamposExtras } from "@/components/equipe/CamposExtras";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { SkeletonStatus } from "@/components/ui/skeleton";
+import { FormSkeleton } from "@/components/common/skeletons";
 
 const iniciais = (nome: string) =>
   nome.split(" ").filter(Boolean).map((n) => n[0]).join("").substring(0, 2).toUpperCase();
@@ -201,9 +203,19 @@ export default function EditarMembroPage() {
 
   if (loading) {
     return (
-      <p role="status" style={{ padding: 48, textAlign: "center", color: "#475569" }}>
-        Carregando dados do colaborador...
-      </p>
+      <>
+        <PageHeader
+          back="/equipe"
+          backLabel="Voltar para equipe"
+          crumb={<>Operação / <Link href="/equipe">Equipe</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Editar colaborador</span></>}
+          eyebrow="Equipe"
+          title="Editar colaborador"
+          subtitle={<span className="gp-only-d">Atualize os dados, a alocação e a situação do profissional.</span>}
+        />
+        <SkeletonStatus texto="Carregando dados do colaborador..." style={{ maxWidth: 720, width: "100%" }}>
+          <FormSkeleton campos={7} colunas={2} />
+        </SkeletonStatus>
+      </>
     );
   }
 

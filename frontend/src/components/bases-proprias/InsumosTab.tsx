@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DownloadSimple, MagnifyingGlass, PencilSimple, Plus, Trash, UploadSimple } from "@phosphor-icons/react";
 import { Modal } from "@/components/ui/Modal";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
 import { useToast } from "@/components/common/toast";
 import {
   atualizarInsumo,
@@ -243,7 +244,17 @@ export function InsumosTab({ baseId }: { baseId: string }) {
             ))}
           </tbody>
         </table>
-        {loading && <p className="gp-sub" style={{ padding: 16, margin: 0 }}>Carregando insumos...</p>}
+        {loading && (
+          <SkeletonStatus texto="Carregando insumos..." style={{ padding: "4px 22px 16px" }}>
+            {["80%", "65%", "72%", "58%", "76%"].map((w, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: "14px 0", borderTop: "1px solid #E6EBF2" }}>
+                <Skeleton width={72} height={14} style={{ flexShrink: 0 }} />
+                <Skeleton width={w} height={14} style={{ flex: 1 }} />
+                <Skeleton width={88} height={14} style={{ flexShrink: 0 }} />
+              </div>
+            ))}
+          </SkeletonStatus>
+        )}
         {!loading && insumos.length === 0 && (
           <p className="gp-sub" style={{ padding: 24, margin: 0, textAlign: "center" }} data-testid="insumos-vazio">
             Nenhum insumo encontrado. Crie um ou importe uma planilha.

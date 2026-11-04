@@ -13,6 +13,8 @@ import {
   Tooltip,
 } from "chart.js";
 import { getCurvaS, type CurvaS, type SituacaoCurva } from "@/lib/api/medicoes";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { ChartSkeleton } from "@/components/common/skeletons";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
@@ -71,7 +73,11 @@ export function CurvaSCard({ obraId }: { obraId: string }) {
           )}
         </div>
 
-        {carregando && <p className="gp-hint">Carregando Curva S…</p>}
+        {carregando && (
+          <SkeletonStatus texto="Carregando Curva S…">
+            <ChartSkeleton altura={240} comCard={false} />
+          </SkeletonStatus>
+        )}
         {erro && <p style={{ margin: 0, fontSize: 14, color: "#B91C1C" }}>{erro}</p>}
 
         {curva && curva.situacao === "SEM_CRONOGRAMA" && (
@@ -133,6 +139,17 @@ export function CurvaSCard({ obraId }: { obraId: string }) {
           </>
         )}
       </section>
+
+      {carregando && (
+        <div className="gp-side gp-4c-csside" aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {[true, false, false].map((escuro, i) => (
+            <div key={i} className={escuro ? "gp-card gp-met gp-dark" : "gp-card gp-met"}>
+              <Skeleton width="55%" height={12} escuro={escuro} />
+              <Skeleton width="45%" height={30} escuro={escuro} />
+            </div>
+          ))}
+        </div>
+      )}
 
       {comCurva && curva && (
         <div className="gp-side gp-4c-csside" style={{ display: "flex", flexDirection: "column", gap: 12 }}>

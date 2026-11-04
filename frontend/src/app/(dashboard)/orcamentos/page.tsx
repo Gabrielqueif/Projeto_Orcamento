@@ -12,6 +12,7 @@ import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus, type Orca
 import { useToast } from "@/components/common/toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Fab } from "@/components/layout/Fab";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type FilterStatus = "todos" | OrcamentoStatus;
 
@@ -250,11 +251,7 @@ export default function OrcamentosPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="gp-td gp-4a-msg" style={{ padding: 40, textAlign: "center", color: "#475569" }}>
-                    Carregando orçamentos...
-                  </td>
-                </tr>
+                <OrcamentosLinhasSkeleton />
               ) : filteredOrcamentos.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="gp-td gp-4a-msg" style={{ padding: "40px 20px", textAlign: "center" }}>
@@ -320,6 +317,26 @@ export default function OrcamentosPage() {
       </section>
       {/* No fim para não ser o vizinho do cabeçalho (o `lift` sobe o elemento seguinte) */}
       <Fab href="/orcamentos/novo" label="Novo orçamento" />
+    </>
+  );
+}
+
+function OrcamentosLinhasSkeleton({ linhas = 5 }: { linhas?: number }) {
+  return (
+    <>
+      {Array.from({ length: linhas }, (_, i) => (
+        <tr key={i} className="gp-row">
+          <td data-m="nome" className="gp-td" style={{ padding: "14px 20px" }}>
+            {i === 0 && <span role="status" aria-busy="true" className="gp-sr">Carregando orçamentos...</span>}
+            <Skeleton width={i % 2 ? "55%" : "70%"} height={15} />
+          </td>
+          <td data-m="cli" className="gp-td"><Skeleton width="65%" height={14} /></td>
+          <td data-m="data" className="gp-td"><Skeleton width={84} height={14} /></td>
+          <td data-m="st" className="gp-td"><Skeleton width={96} height={24} radius={999} /></td>
+          <td data-m="valor" className="gp-td"><Skeleton width={100} height={14} style={{ marginLeft: "auto" }} /></td>
+          <td data-m="acoes" className="gp-td" style={{ padding: "14px 20px" }}><Skeleton width={32} height={32} radius={8} style={{ marginLeft: "auto" }} /></td>
+        </tr>
+      ))}
     </>
   );
 }

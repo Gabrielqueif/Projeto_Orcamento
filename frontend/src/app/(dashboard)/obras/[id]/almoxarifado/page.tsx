@@ -32,6 +32,8 @@ import {
 } from "@/lib/api/almoxarifado";
 import { useToast } from "@/components/common/toast";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { CardListSkeleton, DetailHeaderSkeleton } from "@/components/common/skeletons";
 
 export default function AlmoxarifadoPage() {
   const { showToast } = useToast();
@@ -209,11 +211,7 @@ export default function AlmoxarifadoPage() {
   };
 
   if (loading) {
-    return (
-      <p role="status" className="gp-sub" style={{ padding: 48, textAlign: "center" }}>
-        Carregando informações do almoxarifado...
-      </p>
-    );
+    return <AlmoxarifadoSkeleton id={id} />;
   }
 
   if (!orcamento) {
@@ -803,6 +801,54 @@ export default function AlmoxarifadoPage() {
           </div>
         </div>
       )}
+    </>
+  );
+}
+
+/** Esqueleto do almoxarifado: cabeçalho, abas reais da obra e o cartão de estoque. */
+function AlmoxarifadoSkeleton({ id }: { id: string }) {
+  return (
+    <>
+      <SkeletonStatus texto="Carregando informações do almoxarifado...">
+        <div className="gp-only-d"><DetailHeaderSkeleton /></div>
+        <div className="gp-only-m">
+          <div className="gp-ph">
+            <Skeleton escuro width={110} height={14} />
+            <Skeleton escuro width="70%" height={26} />
+          </div>
+        </div>
+      </SkeletonStatus>
+      <ObraTabs id={id} atual="almoxarifado" />
+      <div aria-hidden="true" className="gp-only-d">
+        <div className="gp-card" style={{ overflow: "hidden" }}>
+          <div style={{ display: "flex", gap: 16, padding: "16px 16px 12px", borderBottom: "1px solid #E6EBF2" }}>
+            <Skeleton width={120} height={24} />
+            <Skeleton width={110} height={24} />
+          </div>
+          <div style={{ display: "flex", gap: 10, padding: "14px 22px" }}>
+            <Skeleton width={320} height={44} radius={12} />
+            <Skeleton width={200} height={44} radius={8} />
+            <Skeleton width={170} height={36} radius={8} style={{ marginLeft: "auto" }} />
+          </div>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 2fr 1fr 1fr 80px", gap: 16, alignItems: "center", padding: "16px 22px", borderTop: "1px solid #E6EBF2" }}>
+              <Skeleton width={i % 2 ? "70%" : "85%"} height={14} />
+              <Skeleton width="60%" height={14} />
+              <Skeleton width="50%" height={14} />
+              <Skeleton height={8} radius={4} />
+              <Skeleton width={84} height={24} radius={999} />
+              <Skeleton width="70%" height={14} />
+              <Skeleton width={32} height={32} radius={8} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div aria-hidden="true" className="gp-only-m">
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Skeleton height={48} radius={12} />
+          <CardListSkeleton quantidade={3} comBarra />
+        </div>
+      </div>
     </>
   );
 }

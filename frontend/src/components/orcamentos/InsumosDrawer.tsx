@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { X, Package, HardHat, Wrench, Spinner, PencilSimple, Trash } from "@phosphor-icons/react";
+import { X, Package, HardHat, Wrench, PencilSimple, Trash } from "@phosphor-icons/react";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
 import { getInsumos, updateInsumo, type OrcamentoItem, type OrcamentoItemInsumo } from "@/lib/api/orcamentos";
 
 interface InsumosDrawerProps {
@@ -111,10 +112,35 @@ export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate, onEdit, on
 
         <div className="gp-db">
           {loading ? (
-            <div role="status" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, height: 192, color: "#475569" }}>
-              <Spinner size={20} weight="bold" className="animate-spin" aria-hidden="true" />
-              Carregando insumos...
-            </div>
+            <SkeletonStatus texto="Carregando insumos...">
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div className="gp-card gp-pad gp-dark" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                  <Skeleton width="40%" height={12} escuro />
+                  <Skeleton width="30%" height={22} escuro />
+                </div>
+                {[3, 2].map((linhas, g) => (
+                  <div key={g} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <Skeleton width={110} height={24} radius={999} />
+                      <Skeleton width={90} height={14} style={{ marginLeft: "auto" }} />
+                    </div>
+                    <div className="gp-card gp-m-flat" style={{ overflow: "hidden", border: "1px solid #E6EBF2" }}>
+                      {Array.from({ length: linhas }, (_, i) => (
+                        <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 84px 104px 96px", gap: 12, alignItems: "center", padding: "14px 12px", borderTop: i ? "1px solid #E6EBF2" : undefined }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            <Skeleton width={i % 2 ? "70%" : "85%"} height={13} />
+                            <Skeleton width="45%" height={11} />
+                          </div>
+                          <Skeleton width="70%" height={13} style={{ justifySelf: "end" }} />
+                          <Skeleton width="75%" height={13} style={{ justifySelf: "end" }} />
+                          <Skeleton width="80%" height={13} style={{ justifySelf: "end" }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SkeletonStatus>
           ) : insumos.length === 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 192, textAlign: "center", color: "#475569" }}>
               <Package size={40} weight="bold" aria-hidden="true" style={{ marginBottom: 12, opacity: 0.4 }} />
