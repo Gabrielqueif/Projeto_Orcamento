@@ -381,7 +381,12 @@ class DiarioService:
         # Membro (mestre/supervisor): envia o diário e reabre o que ele mesmo enviou, enquanto não aprovado.
         if atual["status"] == "RASCUNHO" and novo_status == "ENVIADO":
             return
-        if atual["status"] == "ENVIADO" and novo_status == "RASCUNHO" and user_id and atual.get("enviado_por") == user_id:
+        if (
+            atual["status"] == "ENVIADO"
+            and novo_status == "RASCUNHO"
+            and user_id
+            and atual.get("enviado_por") == user_id
+        ):
             return
         raise AcessoNegadoError("Sem permissão para esta mudança de status do diário")
 
@@ -419,8 +424,12 @@ class DiarioService:
         try:
             obra = self.repository.buscar_obra(obra_id) or {}
             orcamento_id = obra.get("orcamento_id")
-            nome_obra = (self.repository.nomes_de_orcamentos([orcamento_id] if orcamento_id else []).get(orcamento_id)
-                         or obra.get("escopo") or obra.get("cliente") or "Obra")
+            nome_obra = (
+                self.repository.nomes_de_orcamentos([orcamento_id] if orcamento_id else []).get(orcamento_id)
+                or obra.get("escopo")
+                or obra.get("cliente")
+                or "Obra"
+            )
             autor = (self.repository.nome_do_usuario(autor_id) if autor_id else None) or "Um membro do canteiro"
             data = _como_data(diario["data"]).strftime("%d/%m/%Y")
             self.repository.criar_notificacao(
@@ -499,11 +508,7 @@ class DiarioService:
     def resumo(self, user_id: str, como_membro: bool = False) -> Dict[str, Any]:
         data_hoje = hoje()
         listar = self.repository.listar_obras_do_membro if como_membro else self.repository.listar_obras_do_usuario
-        obras = [
-            o
-            for o in listar(user_id)
-            if o.get("status") not in ("CONCLUIDO", "CONCLUIDA")
-        ]
+        obras = [o for o in listar(user_id) if o.get("status") not in ("CONCLUIDO", "CONCLUIDA")]
         diarios = self.repository.diarios_recentes(
             [o["id"] for o in obras], data_hoje - timedelta(days=JANELA_RESUMO_DIAS)
         )

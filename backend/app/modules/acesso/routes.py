@@ -71,9 +71,7 @@ async def listar_convites_endpoint(obra_id: str, service: AcessoService = Depend
 
 
 @router.delete("/convites/{convite_id}", summary="Revogar convite pendente")
-async def revogar_convite_endpoint(
-    obra_id: str, convite_id: str, service: AcessoService = Depends(get_acesso_service)
-):
+async def revogar_convite_endpoint(obra_id: str, convite_id: str, service: AcessoService = Depends(get_acesso_service)):
     service.revogar_convite(obra_id, convite_id)
     return {"message": "Convite revogado com sucesso"}
 
@@ -107,8 +105,12 @@ async def obras_do_canteiro_endpoint(
     return service.resumo(user_id=user["id"], como_membro=True)
 
 
-@router_obra.get("/cargos", response_model=List[CargoResponse], summary="Cargos do dono da obra, para o efetivo do diário")
-async def cargos_da_obra_endpoint(request: Request, supabase=Depends(get_supabase), user: dict = Depends(get_current_user)):
+@router_obra.get(
+    "/cargos", response_model=List[CargoResponse], summary="Cargos do dono da obra, para o efetivo do diário"
+)
+async def cargos_da_obra_endpoint(
+    request: Request, supabase=Depends(get_supabase), user: dict = Depends(get_current_user)
+):
     # Os cargos são do dono: o membro não tem os seus, e o diário valida o efetivo contra os do dono.
     dono = getattr(request.state, "dono_da_obra", None) or user["id"]
     return CargoRepository(supabase).listar(str(dono))

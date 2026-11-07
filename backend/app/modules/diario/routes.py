@@ -29,6 +29,7 @@ router = APIRouter(
     redirect_slashes=False,
 )
 
+
 def _papel(request: Request) -> str:
     return getattr(request.state, "papel_na_obra", None) or "DONO"
 

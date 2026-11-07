@@ -59,7 +59,9 @@ class AcessoRepository:
         return resultado.data[0] if resultado.data else None
 
     def liberar_convite(self, convite_id: str) -> None:
-        self.supabase.table(TABELA_CONVITES).update({"usado_em": None, "usado_por": None}).eq("id", convite_id).execute()
+        self.supabase.table(TABELA_CONVITES).update({"usado_em": None, "usado_por": None}).eq(
+            "id", convite_id
+        ).execute()
 
     # --- Membros -------------------------------------------------------------
 
@@ -86,7 +88,5 @@ class AcessoRepository:
         return {p["id"]: p for p in (resultado.data or [])}
 
     def remover_membro(self, obra_id: str, user_id: str) -> bool:
-        resultado = (
-            self.supabase.table(TABELA_MEMBROS).delete().eq("obra_id", obra_id).eq("user_id", user_id).execute()
-        )
+        resultado = self.supabase.table(TABELA_MEMBROS).delete().eq("obra_id", obra_id).eq("user_id", user_id).execute()
         return bool(resultado.data)
