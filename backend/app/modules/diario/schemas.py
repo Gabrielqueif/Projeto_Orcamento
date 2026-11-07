@@ -112,11 +112,18 @@ class DiarioResponse(BaseModel):
     efetivo: List[EfetivoDiario] = []
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    criado_por: Optional[str] = None
+    enviado_por: Optional[str] = None
+    enviado_em: Optional[datetime] = None
+    aprovado_por: Optional[str] = None
+    aprovado_em: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class ObraDiarioInfo(BaseModel):
+    # Papel de quem consulta (DONO, MESTRE ou SUPERVISOR): a tela esconde o que o backend recusaria.
+    papel: Optional[str] = None
     obra_id: str
     nome: str
     local: Optional[str] = None

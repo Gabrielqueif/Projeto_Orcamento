@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
 
 from app.dependencies import get_supabase
 from app.modules.diario.repositories import DiarioRepository
@@ -17,7 +17,7 @@ from app.modules.diario.services import DiarioService
 from app.modules.equipe.repositories import CargoRepository
 from app.modules.medicao.repositories import MedicaoRepository
 from app.modules.medicao.services import MedicaoService
-from core.ownership import enforce_ownership
+from core.ownership import enforce_obra_access
 from core.security import get_current_user
 
 MAX_FOTO_MB = 5
@@ -25,9 +25,18 @@ MAX_FOTO_MB = 5
 router = APIRouter(
     prefix="/obras/{obra_id}/diario",
     tags=["Diário de Obra"],
-    dependencies=[Depends(enforce_ownership)],
+    dependencies=[Depends(enforce_obra_access)],
     redirect_slashes=False,
 )
+
+def _papel(request: Request) -> str:
+    return getattr(request.state, "papel_na_obra", None) or "DONO"
+
+
+def _dono_da_obra(request: Request, user: dict) -> str:
+    """Dono da obra (os cargos do efetivo são dele, mesmo quando quem grava é um membro)."""
+    return getattr(request.state, "dono_da_obra", None) or user["id"]
+
 
 router_resumo = APIRouter(
     prefix="/diario", tags=["Diário de Obra"], dependencies=[Depends(get_current_user)], redirect_slashes=False
@@ -47,21 +56,27 @@ async def resumo_endpoint(service: DiarioService = Depends(get_diario_service), 
 
 @router.get("", response_model=DiarioListagem, summary="Listar diários da obra (mais recentes primeiro)")
 async def listar_endpoint(
+    request: Request,
     obra_id: str,
     limite: int = Query(30, ge=1, le=100),
     service: DiarioService = Depends(get_diario_service),
 ):
-    return service.listar(obra_id, limite)
+    resultado = service.listar(obra_id, limite)
+    resultado["obra"]["papel"] = _papel(request)
+    return resultado
 
 
 @router.post("", response_model=DiarioResponse, status_code=status.HTTP_201_CREATED, summary="Criar diário do dia")
 async def criar_endpoint(
+    request: Request,
     obra_id: str,
     dados: DiarioCreate,
     service: DiarioService = Depends(get_diario_service),
     user: dict = Depends(get_current_user),
 ):
-    return service.criar(obra_id, dados, user_id=user["id"])
+    return service.criar(
+        obra_id, dados, user_id=_dono_da_obra(request, user), autor_id=user["id"], papel=_papel(request)
+    )
 
 
 @router.get("/{diario_id}", response_model=DiarioResponse, summary="Buscar diário")
@@ -71,25 +86,40 @@ async def obter_endpoint(obra_id: str, diario_id: str, service: DiarioService = 
 
 @router.put("/{diario_id}", response_model=DiarioResponse, summary="Atualizar diário")
 async def atualizar_endpoint(
+    request: Request,
     obra_id: str,
     diario_id: str,
     dados: DiarioUpdate,
     service: DiarioService = Depends(get_diario_service),
     user: dict = Depends(get_current_user),
 ):
-    return service.atualizar(obra_id, diario_id, dados, user_id=user["id"])
+    return service.atualizar(obra_id, diario_id, dados, user_id=_dono_da_obra(request, user))
 
 
 @router.patch("/{diario_id}/status", response_model=DiarioResponse, summary="Enviar, aprovar ou reabrir diário")
 async def alterar_status_endpoint(
-    obra_id: str, diario_id: str, dados: DiarioStatusUpdate, service: DiarioService = Depends(get_diario_service)
+    request: Request,
+    obra_id: str,
+    diario_id: str,
+    dados: DiarioStatusUpdate,
+    service: DiarioService = Depends(get_diario_service),
+    user: dict = Depends(get_current_user),
 ):
-    return service.alterar_status(obra_id, diario_id, dados.status)
+    return service.alterar_status(
+        obra_id,
+        diario_id,
+        dados.status,
+        user_id=user["id"],
+        papel=_papel(request),
+        dono_id=_dono_da_obra(request, user),
+    )
 
 
 @router.delete("/{diario_id}", summary="Excluir diário")
-async def deletar_endpoint(obra_id: str, diario_id: str, service: DiarioService = Depends(get_diario_service)):
-    service.deletar(obra_id, diario_id)
+async def deletar_endpoint(
+    request: Request, obra_id: str, diario_id: str, service: DiarioService = Depends(get_diario_service)
+):
+    service.deletar(obra_id, diario_id, papel=_papel(request))
     return {"message": "Diário excluído com sucesso"}
 
 

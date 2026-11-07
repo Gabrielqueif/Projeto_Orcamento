@@ -9,6 +9,8 @@ import {
   ChartBar,
   Folder,
   SquaresFour,
+  Bell,
+  Toolbox,
 } from "@phosphor-icons/react";
 
 export type NavLink = { href: string; icon: typeof House; label: string };
@@ -51,6 +53,17 @@ export const ABAS_MOBILE: NavLink[] = [
   { href: "/mais", icon: SquaresFour, label: "Mais" },
 ];
 
+/** Abas do perfil "só membro" (mestre/supervisor): canteiro, notificações e mais. */
+export const ABAS_MEMBRO: NavLink[] = [
+  { href: "/canteiro", icon: Toolbox, label: "Canteiro" },
+  { href: "/notificacoes", icon: Bell, label: "Avisos" },
+  { href: "/mais", icon: SquaresFour, label: "Mais" },
+];
+
+export const GRUPOS_SIDEBAR_MEMBRO: { titulo: string; links: NavLink[] }[] = [
+  { titulo: "Operação", links: [{ href: "/canteiro", icon: Toolbox, label: "Canteiro" }] },
+];
+
 /** Atalhos da seção "Gestão" da tela Mais. */
 export function atalhosGestao(isAdmin: boolean): NavLink[] {
   return [
@@ -67,9 +80,9 @@ export function linkAtivo(pathname: string | null, href: string): boolean {
 }
 
 /** Aba da barra inferior que fica ativa: rotas fora das 4 abas principais caem em "Mais". */
-export function abaAtiva(pathname: string | null): string {
+export function abaAtiva(pathname: string | null, abas: NavLink[] = ABAS_MOBILE): string {
   // O editor de prazos é aberto a partir da obra.
-  if (linkAtivo(pathname, "/prazo")) return "/obras";
-  const principal = ABAS_MOBILE.slice(0, 4).find((a) => linkAtivo(pathname, a.href));
+  if (abas === ABAS_MOBILE && linkAtivo(pathname, "/prazo")) return "/obras";
+  const principal = abas.slice(0, -1).find((a) => linkAtivo(pathname, a.href));
   return principal ? principal.href : "/mais";
 }

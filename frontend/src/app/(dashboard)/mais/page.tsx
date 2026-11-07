@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { atalhosGestao } from "@/components/layout/nav";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useUserRole } from "@/hooks/use-user-role";
+import { useSomenteMembro } from "@/contexts/canteiro-context";
 
 // Fundo e cor do ícone de cada atalho, na ordem de atalhosGestao (artefato: Mais.dc.html).
 const TONS = [
@@ -20,7 +21,7 @@ const TONS = [
 export default function MaisPage() {
   const { role } = useUserRole();
   const { nome, cargo, iniciais } = useCurrentUser();
-  const atalhos = atalhosGestao(role === "admin");
+  const atalhos = useSomenteMembro() ? [] : atalhosGestao(role === "admin");
 
   return (
     <>
@@ -36,7 +37,7 @@ export default function MaisPage() {
         </span>
       </div>
 
-      <nav aria-labelledby="mais-gestao" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {atalhos.length > 0 && <nav aria-labelledby="mais-gestao" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <h2 id="mais-gestao" style={{ margin: 0, padding: "0 6px", fontSize: 13, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: "#475569" }}>
           Gestão
         </h2>
@@ -56,7 +57,7 @@ export default function MaisPage() {
             </li>
           ))}
         </ul>
-      </nav>
+      </nav>}
 
       <nav aria-labelledby="mais-conta" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <h2 id="mais-conta" style={{ margin: 0, padding: "0 6px", fontSize: 13, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: "#475569" }}>

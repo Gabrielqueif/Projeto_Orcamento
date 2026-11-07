@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ABAS_MOBILE, abaAtiva } from "./nav";
+import { useSomenteMembro } from "@/contexts/canteiro-context";
+import { ABAS_MEMBRO, ABAS_MOBILE, abaAtiva } from "./nav";
 
 /** Barra de navegação inferior do mobile (escondida a partir de 1024px pelo CSS). */
 export function BottomNav() {
-  const ativa = abaAtiva(usePathname());
+  const abas = useSomenteMembro() ? ABAS_MEMBRO : ABAS_MOBILE;
+  const ativa = abaAtiva(usePathname(), abas);
 
   return (
     <nav aria-label="Navegação principal" className="gp-bn">
-      {ABAS_MOBILE.map((aba) => {
+      {abas.map((aba) => {
         const atual = aba.href === ativa;
         return (
           <Link key={aba.href} href={aba.href} aria-current={atual ? "page" : undefined}>

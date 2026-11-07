@@ -3,7 +3,7 @@ import type { SeveridadeRisco, TipoRisco } from "./dashboard";
 
 export interface Notificacao {
   chave: string;
-  tipo: TipoRisco;
+  tipo: TipoRisco | "DIARIO_ENVIADO";
   severidade: SeveridadeRisco;
   titulo: string;
   descricao: string;
