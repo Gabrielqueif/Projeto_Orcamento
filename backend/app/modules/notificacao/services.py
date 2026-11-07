@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional
 from app.modules.dashboard.services import DashboardService
 from app.modules.notificacao.repositories import NotificacaoRepository
 
-
 PREFIXO_EVENTO = "EVENTO:"
 
 
@@ -62,7 +61,7 @@ class NotificacaoService:
             unicas = list(dict.fromkeys(chaves))
             # Chaves que não são riscos ativos do usuário são ignoradas.
             alvo = [c for c in unicas if c in conhecidas]
-            ids_eventos = [c[len(PREFIXO_EVENTO):] for c in unicas if c.startswith(PREFIXO_EVENTO)]
+            ids_eventos = [c[len(PREFIXO_EVENTO) :] for c in unicas if c.startswith(PREFIXO_EVENTO)]
             if ids_eventos:
                 # Filtrado por user_id no repositório: ids de outros usuários não são tocados.
                 self.repository.marcar_eventos(user_id, ids_eventos)

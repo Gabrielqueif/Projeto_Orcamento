@@ -49,11 +49,7 @@ def _obra_com_dono(supabase: Client, obra_id: str):
 def _papel_do_membro(supabase: Client, obra_id: str, user_id: str):
     try:
         resultado = (
-            supabase.table("obra_membros")
-            .select("papel")
-            .eq("obra_id", obra_id)
-            .eq("user_id", user_id)
-            .execute()
+            supabase.table("obra_membros").select("papel").eq("obra_id", obra_id).eq("user_id", user_id).execute()
         )
     except Exception as e:
         logger.warning(f"Falha ao consultar membro da obra {obra_id}: {e}")

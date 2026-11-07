@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.modules.acesso import router as acesso_router
-from app.modules.acesso import router_canteiro, router_convites, router_obra as acesso_obra_router
+from app.modules.acesso import router_canteiro, router_convites
+from app.modules.acesso import router_obra as acesso_obra_router
 from app.modules.almoxarifado import router as almoxarifado_router
 from app.modules.base_propria import router as base_propria_router
 from app.modules.busca import router as busca_router
