@@ -8,7 +8,7 @@ from app.modules.diario import services as diario_services
 from app.modules.diario.routes import get_diario_service
 from app.modules.diario.schemas import DiarioCreate, DiarioUpdate
 from app.modules.diario.services import DiarioService, detectar_imagem, formatar_endereco
-from core.exceptions import NaoEncontradoError
+from core.exceptions import AcessoNegadoError, NaoEncontradoError
 
 OBRA = "obra-real"
 DIARIO = "diario-1"
@@ -424,3 +424,80 @@ def test_rota_resumo(api, repo):
     r = api.get("/diario/resumo")
     assert r.status_code == 200
     assert r.json()["total_obras"] == 0
+
+
+# --- Fase 2: autoria, permissões por papel e notificação ---------------------
+
+MEMBRO = "membro-1"
+DONO = "dono-1"
+
+
+def test_envio_grava_autor_e_notifica_o_dono(service, repo):
+    repo.nome_do_usuario.return_value = "Zé Mestre"
+    repo.buscar_obra.return_value = {"id": OBRA, "orcamento_id": None, "escopo": "Casa X"}
+    repo.nomes_de_orcamentos.return_value = {}
+
+    service.alterar_status(OBRA, DIARIO, "ENVIADO", user_id=MEMBRO, papel="MESTRE", dono_id=DONO)
+
+    dados = repo.atualizar.call_args.args[2]
+    assert dados["enviado_por"] == MEMBRO and dados["enviado_em"]
+    notif = repo.criar_notificacao.call_args.args[0]
+    assert notif["user_id"] == DONO and notif["tipo"] == "DIARIO_ENVIADO"
+    assert "Zé Mestre" in notif["descricao"] and "21/10/2026" in notif["descricao"]
+
+
+def test_dono_enviando_o_proprio_diario_nao_gera_notificacao(service, repo):
+    service.alterar_status(OBRA, DIARIO, "ENVIADO", user_id=DONO, papel="DONO", dono_id=DONO)
+    repo.criar_notificacao.assert_not_called()
+
+
+def test_falha_na_notificacao_nao_desfaz_o_envio(service, repo):
+    repo.criar_notificacao.side_effect = RuntimeError("db")
+    r = service.alterar_status(OBRA, DIARIO, "ENVIADO", user_id=MEMBRO, papel="MESTRE", dono_id=DONO)
+    assert r["status"] == "ENVIADO"
+
+
+@pytest.mark.parametrize("de,para", [("ENVIADO", "APROVADO"), ("APROVADO", "ENVIADO")])
+def test_membro_nao_aprova_nem_reabre_aprovado(service, repo, de, para):
+    repo.buscar.return_value = _diario(status=de, enviado_por=MEMBRO)
+    with pytest.raises(AcessoNegadoError):
+        service.alterar_status(OBRA, DIARIO, para, user_id=MEMBRO, papel="MESTRE")
+    repo.atualizar.assert_not_called()
+
+
+def test_membro_reabre_so_o_proprio_envio(service, repo):
+    repo.buscar.return_value = _diario(status="ENVIADO", enviado_por="outro-membro")
+    with pytest.raises(AcessoNegadoError):
+        service.alterar_status(OBRA, DIARIO, "RASCUNHO", user_id=MEMBRO, papel="MESTRE")
+
+    repo.buscar.return_value = _diario(status="ENVIADO", enviado_por=MEMBRO)
+    r = service.alterar_status(OBRA, DIARIO, "RASCUNHO", user_id=MEMBRO, papel="MESTRE")
+    assert r["status"] == "RASCUNHO"
+    assert repo.atualizar.call_args.args[2]["enviado_por"] is None
+
+
+def test_dono_aprova_e_grava_autor(service, repo):
+    repo.buscar.return_value = _diario(status="ENVIADO")
+    service.alterar_status(OBRA, DIARIO, "APROVADO", user_id=DONO, papel="DONO")
+    dados = repo.atualizar.call_args.args[2]
+    assert dados["aprovado_por"] == DONO and dados["aprovado_em"]
+
+
+def test_membro_nao_exclui_diario(service, repo):
+    with pytest.raises(AcessoNegadoError):
+        service.deletar(OBRA, DIARIO, papel="SUPERVISOR")
+    repo.deletar.assert_not_called()
+
+
+def test_criar_por_membro_grava_autor_e_preenche_responsavel(service, repo):
+    repo.nome_do_usuario.return_value = "Zé Mestre"
+    schema = DiarioCreate(data=date(2026, 10, 21), titulo="T", atividades="A", clima="SOL")
+    service.criar(OBRA, schema, user_id=DONO, autor_id=MEMBRO, papel="MESTRE")
+    dados = repo.criar.call_args.args[1]
+    assert dados["criado_por"] == MEMBRO and dados["responsavel"] == "Zé Mestre"
+
+
+def test_criar_por_dono_mantem_responsavel_vazio(service, repo):
+    schema = DiarioCreate(data=date(2026, 10, 21), titulo="T", atividades="A", clima="SOL")
+    service.criar(OBRA, schema, user_id=DONO)
+    assert not repo.criar.call_args.args[1].get("responsavel")

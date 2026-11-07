@@ -3,6 +3,7 @@ import { TopHeader } from "@/components/layout/TopHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { ErrorBoundary } from "@/components/common/error-boundary";
 import { ToastProvider } from "@/components/common/toast";
+import { CanteiroProvider } from "@/contexts/canteiro-context";
 
 export default function DashboardLayout({
   children,
@@ -11,6 +12,7 @@ export default function DashboardLayout({
 }) {
   return (
     <ToastProvider>
+      <CanteiroProvider>
       <div className="flex min-h-screen bg-[#F4F6FA] font-['Manrope'] text-[#001b3d] overflow-x-hidden">
         <Sidebar />
         <div className="lg:ml-[256px] flex-1 flex flex-col min-h-screen min-w-0">
@@ -23,6 +25,7 @@ export default function DashboardLayout({
         </div>
         <BottomNav />
       </div>
+      </CanteiroProvider>
     </ToastProvider>
   );
 }

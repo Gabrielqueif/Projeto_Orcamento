@@ -20,7 +20,7 @@ sys.modules["supabase"] = mock_supabase_module
 
 from app.dependencies import get_supabase  # noqa: E402
 from app.main import app  # noqa: E402  (import after sys.path setup)
-from core.ownership import enforce_ownership  # noqa: E402
+from core.ownership import enforce_obra_access, enforce_ownership  # noqa: E402
 from core.security import get_current_user  # noqa: E402
 
 # ---------------------------------------------------------------------------
@@ -56,6 +56,7 @@ def client(mock_supabase):
     # Os testes de rota usam supabase mockado; a checagem de dono tem testes próprios
     # (tests/test_ownership.py), que não usam esta fixture.
     app.dependency_overrides[enforce_ownership] = override_get_current_user
+    app.dependency_overrides[enforce_obra_access] = override_get_current_user
 
     with TestClient(app) as c:
         yield c

@@ -6,18 +6,19 @@ import { BookOpen, Clock, Cube, Money } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
 import { ListItemSkeleton } from "@/components/common/skeletons";
-import type { SeveridadeRisco, TipoRisco } from "@/lib/api/dashboard";
+import type { SeveridadeRisco } from "@/lib/api/dashboard";
 import {
   getNotificacoes,
   marcarNotificacoesLidas,
   type Notificacao,
 } from "@/lib/api/notificacoes";
 
-const ICONES_RISCO: Record<TipoRisco, ReactNode> = {
+const ICONES_RISCO: Record<Notificacao["tipo"], ReactNode> = {
   ATRASO: <Clock weight="bold" />,
   ORCAMENTO: <Money weight="bold" />,
   ESTOQUE: <Cube weight="bold" />,
   DIARIO: <BookOpen weight="bold" />,
+  DIARIO_ENVIADO: <BookOpen weight="bold" />,
 };
 
 const GRUPOS: { severidade: SeveridadeRisco; titulo: string }[] = [

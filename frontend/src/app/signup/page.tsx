@@ -3,7 +3,7 @@
 import { signup } from '@/app/auth/actions'
 import AuthShell from '@/components/auth/AuthShell'
 import Link from 'next/link'
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 
 const tipos = [
     { value: 'individual', label: 'Pessoa física' },
@@ -14,6 +14,9 @@ const passos = ['Crie a conta', 'Monte o primeiro orçamento com SINAPI', 'Trans
 export default function SignupPage() {
     const [state, formAction, pending] = useActionState(signup, {})
     const [accountType, setAccountType] = useState('individual')
+    // Destino após criar a conta (ex.: /convite/<token>); lido no cliente para não exigir Suspense.
+    const [next, setNext] = useState('')
+    useEffect(() => setNext(new URLSearchParams(window.location.search).get('next') ?? ''), [])
     const [senha, setSenha] = useState('')
     const regras = [
         { ok: senha.length >= 8, texto: 'Mínimo de 8 caracteres' },
@@ -51,6 +54,7 @@ export default function SignupPage() {
             )}
 
             <form action={formAction} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {next && <input type="hidden" name="next" value={next} />}
                 <div className="gp-fld">
                     <span className="gp-lb" id="tc">Tipo de conta</span>
                     <div role="radiogroup" aria-labelledby="tc" className="gp-seg">
@@ -113,7 +117,7 @@ export default function SignupPage() {
                     {pending ? 'Cadastrando...' : 'Criar conta'}
                 </button>
                 <p style={{ margin: 0, textAlign: 'center', fontSize: 15, color: '#475569' }}>
-                    Já tem uma conta? <Link href="/login" style={{ fontWeight: 800, color: '#007a85' }}>Fazer login</Link>
+                    Já tem uma conta? <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} style={{ fontWeight: 800, color: '#007a85' }}>Fazer login</Link>
                 </p>
             </form>
         </AuthShell>
