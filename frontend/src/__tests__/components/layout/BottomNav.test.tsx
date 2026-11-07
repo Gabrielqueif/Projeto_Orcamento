@@ -50,6 +50,7 @@ it("o editor de prazos fica na aba Obras", () => {
 
 describe("perfil só membro", () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     mockPathname = "/canteiro";
     mockCanteiro.mockResolvedValue({ total_obras: 1 });
     mockObras.mockResolvedValue([]);
