@@ -13,7 +13,12 @@ logger = logging.getLogger("projeto_orcamento")
 
 OBRAS_ENCERRADAS = ("CONCLUIDO", "CONCLUIDA")
 JANELA_DIARIO_DIAS = 60
-SEMANAS = 4
+# granularidade -> (pontos, dias entre pontos, formato do rótulo)
+GRANULARIDADES = {
+    "diaria": (7, 1, "%d/%m"),
+    "semanal": (4, 7, "%d/%m"),
+    "mensal": (6, 30, "%m/%Y"),
+}
 MAX_SERIES = 4
 MAX_RISCOS = 8
 MAX_FEED = 6
@@ -27,8 +32,9 @@ def _pct(valor: float) -> str:
     return f"{valor:.1f}".replace(".", ",")
 
 
-def _datas_semana(data_hoje: date) -> List[date]:
-    return [data_hoje - timedelta(days=7 * i) for i in range(SEMANAS - 1, -1, -1)]
+def _datas_serie(data_hoje: date, granularidade: str = "semanal") -> List[date]:
+    pontos, passo, _ = GRANULARIDADES[granularidade]
+    return [data_hoje - timedelta(days=passo * i) for i in range(pontos - 1, -1, -1)]
 
 
 class DashboardService:
@@ -138,6 +144,7 @@ class DashboardService:
                 "progressos": [],
                 "orcado_total": 0.0,
                 "realizado_total": 0.0,
+                "planejado_total": 0.0,
                 "riscos": [],
                 "series": [],
                 "feed": [],
@@ -155,6 +162,7 @@ class DashboardService:
         progressos: List[int] = []
         orcado_total = 0.0
         realizado_total = 0.0
+        planejado_total = 0.0
         riscos: List[Dict[str, Any]] = []
         series: List[Dict[str, Any]] = []
         nomes: Dict[str, str] = {}
@@ -177,6 +185,8 @@ class DashboardService:
             financeiro = self.financeiro.obter_consolidado_financeiro(obra["id"])
             orcado_total += financeiro["total_orcado"]
             realizado_total += financeiro["total_realizado"]
+            # Quanto o cronograma previa ter gasto até hoje (orçado × avanço planejado).
+            planejado_total += financeiro["total_orcado"] * (curva["planejado_hoje"] or 0.0) / 100.0
 
             inicio = obra.get("data_inicio_real")
             situacao_diario, _ = situacao_do_diario(
@@ -227,6 +237,7 @@ class DashboardService:
             "progressos": progressos,
             "orcado_total": orcado_total,
             "realizado_total": realizado_total,
+            "planejado_total": planejado_total,
             "riscos": riscos,
             "series": series,
             "feed": feed,
@@ -238,12 +249,15 @@ class DashboardService:
         Não corta em MAX_RISCOS e não regrava o status das obras (isso só acontece em `obter`).
         """
         data_hoje = hoje()
-        return self._varrer(user_id, data_hoje, _datas_semana(data_hoje), sincronizar=False)["riscos"]
+        return self._varrer(user_id, data_hoje, _datas_serie(data_hoje), sincronizar=False)["riscos"]
 
-    def obter(self, user_id: str) -> Dict[str, Any]:
+    def obter(self, user_id: str, granularidade: str = "semanal") -> Dict[str, Any]:
+        if granularidade not in GRANULARIDADES:
+            raise ValueError(f"Granularidade inválida: {granularidade}")
         data_hoje = hoje()
-        datas_semana = _datas_semana(data_hoje)
-        semanas = [d.strftime("%d/%m") for d in datas_semana]
+        datas_semana = _datas_serie(data_hoje, granularidade)
+        semanas = [d.strftime(GRANULARIDADES[granularidade][2]) for d in datas_semana]
+        em_elaboracao = int(self.repository.contar_orcamentos_em_elaboracao(user_id) or 0)
 
         varredura = self._varrer(user_id, data_hoje, datas_semana, sincronizar=True)
         obras = varredura["obras"]
@@ -256,6 +270,10 @@ class DashboardService:
                 "disponivel": 0.0,
                 "utilizacao_orcamento": 0.0,
                 "alertas_criticos": 0,
+                "orcamentos_em_elaboracao": em_elaboracao,
+                "gasto_previsto": 0.0,
+                "gasto_planejado": 0.0,
+                "granularidade": granularidade,
                 "riscos": [],
                 "semanas": semanas,
                 "series": [],
@@ -275,6 +293,10 @@ class DashboardService:
             "disponivel": round(max(orcado_total - realizado_total, 0.0), 2),
             "utilizacao_orcamento": round(100.0 * realizado_total / orcado_total, 1) if orcado_total > 0 else 0.0,
             "alertas_criticos": sum(1 for r in riscos if r["severidade"] == "critical"),
+            "orcamentos_em_elaboracao": em_elaboracao,
+            "gasto_previsto": round(orcado_total, 2),
+            "gasto_planejado": round(varredura["planejado_total"], 2),
+            "granularidade": granularidade,
             "riscos": [{k: v for k, v in r.items() if k != "obra_id"} for r in riscos[:MAX_RISCOS]],
             "semanas": semanas,
             "series": varredura["series"],

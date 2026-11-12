@@ -2,11 +2,11 @@
  * O painel sem nenhuma obra deve aparecer zerado, com todos os cartões e blocos,
  * e não como um convite para criar obra.
  */
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 // O jsdom não implementa canvas; os gráficos não fazem parte do que se testa aqui.
 jest.mock("react-chartjs-2", () => ({
-  Bar: () => <div data-testid="grafico-barras" />,
+  Line: () => <div data-testid="grafico-linhas" />,
   Doughnut: () => <div data-testid="grafico-medidor" />,
 }));
 
@@ -37,6 +37,10 @@ const painelZerado: Dashboard = {
   disponivel: 0,
   utilizacao_orcamento: 0,
   alertas_criticos: 0,
+  orcamentos_em_elaboracao: 0,
+  gasto_previsto: 0,
+  gasto_planejado: 0,
+  granularidade: "semanal",
   riscos: [],
   semanas: ["01/10", "08/10", "15/10", "22/10"],
   series: [],
@@ -56,12 +60,12 @@ describe("painel sem obras", () => {
 
     await waitFor(() => expect(screen.getByText("Obras Ativas")).toBeInTheDocument());
     expect(screen.getByText("Progresso Médio")).toBeInTheDocument();
-    expect(screen.getByText("Orçamento Utilizado")).toBeInTheDocument();
-    expect(screen.getByText("Riscos Críticos")).toBeInTheDocument();
-    // Obras ativas e riscos críticos (00) e os dois percentuais (0%) nos cartões do desktop
+    expect(screen.getByText("Orçamentos em elaboração")).toBeInTheDocument();
+    expect(screen.getByText("Gasto planejado até hoje")).toBeInTheDocument();
+    // Orçamentos em elaboração e obras ativas (00) e o progresso médio (0%) nos cartões do desktop
     const indicadores = within(screen.getByRole("region", { name: "Indicadores" }));
     expect(indicadores.getAllByText("00")).toHaveLength(2);
-    expect(indicadores.getAllByText("0%")).toHaveLength(2);
+    expect(indicadores.getAllByText("0%")).toHaveLength(1);
   });
 
   it("no cartão único do mobile mostra obras ativas, verba usada e riscos críticos", async () => {
@@ -73,6 +77,17 @@ describe("painel sem obras", () => {
     expect(cartao.getByText("Verba usada").nextSibling).toHaveTextContent("0%");
     expect(cartao.getByText("Riscos críticos").nextSibling).toHaveTextContent("00");
     expect(screen.getByRole("img", { name: "Progresso médio das obras ativas: 0%" })).toBeInTheDocument();
+  });
+
+  it("troca a granularidade do gráfico e recarrega o painel", async () => {
+    mockGetDashboard.mockResolvedValue(painelZerado);
+    render(<DashboardPage />);
+    await waitFor(() => expect(screen.getByText("Progresso")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: "Mensal" }));
+
+    await waitFor(() => expect(mockGetDashboard).toHaveBeenLastCalledWith("mensal"));
+    expect(screen.getByRole("button", { name: "Mensal" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("não convida a criar obra", async () => {
@@ -88,7 +103,7 @@ describe("painel sem obras", () => {
     mockGetDashboard.mockResolvedValue(painelZerado);
     render(<DashboardPage />);
 
-    await waitFor(() => expect(screen.getByText("Progresso semanal")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Progresso")).toBeInTheDocument());
     expect(screen.getByText("Nenhuma obra em andamento.")).toBeInTheDocument();
     expect(screen.getByTestId("grafico-medidor")).toBeInTheDocument();
     expect(screen.getByText(/nenhum risco identificado/i)).toBeInTheDocument();

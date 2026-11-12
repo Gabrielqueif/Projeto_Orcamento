@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app.dependencies import get_supabase
 from app.modules.dashboard.repositories import DashboardRepository
-from app.modules.dashboard.schemas import DashboardResponse
+from app.modules.dashboard.schemas import DashboardResponse, Granularidade
 from app.modules.dashboard.services import DashboardService
 from app.modules.financeiro.repositories import FinanceiroRepository
 from app.modules.financeiro.services import FinanceiroService
@@ -24,6 +24,8 @@ def get_dashboard_service(supabase=Depends(get_supabase)) -> DashboardService:
 
 @router.get("", response_model=DashboardResponse, summary="Painel executivo das obras ativas do usuário")
 async def obter_dashboard_endpoint(
-    service: DashboardService = Depends(get_dashboard_service), user: dict = Depends(get_current_user)
+    granularidade: Granularidade = "semanal",
+    service: DashboardService = Depends(get_dashboard_service),
+    user: dict = Depends(get_current_user),
 ):
-    return service.obter(user_id=user["id"])
+    return service.obter(user_id=user["id"], granularidade=granularidade)

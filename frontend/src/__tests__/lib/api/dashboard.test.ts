@@ -22,6 +22,13 @@ describe("getDashboard", () => {
     expect(mockFetch).toHaveBeenCalledWith("/dashboard");
   });
 
+  it("envia a granularidade quando não é a semanal", async () => {
+    mockFetch.mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response);
+
+    await getDashboard("diaria");
+    expect(mockFetch).toHaveBeenCalledWith("/dashboard?granularidade=diaria");
+  });
+
   it("repassa a mensagem de erro do backend", async () => {
     mockFetch.mockResolvedValue({
       ok: false,
