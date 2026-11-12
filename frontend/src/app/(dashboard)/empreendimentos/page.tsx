@@ -97,7 +97,7 @@ export default function OrcamentosPage() {
   };
 
   const handleRowClick = (id: string) => {
-    router.push(`/orcamentos/${id}`);
+    router.push(`/empreendimentos/${id}`);
   };
 
   const formatCurrency = (value: number | null | undefined) => {
@@ -124,9 +124,9 @@ export default function OrcamentosPage() {
   return (
     <>
       <PageHeader
-        crumb={<>Comercial / <span aria-current="page" style={{ color: "#001b3d" }}>Orçamentos</span></>}
+        crumb={<>Comercial / <span aria-current="page" style={{ color: "#001b3d" }}>Empreendimentos</span></>}
         eyebrow="Comercial"
-        title="Orçamentos"
+        title="Empreendimentos"
         subtitle="Propostas com SINAPI, SEINFRA e as suas bases próprias."
         lift
         actions={
@@ -135,9 +135,9 @@ export default function OrcamentosPage() {
               <DownloadSimple size={18} weight="bold" aria-hidden="true" />
               Exportar lista
             </button>
-            <button type="button" onClick={() => router.push("/orcamentos/novo")} className="gp-btn gp-bp gp-only-d">
+            <button type="button" onClick={() => router.push("/empreendimentos/novo")} className="gp-btn gp-bp gp-only-d">
               <Plus size={18} weight="bold" aria-hidden="true" />
-              Novo orçamento
+              Novo empreendimento
             </button>
           </>
         }
@@ -238,7 +238,7 @@ export default function OrcamentosPage() {
         <p className="gp-only-m gp-4a-cont" aria-live="polite">{contagem}</p>
         <div className="gp-4a-tw" style={{ overflowX: "auto" }}>
           <table className="gp-4a-ct gp-4a-ct-orc" style={{ width: "100%", minWidth: 900, borderCollapse: "collapse", fontSize: 14 }}>
-            <caption className="gp-sr">Orçamentos, {contagem}</caption>
+            <caption className="gp-sr">Empreendimentos, {contagem}</caption>
             <thead>
               <tr>
                 <th scope="col" className="gp-th" style={{ padding: "12px 20px" }}>Orçamento</th>
@@ -267,7 +267,7 @@ export default function OrcamentosPage() {
                     <tr key={o.id} onClick={() => handleRowClick(o.id)} className="gp-row" style={{ cursor: "pointer" }}>
                       <th scope="row" data-m="nome" className="gp-td" style={{ padding: "14px 20px", textAlign: "left", fontWeight: 400 }}>
                         <Link
-                          href={`/orcamentos/${o.id}`}
+                          href={`/empreendimentos/${o.id}`}
                           onClick={(e) => e.stopPropagation()}
                           style={{ display: "block", fontSize: 15, fontWeight: 800, color: "#001b3d", textDecoration: "none" }}
                         >
@@ -316,7 +316,7 @@ export default function OrcamentosPage() {
         </div>
       </section>
       {/* No fim para não ser o vizinho do cabeçalho (o `lift` sobe o elemento seguinte) */}
-      <Fab href="/orcamentos/novo" label="Novo orçamento" />
+      <Fab href="/empreendimentos/novo" label="Novo empreendimento" />
     </>
   );
 }

@@ -231,9 +231,9 @@ export default function ObraDetalhePage() {
   return (
     <>
       <PageHeader
-        back="/obras"
+        back="/empreendimentos"
         backLabel="Voltar para obras"
-        crumb={<><Link href="/obras">Obras</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{orcamento.nome}</span></>}
+        crumb={<><Link href="/empreendimentos">Obras</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>{orcamento.nome}</span></>}
         title={orcamento.nome}
         badge={
           <span className={`gp-bg gp-4c-st ${classeStatus}`}>

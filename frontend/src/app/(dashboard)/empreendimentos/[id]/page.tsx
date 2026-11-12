@@ -29,7 +29,7 @@ import { PlanilhaView } from "@/components/orcamentos/PlanilhaView";
 import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
 import { DetailHeaderSkeleton, PanelSkeleton } from "@/components/common/skeletons";
 import { CurvaAbcView } from "@/components/orcamentos/CurvaAbcView";
-import { CronogramaFinanceiroView } from "@/components/orcamentos/CronogramaFinanceiroView";
+import { CronogramaPrazosView } from "@/components/orcamentos/CronogramaPrazosView";
 import { BdiConfigModal } from "@/components/orcamentos/BdiConfigModal";
 import { Modal } from "@/components/ui/Modal";
 import { TransitionDrawer } from "@/components/orcamentos/TransitionDrawer";
@@ -245,7 +245,7 @@ export default function OrcamentoDetalhePage() {
     return (
       <div style={{ textAlign: "center", padding: 48, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
         <p className="gp-sub" style={{ margin: 0 }}>Orçamento não encontrado.</p>
-        <Link href="/orcamentos" className="gp-btn gp-bs gp-sm">Voltar para listagem</Link>
+        <Link href="/empreendimentos" className="gp-btn gp-bs gp-sm">Voltar para listagem</Link>
       </div>
     );
   }
@@ -269,18 +269,18 @@ export default function OrcamentoDetalhePage() {
   const TABS: { id: TabType; label: string; curto: string; Icone: Icon }[] = [
     { id: "planilha", label: "Planilha orçamentária", curto: "Planilha", Icone: ListBullets },
     { id: "abc", label: "Curva ABC", curto: "Curva ABC", Icone: ChartLineUp },
-    { id: "cronograma", label: "Cronograma financeiro", curto: "Cronograma", Icone: CalendarBlank },
+    { id: "cronograma", label: "Cronograma", curto: "Cronograma", Icone: CalendarBlank },
     { id: "anexos", label: "Anexos", curto: "Anexos", Icone: Paperclip },
   ];
 
   return (
     <>
       <PageHeader
-        back="/orcamentos"
+        back="/empreendimentos"
         backLabel="Voltar para orçamentos"
         crumb={
           <>
-            <Link href="/orcamentos">Orçamentos</Link> /{" "}
+            <Link href="/empreendimentos">Empreendimentos</Link> /{" "}
             <span aria-current="page" style={{ color: "#001b3d" }}>{`ORC-${orcamento.id.substring(0, 8).toUpperCase()}`}</span>
           </>
         }
@@ -350,10 +350,12 @@ export default function OrcamentoDetalhePage() {
             <PencilSimple size={16} weight="bold" aria-hidden="true" />
             Editar
           </button>
-          <Link href={`/prazo/${orcamento.id}`} className="gp-btn gp-bs">
-            <CalendarBlank size={16} weight="bold" aria-hidden="true" />
-            Cronograma
-          </Link>
+          {jaTemObra && (
+            <Link href={`/obras/${orcamento.id}`} className="gp-btn gp-bs">
+              <HardHat size={16} weight="bold" aria-hidden="true" />
+              Acompanhar obra
+            </Link>
+          )}
           <button type="button" className="gp-btn gp-bs">
             <Copy size={16} weight="bold" aria-hidden="true" />
             Duplicar
@@ -515,7 +517,7 @@ export default function OrcamentoDetalhePage() {
 
         {activeTab === "abc" && <CurvaAbcView orcamentoId={orcamento.id} />}
 
-        {activeTab === "cronograma" && <CronogramaFinanceiroView orcamentoId={orcamento.id} />}
+        {activeTab === "cronograma" && <CronogramaPrazosView orcamentoId={orcamento.id} />}
 
         {activeTab === "anexos" && (
           <div className="gp-card" style={{ padding: 48, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 14, border: "1px dashed #CBD5E1" }}>
@@ -642,16 +644,18 @@ export default function OrcamentoDetalhePage() {
               Editar orçamento
             </button>
           </li>
-          <li>
-            <Link
-              href={`/prazo/${orcamento.id}`}
-              className="gp-btn gp-bs"
-              style={{ width: "100%", justifyContent: "flex-start", minHeight: 52 }}
-            >
-              <CalendarBlank size={18} weight="bold" aria-hidden="true" />
-              Cronograma de prazos
-            </Link>
-          </li>
+          {jaTemObra && (
+            <li>
+              <Link
+                href={`/obras/${orcamento.id}`}
+                className="gp-btn gp-bs"
+                style={{ width: "100%", justifyContent: "flex-start", minHeight: 52 }}
+              >
+                <HardHat size={18} weight="bold" aria-hidden="true" />
+                Acompanhar obra
+              </Link>
+            </li>
+          )}
           <li>
             <button type="button" className="gp-btn gp-bs" style={{ width: "100%", justifyContent: "flex-start", minHeight: 52 }}>
               <Copy size={18} weight="bold" aria-hidden="true" />

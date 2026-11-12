@@ -23,16 +23,16 @@ function abaAtual() {
   return screen.getByRole("link", { current: "page" });
 }
 
-it("mostra as cinco abas do app", () => {
+it("mostra as quatro abas do app", () => {
   render(<BottomNav />);
   const nomes = screen.getAllByRole("link").map((l) => l.textContent);
-  expect(nomes).toEqual(["Início", "Orçamentos", "Obras", "Diário", "Mais"]);
+  expect(nomes).toEqual(["Início", "Empreend.", "Diário", "Mais"]);
 });
 
 it.each([
   ["/", "Início"],
-  ["/orcamentos/abc", "Orçamentos"],
-  ["/obras/abc/almoxarifado", "Obras"],
+  ["/empreendimentos/abc", "Empreend."],
+  ["/obras/abc/almoxarifado", "Empreend."],
   ["/diario/abc", "Diário"],
   ["/bases", "Mais"],
   ["/equipe/novo", "Mais"],
@@ -44,8 +44,8 @@ it.each([
   expect(abaAtual()).toHaveTextContent(aba);
 });
 
-it("o editor de prazos fica na aba Obras", () => {
-  expect(abaAtiva("/prazo/abc")).toBe("/obras");
+it("o editor de prazos fica na aba Empreendimentos", () => {
+  expect(abaAtiva("/prazo/abc")).toBe("/empreendimentos");
 });
 
 describe("perfil só membro", () => {
@@ -65,7 +65,7 @@ describe("perfil só membro", () => {
     mockObras.mockResolvedValue([{ id: "o1" }]);
     render(<CanteiroProvider><BottomNav /></CanteiroProvider>);
     await waitFor(() => expect(mockObras).toHaveBeenCalled());
-    expect(screen.getAllByRole("link")).toHaveLength(5);
+    expect(screen.getAllByRole("link")).toHaveLength(4);
   });
 
   it("sem vínculo de membro nem consulta as obras próprias", async () => {
@@ -73,6 +73,6 @@ describe("perfil só membro", () => {
     render(<CanteiroProvider><BottomNav /></CanteiroProvider>);
     await waitFor(() => expect(mockCanteiro).toHaveBeenCalled());
     expect(mockObras).not.toHaveBeenCalled();
-    expect(screen.getAllByRole("link")).toHaveLength(5);
+    expect(screen.getAllByRole("link")).toHaveLength(4);
   });
 });

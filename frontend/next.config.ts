@@ -10,6 +10,15 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Orçamentos e obras viraram empreendimentos; links e favoritos antigos continuam funcionando.
+  async redirects() {
+    return [
+      { source: "/orcamentos", destination: "/empreendimentos", permanent: true },
+      { source: "/orcamentos/:path*", destination: "/empreendimentos/:path*", permanent: true },
+      { source: "/obras", destination: "/empreendimentos", permanent: true },
+      { source: "/obras/novo/:path*", destination: "/empreendimentos/novo", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

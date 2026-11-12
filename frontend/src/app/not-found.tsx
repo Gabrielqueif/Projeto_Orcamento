@@ -37,8 +37,8 @@ export default function NotFound() {
           </p>
           <div className="gp-4e-stack" style={{ flexWrap: "wrap", marginTop: 8 }}>
             <Link href="/" className="gp-btn gp-bp">Ir para o início</Link>
-            <Link href="/orcamentos" className="gp-btn" style={ghost}>Ver orçamentos</Link>
-            <Link href="/obras" className="gp-btn" style={ghost}>Ver obras</Link>
+            <Link href="/empreendimentos" className="gp-btn" style={ghost}>Ver orçamentos</Link>
+            <Link href="/empreendimentos" className="gp-btn" style={ghost}>Ver obras</Link>
           </div>
         </div>
       </main>

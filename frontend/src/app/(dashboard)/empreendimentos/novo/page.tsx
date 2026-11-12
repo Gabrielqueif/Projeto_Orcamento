@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CircleNotch, ArrowRight } from "@phosphor-icons/react";
-import { createOrcamento, getSinapiBases, SinapiBase } from "@/lib/api/orcamentos";
+import { createOrcamento, getSinapiBases, SinapiBase, type FaseEmpreendimento } from "@/lib/api/orcamentos";
 import { PageHeader } from "@/components/layout/PageHeader";
 
 const ESTADOS = [
@@ -68,6 +68,9 @@ export default function NovoOrcamentoPage() {
   const [numeroConselho, setNumeroConselho] = useState("");
   const [bdi, setBdi] = useState<number>(0);
   const [margem, setMargem] = useState<number>(0);
+  const [descricao, setDescricao] = useState("");
+  const [proprietario, setProprietario] = useState("");
+  const [fase, setFase] = useState<FaseEmpreendimento>("estimativa_custos");
 
   // Meses de referência disponíveis na base de dados
   const [bases, setBases] = useState<SinapiBase[]>([]);
@@ -135,7 +138,7 @@ export default function NovoOrcamentoPage() {
   const handleSubmit = async (e: React.FormEvent, statusOverride?: string) => {
     e.preventDefault();
     if (!nome) {
-      setError("Por favor, preencha o nome do orçamento.");
+      setError("Por favor, preencha o nome do empreendimento.");
       return;
     }
     if (!cliente) {
@@ -169,14 +172,18 @@ export default function NovoOrcamentoPage() {
         numero_conselho: numeroConselho || undefined,
         status: activeStatus,
         variaveis_globais: [],
-        locais: []
+        locais: [],
+        fase,
+        descricao: descricao || undefined,
+        proprietario: proprietario || undefined,
+        endereco: endereco ? { logradouro: endereco, uf: estado.toUpperCase() } : undefined,
       };
 
       const res = await createOrcamento(orcamentoData);
-      router.push(`/orcamentos/${res.id}`);
+      router.push(`/empreendimentos/${res.id}`);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Ocorreu um erro ao criar o orçamento.");
+      setError(err.message || "Ocorreu um erro ao criar o empreendimento.");
     } finally {
       setLoading(false);
     }
@@ -197,7 +204,7 @@ export default function NovoOrcamentoPage() {
     </>
   ) : (
     <>
-      Criar orçamento
+      Criar empreendimento
       <ArrowRight size={16} weight="bold" aria-hidden="true" />
     </>
   );
@@ -205,10 +212,10 @@ export default function NovoOrcamentoPage() {
   return (
     <>
       <PageHeader
-        back="/orcamentos"
-        backLabel="Voltar para orçamentos"
-        crumb={<><Link href="/orcamentos">Orçamentos</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Novo orçamento</span></>}
-        title="Novo orçamento"
+        back="/empreendimentos"
+        backLabel="Voltar para empreendimentos"
+        crumb={<><Link href="/empreendimentos">Empreendimentos</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Novo empreendimento</span></>}
+        title="Novo empreendimento"
         subtitle={<>Campos com <span className="gp-req" style={{ fontWeight: 700 }}>(obrigatório)</span> precisam ser preenchidos para criar.</>}
       />
 
@@ -221,9 +228,24 @@ export default function NovoOrcamentoPage() {
       <div className="gp-split" style={{ gap: 24 }}>
         <form onSubmit={(e) => handleSubmit(e)} className="gp-main gp-4a-form" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <fieldset className="gp-card" style={{ ...fieldset, display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 16 }}>
-            {legend(1, "Obra")}
+            {legend(1, "Empreendimento")}
+            <div className="gp-fld" style={{ gridColumn: "span 3" }}>
+              <label htmlFor="n-fase" className="gp-lb">Fase</label>
+              <select id="n-fase" className="gp-in" value={fase} onChange={(e) => setFase(e.target.value as FaseEmpreendimento)}>
+                <option value="estimativa_custos">Estimativa de custos</option>
+                <option value="orcamentacao_detalhada">Orçamentação detalhada</option>
+              </select>
+            </div>
+            <div className="gp-fld" style={{ gridColumn: "span 3" }}>
+              <label htmlFor="n-prop" className="gp-lb">Proprietário</label>
+              <input id="n-prop" className="gp-in" type="text" value={proprietario} onChange={(e) => setProprietario(e.target.value)} placeholder="Dono do imóvel ou da obra" />
+            </div>
+            <div className="gp-fld" style={{ gridColumn: "span 6" }}>
+              <label htmlFor="n-desc" className="gp-lb">Descrição</label>
+              <textarea id="n-desc" className="gp-in" rows={2} value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Resumo do escopo do empreendimento" />
+            </div>
             <div className="gp-fld" style={{ gridColumn: "span 4" }}>
-              <label htmlFor="n-nome" className="gp-lb">Nome do orçamento{req}</label>
+              <label htmlFor="n-nome" className="gp-lb">Nome do empreendimento{req}</label>
               <input id="n-nome" className="gp-in" type="text" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Residencial Vila Verde — etapa 1" required aria-required="true" />
             </div>
             <div className="gp-fld" style={{ gridColumn: "span 2" }}>
