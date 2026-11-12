@@ -18,6 +18,7 @@ import {
   DotsThree,
   Percent,
   ListBullets,
+  Stack,
   ChartLineUp,
   Paperclip,
   type Icon,
@@ -30,13 +31,14 @@ import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
 import { DetailHeaderSkeleton, PanelSkeleton } from "@/components/common/skeletons";
 import { CurvaAbcView } from "@/components/orcamentos/CurvaAbcView";
 import { CronogramaPrazosView } from "@/components/orcamentos/CronogramaPrazosView";
+import { ComposicoesEmpreendimentoView } from "@/components/orcamentos/ComposicoesEmpreendimentoView";
 import { BdiConfigModal } from "@/components/orcamentos/BdiConfigModal";
 import { Modal } from "@/components/ui/Modal";
 import { TransitionDrawer } from "@/components/orcamentos/TransitionDrawer";
 import { useToast } from "@/components/common/toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 
-type TabType = "planilha" | "abc" | "cronograma" | "anexos";
+type TabType = "planilha" | "composicao" | "abc" | "cronograma" | "anexos";
 
 // Prazo total = do início da primeira etapa ao fim da última (inclusive), conforme o cronograma
 const calcularDiasExecucao = (etapas: Etapa[]): number | null => {
@@ -268,6 +270,7 @@ export default function OrcamentoDetalhePage() {
   // `curto` e `Icone` são usados nos atalhos do mobile
   const TABS: { id: TabType; label: string; curto: string; Icone: Icon }[] = [
     { id: "planilha", label: "Planilha orçamentária", curto: "Planilha", Icone: ListBullets },
+    { id: "composicao", label: "Composição própria", curto: "Composição", Icone: Stack },
     { id: "abc", label: "Curva ABC", curto: "Curva ABC", Icone: ChartLineUp },
     { id: "cronograma", label: "Cronograma", curto: "Cronograma", Icone: CalendarBlank },
     { id: "anexos", label: "Anexos", curto: "Anexos", Icone: Paperclip },
@@ -514,6 +517,8 @@ export default function OrcamentoDetalhePage() {
             onTotalChanged={recarregarOrcamento}
           />
         )}
+
+        {activeTab === "composicao" && <ComposicoesEmpreendimentoView ufPadrao={orcamento.estado?.toUpperCase()} />}
 
         {activeTab === "abc" && <CurvaAbcView orcamentoId={orcamento.id} />}
 
