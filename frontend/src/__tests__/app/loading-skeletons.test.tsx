@@ -9,7 +9,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 // ---- mocks (mesmos padrões dos demais testes de tela) ----
 
 jest.mock("react-chartjs-2", () => ({
-  Bar: () => <div data-testid="grafico-barras" />,
+  Line: () => <div data-testid="grafico-linhas" />,
   Doughnut: () => <div data-testid="grafico-medidor" />,
 }));
 
@@ -111,6 +111,10 @@ describe("Painel", () => {
     disponivel: 0,
     utilizacao_orcamento: 0,
     alertas_criticos: 0,
+    orcamentos_em_elaboracao: 0,
+    gasto_previsto: 0,
+    gasto_planejado: 0,
+    granularidade: "semanal",
     riscos: [],
     semanas: ["01/10"],
     series: [],

@@ -12,6 +12,16 @@ class DashboardRepository:
         resultado = self.supabase.table("obras").select(COLUNAS_OBRA).eq("user_id", user_id).execute()
         return resultado.data or []
 
+    def contar_orcamentos_em_elaboracao(self, user_id: str) -> int:
+        resultado = (
+            self.supabase.table("orcamentos")
+            .select("id", count="exact")
+            .eq("user_id", user_id)
+            .eq("status", "em_elaboracao")
+            .execute()
+        )
+        return resultado.count or 0
+
     def nomes_de_orcamentos(self, orcamento_ids: List[str]) -> Dict[str, str]:
         if not orcamento_ids:
             return {}

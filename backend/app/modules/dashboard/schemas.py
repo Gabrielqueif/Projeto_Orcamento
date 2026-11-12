@@ -4,6 +4,7 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel
 
 Severidade = Literal["critical", "moderate", "info"]
+Granularidade = Literal["diaria", "semanal", "mensal"]
 TipoRisco = Literal["ATRASO", "ORCAMENTO", "ESTOQUE", "DIARIO"]
 
 
@@ -39,6 +40,11 @@ class DashboardResponse(BaseModel):
     disponivel: float
     utilizacao_orcamento: float
     alertas_criticos: int
+    orcamentos_em_elaboracao: int
+    # Previsto = orçamento total das obras ativas; planejado = o que o cronograma previa gastar até hoje.
+    gasto_previsto: float
+    gasto_planejado: float
+    granularidade: Granularidade
     riscos: List[RiscoDashboard]
     semanas: List[str]
     series: List[SerieSemanal]

@@ -61,6 +61,7 @@ def repo():
     r.nomes_de_orcamentos.return_value = {}
     r.insumos_criticos_por_obra.return_value = {}
     r.diarios_recentes.return_value = [_diario()]
+    r.contar_orcamentos_em_elaboracao.return_value = 2
     return r
 
 
@@ -319,3 +320,47 @@ def test_obter_continua_sincronizando_status_ao_usar_a_lista(service, repo, medi
     medicoes.listar.return_value = [{"etapa_id": "e1", "data": "2026-10-22", "progresso": 10}]
     service.obter(USUARIO)
     repo.atualizar_status_obra.assert_called_once_with("o1", "ATRASADO")
+
+
+# --- empreendimentos: KPIs novos e granularidade --------------------------------
+
+
+def test_dashboard_traz_orcamentos_em_elaboracao_e_gasto_planejado(service, repo):
+    dados = service.obter("u1")
+
+    assert dados["orcamentos_em_elaboracao"] == 2
+    repo.contar_orcamentos_em_elaboracao.assert_called_once_with("u1")
+    assert dados["gasto_previsto"] == 1000.0
+    assert 0 < dados["gasto_planejado"] < dados["gasto_previsto"]
+
+
+def test_dashboard_sem_obras_ainda_conta_orcamentos_em_elaboracao(service, repo):
+    repo.obras_do_usuario.return_value = []
+
+    dados = service.obter("u1")
+
+    assert dados["obras_ativas"] == 0
+    assert dados["orcamentos_em_elaboracao"] == 2
+    assert dados["gasto_planejado"] == 0.0
+
+
+@pytest.mark.parametrize("granularidade, pontos", [("diaria", 7), ("semanal", 4), ("mensal", 6)])
+def test_dashboard_granularidade_define_numero_de_pontos(service, granularidade, pontos):
+    dados = service.obter("u1", granularidade)
+
+    assert dados["granularidade"] == granularidade
+    assert len(dados["semanas"]) == pontos
+    assert all(len(s["valores"]) == pontos for s in dados["series"])
+
+
+def test_dashboard_rejeita_granularidade_invalida(service):
+    with pytest.raises(ValueError):
+        service.obter("u1", "anual")
+
+
+def test_rota_dashboard_aceita_granularidade(client, service):
+    app.dependency_overrides[get_dashboard_service] = lambda: service
+
+    corpo = client.get("/dashboard?granularidade=mensal").json()
+    assert len(corpo["semanas"]) == 6
+    assert client.get("/dashboard?granularidade=anual").status_code == 422

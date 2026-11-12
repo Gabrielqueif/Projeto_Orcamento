@@ -7,7 +7,7 @@ import { MetricCard } from '../../components/dashboard/MetricCard';
 import WeeklyProgressChart, { CORES_SERIES } from '../../components/dashboard/WeeklyProgressChart';
 import BudgetGauge from '../../components/dashboard/BudgetGauge';
 import { RiskItem } from '../../components/dashboard/RiskItem';
-import { getDashboard, type Dashboard, type TipoRisco } from '../../lib/api/dashboard';
+import { getDashboard, type Dashboard, type Granularidade, type TipoRisco } from '../../lib/api/dashboard';
 import { getObras, type Obra } from '@/lib/api/obras';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -63,6 +63,8 @@ export default function DashboardPage() {
   const [erro, setErro] = useState<string | null>(null);
   // Obras do usuário: ligam as séries do painel à página da obra (id do orçamento), ao cliente e à situação.
   const [obras, setObras] = useState<Obra[]>([]);
+  const [granularidade, setGranularidade] = useState<Granularidade>('semanal');
+  const [trocandoSerie, setTrocandoSerie] = useState(false);
   const { nome, iniciais } = useCurrentUser();
 
   const carregar = useCallback(async () => {
@@ -83,6 +85,20 @@ export default function DashboardPage() {
     carregar();
   }, [carregar]);
 
+  // Troca só a série do gráfico, sem refazer o esqueleto da página inteira.
+  const trocarGranularidade = async (nova: Granularidade) => {
+    if (nova === granularidade) return;
+    setGranularidade(nova);
+    setTrocandoSerie(true);
+    try {
+      setPainel(await getDashboard(nova));
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : 'Erro ao carregar o painel');
+    } finally {
+      setTrocandoSerie(false);
+    }
+  };
+
   if (carregando) {
     return <PainelSkeleton />;
   }
@@ -102,6 +118,7 @@ export default function DashboardPage() {
   const hoje = hojeLongo.charAt(0).toUpperCase() + hojeLongo.slice(1);
 
   const progresso = Math.min(100, Math.max(0, painel.progresso_medio));
+  const moeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const utilizacao = `${painel.utilizacao_orcamento.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
   // No mobile, o primeiro alerta de diário vira um aviso em destaque logo abaixo dos indicadores.
   const alertaDiario = painel.riscos.find((r) => r.tipo === 'DIARIO');
@@ -227,10 +244,14 @@ export default function DashboardPage() {
       )}
 
       <section aria-label="Indicadores" className="gp-grid gp-only-d">
-        <MetricCard dark title="Obras Ativas" value={painel.obras_ativas.toString().padStart(2, '0')} />
+        <MetricCard dark title="Orçamentos em elaboração" value={painel.orcamentos_em_elaboracao.toString().padStart(2, '0')} />
+        <MetricCard title="Obras Ativas" value={painel.obras_ativas.toString().padStart(2, '0')} />
         <MetricCard title="Progresso Médio" value={`${painel.progresso_medio}%`} />
-        <MetricCard title="Orçamento Utilizado" value={utilizacao} />
-        <MetricCard title="Riscos Críticos" value={painel.alertas_criticos.toString().padStart(2, '0')} />
+        <MetricCard
+          title="Gasto planejado até hoje"
+          value={moeda(painel.gasto_planejado)}
+          hint={`Previsto no orçamento: ${moeda(painel.gasto_previsto)}`}
+        />
       </section>
 
       <section aria-labelledby="h-atencao" className={riscosSoNoDesktop ? 'gp-only-d' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -258,7 +279,14 @@ export default function DashboardPage() {
       <div className="gp-split gp-4a-split">
         <section className="gp-card gp-pad gp-main" aria-labelledby="h-prog" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-            <h2 id="h-prog" className="gp-h2">Progresso semanal</h2>
+            <h2 id="h-prog" className="gp-h2">Progresso</h2>
+            <div className="gp-seg" role="group" aria-label="Período do gráfico">
+              {(['mensal', 'semanal', 'diaria'] as Granularidade[]).map((g) => (
+                <button key={g} type="button" aria-pressed={granularidade === g} disabled={trocandoSerie} onClick={() => trocarGranularidade(g)} style={{ padding: '0 14px' }}>
+                  {g === 'mensal' ? 'Mensal' : g === 'semanal' ? 'Semanal' : 'Diário'}
+                </button>
+              ))}
+            </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 13, fontWeight: 700, color: '#475569' }}>
               {painel.series.map((serie, i) => (
                 <span key={serie.obra_id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -272,7 +300,7 @@ export default function DashboardPage() {
             <p className="gp-sub" style={{ margin: 0 }}>
               {painel.obras_ativas === 0
                 ? 'Nenhuma obra em andamento.'
-                : 'Defina as datas das etapas e registre medições para acompanhar o avanço semanal.'}
+                : 'Defina as datas das etapas e registre medições para acompanhar o avanço.'}
             </p>
           ) : (
             <WeeklyProgressChart semanas={painel.semanas} series={painel.series} />
