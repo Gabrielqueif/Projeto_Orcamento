@@ -61,6 +61,10 @@ export interface Diario {
   efetivo?: EfetivoItem[];
   created_at?: string | null;
   updated_at?: string | null;
+  enviado_por?: string | null;
+  enviado_em?: string | null;
+  aprovado_por?: string | null;
+  aprovado_em?: string | null;
 }
 
 export interface DiarioCreate {
@@ -79,6 +83,8 @@ export interface DiarioCreate {
 export type DiarioUpdate = Partial<DiarioCreate>;
 
 export interface ObraDiarioInfo {
+  /** Papel de quem consulta: o dono aprova e reabre; mestre/supervisor só envia. */
+  papel?: "DONO" | "MESTRE" | "SUPERVISOR" | null;
   obra_id: string;
   nome: string;
   local?: string | null;

@@ -5,6 +5,12 @@ import { redirect } from 'next/navigation'
 
 import { createClient } from '@/utils/supabase/server'
 
+/** Destino pós-login vindo do formulário: só caminhos internos (evita open redirect). */
+function destinoSeguro(valor: FormDataEntryValue | null): string {
+    const next = typeof valor === 'string' ? valor : ''
+    return next.startsWith('/') && !next.startsWith('//') && !next.includes('\\') ? next : '/'
+}
+
 export async function login(formData: FormData) {
     const supabase = await createClient()
 
@@ -18,11 +24,13 @@ export async function login(formData: FormData) {
     const { error } = await supabase.auth.signInWithPassword(data)
 
     if (error) {
-        redirect(`/login?error=${encodeURIComponent('E-mail ou senha inválidos.')}`)
+        const next = destinoSeguro(formData.get('next'))
+        const volta = next === '/' ? '' : `&next=${encodeURIComponent(next)}`
+        redirect(`/login?error=${encodeURIComponent('E-mail ou senha inválidos.')}${volta}`)
     }
 
     revalidatePath('/', 'layout')
-    redirect('/')
+    redirect(destinoSeguro(formData.get('next')))
 }
 
 export type SignupState = {
@@ -113,10 +121,12 @@ export async function signup(_prevState: SignupState, formData: FormData): Promi
     revalidatePath('/', 'layout')
 
     // Com a confirmação de e-mail desativada o Supabase já devolve a sessão.
+    const next = destinoSeguro(formData.get('next'))
     if (data.session) {
-        redirect('/')
+        redirect(next)
     }
-    redirect(`/login?message=${encodeURIComponent('Conta criada. Faça login para continuar.')}`)
+    const volta = next === '/' ? '' : `&next=${encodeURIComponent(next)}`
+    redirect(`/login?message=${encodeURIComponent('Conta criada. Faça login para continuar.')}${volta}`)
 }
 
 export async function logout() {

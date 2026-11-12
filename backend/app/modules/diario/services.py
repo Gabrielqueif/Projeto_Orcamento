@@ -9,7 +9,7 @@ from app.modules.diario.schemas import DiarioCreate, DiarioUpdate, EfetivoInput,
 from app.modules.equipe.repositories import CargoRepository
 from app.modules.medicao.schemas import AvancoEtapa
 from app.modules.medicao.services import MedicaoService
-from core.exceptions import NaoEncontradoError
+from core.exceptions import AcessoNegadoError, NaoEncontradoError
 from core.tempo import hoje
 
 logger = logging.getLogger("projeto_orcamento")
@@ -304,7 +304,15 @@ class DiarioService:
         real = self._obra(obra_id)
         return self._com_fotos([self._diario(real, diario_id)])[0]
 
-    def criar(self, obra_id: str, schema: DiarioCreate, user_id: Optional[str] = None) -> Dict[str, Any]:
+    def criar(
+        self,
+        obra_id: str,
+        schema: DiarioCreate,
+        user_id: Optional[str] = None,
+        autor_id: Optional[str] = None,
+        papel: str = "DONO",
+    ) -> Dict[str, Any]:
+        """user_id é o dono da obra (dele são os cargos do efetivo); autor_id, quem está gravando."""
         real = self._obra(obra_id)
         self._validar_data(schema.data)
         if self.repository.buscar_por_data(real, schema.data.isoformat()):
@@ -314,6 +322,11 @@ class DiarioService:
         dados = _serializar(schema.model_dump(exclude={"servicos", "efetivo"}))
         if schema.efetivo is not None:
             dados["equipe_presente"] = self._total_efetivo(schema.efetivo)
+        autor_id = autor_id or user_id
+        if autor_id:
+            dados["criado_por"] = autor_id
+        if papel != "DONO" and autor_id and not dados.get("responsavel"):
+            dados["responsavel"] = self.repository.nome_do_usuario(autor_id)
         criado = self.repository.criar(real, dados)
         try:
             if schema.servicos:
@@ -361,19 +374,80 @@ class DiarioService:
             self.repository.substituir_efetivo(diario_id, [e.model_dump() for e in schema.efetivo])
         return self._com_fotos([atualizado])[0]
 
-    def alterar_status(self, obra_id: str, diario_id: str, novo_status: str) -> Dict[str, Any]:
+    @staticmethod
+    def _exigir_permissao_status(atual: Dict[str, Any], novo_status: str, user_id: Optional[str], papel: str) -> None:
+        if papel == "DONO":
+            return
+        # Membro (mestre/supervisor): envia o diário e reabre o que ele mesmo enviou, enquanto não aprovado.
+        if atual["status"] == "RASCUNHO" and novo_status == "ENVIADO":
+            return
+        if (
+            atual["status"] == "ENVIADO"
+            and novo_status == "RASCUNHO"
+            and user_id
+            and atual.get("enviado_por") == user_id
+        ):
+            return
+        raise AcessoNegadoError("Sem permissão para esta mudança de status do diário")
+
+    def alterar_status(
+        self,
+        obra_id: str,
+        diario_id: str,
+        novo_status: str,
+        user_id: Optional[str] = None,
+        papel: str = "DONO",
+        dono_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
         real = self._obra(obra_id)
         atual = self._diario(real, diario_id)
         if novo_status not in TRANSICOES_STATUS[atual["status"]]:
             raise ValueError(f"Não é possível mudar o diário de {atual['status']} para {novo_status}")
-        atualizado = self.repository.atualizar(
-            diario_id, real, {"status": novo_status, "updated_at": datetime.now(timezone.utc).isoformat()}
-        )
+        self._exigir_permissao_status(atual, novo_status, user_id, papel)
+        agora = datetime.now(timezone.utc).isoformat()
+        dados: Dict[str, Any] = {"status": novo_status, "updated_at": agora}
+        if novo_status == "ENVIADO":
+            dados.update(enviado_por=user_id, enviado_em=agora, aprovado_por=None, aprovado_em=None)
+        elif novo_status == "APROVADO":
+            dados.update(aprovado_por=user_id, aprovado_em=agora)
+        else:  # reaberto como rascunho
+            dados.update(enviado_por=None, enviado_em=None, aprovado_por=None, aprovado_em=None)
+        atualizado = self.repository.atualizar(diario_id, real, dados)
         if not atualizado:
             raise NaoEncontradoError("Diário não encontrado")
+        if novo_status == "ENVIADO" and papel != "DONO" and dono_id:
+            self._notificar_envio(real, atual, user_id, dono_id)
         return self._com_fotos([atualizado])[0]
 
-    def deletar(self, obra_id: str, diario_id: str) -> None:
+    def _notificar_envio(self, obra_id: str, diario: Dict[str, Any], autor_id: Optional[str], dono_id: str) -> None:
+        # A notificação não pode desfazer o envio: falha só vai para o log.
+        try:
+            obra = self.repository.buscar_obra(obra_id) or {}
+            orcamento_id = obra.get("orcamento_id")
+            nome_obra = (
+                self.repository.nomes_de_orcamentos([orcamento_id] if orcamento_id else []).get(orcamento_id)
+                or obra.get("escopo")
+                or obra.get("cliente")
+                or "Obra"
+            )
+            autor = (self.repository.nome_do_usuario(autor_id) if autor_id else None) or "Um membro do canteiro"
+            data = _como_data(diario["data"]).strftime("%d/%m/%Y")
+            self.repository.criar_notificacao(
+                {
+                    "user_id": dono_id,
+                    "obra_id": obra_id,
+                    "tipo": "DIARIO_ENVIADO",
+                    "titulo": "Diário enviado",
+                    "descricao": f"{autor} enviou o diário de {data} — {nome_obra}",
+                    "href": f"/diario/{obra_id}",
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Falha ao notificar envio do diário {diario.get('id')}: {e}")
+
+    def deletar(self, obra_id: str, diario_id: str, papel: str = "DONO") -> None:
+        if papel != "DONO":
+            raise AcessoNegadoError("Só o dono da obra pode excluir diários")
         real = self._obra(obra_id)
         atual = self._diario(real, diario_id)
         self._exigir_editavel(atual)
@@ -431,13 +505,10 @@ class DiarioService:
 
     # --- Visão geral ---------------------------------------------------------
 
-    def resumo(self, user_id: str) -> Dict[str, Any]:
+    def resumo(self, user_id: str, como_membro: bool = False) -> Dict[str, Any]:
         data_hoje = hoje()
-        obras = [
-            o
-            for o in self.repository.listar_obras_do_usuario(user_id)
-            if o.get("status") not in ("CONCLUIDO", "CONCLUIDA")
-        ]
+        listar = self.repository.listar_obras_do_membro if como_membro else self.repository.listar_obras_do_usuario
+        obras = [o for o in listar(user_id) if o.get("status") not in ("CONCLUIDO", "CONCLUIDA")]
         diarios = self.repository.diarios_recentes(
             [o["id"] for o in obras], data_hoje - timedelta(days=JANELA_RESUMO_DIAS)
         )

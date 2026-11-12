@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
@@ -7,7 +7,7 @@ from app.modules.dashboard.schemas import Severidade, TipoRisco
 
 class NotificacaoItem(BaseModel):
     chave: str
-    tipo: TipoRisco
+    tipo: Union[TipoRisco, Literal["DIARIO_ENVIADO"]]
     severidade: Severidade
     titulo: str
     descricao: str

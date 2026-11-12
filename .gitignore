@@ -1,6 +1,13 @@
 .vscode/
 backends/servico-planilhas/.env
 .env
+# Cópias de .env (ex.: .env.save) também têm segredos; só o exemplo é versionado
+.env.*
+!.env.example
+# Dados do Nginx Proxy Manager, incluindo certificados e chaves privadas
+npm/
+# Ajustes locais de cada servidor
+docker-compose.override.yml
 __pycache__/
 *.pyc
 .pytest_cache/

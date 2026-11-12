@@ -223,6 +223,8 @@ export default function DiarioObraPage() {
             const { rotulo, Icone } = CLIMAS[registro.clima];
             const status = STATUS_ESTILO[registro.status];
             const editavel = registro.status !== "APROVADO";
+            // Só o dono aprova, reabre e exclui; mestre/supervisor envia (o backend recusa o resto com 403).
+            const dono = (dados.obra.papel ?? "DONO") === "DONO";
             const btn = "gp-btn gp-sm ";
             return (
               <li key={registro.id}>
@@ -342,15 +344,17 @@ export default function DiarioObraPage() {
                     )}
                     {registro.status === "ENVIADO" && (
                       <>
-                        <button onClick={() => mudarStatus(registro, "APROVADO")} className={btn + "gp-bp"}>
-                          Aprovar
-                        </button>
+                        {dono && (
+                          <button onClick={() => mudarStatus(registro, "APROVADO")} className={btn + "gp-bp"}>
+                            Aprovar
+                          </button>
+                        )}
                         <button onClick={() => mudarStatus(registro, "RASCUNHO")} className={btn + "gp-bs"}>
                           Devolver
                         </button>
                       </>
                     )}
-                    {registro.status === "APROVADO" && (
+                    {registro.status === "APROVADO" && dono && (
                       <button onClick={() => mudarStatus(registro, "ENVIADO")} className={btn + "gp-bs"}>
                         Reabrir
                       </button>
@@ -360,9 +364,11 @@ export default function DiarioObraPage() {
                         <button onClick={() => abrirEdicao(registro)} className={btn + "gp-bs"}>
                           Editar
                         </button>
-                        <button onClick={() => excluir(registro)} className={btn + "gp-bs"} style={{ color: "#B91C1C" }}>
-                          Excluir
-                        </button>
+                        {dono && (
+                          <button onClick={() => excluir(registro)} className={btn + "gp-bs"} style={{ color: "#B91C1C" }}>
+                            Excluir
+                          </button>
+                        )}
                       </>
                     )}
                   </div>

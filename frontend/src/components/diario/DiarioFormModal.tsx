@@ -16,6 +16,7 @@ import {
   type FotoDiario,
   type ServicoObra,
 } from "@/lib/api/diario";
+import { ServicosChecklist, paraNumero, type ServicosFeitos } from "./ServicosChecklist";
 
 const TIPOS_ACEITOS = ["image/jpeg", "image/png", "image/webp"];
 const TAMANHO_MAX_FOTO = 5 * 1024 * 1024;
@@ -33,12 +34,6 @@ function hojeLocal(): string {
   const dia = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${mes}-${dia}`;
 }
-
-// Quantidade e % do serviço andam juntos: digitar um calcula o outro (% sobre a quantidade orçada).
-function arredondar(n: number, casas: number): string {
-  return Number.isFinite(n) ? String(Number(n.toFixed(casas))) : "";
-}
-const paraNumero = (texto: string) => Number(texto.replace(",", "."));
 
 // Teto por função: o backend recusa linhas acima de 10000 pessoas.
 const MAX_POR_FUNCAO = 10000;
@@ -169,12 +164,11 @@ function FormularioDiario({ onClose, obraId, obraNome, titulo: tituloForm, regis
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   // Um serviço marcado no checklist tem entrada aqui; some ao desmarcar.
-  const [feitos, setFeitos] = useState<Record<string, { qtd: string; pct: string }>>(() =>
+  const [feitos, setFeitos] = useState<ServicosFeitos>(() =>
     Object.fromEntries(
       (registro?.servicos ?? []).map((s) => [s.item_id, { qtd: String(s.quantidade), pct: String(s.percentual) }])
     )
   );
-  const [busca, setBusca] = useState("");
   // null enquanto carrega; sem cargos (ou se falhar) o formulário usa o campo numérico "Equipe presente".
   const [cargos, setCargos] = useState<Cargo[] | null>(null);
   const [quantidades, setQuantidades] = useState<Record<string, number>>(() =>
@@ -207,33 +201,11 @@ function FormularioDiario({ onClose, obraId, obraNome, titulo: tituloForm, regis
   // Registro antigo sem efetivo e com contadores zerados: não envia efetivo, para não zerar o total antigo.
   const enviaEfetivo = usaEfetivo && (linhasEfetivo.length > 0 || efetivoAtual.length > 0);
 
-  const marcar = (id: string, marcado: boolean) =>
-    setFeitos((atual) => {
-      if (marcado) return { ...atual, [id]: { qtd: "", pct: "" } };
-      return Object.fromEntries(Object.entries(atual).filter(([chave]) => chave !== id));
-    });
-  const digitarQuantidade = (servico: ServicoObra, qtd: string) =>
-    setFeitos((atual) => ({
-      ...atual,
-      [servico.id]: { qtd, pct: qtd.trim() === "" ? "" : arredondar((paraNumero(qtd) / servico.quantidade) * 100, 1) },
-    }));
-  const digitarPercentual = (servico: ServicoObra, pct: string) =>
-    setFeitos((atual) => ({
-      ...atual,
-      [servico.id]: { pct, qtd: pct.trim() === "" ? "" : arredondar((paraNumero(pct) / 100) * servico.quantidade, 3) },
-    }));
-
-  const termo = busca.trim().toLowerCase();
   // O que sobra do orçado: o executado em todos os diários, menos o que este mesmo diário já lançou.
   const restanteDe = (s: ServicoObra) => {
     const proprio = registro?.servicos.find((x) => x.item_id === s.id)?.quantidade ?? 0;
     return Math.max(0, Number((s.quantidade - s.executado + proprio).toFixed(6)));
   };
-  // Serviços já concluídos em outros diários vão para o fim da lista.
-  const visiveis = servicos
-    .filter((s) => !termo || `${s.codigo ?? ""} ${s.descricao} ${s.etapa_nome ?? ""}`.toLowerCase().includes(termo))
-    .sort((a, b) => Number(restanteDe(a) === 0) - Number(restanteDe(b) === 0));
-
   const escolherArquivos = (lista: FileList | null) => {
     if (!lista) return;
     const novos: File[] = [];
@@ -477,90 +449,7 @@ function FormularioDiario({ onClose, obraId, obraNome, titulo: tituloForm, regis
           </div>
         </div>
 
-        {servicos.length > 0 && (
-          <div className="gp-4d-sec">
-          <div className="gp-fld">
-            <span className="gp-lb">Serviços executados ({Object.keys(feitos).length} marcados)</span>
-            <input
-              type="search"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar serviço por código, nome ou etapa"
-              aria-label="Buscar serviço"
-              className="gp-in"
-            />
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, maxHeight: 288, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
-              {visiveis.map((servico) => {
-                const feito = feitos[servico.id];
-                const restante = restanteDe(servico);
-                const concluido = restante === 0;
-                return (
-                  <li
-                    key={servico.id}
-                    style={{
-                      border: `1px solid ${concluido ? "#65A30D" : "#E6EBF2"}`,
-                      background: concluido ? "#E6F6D0" : "#fff",
-                      borderRadius: 12,
-                      padding: "10px 12px",
-                    }}
-                  >
-                    <label
-                      style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 14, color: concluido ? "#3F6604" : "#001b3d", cursor: concluido ? "default" : "pointer" }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={!!feito}
-                        disabled={concluido}
-                        onChange={(e) => marcar(servico.id, e.target.checked)}
-                        className="gp-4d-chk"
-                        style={{ marginTop: 3, width: 16, height: 16, flex: "0 0 auto" }}
-                      />
-                      <span style={{ flex: 1 }}>
-                        {servico.descricao}
-                        <span className="gp-hint" style={{ display: "block", color: concluido ? "#3F6604" : undefined }}>
-                          {[servico.codigo, servico.etapa_nome].filter(Boolean).join(" · ")}
-                          {" · "}
-                          {concluido
-                            ? `concluído (100% de ${servico.quantidade} ${servico.unidade})`
-                            : `falta ${restante} de ${servico.quantidade} ${servico.unidade}`}
-                        </span>
-                      </span>
-                    </label>
-                    {feito && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, paddingLeft: 24 }}>
-                        <input
-                          inputMode="decimal"
-                          aria-label={`Quantidade de ${servico.descricao}`}
-                          value={feito.qtd}
-                          placeholder="0"
-                          onChange={(e) => digitarQuantidade(servico, e.target.value)}
-                          className="gp-in gp-mono gp-4d-num"
-                          style={{ width: 96, height: 40, textAlign: "right", fontSize: 14 }}
-                        />
-                        <span className="gp-hint">{servico.unidade}</span>
-                        <input
-                          inputMode="decimal"
-                          aria-label={`Percentual de ${servico.descricao}`}
-                          value={feito.pct}
-                          placeholder="0"
-                          onChange={(e) => digitarPercentual(servico, e.target.value)}
-                          className="gp-in gp-mono gp-4d-num"
-                          style={{ width: 80, height: 40, textAlign: "right", fontSize: 14 }}
-                        />
-                        <span className="gp-hint">%</span>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-              {visiveis.length === 0 && <li className="gp-hint">Nenhum serviço encontrado.</li>}
-            </ul>
-            <p className="gp-hint" style={{ margin: 0 }}>
-              Marque o que foi feito no dia e informe a quantidade ou o percentual do serviço: um calcula o outro.
-            </p>
-          </div>
-          </div>
-        )}
+        <ServicosChecklist servicos={servicos} feitos={feitos} onChange={setFeitos} restanteDe={restanteDe} />
 
         <div className="gp-4d-sec">
           <div className="gp-fld">

@@ -12,7 +12,7 @@ const beneficios = [
 export default async function LoginPage({
     searchParams,
 }: {
-    searchParams: Promise<{ message?: string; error?: string }>
+    searchParams: Promise<{ message?: string; error?: string; next?: string }>
 }) {
     const params = await searchParams;
     return (
@@ -47,6 +47,7 @@ export default async function LoginPage({
             )}
 
             <form style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                {params?.next && <input type="hidden" name="next" value={params.next} />}
                 <div className="gp-fld">
                     <label htmlFor="email" className="gp-lb">E-mail</label>
                     <input id="email" name="email" type="email" required className="gp-in" autoComplete="email" inputMode="email" placeholder="voce@empresa.com.br" />
@@ -63,7 +64,7 @@ export default async function LoginPage({
                     Entrar
                 </button>
                 <p style={{ margin: 0, textAlign: 'center', fontSize: 15, color: '#475569' }}>
-                    Ainda não tem conta? <Link href="/signup" style={{ fontWeight: 800, color: '#007a85' }}>Criar conta</Link>
+                    Ainda não tem conta? <Link href={params?.next ? `/signup?next=${encodeURIComponent(params.next)}` : '/signup'} style={{ fontWeight: 800, color: '#007a85' }}>Criar conta</Link>
                 </p>
             </form>
         </AuthShell>

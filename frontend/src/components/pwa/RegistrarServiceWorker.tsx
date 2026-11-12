@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 /**
- * Registra o service worker mínimo (public/sw.js) que torna o app instalável.
+ * Registra o service worker (public/sw.js): torna o app instalável e abre o canteiro sem sinal.
  * Só em produção: em desenvolvimento ele atrapalharia o recarregamento a quente.
  */
 export function RegistrarServiceWorker() {

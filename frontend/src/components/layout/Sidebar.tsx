@@ -7,13 +7,15 @@ import { logout } from "@/app/auth/actions";
 import Image from "next/image";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { gruposSidebar, linkAtivo } from "./nav";
+import { useSomenteMembro } from "@/contexts/canteiro-context";
+import { GRUPOS_SIDEBAR_MEMBRO, gruposSidebar, linkAtivo } from "./nav";
 
 export function Sidebar() {
   const pathname = usePathname();
   const { role } = useUserRole();
   const { nome, cargo, iniciais } = useCurrentUser();
-  const grupos = gruposSidebar(role === "admin");
+  const somenteMembro = useSomenteMembro();
+  const grupos = somenteMembro ? GRUPOS_SIDEBAR_MEMBRO : gruposSidebar(role === "admin");
   const ativo = (href: string) => linkAtivo(pathname, href);
 
   return (
@@ -30,10 +32,12 @@ export function Sidebar() {
         </span>
       </Link>
 
-      <Link href="/obras/novo" className="gp-sd-cta">
-        <Plus size={18} weight="bold" aria-hidden="true" />
-        Nova obra
-      </Link>
+      {!somenteMembro && (
+        <Link href="/obras/novo" className="gp-sd-cta">
+          <Plus size={18} weight="bold" aria-hidden="true" />
+          Nova obra
+        </Link>
+      )}
 
       <nav className="gp-sd-nav" aria-label="Navegação principal">
         {grupos.map((g) => (

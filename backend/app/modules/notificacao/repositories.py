@@ -1,6 +1,8 @@
-from typing import Any, Dict, List
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 TABELA_NOTIFICACOES_LIDAS = "notificacoes_lidas"
+TABELA_EVENTOS = "notificacoes_evento"
 
 
 class NotificacaoRepository:
@@ -21,3 +23,28 @@ class NotificacaoRepository:
     def marcar(self, user_id: str, chaves: List[str]) -> None:
         linhas: List[Dict[str, Any]] = [{"user_id": user_id, "chave": c} for c in chaves]
         self.supabase.table(TABELA_NOTIFICACOES_LIDAS).upsert(linhas, on_conflict="user_id,chave").execute()
+
+    # --- Eventos persistidos (ex.: diário enviado) ---------------------------
+
+    def listar_eventos(self, user_id: str, limite: int = 30) -> List[Dict[str, Any]]:
+        resultado = (
+            self.supabase.table(TABELA_EVENTOS)
+            .select("id, tipo, titulo, descricao, href, lida_em")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(limite)
+            .execute()
+        )
+        return resultado.data or []
+
+    def marcar_eventos(self, user_id: str, ids: Optional[List[str]]) -> None:
+        """ids None marca todos os não lidos do usuário."""
+        consulta = (
+            self.supabase.table(TABELA_EVENTOS)
+            .update({"lida_em": datetime.now(timezone.utc).isoformat()})
+            .eq("user_id", user_id)
+            .is_("lida_em", "null")
+        )
+        if ids is not None:
+            consulta = consulta.in_("id", ids)
+        consulta.execute()

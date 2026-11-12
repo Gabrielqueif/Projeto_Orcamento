@@ -186,3 +186,34 @@ def test_rota_marcar_todas_com_chaves_nulas(client, service, repo):
 
     assert resposta.status_code == 200
     repo.marcar.assert_called_once_with("test-user-id", ["ATRASO:o1", "ESTOQUE:o1"])
+
+
+# --- Eventos persistidos (diário enviado) -----------------------------------
+
+
+def test_eventos_aparecem_no_feed_e_contam_como_nao_lidos():
+    from app.modules.notificacao.services import NotificacaoService
+
+    dash = MagicMock()
+    dash.listar_riscos.return_value = []
+    repo = MagicMock()
+    repo.chaves_lidas.return_value = []
+    repo.listar_eventos.return_value = [
+        {"id": "e1", "tipo": "DIARIO_ENVIADO", "titulo": "Diário enviado", "descricao": "d", "href": "/diario/o", "lida_em": None}
+    ]
+    r = NotificacaoService(dash, repo).listar("u1")
+    assert r["itens"][0]["chave"] == "EVENTO:e1" and r["itens"][0]["lida"] is False
+    assert r["nao_lidas"] == 1
+
+
+def test_marcar_evento_como_lido_so_do_proprio_usuario():
+    from app.modules.notificacao.services import NotificacaoService
+
+    dash = MagicMock()
+    dash.listar_riscos.return_value = []
+    repo = MagicMock()
+    repo.chaves_lidas.return_value = []
+    repo.listar_eventos.return_value = []
+    NotificacaoService(dash, repo).marcar_lidas("u1", ["EVENTO:e1", "lixo"])
+    repo.marcar_eventos.assert_called_once_with("u1", ["e1"])
+    repo.marcar.assert_not_called()

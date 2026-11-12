@@ -15,7 +15,8 @@ VALIDADE_URL_SEGUNDOS = 3600
 
 COLUNAS_DIARIO = (
     "id, obra_id, data, titulo, atividades, ocorrencias, clima, temperatura, "
-    "equipe_presente, responsavel, status, created_at, updated_at"
+    "equipe_presente, responsavel, status, created_at, updated_at, "
+    "criado_por, enviado_por, enviado_em, aprovado_por, aprovado_em"
 )
 COLUNAS_ITEM = "id, orcamento_id, etapa_id, codigo_composicao, descricao, unidade, quantidade, preco_total"
 COLUNAS_FOTO = "id, diario_id, caminho, legenda, created_at"
@@ -147,6 +148,21 @@ class DiarioRepository:
     def listar_obras_do_usuario(self, user_id: str) -> List[Dict[str, Any]]:
         resultado = self.supabase.table("obras").select(COLUNAS_OBRA).eq("user_id", user_id).execute()
         return resultado.data or []
+
+    def nome_do_usuario(self, user_id: str) -> Optional[str]:
+        resultado = self.supabase.table("profiles").select("username").eq("id", user_id).execute()
+        return resultado.data[0].get("username") if resultado.data else None
+
+    def criar_notificacao(self, dados: Dict[str, Any]) -> None:
+        self.supabase.table("notificacoes_evento").insert(dados).execute()
+
+    def listar_obras_do_membro(self, user_id: str) -> List[Dict[str, Any]]:
+        """Obras em que o usuário é mestre/supervisor (vínculo em obra_membros)."""
+        vinculos = self.supabase.table("obra_membros").select("obra_id").eq("user_id", user_id).execute().data or []
+        ids = [v["obra_id"] for v in vinculos]
+        if not ids:
+            return []
+        return self.supabase.table("obras").select(COLUNAS_OBRA).in_("id", ids).execute().data or []
 
     def nomes_de_orcamentos(self, orcamento_ids: List[str]) -> Dict[str, str]:
         if not orcamento_ids:
