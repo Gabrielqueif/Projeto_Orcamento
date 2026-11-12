@@ -12,6 +12,7 @@ from app.modules.importacao.services.pdf_service import PdfService
 from app.modules.orcamento.bdi import FAIXAS_REFERENCIA_TCU, calcular_bdi_tcu
 from app.modules.orcamento.repositories import InsumoRepository, OrcamentoItemRepository, OrcamentoRepository
 from app.modules.orcamento.schemas import (
+    AprovarOrcamentoRequest,
     AtualizarPrecosPropriaResponse,
     BDICalculateRequest,
     BDICalculateResponse,
@@ -250,6 +251,20 @@ async def adicionar_item(
 async def listar_itens(orcamento_id: str, service: OrcamentoItemService = Depends(get_orcamento_item_service)):
     """Lista todos os itens de um orçamento"""
     return service.listar_itens(orcamento_id)
+
+
+@router.post(
+    "/{orcamento_id}/aprovar",
+    response_model=OrcamentoResponse,
+    summary="Aprovar orçamento aplicando a margem de negociação e fechando a planilha",
+    tags=["Orçamentos"],
+)
+async def aprovar_orcamento(
+    orcamento_id: str,
+    dados: AprovarOrcamentoRequest,
+    service: OrcamentoItemService = Depends(get_orcamento_item_service),
+):
+    return service.aprovar_orcamento(orcamento_id, dados.margem_negociacao_pct)
 
 
 @router.post(

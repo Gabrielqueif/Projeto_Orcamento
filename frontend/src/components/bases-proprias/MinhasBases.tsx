@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { CaretRight, Database, Plus } from "@phosphor-icons/react";
 import { Modal } from "@/components/ui/Modal";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
 import { useToast } from "@/components/common/toast";
 import { criarBase, listarBases, type BasePropria } from "@/lib/api/basesProprias";
 import { UFS } from "@/lib/basesPropriasUtils";
@@ -70,7 +71,19 @@ export function MinhasBases() {
         </button>
       </div>
 
-      {loading && <p className="gp-sub">Carregando suas bases...</p>}
+      {loading && (
+        <SkeletonStatus texto="Carregando suas bases...">
+          <div className="gp-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))" }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="gp-card gp-pad" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <Skeleton width={i === 1 ? "50%" : "65%"} height={18} />
+                <Skeleton width="85%" height={14} />
+                <Skeleton width={40} height={22} radius={999} />
+              </div>
+            ))}
+          </div>
+        </SkeletonStatus>
+      )}
       {erro && <p style={{ color: "#B91C1C", margin: 0 }}>{erro}</p>}
 
       {!loading && !erro && bases.length === 0 && (

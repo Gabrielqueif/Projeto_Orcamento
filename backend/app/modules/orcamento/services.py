@@ -8,11 +8,22 @@ from app.modules.etapa.repositories import EtapaRepository
 from app.modules.orcamento.bdi import BDIConfig, calcular_bdi_tcu, determinar_tipo_bdi_item
 from app.modules.orcamento.repositories import InsumoRepository, OrcamentoItemRepository, OrcamentoRepository
 from app.modules.orcamento.schemas import OrcamentoCreate, OrcamentoItemCreate, OrcamentoItemUpdate, OrcamentoUpdate
-from core.exceptions import NaoEncontradoError
+from core.exceptions import ConflitoError, NaoEncontradoError
 
 logger = logging.getLogger("projeto_orcamento")
 
 FONTE_PROPRIA = "PROPRIA"
+STATUS_TRAVADOS = {"aprovado", "concluido"}
+
+
+def orcamento_travado(orcamento: Any) -> bool:
+    """Orçamento aprovado/concluído tem planilha fechada: sem edição de itens, insumos ou etapas."""
+    return isinstance(orcamento, dict) and str(orcamento.get("status") or "").lower() in STATUS_TRAVADOS
+
+
+def garantir_editavel(orcamento: Any) -> None:
+    if orcamento_travado(orcamento):
+        raise ConflitoError("Orçamento aprovado: a planilha está fechada e não pode ser editada.")
 TIPOS_INSUMO_PROPRIO = {"MATERIAL", "MAO_DE_OBRA", "EQUIPAMENTO", "SERVICO"}
 
 
@@ -76,6 +87,12 @@ class OrcamentoService:
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat(),
         }
+        # Campos de empreendimento: só enviados quando informados, para não
+        # exigir as colunas novas antes da migration ser aplicada.
+        for campo in ("descricao", "proprietario", "endereco", "fase"):
+            valor = getattr(orcamento, campo, None)
+            if valor is not None:
+                dados[campo] = valor
         return self.repository.criar(dados)
 
     def listar_orcamentos(
@@ -97,6 +114,7 @@ class OrcamentoService:
         existente = self.repository.buscar_por_id(orcamento_id)
         if not existente:
             raise NaoEncontradoError("Orçamento não encontrado")
+        garantir_editavel(existente)
 
         dados_atualizacao = {}
         dados_atualizacao["updated_at"] = datetime.now().isoformat()
@@ -144,6 +162,10 @@ class OrcamentoService:
             dados_atualizacao["variaveis_globais"] = orcamento_update.variaveis_globais
         if orcamento_update.locais is not None:
             dados_atualizacao["locais"] = orcamento_update.locais
+        for campo in ("descricao", "proprietario", "endereco", "fase"):
+            valor = getattr(orcamento_update, campo, None)
+            if valor is not None:
+                dados_atualizacao[campo] = valor
 
         # Recalcula BDI analítico quando bdi_config é enviado
         tipo_bdi_efetivo = dados_atualizacao.get("tipo_bdi") or existente.get("tipo_bdi", "ANALITICO")
@@ -507,6 +529,7 @@ class OrcamentoItemService:
         orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
         if not orcamento:
             raise NaoEncontradoError("Orçamento não encontrado")
+        garantir_editavel(orcamento)
 
         estado_para_buscar = item.estado or orcamento.get("estado")
         if not estado_para_buscar:
@@ -612,7 +635,44 @@ class OrcamentoItemService:
         itens = self.repository.listar_por_orcamento(orcamento_id)
         return anexar_nome_base_propria(itens, self.base_propria_service, orcamento.get("user_id"))
 
+    def _garantir_editavel(self, orcamento_id: str) -> None:
+        garantir_editavel(self.orcamento_repository.buscar_por_id(orcamento_id))
+
+    def aprovar_orcamento(self, orcamento_id: str, margem_pct: float):
+        """Aprova e fecha a planilha: aplica a margem de negociação como desconto fixo em cada serviço."""
+        orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
+        if not orcamento:
+            raise NaoEncontradoError("Orçamento não encontrado")
+        garantir_editavel(orcamento)
+        if not 0 <= margem_pct < 100:
+            raise ValueError("Margem de negociação deve estar entre 0 e 100.")
+
+        fator = 1 - margem_pct / 100
+        for item in self.repository.listar_por_orcamento(orcamento_id):
+            preco_unitario = round(float(item.get("preco_unitario") or 0.0) * fator, 4)
+            self.repository.atualizar(
+                item["id"],
+                {
+                    "preco_unitario": preco_unitario,
+                    "preco_total": round(float(item.get("quantidade") or 0.0) * preco_unitario, 2),
+                },
+            )
+        self._atualizar_valor_total_orcamento(orcamento_id)
+
+        agora = datetime.now().isoformat()
+        return self.orcamento_repository.atualizar(
+            orcamento_id,
+            {
+                "status": "aprovado",
+                "fase": "obra",
+                "margem_negociacao_pct": margem_pct,
+                "aprovado_em": agora,
+                "updated_at": agora,
+            },
+        )
+
     def atualizar_item(self, orcamento_id: str, item_id: str, item_update: OrcamentoItemUpdate):
+        self._garantir_editavel(orcamento_id)
         item_atual = self.repository.buscar_por_id(item_id, orcamento_id)
         if not item_atual:
             raise NaoEncontradoError("Item não encontrado")
@@ -802,6 +862,8 @@ class OrcamentoItemService:
         orcamento = self.orcamento_repository.buscar_por_id(orcamento_id)
         if not orcamento:
             raise NaoEncontradoError("Orçamento não encontrado")
+        if aplicar:
+            garantir_editavel(orcamento)
         servico = self._exigir_base_propria_service()
         dono = orcamento.get("user_id")
 
@@ -927,6 +989,7 @@ class OrcamentoItemService:
     def atualizar_insumo(self, orcamento_id: str, item_id: str, insumo_id: str, dados: dict):
         if not self.insumo_repository:
             raise ValueError("Repositório de insumos não disponível")
+        self._garantir_editavel(orcamento_id)
 
         item_pai = self.repository.buscar_por_id(item_id, orcamento_id)
         if not item_pai:
@@ -1016,6 +1079,7 @@ class OrcamentoItemService:
             logging.getLogger(__name__).warning(f"Falha ao explodir insumos: {e}")
 
     def remover_item(self, orcamento_id: str, item_id: str):
+        self._garantir_editavel(orcamento_id)
         item_existente = self.repository.buscar_por_id(item_id, orcamento_id)
         if not item_existente:
             raise NaoEncontradoError("Item não encontrado")

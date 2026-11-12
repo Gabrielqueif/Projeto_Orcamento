@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { X, Package, HardHat, Wrench, Spinner, PencilSimple, Trash } from "@phosphor-icons/react";
+import { X, Package, HardHat, Wrench, PencilSimple, Trash } from "@phosphor-icons/react";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
 import { getInsumos, updateInsumo, type OrcamentoItem, type OrcamentoItemInsumo } from "@/lib/api/orcamentos";
 
 interface InsumosDrawerProps {
@@ -12,6 +13,8 @@ interface InsumosDrawerProps {
   /** Mobile: o cartão do item abre esta folha, que oferece editar e remover no rodapé. */
   onEdit?: (item: OrcamentoItem) => void;
   onRemove?: (item: OrcamentoItem) => void;
+  /** Orçamento aprovado: insumos só para consulta. */
+  readOnly?: boolean;
 }
 
 // Cores da barra de composição do custo (mobile), na ordem dos grupos
@@ -36,7 +39,7 @@ function formatCurrency(v: number | null | undefined) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate, onEdit, onRemove }: InsumosDrawerProps) {
+export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate, onEdit, onRemove, readOnly = false }: InsumosDrawerProps) {
   const [insumos, setInsumos] = useState<OrcamentoItemInsumo[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -111,10 +114,35 @@ export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate, onEdit, on
 
         <div className="gp-db">
           {loading ? (
-            <div role="status" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, height: 192, color: "#475569" }}>
-              <Spinner size={20} weight="bold" className="animate-spin" aria-hidden="true" />
-              Carregando insumos...
-            </div>
+            <SkeletonStatus texto="Carregando insumos...">
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div className="gp-card gp-pad gp-dark" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                  <Skeleton width="40%" height={12} escuro />
+                  <Skeleton width="30%" height={22} escuro />
+                </div>
+                {[3, 2].map((linhas, g) => (
+                  <div key={g} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <Skeleton width={110} height={24} radius={999} />
+                      <Skeleton width={90} height={14} style={{ marginLeft: "auto" }} />
+                    </div>
+                    <div className="gp-card gp-m-flat" style={{ overflow: "hidden", border: "1px solid #E6EBF2" }}>
+                      {Array.from({ length: linhas }, (_, i) => (
+                        <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 84px 104px 96px", gap: 12, alignItems: "center", padding: "14px 12px", borderTop: i ? "1px solid #E6EBF2" : undefined }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            <Skeleton width={i % 2 ? "70%" : "85%"} height={13} />
+                            <Skeleton width="45%" height={11} />
+                          </div>
+                          <Skeleton width="70%" height={13} style={{ justifySelf: "end" }} />
+                          <Skeleton width="75%" height={13} style={{ justifySelf: "end" }} />
+                          <Skeleton width="80%" height={13} style={{ justifySelf: "end" }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SkeletonStatus>
           ) : insumos.length === 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 192, textAlign: "center", color: "#475569" }}>
               <Package size={40} weight="bold" aria-hidden="true" style={{ marginBottom: 12, opacity: 0.4 }} />
@@ -198,6 +226,7 @@ export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate, onEdit, on
                                 <input
                                   type="number"
                                   aria-label={`Quantidade de ${ins.descricao}`}
+                                  readOnly={readOnly}
                                   defaultValue={(ins.quantidade_unitaria / item.quantidade).toFixed(6)}
                                   className="gp-mono gp-4b-num"
                                   style={{ width: "100%", height: 34, border: "1px solid #CBD5E1", borderRadius: 8, textAlign: "right", fontSize: 13, padding: "0 6px" }}
@@ -214,6 +243,7 @@ export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate, onEdit, on
                                     type="number"
                                     step="0.01"
                                     aria-label={`Preço unitário de ${ins.descricao}`}
+                                    readOnly={readOnly}
                                     defaultValue={(ins.preco_unitario_custom ?? ins.preco_unitario_base ?? 0).toFixed(2)}
                                     className="gp-mono gp-4b-num"
                                     style={{ width: 72, height: 34, border: "1px solid #CBD5E1", borderRadius: 8, textAlign: "right", fontSize: 13, padding: "0 6px" }}

@@ -19,6 +19,8 @@ import { getOrcamento } from "@/lib/api/orcamentos";
 import { ObraTabs } from "@/components/obras/ObraTabs";
 import { useToast } from "@/components/common/toast";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { CardListSkeleton, MetricCardsSkeleton, PanelSkeleton } from "@/components/common/skeletons";
 
 // Sigla e tom de cada categoria nos cartões de despesa do mobile.
 const SIGLA_CATEGORIA: Record<string, [string, string]> = {
@@ -184,9 +186,40 @@ export default function GestaoCustosObraPage() {
 
   if (loading) {
     return (
-      <p role="status" style={{ padding: 48, textAlign: "center", color: "#475569" }}>
-        Carregando gestão de custos da obra...
-      </p>
+      <>
+        <PageHeader
+          back="/financeiro"
+          backLabel="Voltar para o financeiro"
+          crumb={<><Link href="/financeiro">Financeiro</Link> / <span aria-current="page" style={{ color: "#001b3d" }}>Gestão de custos</span></>}
+          eyebrow="Financeiro da obra"
+          title={nomeObra ?? "Detalhamento de Custos da Obra"}
+          subtitle="Despesas lançadas e consumo da verba por categoria."
+        />
+        <ObraTabs id={obraId} atual="financeiro" />
+        <SkeletonStatus texto="Carregando gestão de custos da obra..." style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div className="gp-only-m">
+            <CardListSkeleton quantidade={3} />
+          </div>
+          <div className="gp-only-d">
+<div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <MetricCardsSkeleton quantidade={4} />
+            <div className="gp-card gp-pad" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <Skeleton width={320} height={18} style={{ maxWidth: "100%" }} />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <Skeleton width="50%" height={14} />
+                    <Skeleton width="75%" height={12} />
+                    <Skeleton height={10} radius={5} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <PanelSkeleton linhas={5} />
+          </div>
+</div>
+        </SkeletonStatus>
+      </>
     );
   }
 

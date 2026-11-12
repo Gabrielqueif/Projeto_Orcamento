@@ -263,6 +263,21 @@ export async function getOrcamento(id: string): Promise<Orcamento> {
   return response.json();
 }
 
+/** Aprova o orçamento: aplica a margem de negociação em cada item e fecha a planilha. */
+export async function aprovarOrcamento(id: string, margemNegociacaoPct: number): Promise<Orcamento> {
+  const response = await fetchWithAuth(`/orcamentos/${id}/aprovar`, {
+    method: "POST",
+    body: JSON.stringify({ margem_negociacao_pct: margemNegociacaoPct }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Erro ao aprovar orçamento");
+  }
+
+  return response.json();
+}
+
 export async function updateOrcamento(
   id: string,
   data: OrcamentoUpdate,

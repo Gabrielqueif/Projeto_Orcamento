@@ -171,3 +171,100 @@ def test_deletar_orcamento_nao_encontrado_levanta_value_error(orcamento_service,
         orcamento_service.deletar_orcamento("id-inexistente")
 
     repository_mock.deletar.assert_not_called()
+
+
+@pytest.mark.unit
+def test_criar_orcamento_grava_campos_de_empreendimento(orcamento_service, repository_mock):
+    repository_mock.criar.return_value = {"id": "1"}
+    entrada = OrcamentoCreate(
+        nome="Edifício A",
+        cliente="Cliente",
+        data=datetime.now().date(),
+        base_referencia="SINAPI",
+        tipo_composicao="PRECO_MEDIO",
+        estado="SP",
+        descricao="Residencial 10 andares",
+        proprietario="Construtora X",
+        endereco={"cidade": "São Paulo", "uf": "SP"},
+        fase="estimativa_custos",
+    )
+    orcamento_service.criar_orcamento(entrada)
+    dados = repository_mock.criar.call_args[0][0]
+    assert dados["descricao"] == "Residencial 10 andares"
+    assert dados["proprietario"] == "Construtora X"
+    assert dados["endereco"]["uf"] == "SP"
+    assert dados["fase"] == "estimativa_custos"
+
+
+@pytest.mark.unit
+def test_criar_orcamento_omite_campos_de_empreendimento_quando_nao_informados(orcamento_service, repository_mock):
+    repository_mock.criar.return_value = {"id": "1"}
+    entrada = OrcamentoCreate(
+        nome="Sem extras",
+        cliente="C",
+        data=datetime.now().date(),
+        base_referencia="SINAPI",
+        tipo_composicao="PRECO_MEDIO",
+        estado="SP",
+    )
+    orcamento_service.criar_orcamento(entrada)
+    dados = repository_mock.criar.call_args[0][0]
+    for campo in ("descricao", "proprietario", "endereco", "fase"):
+        assert campo not in dados
+
+
+@pytest.mark.unit
+def test_orcamento_create_rejeita_fase_invalida():
+    with pytest.raises(Exception):
+        OrcamentoCreate(
+            nome="x", cliente="c", data=datetime.now().date(), base_referencia="SINAPI",
+            tipo_composicao="PRECO_MEDIO", estado="SP", fase="inexistente",
+        )
+
+
+def _item_service(orcamento, itens=None):
+    from app.modules.orcamento.services import OrcamentoItemService
+
+    item_repo = MagicMock()
+    item_repo.listar_por_orcamento.return_value = itens or []
+    orc_repo = MagicMock()
+    orc_repo.buscar_por_id.return_value = orcamento
+    return OrcamentoItemService(item_repo, orc_repo, MagicMock()), item_repo, orc_repo
+
+
+@pytest.mark.unit
+def test_aprovar_aplica_margem_em_cada_item_e_trava():
+    itens = [
+        {"id": "i1", "quantidade": 10, "preco_unitario": 100.0},
+        {"id": "i2", "quantidade": 2, "preco_unitario": 50.0},
+    ]
+    svc, item_repo, orc_repo = _item_service({"id": "o1", "status": "em_elaboracao", "bdi": 0}, itens)
+    svc.aprovar_orcamento("o1", 10)
+    chamadas = {c[0][0]: c[0][1] for c in item_repo.atualizar.call_args_list if "preco_total" in c[0][1]}
+    assert chamadas["i1"]["preco_unitario"] == 90.0 and chamadas["i1"]["preco_total"] == 900.0
+    assert chamadas["i2"]["preco_unitario"] == 45.0
+    final = orc_repo.atualizar.call_args[0][1]
+    assert final["status"] == "aprovado" and final["fase"] == "obra" and final["margem_negociacao_pct"] == 10
+
+
+@pytest.mark.unit
+def test_aprovar_rejeita_orcamento_ja_aprovado_e_margem_invalida():
+    from core.exceptions import ConflitoError
+
+    svc, _, _ = _item_service({"id": "o1", "status": "aprovado"})
+    with pytest.raises(ConflitoError):
+        svc.aprovar_orcamento("o1", 5)
+    svc, _, _ = _item_service({"id": "o1", "status": "em_elaboracao"})
+    with pytest.raises(ValueError):
+        svc.aprovar_orcamento("o1", 100)
+
+
+@pytest.mark.unit
+def test_orcamento_aprovado_bloqueia_edicao_de_itens():
+    from core.exceptions import ConflitoError
+
+    svc, _, _ = _item_service({"id": "o1", "status": "aprovado"})
+    with pytest.raises(ConflitoError):
+        svc.remover_item("o1", "i1")
+    with pytest.raises(ConflitoError):
+        svc.atualizar_item("o1", "i1", MagicMock())

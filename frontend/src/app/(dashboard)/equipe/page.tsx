@@ -8,6 +8,7 @@ import { getOrcamentos, type Orcamento } from "@/lib/api/orcamentos";
 import { useToast } from "@/components/common/toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Fab } from "@/components/layout/Fab";
+import { ListItemSkeleton, TableRowsSkeleton } from "@/components/common/skeletons";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 // Valor curto para o resumo do mobile ("R$ 48,6 mil").
@@ -193,7 +194,9 @@ export default function EquipePage() {
               ? "Carregando membros da equipe..."
               : `${filteredMembers.length} ${filteredMembers.length === 1 ? "colaborador" : "colaboradores"}`}
           </p>
-          {!loading && filteredMembers.length === 0 ? (
+          {loading ? (
+            <ListItemSkeleton quantidade={4} />
+          ) : filteredMembers.length === 0 ? (
             <p className="gp-card" style={{ margin: 0, padding: 24, textAlign: "center", color: "#475569" }}>
               Nenhum membro encontrado com os filtros atuais.
             </p>
@@ -247,11 +250,7 @@ export default function EquipePage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="gp-td" style={{ textAlign: "center", padding: 40, color: "#475569" }} role="status">
-                    Carregando membros da equipe...
-                  </td>
-                </tr>
+                <TableRowsSkeleton colunas={6} linhas={6} anunciar={false} />
               ) : filteredMembers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="gp-td" style={{ textAlign: "center", padding: 40, color: "#475569" }}>

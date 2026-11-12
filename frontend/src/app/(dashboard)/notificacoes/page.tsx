@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { BookOpen, Clock, Cube, Money } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { ListItemSkeleton } from "@/components/common/skeletons";
 import type { SeveridadeRisco, TipoRisco } from "@/lib/api/dashboard";
 import {
   getNotificacoes,
@@ -84,9 +86,10 @@ export default function NotificacoesPage() {
       />
 
       {estado === "carregando" && (
-        <p className="gp-sub" role="status" style={{ margin: 0 }}>
-          Carregando notificações…
-        </p>
+        <SkeletonStatus texto="Carregando notificações…" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Skeleton width={140} height={20} />
+          <ListItemSkeleton quantidade={4} />
+        </SkeletonStatus>
       )}
 
       {estado === "erro" && (

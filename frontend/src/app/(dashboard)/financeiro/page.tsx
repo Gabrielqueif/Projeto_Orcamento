@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { getPortfolioConsolidado, PortfolioConsolidado } from "@/lib/api/financeiro";
 import { Check, Warning } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { CardListSkeleton, MetricCardsSkeleton } from "@/components/common/skeletons";
 
 const formatCurrency = (val: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(val);
@@ -50,9 +52,56 @@ export default function FinanceiroVisaoPage() {
 
   if (loading) {
     return (
-      <p role="status" style={{ padding: 48, textAlign: "center", color: "#475569" }}>
-        Carregando dados financeiros das obras...
-      </p>
+      <>
+        <PageHeader
+          crumb={<>Gestão / <span aria-current="page" style={{ color: "#001b3d" }}>Financeiro</span></>}
+          eyebrow="Gestão"
+          back="/mais"
+          title="Financeiro"
+          subtitle={<span className="gp-only-d">Verba, gasto e saldo de todas as obras ativas.</span>}
+        />
+        <SkeletonStatus texto="Carregando dados financeiros das obras..." style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div className="gp-only-m">
+            <CardListSkeleton quantidade={3} comBarra />
+          </div>
+          <div className="gp-only-d">
+<div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <MetricCardsSkeleton quantidade={4} />
+            <div className="gp-split">
+              <div className="gp-card gp-main" style={{ overflow: "hidden" }}>
+                <div style={{ padding: "18px 22px", borderBottom: "1px solid #E6EBF2" }}>
+                  <Skeleton width={110} height={18} />
+                </div>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1.4fr 0.8fr", gap: 16, alignItems: "center", padding: "16px 22px", borderTop: i ? "1px solid #E6EBF2" : undefined }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <Skeleton width={i % 2 ? "65%" : "80%"} height={15} />
+                      <Skeleton width="45%" height={12} />
+                    </div>
+                    <Skeleton width="80%" height={14} />
+                    <Skeleton width="75%" height={14} />
+                    <Skeleton height={8} radius={4} />
+                    <Skeleton width={70} height={22} radius={999} />
+                  </div>
+                ))}
+              </div>
+              <div className="gp-card gp-pad gp-side" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <Skeleton width={130} height={18} />
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                      <Skeleton width="35%" height={14} />
+                      <Skeleton width="40%" height={14} />
+                    </div>
+                    <Skeleton height={10} radius={5} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+</div>
+        </SkeletonStatus>
+      </>
     );
   }
 

@@ -9,6 +9,9 @@ import { getOrcamento, type Orcamento } from "@/lib/api/orcamentos";
 import { ObraTabs } from "@/components/obras/ObraTabs";
 import { PlanilhaView } from "@/components/orcamentos/PlanilhaView";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PlanilhaSkeleton } from "@/components/orcamentos/PlanilhaSkeleton";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { DetailHeaderSkeleton, MetricCardsSkeleton } from "@/components/common/skeletons";
 
 export default function PlanilhaOrcamentariaPage() {
   const params = useParams();
@@ -34,7 +37,26 @@ export default function PlanilhaOrcamentariaPage() {
   }, [id]);
 
   if (loading && !orcamento) {
-    return <p className="gp-sub" style={{ textAlign: "center", padding: 48 }}>Carregando planilha orçamentária...</p>;
+    return (
+      <>
+        <SkeletonStatus texto="Carregando planilha orçamentária...">
+          <div className="gp-only-d">
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <DetailHeaderSkeleton />
+            </div>
+          </div>
+          <div className="gp-only-m">
+            <div className="gp-ph">
+              <Skeleton escuro width={90} height={14} />
+              <Skeleton escuro width="70%" height={26} />
+            </div>
+          </div>
+        </SkeletonStatus>
+        <ObraTabs id={id} atual="planilha" />
+        <div aria-hidden="true" className="gp-only-d"><MetricCardsSkeleton quantidade={4} /></div>
+        <PlanilhaSkeleton />
+      </>
+    );
   }
 
   if (!orcamento) {

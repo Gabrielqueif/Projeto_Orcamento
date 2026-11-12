@@ -9,6 +9,7 @@ from app.modules.etapa.schemas import EtapaCreate, EtapaResponse, EtapaUpdate
 from app.modules.etapa.services import EtapaService
 from app.modules.medicao.repositories import MedicaoRepository
 from app.modules.medicao.services import MedicaoService
+from app.modules.orcamento.repositories import OrcamentoRepository
 from core.ownership import enforce_ownership
 
 logger = logging.getLogger("projeto_orcamento")
@@ -23,7 +24,7 @@ router = APIRouter(
 
 def get_etapa_service(supabase=Depends(get_supabase)) -> EtapaService:
     repository = EtapaRepository(supabase)
-    return EtapaService(repository)
+    return EtapaService(repository, OrcamentoRepository(supabase))
 
 
 @router.post("/{orcamento_id}/etapas", response_model=EtapaResponse, summary="Criar etapa no orçamento")

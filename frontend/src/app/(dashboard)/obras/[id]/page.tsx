@@ -20,6 +20,8 @@ import { CurvaSCard } from "@/components/obras/CurvaSCard";
 import { ObraTabs } from "@/components/obras/ObraTabs";
 import { useToast } from "@/components/common/toast";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
+import { ChartSkeleton, DetailHeaderSkeleton, ListItemSkeleton, MetricCardsSkeleton, PanelSkeleton } from "@/components/common/skeletons";
 
 export default function ObraDetalhePage() {
   const { showToast } = useToast();
@@ -80,9 +82,7 @@ export default function ObraDetalhePage() {
   }, [id]);
 
   if (loading) {
-    return (
-      <p className="gp-sub" style={{ textAlign: "center", padding: 48 }}>Carregando detalhes da obra...</p>
-    );
+    return <ObraDetalheSkeleton id={id} />;
   }
 
   if (!orcamento) {
@@ -652,6 +652,49 @@ export default function ObraDetalhePage() {
           </div>
         </div>
       )}
+    </>
+  );
+}
+
+/** Esqueleto da obra: cabeçalho, indicadores, abas reais, cronograma e Curva S. */
+function ObraDetalheSkeleton({ id }: { id: string }) {
+  return (
+    <>
+      <SkeletonStatus texto="Carregando detalhes da obra...">
+        <div className="gp-only-d">
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <DetailHeaderSkeleton />
+            <MetricCardsSkeleton quantidade={4} />
+          </div>
+        </div>
+        <div className="gp-only-m">
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="gp-ph">
+              <Skeleton escuro width="70%" height={26} />
+              <Skeleton escuro width="50%" height={14} />
+            </div>
+            <div className="gp-card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+              {[0, 1, 2].map((i) => (
+                <div key={i} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <Skeleton width="70%" height={11} />
+                  <Skeleton width="55%" height={22} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </SkeletonStatus>
+      <ObraTabs id={id} atual="prazo" />
+      <div aria-hidden="true" className="gp-only-d">
+        <div className="gp-split">
+          <div className="gp-main"><PanelSkeleton linhas={6} /></div>
+          <div className="gp-side"><PanelSkeleton linhas={3} /></div>
+        </div>
+      </div>
+      <div aria-hidden="true" className="gp-only-m">
+        <ListItemSkeleton quantidade={3} avatar={false} />
+      </div>
+      <div aria-hidden="true"><ChartSkeleton altura={200} /></div>
     </>
   );
 }

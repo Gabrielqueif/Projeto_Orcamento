@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { MagnifyingGlass } from '@phosphor-icons/react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Skeleton, SkeletonStatus } from '@/components/ui/skeleton';
 import { buscarComposicoes, buscarInsumos, getEstadosComposicao, type ItemComposicao, type ItemInsumo, type PrecosEstado } from '@/lib/api/composicoes';
 
 const UFS = [
@@ -252,7 +253,7 @@ export function ItemSearch({ fonte: fonteInicial = 'SINAPI' }: { fonte?: string 
                           onAlternar={() => alternarComp(item)}
                         >
                           {loadingPrecos[item.codigo_composicao] ? (
-                            <p className="gp-hint" style={{ margin: 0 }}>Carregando...</p>
+                            <PrecosEstadosSkeleton />
                           ) : (
                             <ListaEstados mapa={precosAbertos[item.codigo_composicao]} />
                           )}
@@ -402,7 +403,7 @@ export function ItemSearch({ fonte: fonteInicial = 'SINAPI' }: { fonte?: string 
               </p>
               <p className="gp-ml" style={{ margin: '4px 0 0' }}>Comparar estados</p>
               {selComp && loadingPrecos[selComp.codigo_composicao] ? (
-                <p className="gp-hint" style={{ margin: 0 }}>Carregando...</p>
+                <PrecosEstadosSkeleton />
               ) : (
                 <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                   {comparar(mapaSel || {}).map(([k, v]) => (
@@ -423,5 +424,19 @@ export function ItemSearch({ fonte: fonteInicial = 'SINAPI' }: { fonte?: string 
         </aside>
       </div>
     </>
+  );
+}
+
+/** Linhas UF / preço enquanto os preços por estado são carregados. */
+function PrecosEstadosSkeleton() {
+  return (
+    <SkeletonStatus texto="Carregando...">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="gp-li" style={{ padding: '8px 0' }}>
+          <Skeleton width={28} height={14} />
+          <Skeleton width={i % 2 ? 72 : 84} height={14} />
+        </div>
+      ))}
+    </SkeletonStatus>
   );
 }
