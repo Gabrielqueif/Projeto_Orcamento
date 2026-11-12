@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, MagnifyingGlass, Plus, Trash } from "@phosphor-icons/react";
 import { Modal } from "@/components/ui/Modal";
+import { Drawer } from "@/components/ui/Drawer";
 import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
 import { useToast } from "@/components/common/toast";
 import {
@@ -13,7 +14,16 @@ import {
 } from "@/lib/api/basesProprias";
 import { ComposicaoEditor } from "./ComposicaoEditor";
 
-export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?: string }) {
+export function ComposicoesTab({
+  baseId,
+  ufPadrao,
+  editorEmDrawer = false,
+}: {
+  baseId: string;
+  ufPadrao?: string;
+  /** Abre o editor numa janela lateral de sobreposição em vez de abaixo da lista. */
+  editorEmDrawer?: boolean;
+}) {
   const { showToast } = useToast();
   const [lista, setLista] = useState<ComposicaoPropria[]>([]);
   const [busca, setBusca] = useState("");
@@ -95,7 +105,7 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
 
   return (
     // No mobile, com uma composição aberta, a lista some e o editor ocupa a tela (globals.css).
-    <div className="gp-4e-comps" data-editando={selecionada ? "" : undefined}>
+    <div className="gp-4e-comps" data-editando={selecionada && !editorEmDrawer ? "" : undefined}>
       <div className="gp-4e-tb">
         <form
           role="search"
@@ -123,7 +133,7 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
       </div>
 
       {/* Mobile: "Nova composição" vira o botão flutuante; some enquanto o editor está aberto */}
-      {!selecionada && (
+      {(!selecionada || editorEmDrawer) && (
         <button type="button" onClick={() => setModalAberto(true)} className="gp-fab gp-4e-fab">
           <Plus size={22} weight="bold" aria-hidden="true" /> Nova composição
         </button>
@@ -186,7 +196,21 @@ export function ComposicoesTab({ baseId, ufPadrao }: { baseId: string; ufPadrao?
         )}
       </div>
 
-      <div className="gp-4e-edw">
+      {editorEmDrawer && (
+        <Drawer isOpen={!!selecionada} onClose={() => setSelecionada(null)} title="Editar composição">
+          {selecionada && (
+            <ComposicaoEditor
+              key={selecionada}
+              baseId={baseId}
+              composicaoId={selecionada}
+              ufPadrao={ufPadrao}
+              onAlterada={() => carregar(busca)}
+            />
+          )}
+        </Drawer>
+      )}
+
+      <div className="gp-4e-edw" hidden={editorEmDrawer}>
         {selecionada && (
           <div className="gp-only-m">
             <button type="button" onClick={() => setSelecionada(null)} className="gp-btn gp-bs gp-4e-voltar">
