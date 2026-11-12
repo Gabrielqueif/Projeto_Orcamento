@@ -26,6 +26,8 @@ interface EtapasEstruturaProps {
   onSelect: (id: string) => void;
   /** targetId null = mover para o fim da raiz */
   onMove: (dragId: string, targetId: string | null, pos: DropPos) => void;
+  /** Orçamento aprovado: estrutura só para consulta. */
+  readOnly?: boolean;
 }
 
 export type DropPos = "before" | "after" | "inside";
@@ -41,6 +43,7 @@ export function EtapasEstrutura({
   onRemove,
   onSelect,
   onMove,
+  readOnly = false,
 }: EtapasEstruturaProps) {
   const [painelAberto, setPainelAberto] = React.useState(true);
   const [collapsed, setCollapsed] = React.useState<Set<string>>(new Set());
@@ -128,7 +131,7 @@ export function EtapasEstrutura({
     return (
       <li key={etapa.id}>
         <div
-          draggable={!isEditing}
+          draggable={!isEditing && !readOnly}
           onDragStart={(e) => {
             e.dataTransfer.effectAllowed = "move";
             e.dataTransfer.setData("text/plain", etapa.id);
@@ -200,6 +203,7 @@ export function EtapasEstrutura({
             {formatarValor(totais[etapa.id] || 0)}
           </span>
 
+          {!readOnly && (
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0">
             {nivel < MAX_NIVEL_ETAPAS && (
               <button
@@ -228,6 +232,7 @@ export function EtapasEstrutura({
               <Trash size={15} />
             </button>
           </div>
+          )}
         </div>
 
         {subs.length > 0 && !isCollapsed && (
@@ -263,7 +268,7 @@ export function EtapasEstrutura({
             )}
           </span>
         </button>
-        {painelAberto && (
+        {painelAberto && !readOnly && (
           <button
             type="button"
             onClick={() => onAdd(null)}

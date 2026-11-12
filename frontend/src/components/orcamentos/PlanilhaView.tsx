@@ -30,9 +30,11 @@ interface PlanilhaViewProps {
   fonteOrcamento?: string;
   bdiOrcamento?: number;
   onTotalChanged?: () => void;
+  /** Orçamento aprovado: planilha fechada, só leitura. */
+  readOnly?: boolean;
 }
 
-export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "SINAPI", bdiOrcamento = 0, onTotalChanged }: PlanilhaViewProps) {
+export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "SINAPI", bdiOrcamento = 0, onTotalChanged, readOnly = false }: PlanilhaViewProps) {
   const { showToast } = useToast();
   const [etapas, setEtapas] = React.useState<Etapa[]>([]);
   const [previaPrecos, setPreviaPrecos] = React.useState<AtualizacaoPrecosPropriaResponse | null>(null);
@@ -370,12 +372,16 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
                       <button type="button" onClick={() => setDrawerItem(item)} className="gp-ib" style={{ width: 36, height: 36, borderRadius: 10, marginRight: 6 }} title="Ver recursos (insumos)" aria-label={`Ver insumos de ${item.descricao}`}>
                         <Database size={16} weight="bold" aria-hidden="true" />
                       </button>
-                      <button type="button" onClick={() => openModalToEdit(item)} className="gp-ib" style={{ width: 36, height: 36, borderRadius: 10, marginRight: 6 }} title="Editar item" aria-label={`Editar item ${item.descricao}`}>
-                        <PencilSimple size={16} weight="bold" aria-hidden="true" />
-                      </button>
-                      <button type="button" onClick={() => handleRemoveItem(item.id)} className="gp-ib" style={{ width: 36, height: 36, borderRadius: 10, color: "#B91C1C" }} title="Remover item" aria-label={`Remover item ${item.descricao}`}>
-                        <Trash size={16} weight="bold" aria-hidden="true" />
-                      </button>
+                      {!readOnly && (
+                        <>
+                          <button type="button" onClick={() => openModalToEdit(item)} className="gp-ib" style={{ width: 36, height: 36, borderRadius: 10, marginRight: 6 }} title="Editar item" aria-label={`Editar item ${item.descricao}`}>
+                            <PencilSimple size={16} weight="bold" aria-hidden="true" />
+                          </button>
+                          <button type="button" onClick={() => handleRemoveItem(item.id)} className="gp-ib" style={{ width: 36, height: 36, borderRadius: 10, color: "#B91C1C" }} title="Remover item" aria-label={`Remover item ${item.descricao}`}>
+                            <Trash size={16} weight="bold" aria-hidden="true" />
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 );
@@ -430,16 +436,18 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
         className={`relative scroll-mt-4 ${isRaiz ? "gp-card" : ""}`}
         style={isRaiz ? { padding: 24 } : { padding: 16, borderRadius: 16, background: "#F8FAFC", border: "1px solid #E6EBF2" }}
       >
-        <button
-          onClick={() => handleRemoveEtapa(etapa.id)}
-          type="button"
-          className={`absolute border-none bg-transparent cursor-pointer ${isRaiz ? "top-6 right-6" : "top-4 right-4"}`}
-          style={{ color: "#B91C1C" }}
-          title={isRaiz ? "Excluir etapa completa" : "Excluir sub-etapa"}
-          aria-label={isRaiz ? "Excluir etapa completa" : "Excluir sub-etapa"}
-        >
-          <Trash size={isRaiz ? 20 : 16} weight="bold" aria-hidden="true" />
-        </button>
+        {!readOnly && (
+          <button
+            onClick={() => handleRemoveEtapa(etapa.id)}
+            type="button"
+            className={`absolute border-none bg-transparent cursor-pointer ${isRaiz ? "top-6 right-6" : "top-4 right-4"}`}
+            style={{ color: "#B91C1C" }}
+            title={isRaiz ? "Excluir etapa completa" : "Excluir sub-etapa"}
+            aria-label={isRaiz ? "Excluir etapa completa" : "Excluir sub-etapa"}
+          >
+            <Trash size={isRaiz ? 20 : 16} weight="bold" aria-hidden="true" />
+          </button>
+        )}
 
         <div className="gp-mono" style={{ fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
           {labelNivel} {isRaiz ? prefix.padStart(2, "0") : prefix}
@@ -473,6 +481,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
             aria-label="Nome da etapa"
             placeholder="Nome da etapa..."
           />
+          {!readOnly && (
           <button
             type="button"
             onClick={() => {
@@ -497,6 +506,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
           >
             {editingEtapaId === etapa.id ? <Check size={isRaiz ? 18 : 16} weight="bold" color="#3F6604" /> : <PencilSimple size={isRaiz ? 18 : 16} weight="bold" />}
           </button>
+          )}
         </div>
 
         {/* Itens diretos desta etapa */}
@@ -518,14 +528,16 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
 
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, borderTop: "1px solid #E6EBF2", paddingTop: 16, marginTop: 24 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            {nivel < MAX_NIVEL_ETAPAS && (
+            {!readOnly && nivel < MAX_NIVEL_ETAPAS && (
               <button type="button" onClick={() => handleAddSubEtapa(etapa.id)} className="gp-btn gp-bs gp-sm">
                 <Plus size={14} weight="bold" aria-hidden="true" /> Adicionar sub-etapa
               </button>
             )}
-            <button type="button" onClick={() => openModalToCreate(etapa.id)} className="gp-btn gp-bp gp-sm">
-              <Plus size={14} weight="bold" aria-hidden="true" /> Adicionar item à etapa
-            </button>
+            {!readOnly && (
+              <button type="button" onClick={() => openModalToCreate(etapa.id)} className="gp-btn gp-bp gp-sm">
+                <Plus size={14} weight="bold" aria-hidden="true" /> Adicionar item à etapa
+              </button>
+            )}
           </div>
           <div style={{ fontWeight: 800, fontSize: 14 }}>
             Total da etapa: <span className="gp-mono" style={{ marginLeft: 8, fontSize: 16, fontWeight: 600 }}>{formatarReal(totaisPorEtapa[etapa.id] || 0)}</span>
@@ -613,9 +625,12 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
             </section>
           );
         })}
+        {!readOnly && (
         <button type="button" onClick={() => openModalToCreate(etapa.id)} style={botaoTracejado}>
           <Plus size={16} weight="bold" aria-hidden="true" /> Adicionar item
         </button>
+        )}
+        {!readOnly && (
         <div role="group" aria-label={`Ações de ${etapa.nome}`} style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 }}>
           <button type="button" onClick={() => renomearEtapaMobile(etapa)} style={botaoAcaoEtapa}>
             <PencilSimple size={16} weight="bold" aria-hidden="true" /> Renomear
@@ -629,6 +644,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
             <Trash size={16} weight="bold" aria-hidden="true" /> Excluir
           </button>
         </div>
+        )}
       </>
     );
   };
@@ -656,6 +672,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
         onRemove={handleRemoveEtapa}
         onSelect={scrollToEtapa}
         onMove={handleMoveEtapa}
+        readOnly={readOnly}
       />
       <div className="gp-only-d">
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 20 }}>
@@ -674,13 +691,17 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
             </button>
           </div>
 
-          <button type="button" onClick={abrirPreviaPrecos} className="gp-btn gp-bs gp-sm">
-            <ArrowsClockwise size={16} weight="bold" aria-hidden="true" /> Atualizar preços da base própria
-          </button>
+          {!readOnly && (
+            <>
+              <button type="button" onClick={abrirPreviaPrecos} className="gp-btn gp-bs gp-sm">
+                <ArrowsClockwise size={16} weight="bold" aria-hidden="true" /> Atualizar preços da base própria
+              </button>
 
-          <button type="button" onClick={handleAddEtapa} className="gp-btn gp-bs gp-sm">
-            <Plus size={16} weight="bold" aria-hidden="true" /> Nova etapa
-          </button>
+              <button type="button" onClick={handleAddEtapa} className="gp-btn gp-bs gp-sm">
+                <Plus size={16} weight="bold" aria-hidden="true" /> Nova etapa
+              </button>
+            </>
+          )}
         </div>
       </div>
       </div>
@@ -692,9 +713,11 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
             <h2 id="h-etapas-m" className="gp-h2">
               Etapas <span style={{ fontSize: 14, fontWeight: 600, color: "#475569" }}>· {etapasPrincipais.length}</span>
             </h2>
-            <button type="button" onClick={handleAddEtapa} style={{ ...botaoAcaoEtapa, color: "#00626b", fontWeight: 800, paddingRight: 4 }}>
-              <Plus size={16} weight="bold" aria-hidden="true" /> Nova etapa
-            </button>
+            {!readOnly && (
+              <button type="button" onClick={handleAddEtapa} style={{ ...botaoAcaoEtapa, color: "#00626b", fontWeight: 800, paddingRight: 4 }}>
+                <Plus size={16} weight="bold" aria-hidden="true" /> Nova etapa
+              </button>
+            )}
           </div>
           <div className="gp-seg" role="group" aria-label="Modo de preço">
             <button type="button" aria-pressed={modoPreco === "VENDA"} onClick={() => setModoPreco("VENDA")} style={{ minHeight: 44 }}>
@@ -704,9 +727,11 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
               Custo direto
             </button>
           </div>
-          <button type="button" onClick={abrirPreviaPrecos} className="gp-btn gp-bs gp-sm" style={{ minHeight: 44 }}>
-            <ArrowsClockwise size={16} weight="bold" aria-hidden="true" /> Atualizar preços da base própria
-          </button>
+          {!readOnly && (
+            <button type="button" onClick={abrirPreviaPrecos} className="gp-btn gp-bs gp-sm" style={{ minHeight: 44 }}>
+              <ArrowsClockwise size={16} weight="bold" aria-hidden="true" /> Atualizar preços da base própria
+            </button>
+          )}
 
           {etapasPrincipais.length > 0 && (
             <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
@@ -758,9 +783,11 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
               <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
                 {itensSemEtapa.map(renderItemCartao)}
               </ul>
-              <button type="button" onClick={() => openModalToCreate("")} style={botaoTracejado}>
-                <Plus size={16} weight="bold" aria-hidden="true" /> Vincular novo item
-              </button>
+              {!readOnly && (
+                <button type="button" onClick={() => openModalToCreate("")} style={botaoTracejado}>
+                  <Plus size={16} weight="bold" aria-hidden="true" /> Vincular novo item
+                </button>
+              )}
             </section>
           )}
         </div>
@@ -783,7 +810,7 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
               {renderItemTable(itensSemEtapa, "")}
 
               <div className="flex justify-between items-center mt-4">
-                <button type="button" onClick={() => openModalToCreate("")} className="gp-btn gp-bs gp-sm"><Plus size={14} weight="bold" aria-hidden="true" /> Vincular novo item</button><div className="font-bold text-text-main text-sm">Subtotal: <span className="gp-mono ml-2 text-base">{formatarReal(itensSemEtapa.reduce((acc, curr) => acc + (curr.preco_total || 0), 0))}</span>
+                {!readOnly ? <button type="button" onClick={() => openModalToCreate("")} className="gp-btn gp-bs gp-sm"><Plus size={14} weight="bold" aria-hidden="true" /> Vincular novo item</button> : <span />}<div className="font-bold text-text-main text-sm">Subtotal: <span className="gp-mono ml-2 text-base">{formatarReal(itensSemEtapa.reduce((acc, curr) => acc + (curr.preco_total || 0), 0))}</span>
                 </div>
               </div>
             </div>
@@ -827,11 +854,12 @@ export function PlanilhaView({ orcamentoId, estadoOrcamento, fonteOrcamento = "S
         item={drawerItem}
         onClose={() => setDrawerItem(null)}
         onUpdate={carregarDados}
-        onEdit={(item) => {
+        readOnly={readOnly}
+        onEdit={readOnly ? undefined : (item) => {
           setDrawerItem(null);
           openModalToEdit(item);
         }}
-        onRemove={(item) => {
+        onRemove={readOnly ? undefined : (item) => {
           setDrawerItem(null);
           handleRemoveItem(item.id);
         }}

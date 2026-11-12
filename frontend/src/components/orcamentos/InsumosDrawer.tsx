@@ -13,6 +13,8 @@ interface InsumosDrawerProps {
   /** Mobile: o cartão do item abre esta folha, que oferece editar e remover no rodapé. */
   onEdit?: (item: OrcamentoItem) => void;
   onRemove?: (item: OrcamentoItem) => void;
+  /** Orçamento aprovado: insumos só para consulta. */
+  readOnly?: boolean;
 }
 
 // Cores da barra de composição do custo (mobile), na ordem dos grupos
@@ -37,7 +39,7 @@ function formatCurrency(v: number | null | undefined) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate, onEdit, onRemove }: InsumosDrawerProps) {
+export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate, onEdit, onRemove, readOnly = false }: InsumosDrawerProps) {
   const [insumos, setInsumos] = useState<OrcamentoItemInsumo[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -224,6 +226,7 @@ export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate, onEdit, on
                                 <input
                                   type="number"
                                   aria-label={`Quantidade de ${ins.descricao}`}
+                                  readOnly={readOnly}
                                   defaultValue={(ins.quantidade_unitaria / item.quantidade).toFixed(6)}
                                   className="gp-mono gp-4b-num"
                                   style={{ width: "100%", height: 34, border: "1px solid #CBD5E1", borderRadius: 8, textAlign: "right", fontSize: 13, padding: "0 6px" }}
@@ -240,6 +243,7 @@ export function InsumosDrawer({ orcamentoId, item, onClose, onUpdate, onEdit, on
                                     type="number"
                                     step="0.01"
                                     aria-label={`Preço unitário de ${ins.descricao}`}
+                                    readOnly={readOnly}
                                     defaultValue={(ins.preco_unitario_custom ?? ins.preco_unitario_base ?? 0).toFixed(2)}
                                     className="gp-mono gp-4b-num"
                                     style={{ width: 72, height: 34, border: "1px solid #CBD5E1", borderRadius: 8, textAlign: "right", fontSize: 13, padding: "0 6px" }}

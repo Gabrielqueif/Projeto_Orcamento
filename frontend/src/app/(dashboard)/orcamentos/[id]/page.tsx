@@ -23,8 +23,8 @@ import {
   type Icon,
 } from "@phosphor-icons/react";
 import { getObras } from "@/lib/api/obras";
-import { getOrcamento, getEtapas, downloadOrcamentoPDF, updateOrcamento, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
-import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus } from "@/lib/orcamentoStatus";
+import { getOrcamento, getEtapas, downloadOrcamentoPDF, updateOrcamento, aprovarOrcamento, type Orcamento, type Etapa } from "@/lib/api/orcamentos";
+import { STATUS_INFO, STATUS_ORDER, getStatusDisplay, normalizeStatus, orcamentoEditavel } from "@/lib/orcamentoStatus";
 import { PlanilhaView } from "@/components/orcamentos/PlanilhaView";
 import { Skeleton, SkeletonStatus } from "@/components/ui/skeleton";
 import { DetailHeaderSkeleton, PanelSkeleton } from "@/components/common/skeletons";
@@ -73,6 +73,9 @@ export default function OrcamentoDetalhePage() {
   // Folha inferior do mobile com as ações que não cabem no cabeçalho
   const [isMaisAcoesOpen, setIsMaisAcoesOpen] = useState(false);
   const [jaTemObra, setJaTemObra] = useState(false);
+  const [isAprovarOpen, setIsAprovarOpen] = useState(false);
+  const [margemPct, setMargemPct] = useState("0");
+  const [aprovando, setAprovando] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -84,6 +87,11 @@ export default function OrcamentoDetalhePage() {
   const handleUpdateStatus = async (newStatus: string) => {
     setIsStatusDropdownOpen(false);
     if (!orcamento) return;
+    // Aprovar passa pela margem de negociação, que fecha a planilha
+    if (newStatus === "aprovado") {
+      setIsAprovarOpen(true);
+      return;
+    }
     try {
       setLoading(true);
       await updateOrcamento(orcamento.id, { status: newStatus });
@@ -93,6 +101,27 @@ export default function OrcamentoDetalhePage() {
       showToast("Erro ao atualizar o status do orçamento.", undefined, "error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAprovar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!orcamento) return;
+    const margem = parseFloat(margemPct.replace(",", "."));
+    if (isNaN(margem) || margem < 0 || margem >= 100) {
+      showToast("Informe uma margem entre 0 e 100%.", undefined, "error");
+      return;
+    }
+    try {
+      setAprovando(true);
+      await aprovarOrcamento(orcamento.id, margem);
+      setIsAprovarOpen(false);
+      await recarregarOrcamento();
+      showToast("Orçamento aprovado. A planilha foi fechada.");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Erro ao aprovar o orçamento.", undefined, "error");
+    } finally {
+      setAprovando(false);
     }
   };
 
@@ -225,6 +254,7 @@ export default function OrcamentoDetalhePage() {
   const statusDisplay = getStatusDisplay(orcamento.status);
   const statusNorm = normalizeStatus(orcamento.status);
   const isAprovado = statusNorm === "aprovado";
+  const editavel = orcamentoEditavel(orcamento.status);
   const badgeClass = (n: ReturnType<typeof normalizeStatus>) =>
     n === "em_elaboracao" ? "gp-te" : n === "pendente" ? "gp-wa" : n === "aprovado" ? "gp-ok" : n === "recusado" ? "gp-da" : "gp-ne";
   const custoDireto = (orcamento.valor_total ?? 0) / (1 + (orcamento.bdi || 0) / 100);
@@ -261,6 +291,8 @@ export default function OrcamentoDetalhePage() {
               <button
                 type="button"
                 onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                disabled={!editavel}
+                title={editavel ? undefined : "Orçamento aprovado: status travado"}
                 aria-haspopup="true"
                 aria-expanded={isStatusDropdownOpen}
                 className={`gp-bg ${badgeClass(statusNorm)}`}
@@ -308,7 +340,13 @@ export default function OrcamentoDetalhePage() {
           </button>
           {/* No mobile as demais ações vão para a folha "Mais ações" */}
           <div className="hidden lg:contents">
-          <button type="button" onClick={handleOpenEditModal} className="gp-btn gp-bs">
+          <button
+            type="button"
+            onClick={handleOpenEditModal}
+            disabled={!editavel}
+            title={editavel ? undefined : "Orçamento aprovado: edição travada"}
+            className="gp-btn gp-bs"
+          >
             <PencilSimple size={16} weight="bold" aria-hidden="true" />
             Editar
           </button>
@@ -419,6 +457,7 @@ export default function OrcamentoDetalhePage() {
         <button
           type="button"
           onClick={() => setIsBdiModalOpen(true)}
+          disabled={!editavel}
           aria-label="Configurar BDI aplicado"
           style={{ ...totalCell(false), border: 0, textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit" }}
         >
@@ -469,6 +508,7 @@ export default function OrcamentoDetalhePage() {
             estadoOrcamento={orcamento.estado}
             fonteOrcamento={orcamento.fonte}
             bdiOrcamento={orcamento.bdi || 0}
+            readOnly={!editavel}
             onTotalChanged={recarregarOrcamento}
           />
         )}
@@ -594,6 +634,7 @@ export default function OrcamentoDetalhePage() {
                 setIsMaisAcoesOpen(false);
                 handleOpenEditModal();
               }}
+              disabled={!editavel}
               className="gp-btn gp-bs"
               style={{ width: "100%", justifyContent: "flex-start", minHeight: 52 }}
             >
@@ -650,6 +691,35 @@ export default function OrcamentoDetalhePage() {
             )}
           </li>
         </ul>
+      </Modal>
+
+      <Modal isOpen={isAprovarOpen} onClose={() => setIsAprovarOpen(false)} title="Aprovar orçamento">
+        <form onSubmit={handleAprovar} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <p className="gp-ms" style={{ margin: 0 }}>
+            A margem de negociação é aplicada como desconto fixo no preço de cada serviço. Depois da aprovação a planilha
+            fica fechada e não pode mais ser editada.
+          </p>
+          <div className="gp-fld">
+            <label htmlFor="margem-pct" className="gp-lb">Margem de negociação (%)</label>
+            <input
+              id="margem-pct"
+              className="gp-in gp-mono"
+              type="number"
+              step="0.01"
+              min="0"
+              max="99.99"
+              value={margemPct}
+              onChange={(e) => setMargemPct(e.target.value)}
+              required
+            />
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <button type="button" onClick={() => setIsAprovarOpen(false)} className="gp-btn gp-bs">Cancelar</button>
+            <button type="submit" disabled={aprovando} className="gp-btn gp-bd">
+              {aprovando ? "Aprovando..." : "Aprovar e fechar planilha"}
+            </button>
+          </div>
+        </form>
       </Modal>
 
       {isBdiModalOpen && orcamento && (

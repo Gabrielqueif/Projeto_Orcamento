@@ -63,6 +63,11 @@ export function normalizeStatus(raw: string | null | undefined): OrcamentoStatus
   return STATUS_ALIASES[s] ?? null;
 }
 
+/** Orçamento aprovado tem a planilha fechada: sem edição de itens, etapas, BDI ou status. */
+export function orcamentoEditavel(raw: string | null | undefined): boolean {
+  return normalizeStatus(raw) !== "aprovado";
+}
+
 /** Dados de exibição; valores desconhecidos mostram o texto cru em estilo neutro. */
 export function getStatusDisplay(raw: string | null | undefined): Omit<StatusInfo, "filterLabel"> {
   const status = normalizeStatus(raw);

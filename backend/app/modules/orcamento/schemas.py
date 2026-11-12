@@ -1,9 +1,11 @@
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.modules.orcamento.bdi import BDIConfig, TipoBDI, TipoBDIItem
+
+FaseEmpreendimento = Literal["estimativa_custos", "orcamentacao_detalhada", "obra"]
 
 # --- Schemas de Orçamento ---
 
@@ -37,6 +39,11 @@ class OrcamentoCreate(BaseModel):
     status: Optional[str] = "em_elaboracao"
     variaveis_globais: Optional[List[Any]] = []
     locais: Optional[List[Any]] = []
+    # Campos de empreendimento (opcionais; só são gravados quando informados)
+    descricao: Optional[str] = None
+    proprietario: Optional[str] = None
+    endereco: Optional[Dict[str, Any]] = None
+    fase: Optional[FaseEmpreendimento] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -59,6 +66,10 @@ class OrcamentoUpdate(BaseModel):
     valor_total: Optional[float] = None
     variaveis_globais: Optional[List[Any]] = None
     locais: Optional[List[Any]] = None
+    descricao: Optional[str] = None
+    proprietario: Optional[str] = None
+    endereco: Optional[Dict[str, Any]] = None
+    fase: Optional[FaseEmpreendimento] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -82,10 +93,20 @@ class OrcamentoResponse(BaseModel):
     status: str
     variaveis_globais: Optional[List[Any]] = []
     locais: Optional[List[Any]] = []
+    descricao: Optional[str] = None
+    proprietario: Optional[str] = None
+    endereco: Optional[Dict[str, Any]] = None
+    fase: Optional[str] = None
+    margem_negociacao_pct: Optional[float] = None
+    aprovado_em: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AprovarOrcamentoRequest(BaseModel):
+    margem_negociacao_pct: float = Field(0.0, ge=0, lt=100)
 
 
 class OrcamentoStatsResponse(BaseModel):
