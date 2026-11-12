@@ -117,8 +117,7 @@ export default function DashboardPage() {
         lift
         actions={
           <>
-            <Link href="/orcamentos/novo" className="gp-btn gp-bs gp-only-d">Novo orçamento</Link>
-            <Link href="/obras/novo" className="gp-btn gp-bd gp-only-d"><Plus size={18} weight="bold" aria-hidden="true" />Nova obra</Link>
+            <Link href="/empreendimentos/novo" className="gp-btn gp-bd gp-only-d"><Plus size={18} weight="bold" aria-hidden="true" />Criar novo empreendimento</Link>
           </>
         }
       >
@@ -190,7 +189,7 @@ export default function DashboardPage() {
         <section aria-labelledby="h-andamento" className="gp-only-m">
           <div className="gp-4a-sec-tit">
             <h2 id="h-andamento" className="gp-h2">Obras em andamento</h2>
-            <Link href="/obras">Ver todas</Link>
+            <Link href="/empreendimentos">Ver todos</Link>
           </div>
           <ul className="gp-4a-carr">
             {painel.series.map((serie) => {
@@ -317,7 +316,7 @@ export default function DashboardPage() {
         )}
       </section>
       {/* No fim para não ser o vizinho do cabeçalho (o `lift` sobe o elemento seguinte) */}
-      <Fab href="/obras/novo" ariaLabel="Nova obra" />
+      <Fab href="/empreendimentos/novo" ariaLabel="Novo empreendimento" />
     </>
   );
 }

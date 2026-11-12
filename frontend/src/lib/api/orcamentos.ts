@@ -49,9 +49,17 @@ export interface Orcamento {
   status: string;
   variaveis_globais?: any[] | null;
   locais?: any[] | null;
+  descricao?: string | null;
+  proprietario?: string | null;
+  endereco?: Record<string, unknown> | null;
+  fase?: FaseEmpreendimento;
+  margem_negociacao_pct?: number | null;
+  aprovado_em?: string | null;
   created_at?: string;
   updated_at?: string;
 }
+
+export type FaseEmpreendimento = "estimativa_custos" | "orcamentacao_detalhada" | "obra";
 
 export interface OrcamentoCreate {
   nome: string;
@@ -71,6 +79,10 @@ export interface OrcamentoCreate {
   status?: string;
   variaveis_globais?: any[] | null;
   locais?: any[] | null;
+  descricao?: string;
+  proprietario?: string;
+  endereco?: Record<string, unknown>;
+  fase?: FaseEmpreendimento;
 }
 
 export interface OrcamentoUpdate {

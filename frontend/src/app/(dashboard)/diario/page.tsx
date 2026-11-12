@@ -184,7 +184,7 @@ export default function DiarioVisaoPage() {
               {resumo.total_obras === 0 ? "Você ainda não tem obras em andamento." : "Nenhuma obra em alerta."}
             </p>
             {resumo.total_obras === 0 && (
-              <Link href="/obras/novo" className="gp-btn gp-bp gp-sm" style={{ marginTop: 16 }}>
+              <Link href="/empreendimentos/novo" className="gp-btn gp-bp gp-sm" style={{ marginTop: 16 }}>
                 Criar uma obra
               </Link>
             )}

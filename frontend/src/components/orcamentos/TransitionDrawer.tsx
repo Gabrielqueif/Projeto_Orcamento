@@ -100,7 +100,7 @@ export function TransitionDrawer({
         onSuccess(obraCriada.id);
       }
       
-      router.push(`/obras`);
+      router.push(`/empreendimentos`);
     } catch (err: any) {
       setErrorMsg(err.message || "Ocorreu um erro ao gerar a obra.");
     } finally {

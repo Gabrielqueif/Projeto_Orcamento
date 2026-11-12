@@ -218,7 +218,7 @@ export default function AlmoxarifadoPage() {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: 48 }}>
         <span className="gp-sub">Obra não encontrada.</span>
-        <button type="button" onClick={() => router.push("/obras")} className="gp-btn gp-bd">
+        <button type="button" onClick={() => router.push("/empreendimentos")} className="gp-btn gp-bd">
           Voltar para Obras
         </button>
       </div>
@@ -368,7 +368,7 @@ export default function AlmoxarifadoPage() {
         backLabel="Voltar para a obra"
         crumb={
           <>
-            <Link href="/obras">Obras</Link> / <Link href={`/obras/${id}`}>{orcamento.nome}</Link> /{" "}
+            <Link href="/empreendimentos">Obras</Link> / <Link href={`/obras/${id}`}>{orcamento.nome}</Link> /{" "}
             <span aria-current="page" style={{ color: "#001b3d" }}>Almoxarifado</span>
           </>
         }

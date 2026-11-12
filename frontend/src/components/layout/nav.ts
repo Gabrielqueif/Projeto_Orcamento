@@ -3,7 +3,6 @@ import {
   HardHat,
   Database,
   Users,
-  Coins,
   UploadSimple,
   Notebook,
   ChartBar,
@@ -22,14 +21,13 @@ export function gruposSidebar(isAdmin: boolean): { titulo: string; links: NavLin
       titulo: "Comercial",
       links: [
         { href: "/", icon: House, label: "Visão geral" },
-        { href: "/orcamentos", icon: Coins, label: "Orçamentos" },
+        { href: "/empreendimentos", icon: HardHat, label: "Empreendimentos" },
         { href: "/bases", icon: Database, label: "Bases de dados" },
       ],
     },
     {
       titulo: "Operação",
       links: [
-        { href: "/obras", icon: HardHat, label: "Obras" },
         { href: "/diario", icon: Notebook, label: "Diário de obra" },
         { href: "/equipe", icon: Users, label: "Equipe" },
       ],
@@ -47,8 +45,7 @@ export function gruposSidebar(isAdmin: boolean): { titulo: string; links: NavLin
 /** Abas da barra inferior (mobile). */
 export const ABAS_MOBILE: NavLink[] = [
   { href: "/", icon: House, label: "Início" },
-  { href: "/orcamentos", icon: Coins, label: "Orçamentos" },
-  { href: "/obras", icon: HardHat, label: "Obras" },
+  { href: "/empreendimentos", icon: HardHat, label: "Empreend." },
   { href: "/diario", icon: Notebook, label: "Diário" },
   { href: "/mais", icon: SquaresFour, label: "Mais" },
 ];
@@ -81,8 +78,8 @@ export function linkAtivo(pathname: string | null, href: string): boolean {
 
 /** Aba da barra inferior que fica ativa: rotas fora das 4 abas principais caem em "Mais". */
 export function abaAtiva(pathname: string | null, abas: NavLink[] = ABAS_MOBILE): string {
-  // O editor de prazos é aberto a partir da obra.
-  if (abas === ABAS_MOBILE && linkAtivo(pathname, "/prazo")) return "/obras";
+  // Prazos e acompanhamento da obra pertencem ao empreendimento.
+  if (abas === ABAS_MOBILE && (linkAtivo(pathname, "/prazo") || linkAtivo(pathname, "/obras"))) return "/empreendimentos";
   const principal = abas.slice(0, -1).find((a) => linkAtivo(pathname, a.href));
   return principal ? principal.href : "/mais";
 }

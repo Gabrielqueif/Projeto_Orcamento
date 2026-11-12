@@ -56,8 +56,7 @@ jest.mock("@/lib/api/basesProprias", () => ({ listarBases: jest.fn(), criarBase:
 jest.mock("@/lib/api/financeiro", () => ({ getPortfolioConsolidado: jest.fn() }));
 
 import DashboardPage from "@/app/(dashboard)/page";
-import ObrasPage from "@/app/(dashboard)/obras/page";
-import OrcamentosPage from "@/app/(dashboard)/orcamentos/page";
+import OrcamentosPage from "@/app/(dashboard)/empreendimentos/page";
 import EquipePage from "@/app/(dashboard)/equipe/page";
 import NotificacoesPage from "@/app/(dashboard)/notificacoes/page";
 import ConfiguracoesPage from "@/app/(dashboard)/configuracoes/page";
@@ -135,39 +134,6 @@ describe("Painel", () => {
 
     expect(await screen.findByText("Obras Ativas")).toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
-  });
-});
-
-describe("Obras (lista)", () => {
-  const orcamento = { id: "orc-1", nome: "Residencial Aurora", cliente: "Cliente X", status: "em_elaboracao" };
-  const obra = { id: "obra-1", orcamento_id: "orc-1", status: "EM_ANDAMENTO" };
-
-  it("mostra o esqueleto da tabela, sem a mensagem de lista vazia, até carregar", async () => {
-    const orcamentos = adiada<unknown[]>();
-    mock(getOrcamentos).mockReturnValue(orcamentos.promessa);
-    mock(getObras).mockResolvedValue([obra]);
-    mock(getEtapas).mockResolvedValue([]);
-
-    render(<ObrasPage />);
-
-    expect(statusCom("Carregando obras...")).toHaveLength(1);
-    expect(screen.queryByText("Nenhuma obra encontrada.")).not.toBeInTheDocument();
-    expect(screen.queryByText("Residencial Aurora")).not.toBeInTheDocument();
-
-    await resolverCom(orcamentos.resolver, [orcamento]);
-
-    expect((await screen.findAllByText("Residencial Aurora")).length).toBeGreaterThan(0);
-    expect(screen.queryAllByRole("status")).toHaveLength(0);
-  });
-
-  it("depois de carregar sem obras, troca o esqueleto pela mensagem de vazio", async () => {
-    mock(getOrcamentos).mockResolvedValue([]);
-    mock(getObras).mockResolvedValue([]);
-
-    render(<ObrasPage />);
-
-    expect(await screen.findByText("Nenhuma obra encontrada.")).toBeInTheDocument();
-    expect(screen.queryAllByRole("status")).toHaveLength(0);
   });
 });
 

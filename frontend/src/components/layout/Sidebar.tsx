@@ -33,9 +33,9 @@ export function Sidebar() {
       </Link>
 
       {!somenteMembro && (
-        <Link href="/obras/novo" className="gp-sd-cta">
+        <Link href="/empreendimentos/novo" className="gp-sd-cta">
           <Plus size={18} weight="bold" aria-hidden="true" />
-          Nova obra
+          Novo empreendimento
         </Link>
       )}
 

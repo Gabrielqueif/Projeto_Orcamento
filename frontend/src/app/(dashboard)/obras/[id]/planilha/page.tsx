@@ -79,7 +79,7 @@ export default function PlanilhaOrcamentariaPage() {
         backLabel="Voltar para a obra"
         crumb={
           <>
-            <Link href="/obras">Obras</Link> / <Link href={`/obras/${id}`}>{orcamento.nome}</Link> /{" "}
+            <Link href="/empreendimentos">Obras</Link> / <Link href={`/obras/${id}`}>{orcamento.nome}</Link> /{" "}
             <span aria-current="page" style={{ color: "#001b3d" }}>Planilha</span>
           </>
         }
